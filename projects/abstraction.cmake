@@ -14,6 +14,15 @@ function(abstraction_include_interface_library dependent)
     include_interface_library(${INTERFACE_OF_TARGET} ${dependent})
 endfunction()
 
+function(include_interface_location target location)
+    target_include_directories(${target} INTERFACE ${location})
+endfunction()
+
+function(abstraction_include_interface_location location)
+    include_interface_location(${PROJECT_NAME} ${location})
+    include_interface_location(${INTERFACE_OF_TARGET} ${location})
+endfunction()
+
 function(include_definition target keyValue)
     target_compile_definitions(${target} INTERFACE ${keyValue})
 endfunction()

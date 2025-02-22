@@ -28,6 +28,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-log)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-text)
+target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-converter)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE efi-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE efi-error)

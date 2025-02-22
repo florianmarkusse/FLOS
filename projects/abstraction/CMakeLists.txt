@@ -10,8 +10,10 @@ add_subdirectory("efi/code")
 add_subdirectory("interrupts/code")
 add_subdirectory("log/code")
 
+add_subdirectory("memory/management/code")
 add_subdirectory("memory/manipulation/code")
 add_subdirectory("memory/virtual/code")
+add_subdirectory("memory/physical/code")
 
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     fetch_and_write_project_targets()

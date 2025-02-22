@@ -1,4 +1,5 @@
 - redo abstractions
+- redo .go files with "/" as an ending character. I should just bite the bullet and remove it and be consistent
 - need to only print-configuration after adding all subprojects, some subprojects can add flags now if they need it
 - remove FREE_C & HOSTED_LIB_C in favor of just using environments
 - get rid of if xxx for `add_subproject` - each project can just declare their included projects now
