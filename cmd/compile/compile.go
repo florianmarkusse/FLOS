@@ -118,6 +118,7 @@ func main() {
 	}
 	configuration.DisplayStringArgument(SELECT_TARGETS_LONG_FLAG, targetsConfiguration)
 
+	configuration.DisplayBoolArgument(ERRORS_TO_FILE_LONG_FLAG, buildArgs.ErrorsToFile)
 	configuration.DisplayBoolArgument(BUILD_TESTS_LONG_FLAG, buildArgs.BuildTests)
 	configuration.DisplayBoolArgument(RUN_TESTS_LONG_FLAG, buildArgs.RunTests)
 	configuration.DisplayBoolArgument(VERBOSE_LONG_FLAG, buildArgs.Verbose)

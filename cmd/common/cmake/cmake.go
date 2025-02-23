@@ -45,7 +45,7 @@ func AddDefaultConfigureOptions(options *strings.Builder, projectFolder string, 
 	argument.AddArgument(options, fmt.Sprintf("--graphviz=%s/output.dot", codeFolder))
 
 	var iwyuString = strings.Builder{}
-	iwyuString.WriteString("-D CMAKE_C_INCLUDE_WHAT_YOU_USE=\"include-what-you-use;-w;-Xiwyu;")
+	iwyuString.WriteString(fmt.Sprintf("-D CMAKE_C_INCLUDE_WHAT_YOU_USE=\"include-what-you-use;-w;-Xiwyu;--mapping_file=%s/facades.imp;", common.REPO_PROJECTS))
 	if env == string(environment.Freestanding) {
 		iwyuString.WriteString("--no_default_mappings")
 	}

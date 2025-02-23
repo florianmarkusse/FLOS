@@ -33,5 +33,5 @@ Will currently (probably) break intermittently because of interrupts clobbering 
 
 ```
 # First compile with -e flag to create stderr.txt file for a project.
-dependencies/include-what-you-use/fix_includes.py --nocomments < projects/image-builder/code/stderr.txt
+dependencies/include-what-you-use/fix_includes.py --reorder --nocomments < projects/image-builder/code/stderr.txt
 ```

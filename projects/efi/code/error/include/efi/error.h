@@ -2,7 +2,6 @@
 #define EFI_ERROR_H
 
 #include "efi/firmware/base.h"
-#include "abstraction/log.h"
 #include "shared/macros.h"
 
 void waitKeyThenReset();
