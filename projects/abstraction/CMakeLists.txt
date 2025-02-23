@@ -15,6 +15,8 @@ add_subdirectory("memory/manipulation/code")
 add_subdirectory("memory/virtual/code")
 add_subdirectory("memory/physical/code")
 
+add_subdirectory("text/converter/code")
+
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     fetch_and_write_project_targets()
 endif()

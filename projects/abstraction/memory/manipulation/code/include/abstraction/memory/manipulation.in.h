@@ -1,8 +1,0 @@
-#ifndef ABSTRACTION_MEMORY_MANIPULATION_IN_H
-#define ABSTRACTION_MEMORY_MANIPULATION_IN_H
-
-// clang-format off
-#include "@ABSTRACTION_MEMORY_MANIPULATION_INCLUDE@"
-// clang-format on
-
-#endif

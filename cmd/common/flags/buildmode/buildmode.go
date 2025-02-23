@@ -15,8 +15,8 @@ const BUILD_MODE_SHORT_FLAG = "m"
 type BuildMode string
 
 const (
-	Release BuildMode = "Release"
-	Debug   BuildMode = "Debug"
+	Release BuildMode = "RELEASE"
+	Debug   BuildMode = "DEBUG"
 )
 
 var PossibleBuildModes = []string{

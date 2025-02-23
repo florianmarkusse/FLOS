@@ -3,14 +3,14 @@
 
 #ifdef DEBUG
 
-#if defined(FREESTANDING_ENVIRONMENT) || defined(EFI_ENVIRONMENT)
+#if defined(FREESTANDING) || defined(EFI)
 // Use set $pc += 2 to resume exection
 #define BREAKPOINT asm volatile("1: jmp 1b");
 #define ASSERT(c)                                                              \
     if (!(c)) {                                                                \
         asm volatile("1: jmp 1b");                                     \
     }
-#elif POSIX_ENVIRONMENT
+#elif POSIX
 
 #define BREAKPOINT asm volatile("int3; nop");
 

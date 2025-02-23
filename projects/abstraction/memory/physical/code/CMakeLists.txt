@@ -1,9 +1,9 @@
 create_abstraction_targets(abstraction-memory-physical)
 
-if("${ENVIRONMENT}" STREQUAL "efi")
+if(${ENVIRONMENT} STREQUAL "EFI")
     add_project("efi")
     abstraction_add_sources(efi-memory)
-elseif("${ARCHITECTURE}" STREQUAL "x86")
+elseif(${ARCHITECTURE} STREQUAL "X86")
     add_project("x86/memory/physical")
     abstraction_add_sources(x86-memory-physical)
     abstraction_add_sources(x86-memory-physical-status)

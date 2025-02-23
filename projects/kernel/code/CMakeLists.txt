@@ -26,10 +26,10 @@ include("${REPO_PROJECTS}/print-configuration.cmake")
 
 add_executable(${PROJECT_NAME} "src/main.c")
 
-if(${ARCHITECTURE} STREQUAL "x86")
+if(${ARCHITECTURE} STREQUAL "X86")
     set(EMULATION_TARGET "elf_x86_64")
 else()
-    message(FATAL "No emulation target set to link")
+    message(FATAL_ERROR "No emulation target set to link")
 endif()
 set_target_properties(
     ${PROJECT_NAME}

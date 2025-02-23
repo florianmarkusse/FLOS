@@ -15,9 +15,9 @@ const ENVIRONMENT_SHORT_FLAG = "n"
 type Environment string
 
 const (
-	Freestanding Environment = "freestanding"
-	Posix        Environment = "posix"
-	Efi          Environment = "efi"
+	Freestanding Environment = "FREESTANDING"
+	Posix        Environment = "POSIX"
+	Efi          Environment = "EFI"
 )
 
 var PossibleEnvironments = []string{

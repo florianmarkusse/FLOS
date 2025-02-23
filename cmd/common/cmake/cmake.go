@@ -14,7 +14,7 @@ import (
 
 const EXECUTABLE = "cmake"
 
-func AddDefaultConfigureOptions(options *strings.Builder, projectFolder string, codeFolder string, buildDirectory string, cCompiler string, linker string, buildMode string, env string, buildTests bool, projectTargetsFile string, architecture string) {
+func AddDefaultConfigureOptions(options *strings.Builder, projectFolder string, codeFolder string, buildDirectory string, cCompiler string, linker string, buildMode string, env string, buildTests bool, projectTargetsFile string, architecture string, floatOperations bool) {
 	argument.AddArgument(options, fmt.Sprintf("-S %s", codeFolder))
 	argument.AddArgument(options, fmt.Sprintf("-B %s", buildDirectory))
 
@@ -32,9 +32,17 @@ func AddDefaultConfigureOptions(options *strings.Builder, projectFolder string, 
 	argument.AddArgument(options, fmt.Sprintf("-D REPO_DEPENDENCIES=%s", common.REPO_DEPENDENCIES))
 	argument.AddArgument(options, fmt.Sprintf("-D REPO_PROJECTS=%s", common.REPO_PROJECTS))
 	argument.AddArgument(options, fmt.Sprintf("-D PROJECT_TARGETS_FILE=%s", projectTargetsFile))
+	argument.AddArgument(options, fmt.Sprintf("-D FLOAT_OPERATIONS=%t", floatOperations))
+
+	var build string
+	if buildTests {
+		build = "UNIT_TEST"
+	} else {
+		build = "PROJECT"
+	}
+	argument.AddArgument(options, fmt.Sprintf("-D BUILD=%s", build))
 
 	argument.AddArgument(options, fmt.Sprintf("--graphviz=%s/output.dot", codeFolder))
-	argument.AddArgument(options, fmt.Sprintf("-D UNIT_TEST_BUILD=%t", buildTests))
 
 	var iwyuString = strings.Builder{}
 	iwyuString.WriteString("-D CMAKE_C_INCLUDE_WHAT_YOU_USE=\"include-what-you-use;-w;-Xiwyu;")

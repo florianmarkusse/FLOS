@@ -1,5 +1,5 @@
-#ifndef ABSTRACTION_TEXT_CONVERTER_CONVERTER_IN_H
-#define ABSTRACTION_TEXT_CONVERTER_CONVERTER_IN_H
+#ifndef ABSTRACTION_TEXT_CONVERTER_BASE_H
+#define ABSTRACTION_TEXT_CONVERTER_BASE_H
 
 #include "shared/text/string.h"
 #include "shared/types/array-types.h"
@@ -24,15 +24,8 @@ string U64ToStringDefault(U64 data);
 string I64ToString(I64 data, U8_a tmp);
 string I64ToStringDefault(I64 data);
 
-string noAppend();
-
-#ifdef INCLUDE_FLOAT_TO_STRING_CONVERSIONS
-#include "shared/text/ccnverter/float.h"
-#endif
-
 // clang-format off
-#define CONVERT_TO_STRING(data)                                                \
-    _Generic((data),                                                           \
+#define CONVERT_TO_STRING_BASE \
         string: stringToString,                                                \
         char: charToStringDefault,                                             \
         bool: boolToString,                                                    \
@@ -52,9 +45,8 @@ string noAppend();
         U32: U64ToStringDefault,                                               \
         I32: I64ToStringDefault,                                               \
         U64: U64ToStringDefault,                                               \
-        I64: I64ToStringDefault,                                               \
-        CONVERT_TO_STRING_FLOAT
-        default: noAppend)(data)
+        I64: I64ToStringDefault,
+
 // clang-format on
 
 #endif

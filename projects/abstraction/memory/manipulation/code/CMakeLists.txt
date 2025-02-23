@@ -1,32 +1,16 @@
 create_abstraction_targets(abstraction-memory-manipulation)
 
-if("${ENVIRONMENT}" STREQUAL "freestanding")
+if(${ENVIRONMENT} STREQUAL "FREESTANDING")
     add_project("freestanding")
     abstraction_add_sources(freestanding-memory-manipulation)
     abstraction_include_interface_library(freestanding-memory-manipulation)
-    set(ABSTRACTION_MEMORY_MANIPULATION_INCLUDE
-        "freestanding/memory/manipulation.h"
-    )
-elseif("${ENVIRONMENT}" STREQUAL "efi")
+elseif(${ENVIRONMENT} STREQUAL "EFI")
     add_project("freestanding")
     abstraction_add_sources(freestanding-memory-manipulation)
     abstraction_include_interface_library(freestanding-memory-manipulation)
-    set(ABSTRACTION_MEMORY_MANIPULATION_INCLUDE
-        "freestanding/memory/manipulation.h"
-    )
-elseif("${ENVIRONMENT}" STREQUAL "posix")
+elseif(${ENVIRONMENT} STREQUAL "POSIX")
     abstraction_include_interface_library(posix-memory-manipulation)
-    set(ABSTRACTION_MEMORY_MANIPULATION_INCLUDE "posix/memory/manipulation.h")
     # Posix should link with a stdlib that contains the right implementations
 else()
     message(FATAL_ERROR "no memory manipulation implementation defined")
 endif()
-
-set(INCLUDE_LOCATION "include/abstraction/memory")
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/${INCLUDE_LOCATION}/manipulation.in.h
-    "${INCLUDE_LOCATION}/manipulation.h"
-    @ONLY
-)
-
-abstraction_include_interface_location("${CMAKE_CURRENT_BINARY_DIR}/include")

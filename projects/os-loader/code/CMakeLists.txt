@@ -11,6 +11,7 @@ add_project("abstraction/memory/manipulation")
 add_project("abstraction/memory/physical")
 add_project("abstraction/memory/virtual")
 add_project("abstraction/log")
+add_project("abstraction/text/converter")
 include("${REPO_PROJECTS}/print-configuration.cmake")
 
 add_executable(

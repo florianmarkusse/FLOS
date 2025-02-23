@@ -15,7 +15,7 @@ const ARCHITECTURE_SHORT_FLAG = "a"
 type Architecture string
 
 const (
-	X86 Architecture = "x86"
+	X86 Architecture = "X86"
 )
 
 var PossibleArchitectures = []string{

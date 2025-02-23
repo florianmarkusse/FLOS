@@ -1,6 +1,6 @@
 create_abstraction_targets(abstraction-memory-management)
 
-if("${ARCHITECTURE}" STREQUAL "x86")
+if(${ARCHITECTURE} STREQUAL "X86")
     add_project("x86")
     add_project("x86/memory/physical")
     add_project("x86/memory/virtual")
