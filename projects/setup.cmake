@@ -86,7 +86,6 @@ endif()
 if(CMAKE_BUILD_TYPE STREQUAL "RELEASE")
     add_compile_definitions(RELEASE)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -flto")
-    # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 endif()
 
 set(VALID_ARCHITECTURES "X86")
@@ -105,66 +104,7 @@ set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS}")
 # NOTE: embed-dir is not a supported asm flag
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --embed-dir=${REPO_PROJECTS}")
 
-set(ADDED_PROJECT_TARGETS
-    "${PROJECT_FOLDER}"
-    CACHE INTERNAL
-    "Used to ensure a module is only added once."
-)
-
-function(add_project project)
-    if(NOT "${project}" IN_LIST ADDED_PROJECT_TARGETS)
-        update_added_projects(${project})
-        add_subdirectory(
-            "${REPO_PROJECTS}/${project}/code"
-            "${REPO_PROJECTS}/${project}/code/${BUILD_OUTPUT_PATH}"
-        )
-    endif()
-endfunction()
-
-function(update_added_projects target)
-    if(NOT "${project}" IN_LIST ADDED_PROJECT_TARGETS)
-        set(ADDED_PROJECT_TARGETS
-            "${ADDED_PROJECT_TARGETS};${target}"
-            CACHE INTERNAL
-            "Used to ensure a module is only added once."
-        )
-    endif()
-endfunction()
-
-function(get_project_targets result currentDir)
-    get_property(
-        subdirectories
-        DIRECTORY "${currentDir}"
-        PROPERTY SUBDIRECTORIES
-    )
-    foreach(subdirectory IN LISTS subdirectories)
-        get_project_targets(${result} "${subdirectory}")
-    endforeach()
-    get_directory_property(
-        all_targets
-        DIRECTORY "${currentDir}"
-        BUILDSYSTEM_TARGETS
-    )
-    set(buildable_targets)
-    foreach(target IN LISTS all_targets)
-        get_property(target_type TARGET ${target} PROPERTY TYPE)
-        if(NOT target_type STREQUAL "INTERFACE_LIBRARY")
-            list(APPEND buildable_targets ${target})
-        endif()
-    endforeach()
-    list(FILTER buildable_targets INCLUDE REGEX "^${PROJECT_NAME}.*")
-    set(${result} ${${result}} ${buildable_targets} PARENT_SCOPE)
-endfunction()
-
-function(fetch_and_write_project_targets)
-    set(project_targets)
-    get_project_targets(project_targets ${CMAKE_CURRENT_BINARY_DIR})
-
-    file(WRITE ${PROJECT_TARGETS_FILE} "")
-    foreach(target ${project_targets})
-        file(APPEND ${PROJECT_TARGETS_FILE} "${target}\n")
-    endforeach()
-endfunction()
-
+include("${REPO_PROJECTS}/project-target.cmake")
+include("${REPO_PROJECTS}/add-project.cmake")
 include("${REPO_PROJECTS}/abstraction.cmake")
 include("${REPO_PROJECTS}/macros.cmake")
