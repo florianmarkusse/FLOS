@@ -3,7 +3,7 @@ add_library(${PROJECT_NAME} OBJECT "src/core.c")
 
 add_includes_for_sublibrary()
 
-if("${UNIT_TEST_BUILD}")
+if(${BUILD} STREQUAL "UNIT_TEST")
     add_subdirectory(test)
 endif()
 
