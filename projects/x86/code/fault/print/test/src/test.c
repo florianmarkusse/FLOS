@@ -1,7 +1,7 @@
 #include "x86/fault/print/test.h"
 
 #include "abstraction/log.h"
-#include "shared/text/converter.h"
+#include "abstraction/text/converter/converter.h"
 #include "shared/text/string.h"
 #include "shared/types/types.h"
 #include "x86/cpu/status/core.h"

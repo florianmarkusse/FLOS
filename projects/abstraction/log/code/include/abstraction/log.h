@@ -2,7 +2,7 @@
 #define ABSTRACTION_LOG_H
 
 #include "shared/macros.h"
-#include "shared/text/converter.h"
+#include "abstraction/text/converter/converter.h"
 #include "shared/text/string.h"
 #include "shared/types/array-types.h"
 #include "shared/types/types.h"

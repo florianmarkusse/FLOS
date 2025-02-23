@@ -3,7 +3,7 @@
 
 #include "shared/types/array-types.h"
 #include "shared/memory/allocator/arena.h"
-#include "shared/text/converter.h"
+#include "abstraction/text/converter/converter.h"
 #include "shared/text/string.h"
 
 void appendToSimpleBuffer(string data, U8_d_a *array, Arena *perm);

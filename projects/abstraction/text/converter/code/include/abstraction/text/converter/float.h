@@ -9,7 +9,7 @@ string F64ToString(F64 data, U8_a tmp);
 string F64ToStringDefault(F64 data);
 
 // clang-format off
-#define CONVERT_TO_STRING_BASE \
+#define CONVERT_TO_STRING_FLOAT                                                \
         F32: F64ToStringDefault,                                               \
         F64: F64ToStringDefault,
 

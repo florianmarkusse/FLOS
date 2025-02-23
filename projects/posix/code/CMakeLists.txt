@@ -8,6 +8,7 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     add_project("shared")
     add_project("abstraction/memory/manipulation")
     add_project("abstraction/log")
+    add_project("abstraction/text/converter")
     include("${REPO_PROJECTS}/print-configuration.cmake")
 endif()
 

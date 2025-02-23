@@ -14,6 +14,7 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     add_project("abstraction/log")
     add_project("abstraction/memory/manipulation")
     add_project("abstraction/memory/physical")
+    add_project("abstraction/text/converter")
     include(${REPO_PROJECTS}/print-configuration.cmake)
 endif()
 
@@ -22,6 +23,7 @@ add_library(${PROJECT_NAME} OBJECT "src/init.c" "src/jump.c" "src/gdt.c")
 add_includes_for_sublibrary()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-log-i)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-text-converter-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-physical-i)
 

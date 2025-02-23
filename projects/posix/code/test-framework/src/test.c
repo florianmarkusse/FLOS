@@ -3,7 +3,7 @@
 #include "posix/log.h"
 #include "shared/assert.h"      // for ASSERT
 #include "shared/text/string.h" // for STRING, string
-#include "shared/text/converter.h"
+#include "abstraction/text/converter/converter.h"
 #include "shared/types/types.h"
 
 typedef struct {
