@@ -19,7 +19,7 @@ func AddDefaultConfigureOptions(options *strings.Builder, projectFolder string, 
 	argument.AddArgument(options, fmt.Sprintf("-B %s", buildDirectory))
 
 	result := strings.TrimPrefix(projectFolder, common.REPO_PROJECTS)
-	result = result[1 : len(result)-1] // remove '/' xxx '/'
+	result = result[1:] // remove '/' xxx
 	argument.AddArgument(options, fmt.Sprintf("-D PROJECT_FOLDER=%s", result))
 
 	argument.AddArgument(options, fmt.Sprintf("-D CMAKE_C_COMPILER=%s", cCompiler))

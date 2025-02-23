@@ -97,21 +97,21 @@ const FREESTANDING = "freestanding"
 const ABSTRACTION = "abstraction"
 
 // and here
-var kernelFolder = common.REPO_PROJECTS + "/" + KERNEL + "/"
-var efiToKernelFolder = common.REPO_PROJECTS + "/" + EFI_TO_KERNEL + "/"
-var osLoaderFolder = common.REPO_PROJECTS + "/" + OS_LOADER + "/"
-var efiFolder = common.REPO_PROJECTS + "/" + EFI + "/"
-var imageBuilderFolder = common.REPO_PROJECTS + "/" + IMAGE_BUILDER + "/"
-var sharedFolder = common.REPO_PROJECTS + "/" + SHARED + "/"
-var posixFolder = common.REPO_PROJECTS + "/" + POSIX + "/"
-var x86Folder = common.REPO_PROJECTS + "/" + X86 + "/"
-var x86EfiFolder = common.REPO_PROJECTS + "/" + "x86/efi" + "/"
-var x86MemoryPhysicalFolder = common.REPO_PROJECTS + "/" + "x86/memory/physical" + "/"
-var x86MemoryVirtualFolder = common.REPO_PROJECTS + "/" + "x86/memory/virtual" + "/"
-var x86MemoryPolicyFolder = common.REPO_PROJECTS + "/" + "x86/memory/policy" + "/"
-var efiUefiFolder = common.REPO_PROJECTS + "/" + "efi/uefi" + "/"
-var freestandingFolder = common.REPO_PROJECTS + "/" + FREESTANDING + "/"
-var abstractionFolder = common.REPO_PROJECTS + "/" + ABSTRACTION + "/"
+var kernelFolder = common.REPO_PROJECTS + "/" + KERNEL
+var efiToKernelFolder = common.REPO_PROJECTS + "/" + EFI_TO_KERNEL
+var osLoaderFolder = common.REPO_PROJECTS + "/" + OS_LOADER
+var efiFolder = common.REPO_PROJECTS + "/" + EFI
+var imageBuilderFolder = common.REPO_PROJECTS + "/" + IMAGE_BUILDER
+var sharedFolder = common.REPO_PROJECTS + "/" + SHARED
+var posixFolder = common.REPO_PROJECTS + "/" + POSIX
+var x86Folder = common.REPO_PROJECTS + "/" + X86
+var x86EfiFolder = common.REPO_PROJECTS + "/" + "x86/efi"
+var x86MemoryPhysicalFolder = common.REPO_PROJECTS + "/" + "x86/memory/physical"
+var x86MemoryVirtualFolder = common.REPO_PROJECTS + "/" + "x86/memory/virtual"
+var x86MemoryPolicyFolder = common.REPO_PROJECTS + "/" + "x86/memory/policy"
+var efiUefiFolder = common.REPO_PROJECTS + "/" + "efi/uefi"
+var freestandingFolder = common.REPO_PROJECTS + "/" + FREESTANDING
+var abstractionFolder = common.REPO_PROJECTS + "/" + ABSTRACTION
 
 // and here
 var PROJECT_STRUCTURES = map[string]*ProjectStructure{
@@ -119,7 +119,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       ELF.CCompiler,
 		Linker:          ELF.Linker,
 		Folder:          kernelFolder,
-		CodeFolder:      kernelFolder + "code",
+		CodeFolder:      kernelFolder + "/code",
 		Environment:     string(environment.Freestanding),
 		FloatOperations: true,
 	},
@@ -127,7 +127,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       ELF.CCompiler,
 		Linker:          ELF.Linker,
 		Folder:          efiToKernelFolder,
-		CodeFolder:      efiToKernelFolder + "code",
+		CodeFolder:      efiToKernelFolder + "/code",
 		Environment:     string(environment.Efi),
 		FloatOperations: true,
 	},
@@ -135,7 +135,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       EFI_SYSTEM.CCompiler,
 		Linker:          EFI_SYSTEM.Linker,
 		Folder:          osLoaderFolder,
-		CodeFolder:      osLoaderFolder + "code",
+		CodeFolder:      osLoaderFolder + "/code",
 		Environment:     string(environment.Efi),
 		FloatOperations: false,
 	},
@@ -143,7 +143,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       EFI_SYSTEM.CCompiler,
 		Linker:          EFI_SYSTEM.Linker,
 		Folder:          efiFolder,
-		CodeFolder:      efiFolder + "code",
+		CodeFolder:      efiFolder + "/code",
 		Environment:     string(environment.Efi),
 		FloatOperations: true,
 	},
@@ -151,7 +151,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       ELF.CCompiler,
 		Linker:          ELF.Linker,
 		Folder:          imageBuilderFolder,
-		CodeFolder:      imageBuilderFolder + "code",
+		CodeFolder:      imageBuilderFolder + "/code",
 		Environment:     string(environment.Posix),
 		FloatOperations: true,
 	},
@@ -159,7 +159,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       ELF.CCompiler,
 		Linker:          ELF.Linker,
 		Folder:          sharedFolder,
-		CodeFolder:      sharedFolder + "code",
+		CodeFolder:      sharedFolder + "/code",
 		Environment:     string(environment.Freestanding),
 		FloatOperations: true,
 	},
@@ -167,7 +167,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       ELF.CCompiler,
 		Linker:          ELF.Linker,
 		Folder:          posixFolder,
-		CodeFolder:      posixFolder + "code",
+		CodeFolder:      posixFolder + "/code",
 		Environment:     string(environment.Posix),
 		FloatOperations: true,
 	},
@@ -175,7 +175,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       ELF.CCompiler,
 		Linker:          ELF.Linker,
 		Folder:          x86Folder,
-		CodeFolder:      x86Folder + "code",
+		CodeFolder:      x86Folder + "/code",
 		Environment:     string(environment.Freestanding),
 		FloatOperations: true,
 	},
@@ -183,7 +183,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       ELF.CCompiler,
 		Linker:          ELF.Linker,
 		Folder:          x86MemoryPhysicalFolder,
-		CodeFolder:      x86MemoryPhysicalFolder + "code",
+		CodeFolder:      x86MemoryPhysicalFolder + "/code",
 		Environment:     string(environment.Freestanding),
 		FloatOperations: true,
 	},
@@ -191,7 +191,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       ELF.CCompiler,
 		Linker:          ELF.Linker,
 		Folder:          x86MemoryVirtualFolder,
-		CodeFolder:      x86MemoryVirtualFolder + "code",
+		CodeFolder:      x86MemoryVirtualFolder + "/code",
 		Environment:     string(environment.Freestanding),
 		FloatOperations: true,
 	},
@@ -199,7 +199,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       ELF.CCompiler,
 		Linker:          ELF.Linker,
 		Folder:          x86MemoryPolicyFolder,
-		CodeFolder:      x86MemoryPolicyFolder + "code",
+		CodeFolder:      x86MemoryPolicyFolder + "/code",
 		Environment:     string(environment.Freestanding),
 		FloatOperations: true,
 	},
@@ -207,7 +207,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       EFI_SYSTEM.CCompiler,
 		Linker:          EFI_SYSTEM.Linker,
 		Folder:          x86EfiFolder,
-		CodeFolder:      x86EfiFolder + "code",
+		CodeFolder:      x86EfiFolder + "/code",
 		Environment:     string(environment.Efi),
 		FloatOperations: true,
 	},
@@ -215,7 +215,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       ELF.CCompiler,
 		Linker:          ELF.Linker,
 		Folder:          efiUefiFolder,
-		CodeFolder:      efiUefiFolder + "code",
+		CodeFolder:      efiUefiFolder + "/code",
 		Environment:     string(environment.Freestanding),
 		FloatOperations: true,
 	},
@@ -223,7 +223,7 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		CCompiler:       ELF.CCompiler,
 		Linker:          ELF.Linker,
 		Folder:          freestandingFolder,
-		CodeFolder:      freestandingFolder + "code",
+		CodeFolder:      freestandingFolder + "/code",
 		Environment:     string(environment.Freestanding),
 		FloatOperations: true,
 	},

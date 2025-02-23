@@ -1,4 +1,3 @@
-- redo .go files with "/" as an ending character. I should just bite the bullet and remove it and be consistent
 - ask iwyu crew how to handle platform-abstraction includes? Perhap
 - Figure out what to do with memory allocation & mapping in os-loader
 - Fix posix tests in physical memory
