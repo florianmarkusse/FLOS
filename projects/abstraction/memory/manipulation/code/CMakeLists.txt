@@ -22,9 +22,10 @@ else()
     message(FATAL_ERROR "no memory manipulation implementation defined")
 endif()
 
+set(INCLUDE_LOCATION "include/abstraction/memory")
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/manipulation.h.in
-    "include/abstraction/memory/manipulation.h"
+    ${CMAKE_CURRENT_SOURCE_DIR}/${INCLUDE_LOCATION}/manipulation.in.h
+    "${INCLUDE_LOCATION}/manipulation.h"
     @ONLY
 )
 
