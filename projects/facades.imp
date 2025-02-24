@@ -1,0 +1,19 @@
+# IWYU mappings use LLVM's YAML Parser text (wtf)
+[
+    {
+        "include": [
+            "\"freestanding/memory/manipulation.h\"", "private", "\"abstraction/memory/manipulation.h\"", "public"
+        ]
+    },
+    {
+        "include": [
+            "\"posix/memory/manipulation.h\"", "private", "\"abstraction/memory/manipulation.h\"", "public"
+        ]
+    },
+
+    {
+        "include": [
+            "\"x86/memory/definitions.h\"", "private", "\"abstraction/memory/virtual.h\"", "public"
+        ]
+    },
+]
