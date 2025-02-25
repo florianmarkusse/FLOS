@@ -4,6 +4,7 @@
 #include "shared/log.h"
 #include "shared/text/string.h"
 #include "shared/types/types.h"
+#include "x86/memory/definitions.h"
 #include "x86/memory/physical.h"
 
 static string pageSizeToString(PageSize pageSize) {

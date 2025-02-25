@@ -1,4 +1,5 @@
 #include "x86/memory/physical.h"
+
 #include "abstraction/interrupts.h"
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/physical/allocation.h"
@@ -7,7 +8,6 @@
 #include "shared/assert.h"
 #include "shared/maths/maths.h"
 #include "shared/types/types.h" // for U64, U32, U8
-#include "x86/fault.h"
 
 // NOTE: This is for an abstraction used in virtual allocation.
 U64 allocate4KiBPage(U64 numPages) {
