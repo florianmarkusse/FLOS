@@ -1,7 +1,8 @@
 /*#include "efi/acpi/configuration-table.h" // for ConfigurationTable*/
+#include "abstraction/memory/manipulation.h" // for memcmp
+#include "efi/acpi/configuration-table.h"
 #include "efi/acpi/guid.h"
 #include "efi/acpi/rdsp.h" // for RSDP_REVISION_2, CAcpiRSDPV1, CAcpi...
-#include "abstraction/memory/manipulation.h" // for memcmp
 #include "shared/macros.h"
 #include "shared/types/types.h" // for USize, U8, nullptr, U16, U64
 #include "shared/uuid.h"        // for Guid, ACPI_TABLE_GUID, EFI_ACPI_20_...

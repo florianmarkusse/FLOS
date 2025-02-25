@@ -1,9 +1,8 @@
 #include "abstraction/log.h"
 
-#include "efi/firmware/simple-text-output.h"
-#include "efi/firmware/system.h"
-#include "efi/globals.h"
 #include "abstraction/memory/manipulation.h"
+#include "efi/firmware/simple-text-output.h"
+#include "efi/globals.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
 #include "shared/memory/sizes.h"
