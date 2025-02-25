@@ -5,7 +5,8 @@ import (
 	"cmd/common"
 	"cmd/common/argument"
 	"cmd/common/exit"
-	"cmd/common/flags/environment"
+	"cmd/common/iwyu"
+	"cmd/common/project"
 	"fmt"
 	"os"
 	"strings"
@@ -17,25 +18,25 @@ func includeWhatYouUseFlag(flag string) string {
 	return fmt.Sprintf("-Xiwyu;%s;", flag)
 }
 
-func AddDefaultConfigureOptions(options *strings.Builder, projectFolder string, codeFolder string, buildDirectory string, cCompiler string, linker string, buildMode string, env string, buildTests bool, projectTargetsFile string, architecture string, floatOperations bool) {
-	argument.AddArgument(options, fmt.Sprintf("-S %s", codeFolder))
+func AddDefaultConfigureOptions(options *strings.Builder, proj *project.ProjectStructure, buildDirectory string, buildMode string, buildTests bool, projectTargetsFile string, architecture string) {
+	argument.AddArgument(options, fmt.Sprintf("-S %s", proj.CodeFolder))
 	argument.AddArgument(options, fmt.Sprintf("-B %s", buildDirectory))
 
-	result := strings.TrimPrefix(projectFolder, common.REPO_PROJECTS)
+	result := strings.TrimPrefix(proj.Folder, common.REPO_PROJECTS)
 	result = result[1:] // remove '/' xxx
 	argument.AddArgument(options, fmt.Sprintf("-D PROJECT_FOLDER=%s", result))
 
-	argument.AddArgument(options, fmt.Sprintf("-D CMAKE_C_COMPILER=%s", cCompiler))
-	argument.AddArgument(options, fmt.Sprintf("-D CMAKE_LINKER=%s", linker))
+	argument.AddArgument(options, fmt.Sprintf("-D CMAKE_C_COMPILER=%s", proj.CCompiler))
+	argument.AddArgument(options, fmt.Sprintf("-D CMAKE_LINKER=%s", proj.Linker))
 	argument.AddArgument(options, fmt.Sprintf("-D CMAKE_BUILD_TYPE=%s", buildMode))
-	argument.AddArgument(options, fmt.Sprintf("-D ENVIRONMENT=%s", env))
+	argument.AddArgument(options, fmt.Sprintf("-D ENVIRONMENT=%s", proj.Environment))
 	argument.AddArgument(options, fmt.Sprintf("-D ARCHITECTURE=%s", architecture))
 	argument.AddArgument(options, fmt.Sprintf("-D BUILD_OUTPUT_PATH=%s", buildDirectory))
 	argument.AddArgument(options, fmt.Sprintf("-D REPO_ROOT=%s", common.REPO_ROOT))
 	argument.AddArgument(options, fmt.Sprintf("-D REPO_DEPENDENCIES=%s", common.REPO_DEPENDENCIES))
 	argument.AddArgument(options, fmt.Sprintf("-D REPO_PROJECTS=%s", common.REPO_PROJECTS))
 	argument.AddArgument(options, fmt.Sprintf("-D PROJECT_TARGETS_FILE=%s", projectTargetsFile))
-	argument.AddArgument(options, fmt.Sprintf("-D FLOAT_OPERATIONS=%t", floatOperations))
+	argument.AddArgument(options, fmt.Sprintf("-D FLOAT_OPERATIONS=%t", proj.FloatOperations))
 
 	var build string
 	if buildTests {
@@ -44,17 +45,8 @@ func AddDefaultConfigureOptions(options *strings.Builder, projectFolder string, 
 		build = "PROJECT"
 	}
 	argument.AddArgument(options, fmt.Sprintf("-D BUILD=%s", build))
-
-	argument.AddArgument(options, fmt.Sprintf("--graphviz=%s/output.dot", codeFolder))
-
-	var iwyuString = strings.Builder{}
-	iwyuString.WriteString("-D CMAKE_C_INCLUDE_WHAT_YOU_USE=\"include-what-you-use;")
-	if env == string(environment.Freestanding) || env == string(environment.Efi) {
-		iwyuString.WriteString(includeWhatYouUseFlag("--no_default_mappings"))
-	}
-	iwyuString.WriteString(includeWhatYouUseFlag(fmt.Sprintf("--mapping_file=%s/facades.imp", common.REPO_PROJECTS)))
-	iwyuString.WriteString("\"")
-	argument.AddArgument(options, iwyuString.String())
+	argument.AddArgument(options, fmt.Sprintf("--graphviz=%s/output.dot", proj.CodeFolder))
+	argument.AddArgument(options, iwyu.FlagsForCMake(proj.Environment, proj.ExcludedIWYUMappings))
 }
 
 func AddDefaultBuildOptions(options *strings.Builder, buildDirectory string, projectTargetsFile string, threads int, targets []string, verbose bool) bool {

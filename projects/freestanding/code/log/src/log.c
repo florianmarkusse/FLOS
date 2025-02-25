@@ -1,8 +1,8 @@
 #include "abstraction/log.h"
 
 #include "freestanding/log/init.h"
+#include "freestanding/memory/manipulation.h"
 #include "freestanding/peripheral/screen.h"
-#include "abstraction/memory/manipulation.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
 #include "shared/text/string.h"

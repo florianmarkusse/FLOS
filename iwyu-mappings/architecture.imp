@@ -1,0 +1,7 @@
+[
+    {
+        "include": [
+            "\"x86/memory/definitions.h\"", "private", "\"abstraction/memory/virtual.h\"", "public"
+        ]
+    },
+]

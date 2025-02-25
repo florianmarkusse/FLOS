@@ -1,4 +1,6 @@
-- ask iwyu crew how to handle platform-abstraction includes? Perhap
+- iwyu create logic for handling which project is exluced from which mapping files
+  - freestanding: implements its own memory/manipulation
+  - all x86 projects: relies on x86 memory definitions and can't just be assumed to work when swapped!
 - Figure out what to do with memory allocation & mapping in os-loader
 - Fix posix tests in physical memory
 - Rethink memory allocation for kernel structures in uefi and whether or not to add them to free physical memory in kernel --- definitely some bugs now.
