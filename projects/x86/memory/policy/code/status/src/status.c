@@ -5,6 +5,7 @@
 #include "abstraction/memory/virtual/status.h"
 #include "shared/log.h"
 #include "shared/text/string.h"
+#include "x86/memory/definitions.h"
 #include "x86/memory/policy/virtual.h"
 
 static void appendVirtualRegionStatus(VirtualRegion region) {
