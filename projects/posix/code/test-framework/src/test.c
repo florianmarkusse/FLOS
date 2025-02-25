@@ -1,9 +1,9 @@
 #include "posix/test-framework/test.h"
 
+#include "abstraction/text/converter/base.h"
 #include "posix/log.h"
 #include "shared/assert.h"      // for ASSERT
 #include "shared/text/string.h" // for STRING, string
-#include "abstraction/text/converter/converter.h"
 #include "shared/types/types.h"
 
 typedef struct {

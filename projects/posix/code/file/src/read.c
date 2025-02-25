@@ -10,7 +10,6 @@
 #include "shared/text/string.h" // for STRING, string
 #include "shared/types/types.h" // for NULLPTR_ON_FAIL
 #include <linux/fs.h>           // for BLKGETSIZE64
-#include <stddef.h>             // for U64
 #include <stdio.h>              // for fclose, perror, nullptr, fopen, fread
 #include <string.h>             // for strerror
 #include <sys/ioctl.h>          // for ioctl
