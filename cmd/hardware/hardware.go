@@ -5,6 +5,7 @@ import (
 	"cmd/common"
 	"cmd/common/argument"
 	"cmd/common/exit"
+	"cmd/common/flags/architecture"
 	"cmd/common/flags/buildmode"
 	"cmd/common/uefiimage"
 	"cmd/compile/builder"
@@ -21,7 +22,7 @@ func main() {
 		os.Exit(exit.EXIT_TARGET_ERROR)
 	}
 
-	uefiimage.CreateUefiImage(buildmode.DefaultBuildMode())
+	uefiimage.CreateUefiImage(buildmode.DefaultBuildMode(), architecture.DefaultArchitecture())
 
 	writeToUSBCommand := fmt.Sprintf("sudo dd if=%s/%s of=/dev/sdc1 conv=notrunc", common.REPO_ROOT, common.FLOS_UEFI_IMAGE_FILE)
 	argument.ExecCommand(writeToUSBCommand)

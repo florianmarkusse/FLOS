@@ -15,8 +15,8 @@ import (
 	"strings"
 )
 
-func findAndRunTests(selectedTargets []string, proj *project.ProjectStructure, buildMode string) BuildResult {
-	var buildDirectory = project.BuildDirectoryRoot(proj, buildMode)
+func findAndRunTests(selectedTargets []string, proj *project.ProjectStructure, buildMode string, architecture string) BuildResult {
+	var buildDirectory = project.BuildDirectoryRoot(proj, buildMode, architecture)
 	if len(selectedTargets) > 0 {
 		for _, target := range selectedTargets {
 			var findCommand = fmt.Sprintf("find %s -executable -type f -name \"%s\" -exec {} \\;", buildDirectory, target)
@@ -67,7 +67,7 @@ func buildProject(args *BuildArgs, proj *project.ProjectStructure) {
 
 	configureOptions := strings.Builder{}
 
-	var buildDirectory = project.BuildDirectoryRoot(proj, args.BuildMode)
+	var buildDirectory = project.BuildDirectoryRoot(proj, args.BuildMode, args.Architecture)
 	var projectTargetsFile = project.BuildProjectTargetsFile(proj.CodeFolder)
 	cmake.AddDefaultConfigureOptions(&configureOptions, proj.Folder, proj.CodeFolder, buildDirectory, proj.CCompiler, proj.Linker, args.BuildMode, proj.Environment, args.BuildTests, projectTargetsFile, args.Architecture, proj.FloatOperations)
 	argument.ExecCommandWriteError(fmt.Sprintf("%s %s", cmake.EXECUTABLE, configureOptions.String()), errorWriters...)
@@ -140,7 +140,7 @@ func Build(args *BuildArgs) BuildResult {
 		}
 		for name, project := range projectsToBuild {
 			fmt.Printf("Testing %s%s%s\n", common.CYAN, name, common.RESET)
-			findAndRunTests(args.SelectedTargets, project, args.BuildMode)
+			findAndRunTests(args.SelectedTargets, project, args.BuildMode, args.Architecture)
 		}
 	}
 

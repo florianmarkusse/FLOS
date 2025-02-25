@@ -249,22 +249,29 @@ func getConfiguredProjects() []string {
 
 var ConfiguredProjects = getConfiguredProjects()
 
-func BuildOutputPath(cCompiler string, linker string, environment string, buildMode string) string {
+func BuildOutputPath(architecture string, cCompiler string, linker string, environment string, buildMode string, floatOperations string) string {
 	configurationPath := strings.Builder{}
 
 	configurationPath.WriteString("build/")
+	configurationPath.WriteString(fmt.Sprintf("%s/", architecture))
 	configurationPath.WriteString(fmt.Sprintf("%s/", cCompiler))
 	configurationPath.WriteString(fmt.Sprintf("%s/", linker))
 	configurationPath.WriteString(fmt.Sprintf("%s/", environment))
+	configurationPath.WriteString(fmt.Sprintf("%s/", floatOperations))
 	configurationPath.WriteString(buildMode)
 
 	return configurationPath.String()
 }
 
-func BuildDirectoryRoot(project *ProjectStructure, buildMode string) string {
+func BuildDirectoryRoot(project *ProjectStructure, buildMode string, architecture string) string {
 	buildDirectory := strings.Builder{}
 	buildDirectory.WriteString(fmt.Sprintf("%s/", project.CodeFolder))
-	buildDirectory.WriteString(BuildOutputPath(project.CCompiler, project.Linker, string(project.Environment), buildMode))
+
+	var floatOperations = "with-floats"
+	if !project.FloatOperations {
+		floatOperations = "no-floats"
+	}
+	buildDirectory.WriteString(BuildOutputPath(architecture, project.CCompiler, project.Linker, string(project.Environment), buildMode, floatOperations))
 
 	return buildDirectory.String()
 }

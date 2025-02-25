@@ -217,7 +217,7 @@ static constexpr U32 EVT_NOTIFY_SIGNAL = 0x00000200;
 static constexpr U32 EVT_SIGNAL_EXIT_BOOT_SERVICES = 0x00000201;
 static constexpr U32 EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE = 0x60000202;
 
-typedef void(*EventNotify)(Event event, void *context);
+typedef void (*EventNotify)(Event event, void *context);
 
 static constexpr auto EVENT_GROUP_EXIT_BOOT_SERVICES =
     (UUID){.ms1 = 0x27abf055,
@@ -407,43 +407,42 @@ static constexpr U64 RUNTIME_TABLE_SIGNATURE =
 typedef struct RuntimeServices {
     TableHeader hdr;
 
-    Status(*get_time)(Time *time, TimeCapabilities *capabilities
+    Status (*get_time)(Time *time, TimeCapabilities *capabilities
 
     );
-    Status(*set_time)(Time *time);
-    Status(*get_wakeup_time)(bool *enabled, bool *pending, Time *time);
-    Status(*set_wakeup_time)(bool enable, Time *time);
+    Status (*set_time)(Time *time);
+    Status (*get_wakeup_time)(bool *enabled, bool *pending, Time *time);
+    Status (*set_wakeup_time)(bool enable, Time *time);
 
-    Status(*set_virtual_address_map)(USize memory_map_size,
-                                             USize descriptor_size,
-                                             U32 descriptor_version,
-                                             MemoryDescriptor *virtual_map);
-    Status(*convert_pointer)(USize debug_disposition, void **address);
+    Status (*set_virtual_address_map)(USize memory_map_size,
+                                      USize descriptor_size,
+                                      U32 descriptor_version,
+                                      MemoryDescriptor *virtual_map);
+    Status (*convert_pointer)(USize debug_disposition, void **address);
 
-    Status(*get_variable)(U16 *variable_name, UUID *vendor_guid,
-                                  U32 *attributes, USize *data_size,
-                                  void *data);
-    Status(*get_next_variable_name)(USize *variable_name_size,
-                                            U16 *variable_name,
-                                            UUID *vendor_guid);
-    Status(*set_variable)(U16 *variable_name, UUID *vendor_guid,
-                                  U32 attributes, USize data_size, void *data);
+    Status (*get_variable)(U16 *variable_name, UUID *vendor_guid,
+                           U32 *attributes, USize *data_size, void *data);
+    Status (*get_next_variable_name)(USize *variable_name_size,
+                                     U16 *variable_name, UUID *vendor_guid);
+    Status (*set_variable)(U16 *variable_name, UUID *vendor_guid,
+                           U32 attributes, USize data_size, void *data);
 
-    Status(*get_next_high_mono_count)(U32 *high_count);
-    void(*reset_system)(ResetType reset_type, Status reset_status,
-                                USize data_size, void *reset_data);
+    Status (*get_next_high_mono_count)(U32 *high_count);
+    void (*reset_system)(ResetType reset_type, Status reset_status,
+                         USize data_size, void *reset_data);
 
-    Status(*update_capsule)(CapsuleHeader **capsule_header_array,
-                                    USize capsule_count,
-                                    PhysicalAddress scatter_gather_list);
-    Status(*query_capsule_capabilities)(
-        CapsuleHeader **capsule_header_array, USize capsule_count,
-        U64 *maximum_capsule_size, ResetType *reset_type);
+    Status (*update_capsule)(CapsuleHeader **capsule_header_array,
+                             USize capsule_count,
+                             PhysicalAddress scatter_gather_list);
+    Status (*query_capsule_capabilities)(CapsuleHeader **capsule_header_array,
+                                         USize capsule_count,
+                                         U64 *maximum_capsule_size,
+                                         ResetType *reset_type);
 
-    Status(*query_variable_info)(U32 attributes,
-                                         U64 *maximum_variable_storage_size,
-                                         U64 *remaining_variable_storage_size,
-                                         U64 *maximum_variable_size);
+    Status (*query_variable_info)(U32 attributes,
+                                  U64 *maximum_variable_storage_size,
+                                  U64 *remaining_variable_storage_size,
+                                  U64 *maximum_variable_size);
 } RuntimeServices;
 
 static constexpr U64 BOOT_SERVICES_SIGNATURE =
@@ -452,109 +451,103 @@ static constexpr U64 BOOT_SERVICES_SIGNATURE =
 typedef struct BootServices {
     TableHeader hdr;
 
-    Tpl(*raise_tpl)(Tpl new_tpl);
-    void(*restore_tpl)(Tpl old_tpl);
+    Tpl (*raise_tpl)(Tpl new_tpl);
+    void (*restore_tpl)(Tpl old_tpl);
 
-    Status(*allocate_pages)(AllocateType type, MemoryType memory_type,
-                                    USize pages, PhysicalAddress *memory);
-    Status(*free_pages)(PhysicalAddress memory, USize pages);
-    Status(*get_memory_map)(USize *memory_map_size,
-                                    MemoryDescriptor *memory_map,
-                                    USize *map_key, USize *descriptor_size,
-                                    U32 *descriptor_version);
-    Status(*allocate_pool)(MemoryType pool_type, USize size,
-                                   void **buffer);
-    Status(*free_pool)(void *buffer);
+    Status (*allocate_pages)(AllocateType type, MemoryType memory_type,
+                             USize pages, PhysicalAddress *memory);
+    Status (*free_pages)(PhysicalAddress memory, USize pages);
+    Status (*get_memory_map)(USize *memory_map_size,
+                             MemoryDescriptor *memory_map, USize *map_key,
+                             USize *descriptor_size, U32 *descriptor_version);
+    Status (*allocate_pool)(MemoryType pool_type, USize size, void **buffer);
+    Status (*free_pool)(void *buffer);
 
-    Status(*create_event)(U32 type, Tpl notify_tpl,
-                                  EventNotify notify_function,
-                                  void *notify_context, Event *event);
-    Status(*set_timer)(Event event, TimerDelay type, U64 trigger_time);
-    Status(*wait_for_event)(USize number_of_events, Event *event,
-                                    USize *index);
-    Status(*signal_event)(Event event);
-    Status(*close_event)(Event event);
-    Status(*check_event)(Event event);
+    Status (*create_event)(U32 type, Tpl notify_tpl,
+                           EventNotify notify_function, void *notify_context,
+                           Event *event);
+    Status (*set_timer)(Event event, TimerDelay type, U64 trigger_time);
+    Status (*wait_for_event)(USize number_of_events, Event *event,
+                             USize *index);
+    Status (*signal_event)(Event event);
+    Status (*close_event)(Event event);
+    Status (*check_event)(Event event);
 
-    Status(*install_protocol_interface)(Handle *handle, UUID *protocol,
-                                                InterfaceType interface_type,
-                                                void *interface);
-    Status(*reinstall_protocol_interface)(Handle handle, UUID *protocol,
-                                                  void *old_interface,
-                                                  void *new_interface);
-    Status(*uninstall_protocol_interface)(Handle handle, UUID *protocol,
-                                                  void *interface);
-    Status(*handle_protocol)(Handle handle, UUID *protocol,
-                                     void **interface);
+    Status (*install_protocol_interface)(Handle *handle, UUID *protocol,
+                                         InterfaceType interface_type,
+                                         void *interface);
+    Status (*reinstall_protocol_interface)(Handle handle, UUID *protocol,
+                                           void *old_interface,
+                                           void *new_interface);
+    Status (*uninstall_protocol_interface)(Handle handle, UUID *protocol,
+                                           void *interface);
+    Status (*handle_protocol)(Handle handle, UUID *protocol, void **interface);
     void *reserved;
-    Status(*register_protocol_notify)(UUID *protocol, Event event,
-                                              void **registration);
-    Status(*locate_handle)(LocateSearchType search_type, UUID *protocol,
-                                   void *search_key, USize *buffer_size,
-                                   Handle *buffer);
-    Status(*locate_device_path)(UUID *protocol,
-                                        DevicePathProtocol **device_path,
-                                        Handle *device);
+    Status (*register_protocol_notify)(UUID *protocol, Event event,
+                                       void **registration);
+    Status (*locate_handle)(LocateSearchType search_type, UUID *protocol,
+                            void *search_key, USize *buffer_size,
+                            Handle *buffer);
+    Status (*locate_device_path)(UUID *protocol,
+                                 DevicePathProtocol **device_path,
+                                 Handle *device);
 
-    Status(*install_configuration_table)(UUID *guid, void *table);
+    Status (*install_configuration_table)(UUID *guid, void *table);
 
-    Status(*load_image)(bool boot_policy, Handle parent_image_handle,
-                                DevicePathProtocol *device_path,
-                                void *source_buffer, USize source_size,
-                                Handle *image_handle);
-    Status(*start_image)(Handle image_handle, USize *exit_data_size,
-                                 U16 **exit_data);
-    Status(*exit)(Handle image_handle, Status exit_status,
-                          USize exit_data_size, U16 *exit_data);
-    Status(*unload_image)(Handle image_handle);
-    Status(*exit_boot_services)(Handle image_handle, USize map_key);
+    Status (*load_image)(bool boot_policy, Handle parent_image_handle,
+                         DevicePathProtocol *device_path, void *source_buffer,
+                         USize source_size, Handle *image_handle);
+    Status (*start_image)(Handle image_handle, USize *exit_data_size,
+                          U16 **exit_data);
+    Status (*exit)(Handle image_handle, Status exit_status,
+                   USize exit_data_size, U16 *exit_data);
+    Status (*unload_image)(Handle image_handle);
+    Status (*exit_boot_services)(Handle image_handle, USize map_key);
 
-    Status(*get_next_monotonic_count)(U64 *count);
-    Status(*stall)(USize microseconds);
-    Status(*set_watchdog_timer)(USize timeout, U64 watchdog_code,
-                                        USize data_size, U16 *watchdog_data);
+    Status (*get_next_monotonic_count)(U64 *count);
+    Status (*stall)(USize microseconds);
+    Status (*set_watchdog_timer)(USize timeout, U64 watchdog_code,
+                                 USize data_size, U16 *watchdog_data);
 
     /* 1.1+ */
 
-    Status(*connect_controller)(
-        Handle controller_handle, Handle *driver_image_handle,
-        DevicePathProtocol *remaining_device_path, bool recursive);
-    Status(*disconnect_controller)(Handle controller_handle,
-                                           Handle driver_image_handle,
-                                           Handle child_handle);
+    Status (*connect_controller)(Handle controller_handle,
+                                 Handle *driver_image_handle,
+                                 DevicePathProtocol *remaining_device_path,
+                                 bool recursive);
+    Status (*disconnect_controller)(Handle controller_handle,
+                                    Handle driver_image_handle,
+                                    Handle child_handle);
 
-    Status(*open_protocol)(Handle handle, UUID *protocol,
-                                   void **interface, Handle agent_handle,
-                                   Handle controller_handle, U32 attributes);
-    Status(*close_protocol)(Handle handle, UUID *protocol,
-                                    Handle agent_handle,
-                                    Handle controller_handle);
-    Status(*open_protocol_information)(
+    Status (*open_protocol)(Handle handle, UUID *protocol, void **interface,
+                            Handle agent_handle, Handle controller_handle,
+                            U32 attributes);
+    Status (*close_protocol)(Handle handle, UUID *protocol, Handle agent_handle,
+                             Handle controller_handle);
+    Status (*open_protocol_information)(
         Handle handle, UUID *protocol,
         OpenProtocolInformationEntry **entry_buffer, USize *entry_count);
 
-    Status(*protocols_per_handle)(Handle handle,
-                                          UUID ***protocol_buffer,
-                                          USize *protocol_buffer_count);
-    Status(*locate_handle_buffer)(LocateSearchType search_type,
-                                          UUID *protocol, void *search_key,
-                                          USize *no_handles, Handle **buffer);
-    Status(*locate_protocol)(UUID *protocol, void *registration,
-                                     void **interface);
-    Status(*install_multiple_protocol_interfaces)(Handle *handle, ...);
-    Status(*uninstall_multiple_protocol_interfaces)(Handle handle, ...);
+    Status (*protocols_per_handle)(Handle handle, UUID ***protocol_buffer,
+                                   USize *protocol_buffer_count);
+    Status (*locate_handle_buffer)(LocateSearchType search_type, UUID *protocol,
+                                   void *search_key, USize *no_handles,
+                                   Handle **buffer);
+    Status (*locate_protocol)(UUID *protocol, void *registration,
+                              void **interface);
+    Status (*install_multiple_protocol_interfaces)(Handle *handle, ...);
+    Status (*uninstall_multiple_protocol_interfaces)(Handle handle, ...);
 
-    Status(*calculate_crc32)(void *data, USize data_size, U32 *crc32);
+    Status (*calculate_crc32)(void *data, USize data_size, U32 *crc32);
 
-    void(*copy_mem)(void *destination, void *source, USize length);
-    void(*set_mem)(void *buffer, USize size, U8 value);
+    void (*copy_mem)(void *destination, void *source, USize length);
+    void (*set_mem)(void *buffer, USize size, U8 value);
 
     /* 2.0+ */
 
-    Status(*create_event_ex)(U32 type, Tpl notify_tpl,
-                                     EventNotify notify_function,
-                                     void *notify_context, UUID *event_group,
-                                     Event *event);
+    Status (*create_event_ex)(U32 type, Tpl notify_tpl,
+                              EventNotify notify_function, void *notify_context,
+                              UUID *event_group, Event *event);
 } BootServices;
 
 static constexpr U64 SYSTEM_TABLE_SIGNATURE =

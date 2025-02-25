@@ -6,7 +6,6 @@ import (
 	"cmd/common/argument"
 	"cmd/common/exit"
 	"cmd/common/flags/environment"
-	"cmd/common/project"
 	"fmt"
 	"os"
 	"strings"
@@ -27,7 +26,7 @@ func AddDefaultConfigureOptions(options *strings.Builder, projectFolder string, 
 	argument.AddArgument(options, fmt.Sprintf("-D CMAKE_BUILD_TYPE=%s", buildMode))
 	argument.AddArgument(options, fmt.Sprintf("-D ENVIRONMENT=%s", env))
 	argument.AddArgument(options, fmt.Sprintf("-D ARCHITECTURE=%s", architecture))
-	argument.AddArgument(options, fmt.Sprintf("-D BUILD_OUTPUT_PATH=%s", project.BuildOutputPath(cCompiler, linker, env, buildMode)))
+	argument.AddArgument(options, fmt.Sprintf("-D BUILD_OUTPUT_PATH=%s", buildDirectory))
 	argument.AddArgument(options, fmt.Sprintf("-D REPO_ROOT=%s", common.REPO_ROOT))
 	argument.AddArgument(options, fmt.Sprintf("-D REPO_DEPENDENCIES=%s", common.REPO_DEPENDENCIES))
 	argument.AddArgument(options, fmt.Sprintf("-D REPO_PROJECTS=%s", common.REPO_PROJECTS))
