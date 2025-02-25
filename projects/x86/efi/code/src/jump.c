@@ -1,8 +1,8 @@
 #include "efi-to-kernel/memory/definitions.h"
-#include "efi/globals.h"
+#include "shared/types/types.h"
 #include "x86/efi/gdt.h"
-#include "x86/memory/virtual.h"
 #include "x86/gdt.h"
+#include "x86/memory/virtual.h"
 
 void enableNewMemoryMapping() {
     asm volatile("mov %%rax, %%cr3" : : "a"(level4PageTable) : "memory");

@@ -1,5 +1,7 @@
 #include "abstraction/log.h"
+#include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/physical/allocation.h"
+#include "efi-to-kernel/memory/descriptor.h"
 #include "efi/error.h"
 #include "efi/firmware/base.h"   // for PhysicalAddress
 #include "efi/firmware/system.h" // for PhysicalAddress
@@ -8,11 +10,13 @@
 #include "shared/log.h"
 #include "shared/maths/maths.h"
 #include "shared/text/string.h"
-#include "x86/efi/gdt.h"
-#include "x86/memory/virtual.h"
+#include "shared/types/types.h"
 #include "x86/configuration/cpu2.h"
 #include "x86/configuration/features.h"
+#include "x86/efi/gdt.h"
 #include "x86/gdt.h"
+#include "x86/memory/definitions.h"
+#include "x86/memory/virtual.h"
 
 void bootstrapProcessorWork() {
     disablePICAndNMI();
