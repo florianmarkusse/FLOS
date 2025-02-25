@@ -1,6 +1,6 @@
 #include "shared/memory/converter.h"
-#include "abstraction/memory/virtual/converter.h"
 
+#include "abstraction/memory/virtual/converter.h"
 #include "shared/assert.h"
 #include "shared/maths/maths.h"
 #include "shared/types/types.h"
