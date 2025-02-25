@@ -1,4 +1,6 @@
 #include "abstraction/text/converter/float.h"
+
+#include "abstraction/memory/manipulation.h"
 #include "abstraction/text/converter/base.h"
 #include "shared/text/converter/buffer.h"
 #include "shared/text/string.h"
