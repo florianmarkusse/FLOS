@@ -13,6 +13,10 @@ import (
 
 const EXECUTABLE = "cmake"
 
+func includeWhatYouUseFlag(flag string) string {
+	return fmt.Sprintf("-Xiwyu;%s;", flag)
+}
+
 func AddDefaultConfigureOptions(options *strings.Builder, projectFolder string, codeFolder string, buildDirectory string, cCompiler string, linker string, buildMode string, env string, buildTests bool, projectTargetsFile string, architecture string, floatOperations bool) {
 	argument.AddArgument(options, fmt.Sprintf("-S %s", codeFolder))
 	argument.AddArgument(options, fmt.Sprintf("-B %s", buildDirectory))
@@ -44,10 +48,11 @@ func AddDefaultConfigureOptions(options *strings.Builder, projectFolder string, 
 	argument.AddArgument(options, fmt.Sprintf("--graphviz=%s/output.dot", codeFolder))
 
 	var iwyuString = strings.Builder{}
-	iwyuString.WriteString(fmt.Sprintf("-D CMAKE_C_INCLUDE_WHAT_YOU_USE=\"include-what-you-use;-w;-Xiwyu;--mapping_file=%s/facades.imp;", common.REPO_PROJECTS))
-	if env == string(environment.Freestanding) {
-		iwyuString.WriteString("--no_default_mappings")
+	iwyuString.WriteString("-D CMAKE_C_INCLUDE_WHAT_YOU_USE=\"include-what-you-use;")
+	if env == string(environment.Freestanding) || env == string(environment.Efi) {
+		iwyuString.WriteString(includeWhatYouUseFlag("--no_default_mappings"))
 	}
+	iwyuString.WriteString(includeWhatYouUseFlag(fmt.Sprintf("--mapping_file=%s/facades.imp", common.REPO_PROJECTS)))
 	iwyuString.WriteString("\"")
 	argument.AddArgument(options, iwyuString.String())
 }
