@@ -5,7 +5,6 @@ import (
 	"cmd/common"
 	"cmd/common/argument"
 	"cmd/common/exit"
-	"cmd/common/iwyu"
 	"cmd/common/project"
 	"fmt"
 	"os"
@@ -46,7 +45,6 @@ func AddDefaultConfigureOptions(options *strings.Builder, proj *project.ProjectS
 	}
 	argument.AddArgument(options, fmt.Sprintf("-D BUILD=%s", build))
 	argument.AddArgument(options, fmt.Sprintf("--graphviz=%s/output.dot", proj.CodeFolder))
-	argument.AddArgument(options, iwyu.FlagsForCMake(proj.Environment, proj.ExcludedIWYUMappings))
 }
 
 func AddDefaultBuildOptions(options *strings.Builder, buildDirectory string, projectTargetsFile string, threads int, targets []string, verbose bool) bool {

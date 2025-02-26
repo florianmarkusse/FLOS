@@ -1,6 +1,5 @@
 #include "abstraction/efi.h"
 #include "abstraction/log.h"
-#include "abstraction/memory/physical/allocation.h"
 #include "abstraction/memory/virtual/map.h"
 #include "efi-to-kernel/kernel-parameters.h"  // for KernelParameters
 #include "efi-to-kernel/memory/definitions.h" // for STACK_SIZE
@@ -17,6 +16,7 @@
 #include "os-loader/memory/boot-functions.h" // for mapMemoryAt
 #include "shared/log.h"
 #include "shared/maths/maths.h" // for CEILING_DIV_V...
+#include "shared/memory/management/definitions.h"
 #include "shared/text/string.h" // for CEILING_DIV_V...
 #include "shared/types/types.h" // for U64, U32, USize
 
