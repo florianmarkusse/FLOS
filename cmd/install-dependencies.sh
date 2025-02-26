@@ -86,7 +86,7 @@ git checkout clang_${LLVM_VERSION}
 mkdir build && cd build
 cmake -G "Unix Makefiles" -DCMAKE_PREFIX_PATH=/usr/lib/llvm-"${LLVM_VERSION}" ..
 make
-sudo make install
+sudo make
 cd ../../
 
 echo -e "${BOLD}Installing ${YELLOW}go${NO_COLOR}"
