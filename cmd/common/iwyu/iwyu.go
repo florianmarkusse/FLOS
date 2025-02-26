@@ -40,20 +40,37 @@ type CompileCommands struct {
 
 var COMPILE_COMMANDS_FILE = "compile_commands.json"
 
-func runIWYUOnProjectFiles(codeFolder string, iwyuFlags string) {
+func FixIncludes(isWetRun bool, iwyuFileString string) {
+	var fixIncludesCommand = strings.Builder{}
+	fmt.Fprintf(&fixIncludesCommand, "%s/include-what-you-use/fix_includes.py ", common.REPO_DEPENDENCIES)
+	if !isWetRun {
+		fmt.Fprintf(&fixIncludesCommand, "--dry_run ")
+	}
+	fmt.Fprintf(&fixIncludesCommand, "--nocomments --reorder ")
+	fmt.Fprintf(&fixIncludesCommand, "< %s", iwyuFileString)
+
+	argument.ExecCommand(fixIncludesCommand.String())
+}
+
+func runIWYUOnProjectFiles(codeFolder string, iwyuFlags string, iwyuFileString string) {
+	iwyuFile, err := os.Create(iwyuFileString)
+	if err != nil {
+		log.Fatalf("Failed to create file to redirect iwyu to")
+	}
+
 	iwyuCommand := strings.Builder{}
 	fmt.Fprintf(&iwyuCommand, "include-what-you-use")
 	fmt.Fprintf(&iwyuCommand, " %s", iwyuFlags)
 
 	var compileCommandsLocation = fmt.Sprintf("%s/%s", codeFolder, COMPILE_COMMANDS_FILE)
 
-	file, err := os.Open(compileCommandsLocation)
+	compileCommandsFile, err := os.Open(compileCommandsLocation)
 	if err != nil {
 		log.Fatalf("Error opening file: %v", err)
 	}
-	defer file.Close()
+	defer compileCommandsFile.Close()
 
-	data, err := io.ReadAll(file)
+	data, err := io.ReadAll(compileCommandsFile)
 	if err != nil {
 		log.Fatalf("Error reading file: %v", err)
 	}
@@ -69,7 +86,7 @@ func runIWYUOnProjectFiles(codeFolder string, iwyuFlags string) {
 			iwyuCommandForFile.WriteString(iwyuCommand.String())
 			iwyuCommandForFile.WriteString(cmd.Command)
 
-			argument.ExecCommand(iwyuCommandForFile.String())
+			argument.ExecCommandWriteOutput(iwyuCommandForFile.String(), iwyuFile)
 		}
 	}
 }
@@ -78,7 +95,7 @@ func includeWhatYouUseFlag(flag string) string {
 	return fmt.Sprintf("-Xiwyu %s ", flag)
 }
 
-func RunIWYUOnProject(codeFolder string, env string, excludedMappings []IWYUMapping) {
+func RunIWYUOnProject(codeFolder string, env string, isWetRun bool, excludedMappings []IWYUMapping) {
 	var iwyuFlags = strings.Builder{}
 	if env == string(environment.Freestanding) || env == string(environment.Efi) {
 		iwyuFlags.WriteString(includeWhatYouUseFlag("--no_default_mappings"))
@@ -97,7 +114,9 @@ func RunIWYUOnProject(codeFolder string, env string, excludedMappings []IWYUMapp
 		}
 	}
 
-	runIWYUOnProjectFiles(codeFolder, iwyuFlags.String())
+	var iwyuFileString = fmt.Sprintf("%s/iwyu.txt", codeFolder)
+	runIWYUOnProjectFiles(codeFolder, iwyuFlags.String(), iwyuFileString)
+	FixIncludes(isWetRun, iwyuFileString)
 }
 
 func FlagsForCMake(env string, excludedMappings []IWYUMapping) string {

@@ -9,17 +9,17 @@ import (
 )
 
 func ExecCommand(command string) {
-	ExecCommandWriteError(command)
+	ExecCommandWriteOutput(command)
 }
 
-func ExecCommandWriteError(command string, errorWriters ...io.Writer) {
+func ExecCommandWriteOutput(command string, writers ...io.Writer) {
 	fmt.Printf("%s%s%s\n", common.BOLD, command, common.RESET)
 
 	cmd := exec.Command("bash", "-c", command)
 
 	cmd.Stdout = log.Writer()
-	if len(errorWriters) > 0 {
-		cmd.Stderr = io.MultiWriter(append([]io.Writer{log.Writer()}, errorWriters...)...)
+	if len(writers) > 0 {
+		cmd.Stderr = io.MultiWriter(append([]io.Writer{log.Writer()}, writers...)...)
 	} else {
 		cmd.Stderr = log.Writer()
 	}

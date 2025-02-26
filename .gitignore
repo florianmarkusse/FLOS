@@ -6,6 +6,7 @@
 /tests/build/
 *.dot*
 stderr.txt
+iwyu.txt
 
 # IDE-specific files and directories
 .vscode/
