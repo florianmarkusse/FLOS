@@ -42,25 +42,21 @@ var COMPILE_COMMANDS_FILE = "compile_commands.json"
 
 func FixIncludes(isWetRun bool, iwyuFileString string) {
 	var fixIncludesCommand = strings.Builder{}
-	fmt.Fprintf(&fixIncludesCommand, "%s/include-what-you-use/fix_includes.py ", common.REPO_DEPENDENCIES)
+	argument.AddArgument(&fixIncludesCommand, fmt.Sprintf("%s/include-what-you-use/fix_includes.py", common.REPO_DEPENDENCIES))
 	if !isWetRun {
-		fmt.Fprintf(&fixIncludesCommand, "--dry_run ")
+		argument.AddArgument(&fixIncludesCommand, "--dry_run")
 	}
-	fmt.Fprintf(&fixIncludesCommand, "--nocomments --reorder ")
-	fmt.Fprintf(&fixIncludesCommand, "< %s", iwyuFileString)
+	argument.AddArgument(&fixIncludesCommand, "--nocomments --reorder")
+	argument.AddArgument(&fixIncludesCommand, fmt.Sprintf("< %s", iwyuFileString))
 
 	argument.ExecCommand(fixIncludesCommand.String())
 }
 
-func runIWYUOnProjectFiles(codeFolder string, iwyuFlags string, iwyuFileString string) {
+func runIWYUOnProjectFiles(codeFolder string, iwyuCommand *strings.Builder, iwyuFileString string) {
 	iwyuFile, err := os.Create(iwyuFileString)
 	if err != nil {
 		log.Fatalf("Failed to create file to redirect iwyu to")
 	}
-
-	iwyuCommand := strings.Builder{}
-	fmt.Fprintf(&iwyuCommand, "include-what-you-use")
-	fmt.Fprintf(&iwyuCommand, " %s", iwyuFlags)
 
 	var compileCommandsLocation = fmt.Sprintf("%s/%s", codeFolder, COMPILE_COMMANDS_FILE)
 
@@ -92,13 +88,16 @@ func runIWYUOnProjectFiles(codeFolder string, iwyuFlags string, iwyuFileString s
 }
 
 func includeWhatYouUseFlag(flag string) string {
-	return fmt.Sprintf("-Xiwyu %s ", flag)
+	return fmt.Sprintf("-Xiwyu %s", flag)
 }
 
 func RunIWYUOnProject(codeFolder string, env string, isWetRun bool, excludedMappings []IWYUMapping) {
-	var iwyuFlags = strings.Builder{}
+	var iwyuCommand = strings.Builder{}
+	// FIXME: Use the .elf in dependencies
+	argument.AddArgument(&iwyuCommand, "include-what-you-use")
+
 	if env == string(environment.Freestanding) || env == string(environment.Efi) {
-		iwyuFlags.WriteString(includeWhatYouUseFlag("--no_default_mappings"))
+		argument.AddArgument(&iwyuCommand, includeWhatYouUseFlag("--no_default_mappings"))
 	}
 
 	for _, possibleMapping := range possibleMappings {
@@ -110,12 +109,12 @@ func RunIWYUOnProject(codeFolder string, env string, isWetRun bool, excludedMapp
 		}
 
 		if !excludeMapping {
-			iwyuFlags.WriteString(includeWhatYouUseFlag(fmt.Sprintf("--mapping_file=%s/%s", IWYU_ROOT, possibleMapping)))
+			argument.AddArgument(&iwyuCommand, includeWhatYouUseFlag(fmt.Sprintf("--mapping_file=%s/%s", IWYU_ROOT, possibleMapping)))
 		}
 	}
 
 	var iwyuFileString = fmt.Sprintf("%s/iwyu.txt", codeFolder)
-	runIWYUOnProjectFiles(codeFolder, iwyuFlags.String(), iwyuFileString)
+	runIWYUOnProjectFiles(codeFolder, &iwyuCommand, iwyuFileString)
 	FixIncludes(isWetRun, iwyuFileString)
 }
 

@@ -6,7 +6,12 @@ import (
 	"io"
 	"log"
 	"os/exec"
+	"strings"
 )
+
+func AddArgument(builder *strings.Builder, arg string) {
+	fmt.Fprintf(builder, "  %s \\\n", arg)
+}
 
 func ExecCommand(command string) {
 	ExecCommandWriteOutput(command)

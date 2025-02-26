@@ -3,6 +3,7 @@ package cmake
 import (
 	"bufio"
 	"cmd/common"
+	"cmd/common/argument"
 	"cmd/common/exit"
 	"cmd/common/iwyu"
 	"cmd/common/project"
@@ -18,24 +19,24 @@ func includeWhatYouUseFlag(flag string) string {
 }
 
 func AddDefaultConfigureOptions(options *strings.Builder, proj *project.ProjectStructure, buildDirectory string, buildMode string, buildTests bool, projectTargetsFile string, architecture string) {
-	fmt.Fprintf(options, "-S %s", proj.CodeFolder)
-	fmt.Fprintf(options, "-B %s", buildDirectory)
+	argument.AddArgument(options, fmt.Sprintf("-S %s", proj.CodeFolder))
+	argument.AddArgument(options, fmt.Sprintf("-B %s", buildDirectory))
 
 	result := strings.TrimPrefix(proj.Folder, common.REPO_PROJECTS)
 	result = result[1:] // remove '/' xxx
-	fmt.Fprintf(options, "-D PROJECT_FOLDER=%s", result)
+	argument.AddArgument(options, fmt.Sprintf("-D PROJECT_FOLDER=%s", result))
 
-	fmt.Fprintf(options, "-D CMAKE_C_COMPILER=%s", proj.CCompiler)
-	fmt.Fprintf(options, "-D CMAKE_LINKER=%s", proj.Linker)
-	fmt.Fprintf(options, "-D CMAKE_BUILD_TYPE=%s", buildMode)
-	fmt.Fprintf(options, "-D ENVIRONMENT=%s", proj.Environment)
-	fmt.Fprintf(options, "-D ARCHITECTURE=%s", architecture)
-	fmt.Fprintf(options, "-D BUILD_OUTPUT_PATH=%s", buildDirectory)
-	fmt.Fprintf(options, "-D REPO_ROOT=%s", common.REPO_ROOT)
-	fmt.Fprintf(options, "-D REPO_DEPENDENCIES=%s", common.REPO_DEPENDENCIES)
-	fmt.Fprintf(options, "-D REPO_PROJECTS=%s", common.REPO_PROJECTS)
-	fmt.Fprintf(options, "-D PROJECT_TARGETS_FILE=%s", projectTargetsFile)
-	fmt.Fprintf(options, "-D FLOAT_OPERATIONS=%t", proj.FloatOperations)
+	argument.AddArgument(options, fmt.Sprintf("-D CMAKE_C_COMPILER=%s", proj.CCompiler))
+	argument.AddArgument(options, fmt.Sprintf("-D CMAKE_LINKER=%s", proj.Linker))
+	argument.AddArgument(options, fmt.Sprintf("-D CMAKE_BUILD_TYPE=%s", buildMode))
+	argument.AddArgument(options, fmt.Sprintf("-D ENVIRONMENT=%s", proj.Environment))
+	argument.AddArgument(options, fmt.Sprintf("-D ARCHITECTURE=%s", architecture))
+	argument.AddArgument(options, fmt.Sprintf("-D BUILD_OUTPUT_PATH=%s", buildDirectory))
+	argument.AddArgument(options, fmt.Sprintf("-D REPO_ROOT=%s", common.REPO_ROOT))
+	argument.AddArgument(options, fmt.Sprintf("-D REPO_DEPENDENCIES=%s", common.REPO_DEPENDENCIES))
+	argument.AddArgument(options, fmt.Sprintf("-D REPO_PROJECTS=%s", common.REPO_PROJECTS))
+	argument.AddArgument(options, fmt.Sprintf("-D PROJECT_TARGETS_FILE=%s", projectTargetsFile))
+	argument.AddArgument(options, fmt.Sprintf("-D FLOAT_OPERATIONS=%t", proj.FloatOperations))
 
 	var build string
 	if buildTests {
@@ -43,16 +44,16 @@ func AddDefaultConfigureOptions(options *strings.Builder, proj *project.ProjectS
 	} else {
 		build = "PROJECT"
 	}
-	fmt.Fprintf(options, "-D BUILD=%s", build)
-	fmt.Fprintf(options, "--graphviz=%s/output.dot", proj.CodeFolder)
-	fmt.Fprintf(options, "%s", iwyu.FlagsForCMake(proj.Environment, proj.ExcludedIWYUMappings))
+	argument.AddArgument(options, fmt.Sprintf("-D BUILD=%s", build))
+	argument.AddArgument(options, fmt.Sprintf("--graphviz=%s/output.dot", proj.CodeFolder))
+	argument.AddArgument(options, iwyu.FlagsForCMake(proj.Environment, proj.ExcludedIWYUMappings))
 }
 
 func AddDefaultBuildOptions(options *strings.Builder, buildDirectory string, projectTargetsFile string, threads int, targets []string, verbose bool) bool {
-	fmt.Fprintf(options, "--build %s", buildDirectory)
-	fmt.Fprintf(options, "--parallel %d", threads)
+	argument.AddArgument(options, fmt.Sprintf("--build %s", buildDirectory))
+	argument.AddArgument(options, fmt.Sprintf("--parallel %d", threads))
 	if verbose {
-		fmt.Fprintf(options, "-v")
+		argument.AddArgument(options, "-v")
 	}
 
 	targetsString := strings.Builder{}
@@ -86,7 +87,7 @@ func AddDefaultBuildOptions(options *strings.Builder, buildDirectory string, pro
 	}
 
 	if targetsString.Len() > 0 {
-		fmt.Fprintf(options, "--target %s", targetsString.String())
+		argument.AddArgument(options, fmt.Sprintf("--target %s", targetsString.String()))
 	}
 
 	return true
