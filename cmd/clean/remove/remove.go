@@ -15,8 +15,8 @@ func RemoveGeneratedFiles() {
 
 	exec.Command("rm", append([]string{"-f"}, filesToRemove...)...).Run()
 
-	exec.Command("find", common.REPO_ROOT, "-type", "d", "-name", "build", "-exec", "rm", "-r", "{}", "+").Run()
-	exec.Command("find", common.REPO_ROOT, "-type", "d", "-name", ".cache", "-exec", "rm", "-r", "{}", "+").Run()
-	exec.Command("find", common.REPO_ROOT, "-type", "f", "-name", "*.dot*", "-exec", "rm", "-r", "{}", "+").Run()
-	exec.Command("find", common.REPO_ROOT, "-name", "compile_commands.json", "-exec", "rm", "-r", "{}", ";").Run()
+	exec.Command("find", common.REPO_PROJECTS, "-type", "d", "-name", "build", "-exec", "rm", "-r", "{}", "+").Run()
+	exec.Command("find", common.REPO_PROJECTS, "-type", "d", "-name", ".cache", "-exec", "rm", "-r", "{}", "+").Run()
+	exec.Command("find", common.REPO_PROJECTS, "-type", "f", "-name", "*.dot*", "-exec", "rm", "-r", "{}", "+").Run()
+	exec.Command("find", common.REPO_PROJECTS, "-name", "compile_commands.json", "-exec", "rm", "-r", "{}", ";").Run()
 }

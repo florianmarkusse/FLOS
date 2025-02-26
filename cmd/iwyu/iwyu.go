@@ -63,19 +63,6 @@ func main() {
 	fmt.Printf("\n")
 
 	os.Exit(exit.EXIT_SUCCESS)
-
-	// var result = builder.Build(&buildArgs)
-	//
-	// switch result {
-	// case builder.Success:
-	// 	{
-	// 		os.Exit(exit.EXIT_SUCCESS)
-	// 	}
-	// case builder.Failure:
-	// 	{
-	// 		os.Exit(exit.EXIT_TARGET_ERROR)
-	// 	}
-	// }
 }
 
 func usage() {

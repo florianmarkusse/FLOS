@@ -93,8 +93,7 @@ func includeWhatYouUseFlag(flag string) string {
 
 func RunIWYUOnProject(codeFolder string, env string, isWetRun bool, excludedMappings []IWYUMapping) {
 	var iwyuCommand = strings.Builder{}
-	// FIXME: Use the .elf in dependencies
-	argument.AddArgument(&iwyuCommand, "include-what-you-use")
+	argument.AddArgument(&iwyuCommand, fmt.Sprintf("%s/include-what-you-use/build/bin/include-what-you-use", common.REPO_DEPENDENCIES))
 
 	if env == string(environment.Freestanding) || env == string(environment.Efi) {
 		argument.AddArgument(&iwyuCommand, includeWhatYouUseFlag("--no_default_mappings"))

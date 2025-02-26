@@ -9,7 +9,7 @@
 #include "freestanding/peripheral/screen.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/sizes.h"
-#include "shared/text/string.h" // for STRING
+#include "shared/text/string.h"
 #include "shared/types/types.h" // for U32
 
 // void appendDescriptionHeaders(RSDPResult rsdp);

@@ -1,6 +1,4 @@
-- send msg to iwyu folks?
-  - How to only run "iwyu" on a project and not all its dependencies?
-  - this is a cmake issue and not iwyu issue tho but is worth seeing if they support such a flag or have plans to
+- add iwyu build to ./install-dependencies.sh
 - Figure out what to do with memory allocation & mapping in os-loader
 - Fix posix tests in physical memory
 - Rethink memory allocation for kernel structures in uefi and whether or not to add them to free physical memory in kernel --- definitely some bugs now.
