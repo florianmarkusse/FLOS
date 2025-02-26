@@ -66,7 +66,7 @@ func runIWYUOnProjectFiles(codeFolder string, iwyuFlags string, iwyuFileString s
 
 	compileCommandsFile, err := os.Open(compileCommandsLocation)
 	if err != nil {
-		log.Fatalf("Error opening file: %v", err)
+		log.Fatalf("Error opening file, does it exist?: %v", err)
 	}
 	defer compileCommandsFile.Close()
 

@@ -1,11 +1,9 @@
 package main
 
 import (
-	"cmd/common"
 	"cmd/common/configuration"
 	"cmd/common/exit"
 	"cmd/common/flags"
-	"cmd/common/flags/environment"
 	"cmd/common/flags/help"
 	"cmd/common/iwyu"
 	"cmd/common/project"
@@ -21,15 +19,12 @@ const WET_RUN_SHORT_FLAG = "w"
 var projectToIWYUString string
 var projectsToIWYU []string
 
-var env string = ""
-
 var isWetRun = false
 
 var isHelp = false
 
 func main() {
 	project.AddProjectAsFlag(&projectToIWYUString)
-	environment.AddEnvironmentAsFlag(&env)
 	help.AddHelpAsFlag(&isHelp)
 
 	flag.BoolVar(&isWetRun, WET_RUN_LONG_FLAG, isWetRun, "")
@@ -41,10 +36,6 @@ func main() {
 	var showHelpAndExit = false
 
 	if !project.ValidateAndConvertProjects(projectToIWYUString, &projectsToIWYU) {
-		showHelpAndExit = true
-	}
-
-	if !environment.IsValidEnvironment(env) && env != "" {
 		showHelpAndExit = true
 	}
 
@@ -61,18 +52,12 @@ func main() {
 	}
 
 	configuration.DisplayConfiguration()
-	environment.DisplayEnvironmentConfiguration(env)
 	project.DisplayProjectConfiguration(projectsToIWYU)
 	configuration.DisplayBoolArgument(WET_RUN_LONG_FLAG, isWetRun)
 
 	var projectsToBuild = project.GetAllProjects(projectsToIWYU)
-	for name, project := range projectsToBuild {
-		var selectedEnvironment = env
-		if env == "" {
-			selectedEnvironment = project.Environment
-		}
-		fmt.Printf("Running iwyu on %s%s%s\n", common.CYAN, name, common.RESET)
-		iwyu.RunIWYUOnProject(project.CodeFolder, selectedEnvironment, isWetRun, project.ExcludedIWYUMappings)
+	for _, project := range projectsToBuild {
+		iwyu.RunIWYUOnProject(project.CodeFolder, project.Environment, isWetRun, project.ExcludedIWYUMappings)
 	}
 
 	fmt.Printf("\n")
@@ -99,7 +84,6 @@ func usage() {
 
 	flags.DisplayOptionalFlags()
 
-	environment.DisplayEnvironment()
 	project.DisplayProject()
 	flags.DisplayArgumentInput(WET_RUN_SHORT_FLAG, WET_RUN_LONG_FLAG, "Do a wet run", fmt.Sprint(isWetRun))
 	help.DisplayHelp()
