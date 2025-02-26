@@ -2,8 +2,13 @@ package iwyu
 
 import (
 	"cmd/common"
+	"cmd/common/argument"
 	"cmd/common/flags/environment"
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
+	"os"
 	"strings"
 )
 
@@ -26,8 +31,73 @@ var mappings = [...]string{
 	"architecture.imp",
 }
 
+type CompileCommands struct {
+	Directory string `json:"directoory"`
+	Command   string `json:"command"`
+	File      string `json:"file"`
+	Output    string `json:"output"`
+}
+
+var COMPILE_COMMANDS_FILE = "compile_commands.json"
+
+func runIWYUOnProjectFiles(codeFolder string, iwyuFlags string) {
+	iwyuCommand := strings.Builder{}
+	fmt.Fprintf(&iwyuCommand, "include-what-you-use")
+	fmt.Fprintf(&iwyuCommand, " %s", iwyuFlags)
+
+	var compileCommandsLocation = fmt.Sprintf("%s/%s", codeFolder, COMPILE_COMMANDS_FILE)
+
+	file, err := os.Open(compileCommandsLocation)
+	if err != nil {
+		log.Fatalf("Error opening file: %v", err)
+	}
+	defer file.Close()
+
+	data, err := io.ReadAll(file)
+	if err != nil {
+		log.Fatalf("Error reading file: %v", err)
+	}
+
+	var commands []CompileCommands
+	if err := json.Unmarshal(data, &commands); err != nil {
+		log.Fatalf("Error unmarshalling JSON: %v", err)
+	}
+
+	for _, cmd := range commands {
+		if strings.HasPrefix(cmd.File, codeFolder) {
+			iwyuCommandForFile := strings.Builder{}
+			iwyuCommandForFile.WriteString(iwyuCommand.String())
+			iwyuCommandForFile.WriteString(cmd.Command)
+
+			argument.ExecCommand(iwyuCommandForFile.String())
+		}
+	}
+}
+
 func includeWhatYouUseFlag(flag string) string {
-	return fmt.Sprintf("-Xiwyu;%s;", flag)
+	return fmt.Sprintf("-Xiwyu %s ", flag)
+}
+
+func RunIWYUOnProject(codeFolder string, env string, excludedMappings []IWYUMapping) {
+	var iwyuFlags = strings.Builder{}
+	if env == string(environment.Freestanding) || env == string(environment.Efi) {
+		iwyuFlags.WriteString(includeWhatYouUseFlag("--no_default_mappings"))
+	}
+
+	for _, possibleMapping := range possibleMappings {
+		var excludeMapping = false
+		for _, excludedMapping := range excludedMappings {
+			if possibleMapping == excludedMapping {
+				excludeMapping = true
+			}
+		}
+
+		if !excludeMapping {
+			iwyuFlags.WriteString(includeWhatYouUseFlag(fmt.Sprintf("--mapping_file=%s/%s", IWYU_ROOT, possibleMapping)))
+		}
+	}
+
+	runIWYUOnProjectFiles(codeFolder, iwyuFlags.String())
 }
 
 func FlagsForCMake(env string, excludedMappings []IWYUMapping) string {

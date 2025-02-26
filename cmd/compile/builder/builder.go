@@ -34,11 +34,11 @@ func findAndRunTests(selectedTargets []string, proj *project.ProjectStructure, b
 
 func copyCompileCommands(buildDirectory string, codeDirectory string) {
 	findOptions := strings.Builder{}
-	argument.AddArgument(&findOptions, buildDirectory)
-	argument.AddArgument(&findOptions, "-maxdepth 1")
-	argument.AddArgument(&findOptions, "-name \"compile_commands.json\"")
+	fmt.Fprintf(&findOptions, "%s", buildDirectory)
+	fmt.Fprintf(&findOptions, "-maxdepth 1")
+	fmt.Fprintf(&findOptions, "-name \"compile_commands.json\"")
 	// NOTE: Using copy here because sym linking gave issues???
-	argument.AddArgument(&findOptions, fmt.Sprintf("-exec cp -f {} %s \\;", codeDirectory))
+	fmt.Fprintf(&findOptions, "-exec cp -f {} %s \\;", codeDirectory)
 
 	argument.ExecCommand(fmt.Sprintf("find %s", findOptions.String()))
 }

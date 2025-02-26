@@ -6,12 +6,7 @@ import (
 	"io"
 	"log"
 	"os/exec"
-	"strings"
 )
-
-func AddArgument(builder *strings.Builder, arg string) {
-	builder.WriteString(fmt.Sprintf("  %s \\\n", arg))
-}
 
 func ExecCommand(command string) {
 	ExecCommandWriteError(command)
