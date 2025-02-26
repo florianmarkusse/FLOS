@@ -5,9 +5,9 @@
 #include "shared/assert.h"
 #include "shared/maths/maths.h"
 #include "shared/types/types.h"
-#include "x86/memory/virtual.h"
 #include "x86/configuration/cpu2.h"
 #include "x86/memory/pat.h"
+#include "x86/memory/virtual.h"
 
 VirtualRegion higherHalfRegion = {.start = HIGHER_HALF_START,
                                   .end = KERNEL_SPACE_START};
@@ -44,15 +44,6 @@ U64 getVirtualMemory(U64 size, PageSize alignValue) {
     return result;
 }
 
-static void programPat() {
-    PAT patValues = {.value = rdmsr(PAT_LOCATION)};
-
-    patValues.pats[3].pat = PAT_WRITE_COMBINGING_WC;
-    wrmsr(PAT_LOCATION, patValues.value);
-
-    flushTLB();
-}
-
 U64 getPhysicalAddressFrame(U64 virtualPage) {
     return virtualPage & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
 }
@@ -76,7 +67,6 @@ void initVirtualMemoryManager(KernelMemory kernelMemory) {
 
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
     level4PageTable = (VirtualPageTable *)CR3();
-    programPat();
 }
 
 static bool isExtendedPageLevel(U8 level) { return level == 1 || level == 2; }

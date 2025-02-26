@@ -87,5 +87,6 @@ void CPUEnableFPU();
 void CPUEnableXSAVE();
 void CPUEnableAVX();
 void CPUEnableSSE();
+void CPUEnablePAT();
 
 #endif

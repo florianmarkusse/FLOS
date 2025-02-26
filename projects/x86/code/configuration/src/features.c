@@ -1,5 +1,7 @@
 #include "x86/configuration/features.h"
 #include "shared/types/types.h"
+#include "x86/configuration/cpu2.h"
+#include "x86/memory/pat.h"
 
 CPUFeatures features;
 
@@ -179,4 +181,11 @@ void CPUEnableSSE() {
 
     // Write the modified CR4 register back
     asm volatile("mov %%rax, %%cr4" : : "a"(cr4));
+}
+
+void CPUEnablePAT() {
+    PAT patValues = {.value = rdmsr(PAT_LOCATION)};
+
+    patValues.pats[3].pat = PAT_WRITE_COMBINGING_WC;
+    wrmsr(PAT_LOCATION, patValues.value);
 }

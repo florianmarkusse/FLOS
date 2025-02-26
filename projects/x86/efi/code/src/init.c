@@ -16,6 +16,7 @@
 #include "x86/efi/gdt.h"
 #include "x86/gdt.h"
 #include "x86/memory/definitions.h"
+#include "x86/memory/pat.h"
 #include "x86/memory/virtual.h"
 
 void bootstrapProcessorWork() {
@@ -115,7 +116,10 @@ void initArchitecture() {
     }
     CPUEnableSSE();
 
-    // TODO: THE PAT PROGRAMMING HERE!
+    if (!features.PAT) {
+        messageAndExit(STRING("CPU does not support PAT!"));
+    }
+    CPUEnablePAT();
 
     //   if (!features.XSAVE) {
     //       messageAndExit(STRING("CPU does not support XSAVE!"));
