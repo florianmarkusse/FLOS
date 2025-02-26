@@ -52,7 +52,7 @@ __attribute__((section("kernel-start"))) int kernelmain() {
                &arena);
     freeMapped((U64)arena.curFree, (U64)(arena.end - arena.curFree));
 
-    KFLUSH_AFTER { KLOG(STRING("HELLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO\n")); }
+    KFLUSH_AFTER { KLOG(STRING("ITS WEDNESDAY MY DUDES\n")); }
 
     KFLUSH_AFTER {
         //

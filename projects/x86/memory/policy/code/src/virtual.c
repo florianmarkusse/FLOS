@@ -5,7 +5,7 @@
 #include "shared/assert.h"
 #include "shared/maths/maths.h"
 #include "shared/types/types.h"
-#include "x86/configuration/cpu2.h"
+#include "x86/configuration/cpu.h"
 #include "x86/memory/pat.h"
 #include "x86/memory/virtual.h"
 

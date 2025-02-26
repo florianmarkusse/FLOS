@@ -1,4 +1,4 @@
-#include "x86/configuration/cpu2.h"
+#include "x86/configuration/cpu.h"
 
 U64 rdmsr(U32 msr) {
     U32 edx;

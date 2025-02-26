@@ -1,6 +1,6 @@
 #include "x86/configuration/features.h"
 #include "shared/types/types.h"
-#include "x86/configuration/cpu2.h"
+#include "x86/configuration/cpu.h"
 #include "x86/memory/pat.h"
 
 CPUFeatures features;

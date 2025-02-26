@@ -11,7 +11,7 @@
 #include "shared/maths/maths.h"
 #include "shared/text/string.h"
 #include "shared/types/types.h"
-#include "x86/configuration/cpu2.h"
+#include "x86/configuration/cpu.h"
 #include "x86/configuration/features.h"
 #include "x86/efi/gdt.h"
 #include "x86/gdt.h"

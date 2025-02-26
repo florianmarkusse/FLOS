@@ -3,7 +3,7 @@
 #include "abstraction/memory/virtual/map.h"
 #include "shared/maths/maths.h"
 #include "shared/memory/management/definitions.h"
-#include "x86/configuration/cpu2.h"
+#include "x86/configuration/cpu.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/pat.h"
 #include "x86/memory/physical.h"

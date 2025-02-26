@@ -1,7 +1,5 @@
-#ifndef X86_CONFIGURATION_CPU2_H
-#define X86_CONFIGURATION_CPU2_H
-
-// FIX: Once the platform-abstraction stuff is moved, merge this with cpu.c
+#ifndef X86_CONFIGURATION_CPU_H
+#define X86_CONFIGURATION_CPU_H
 
 #include "shared/types/types.h"
 
