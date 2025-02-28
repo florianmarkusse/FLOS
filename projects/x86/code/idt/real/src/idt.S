@@ -89,7 +89,6 @@ isr_stub:
     // And pop all the registers
     popaq
     addq $16, %rsp // Pops the error number off the stack
-    orq $0x200, 16(%rsp)  # Ensure RFLAGS.IF=1 in saved RFLAGS, 9th bit in RFLAGS
     iretq
 
 // We'll start by making all of our ISRs. From 0 to 255
