@@ -63,16 +63,14 @@ isr_stub:
     // Push all the 64-bit registers
     pushaq
     // Push all the data segments (Stack alignment is kept because all segments add up to 64-bits here)
-    movw %ds, %ax
-    pushq %rax
-    movw %es, %ax
-    pushq %rax
-    movw %fs, %ax
-    pushq %rax
-    movw %gs, %ax
-    pushq %rax
+    subq $16, %rsp
+    movw %ds, (%rsp)   # Store ds at offset 0
+    movw %es, 2(%rsp)  # Store es at offset 2
+    movw %fs, 4(%rsp)  # Store fs at offset 4
+    movw %gs, 6(%rsp)  # Store gs at offset 6
+
     // Load the kernel data segments
-    movw $KERNEL_DATA_SEG, %ax
+    movw $8, %ax
     movw %ax, %ds
     movw %ax, %es
     movw %ax, %fs
@@ -81,19 +79,17 @@ isr_stub:
     movq %rsp, %rdi
     cld
     call fault_handler
-    // Pop all the data segments
-    popq %rax
-    movw %ax, %gs
-    popq %rax
-    movw %ax, %fs
-    popq %rax
-    movw %ax, %es
-    popq %rax
-    movw %ax, %ds
+    // Restore segment registers
+    movw (%rsp), %ds   # Restore ds from offset 0
+    movw 2(%rsp), %es  # Restore es from offset 2
+    movw 4(%rsp), %fs  # Restore fs from offset 4
+    movw 6(%rsp), %gs  # Restore gs from offset 6
+    addq $16, %rsp      # Restore stack pointer
+
     // And pop all the registers
     popaq
     addq $16, %rsp // Pops the error number off the stack
-    //addq $16, %rsp // Pops the interrupt number off the stack
+    orq $0x200, 16(%rsp)  # Ensure RFLAGS.IF=1 in saved RFLAGS, 9th bit in RFLAGS
     iretq
 
 // We'll start by making all of our ISRs. From 0 to 255
@@ -103,8 +99,6 @@ isr_stub:
 .macro isr_wrapper_no_error isr_num
     .globl isr\isr_num
 isr\isr_num:
-    // Turn off interrupts
-    cli
     // Push an error number of 0
     pushq $0
     // Push the interrupt number
@@ -115,8 +109,6 @@ isr\isr_num:
 .macro isr_wrapper_with_error isr_num
     .globl isr\isr_num
 isr\isr_num:
-    // Turn off interrupts
-    cli
     // Push the interrupt number
     pushq $\isr_num
     jmp isr_stub // And go to the isr_stub

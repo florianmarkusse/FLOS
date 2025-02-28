@@ -688,11 +688,15 @@ __attribute__((noreturn)) void triggerFault(Fault fault) {
 }
 
 typedef struct {
-    // Segment selectors with alignment attributes
-    U16 gs __attribute__((aligned(8)));
-    U16 fs __attribute__((aligned(8)));
-    U16 es __attribute__((aligned(8)));
-    U16 ds __attribute__((aligned(8)));
+    struct {
+        U16 ds;
+        U16 es;
+        U16 fs;
+        U16 gs;
+    } segs; // Packed into 8 bytes
+
+    U64 __paddingForStackAlignment; // SYS V ABI requires 16-byte stack
+                                    // alignemnt
 
     U64 r15;
     U64 r14;
@@ -720,6 +724,10 @@ typedef struct {
     // Never having these because we are not ever planning to switch privileges
     //    U64 useresp;
     //    U64 ss;
-} regs __attribute__((aligned(8)));
+} regs;
 
-void fault_handler([[maybe_unused]] regs *regs) { asm volatile("cli;hlt;"); }
+void fault_handler([[maybe_unused]] regs *regs) {
+    // We are doing stuff here...
+
+    asm volatile("cli;hlt;");
+}
