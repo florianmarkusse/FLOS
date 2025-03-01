@@ -68,8 +68,7 @@ string readDiskLbasFromEfiImage(Lba diskLba, USize bytes) {
             PhysicalAddress address;
             status = globals.st->boot_services->allocate_pages(
                 ALLOCATE_ANY_PAGES, LOADER_DATA,
-                CEILING_DIV_VALUE(alignedBytes, biop->Media->BlockSize),
-                &address);
+                CEILING_DIV_VALUE(alignedBytes, UEFI_PAGE_SIZE), &address);
             EXIT_WITH_MESSAGE_IF(status) {
                 ERROR(STRING("Could not allocete data for disk buffer\n"));
             }
