@@ -18,6 +18,7 @@ static constexpr auto INIT_MEMORY = (64 * MiB);
 
 __attribute__((section("kernel-start"))) int kernelmain() {
     initIDT();
+    // TODO: [X86] I need to enable NMIs here also again!
 
     KernelParameters *kernelParameters =
         /* NOLINTNEXTLINE(performance-no-int-to-ptr) */

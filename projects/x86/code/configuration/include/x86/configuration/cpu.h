@@ -19,7 +19,7 @@ typedef struct {
     U32 edx;
 } CPUIDResult;
 CPUIDResult CPUID(U32 functionID);
-void disablePICAndNMI();
+void disablePIC();
 U64 CR3();
 
 #endif

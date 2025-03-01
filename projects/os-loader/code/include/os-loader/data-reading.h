@@ -10,10 +10,8 @@ typedef struct {
     U64 lbaStart;
 } DataPartitionFile;
 
-string readDiskLbas(Lba diskLba, USize bytes, U32 mediaID);
-string readDiskLbasFromCurrentGlobalImage(Lba diskLba, USize bytes);
+string readDiskLbasFromEfiImage(Lba diskLba, USize bytes);
 
-U32 getDiskImageMediaID();
 DataPartitionFile getKernelInfo();
 
 #endif

@@ -20,7 +20,7 @@
 #include "x86/memory/virtual.h"
 
 void bootstrapProcessorWork() {
-    disablePICAndNMI();
+    disablePIC();
 
     Status status = globals.st->boot_services->allocate_pages(
         ALLOCATE_ANY_PAGES, LOADER_DATA,

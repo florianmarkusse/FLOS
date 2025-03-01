@@ -40,8 +40,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(kernelFile.lbaStart, NEWLINE);
     }
 
-    string kernelContent = readDiskLbasFromCurrentGlobalImage(
-        kernelFile.lbaStart, kernelFile.bytes);
+    string kernelContent =
+        readDiskLbasFromEfiImage(kernelFile.lbaStart, kernelFile.bytes);
 
     KFLUSH_AFTER {
         INFO(STRING("Read kernel content, at memory location:"));
@@ -68,6 +68,31 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     MemoryInfo memoryInfo = getMemoryInfo();
+
+    /*for (USize i = 0; i < memoryInfo.memoryMapSize /
+     * memoryInfo.descriptorSize;*/
+    /*     i++) {*/
+    /*    MemoryDescriptor *desc =*/
+    /*        (MemoryDescriptor *)((U8 *)memoryInfo.memoryMap +*/
+    /*                             (i * memoryInfo.descriptorSize));*/
+    /*    if ((U64)kernelContent.buf >= (U64)desc->physicalStart &&*/
+    /*        (U64)kernelContent.buf < (U64)desc->physicalStart +*/
+    /*                                     desc->numberOfPages * UEFI_PAGE_SIZE)
+     * {*/
+    /*        KFLUSH_AFTER {*/
+    /*            INFO(STRING("--------------------------\n"));*/
+    /*            INFO(STRING("The physical start: "));*/
+    /*            INFO((void *)desc->physicalStart, NEWLINE);*/
+    /*            INFO(STRING("The end: "));*/
+    /*            INFO((void *)((U64)desc->physicalStart +*/
+    /*                          desc->numberOfPages * UEFI_PAGE_SIZE),*/
+    /*                 NEWLINE);*/
+    /*        }*/
+    /*    }*/
+    /*}*/
+    /**/
+    /*waitKeyThenReset();*/
+
     for (USize i = 0; i < memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
          i++) {
         MemoryDescriptor *desc =

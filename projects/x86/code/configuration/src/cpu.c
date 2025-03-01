@@ -45,17 +45,13 @@ void wait(U64 microSeconds) {
     } while (currentCycles < endInCycles);
 }
 
-void disablePICAndNMI() {
-    asm volatile(
-        "movb $0xFF, %%al;" // Set AL to 0xFF
-        "outb %%al, $0x21;" // Disable master PIC
-        "outb %%al, $0xA1;" // Disable slave PIC
-        "inb $0x70, %%al;"  // Read from port 0x70
-        "orb $0x80, %%al;"  // Set the NMI disable bit (bit 7)
-        "outb %%al, $0x70;" // Write the modified value back to port 0x70
-        :                   // No output operands
-        :                   // No input operands
-        : "eax", "memory"   // Clobbered registers: eax and memory
+void disablePIC() {
+    asm volatile("movb $0xFF, %%al;" // Set AL to 0xFF
+                 "outb %%al, $0x21;" // Disable master PIC
+                 "outb %%al, $0xA1;" // Disable slave PIC
+                 :                   // No output operands
+                 :                   // No input operands
+                 : "eax", "memory"   // Clobbered registers: eax and memory
     );
 }
 
