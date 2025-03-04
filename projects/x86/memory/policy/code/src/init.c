@@ -15,7 +15,7 @@ void initMemoryManager(KernelMemory kernelMemory) {
 }
 
 void initScreenMemory(U64 screenAddress, U64 bytes) {
-    PagedMemory pagedMemory = {.pageStart = screenAddress,
+    PagedMemory pagedMemory = {.start = screenAddress,
                                .numberOfPages =
                                    CEILING_DIV_EXP(bytes, PAGE_FRAME_SHIFT)};
     mapVirtualRegionWithFlags(screenAddress, pagedMemory, BASE_PAGE,

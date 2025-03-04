@@ -20,12 +20,33 @@
 #include "shared/text/string.h" // for CEILING_DIV_V...
 #include "shared/types/types.h" // for U64, U32, USize
 
+static void disableEFIBootServices(MemoryInfo *memoryInfo) {
+    Status status = globals.st->boot_services->exit_boot_services(
+        globals.h, memoryInfo->mapKey);
+    if (EFI_ERROR(status)) {
+        status = globals.st->boot_services->free_pages(
+            (PhysicalAddress)memoryInfo->memoryMap,
+            CEILING_DIV_VALUE(memoryInfo->memoryMapSize, UEFI_PAGE_SIZE));
+        EXIT_WITH_MESSAGE_IF(status) {
+            ERROR(STRING("Could not free allocated memory map\r\n"));
+        }
+
+        *memoryInfo = getMemoryInfo();
+        status = globals.st->boot_services->exit_boot_services(
+            globals.h, memoryInfo->mapKey);
+    }
+    EXIT_WITH_MESSAGE_IF(status) {
+        ERROR(STRING("could not exit boot services!\r\n"));
+    }
+}
+
 Status efi_main(Handle handle, SystemTable *systemtable) {
     globals.h = handle;
     globals.st = systemtable;
     globals.st->con_out->reset(globals.st->con_out, false);
     globals.st->con_out->set_attribute(globals.st->con_out,
                                        BACKGROUND_RED | YELLOW);
+    initBumpAllocator();
 
     initArchitecture();
 
@@ -51,7 +72,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     KFLUSH_AFTER { INFO(STRING("Attempting to map memory now\n")); }
 
     mapVirtualRegion(KERNEL_CODE_START,
-                     (PagedMemory){.pageStart = (U64)kernelContent.buf,
+                     (PagedMemory){.start = (U64)kernelContent.buf,
                                    .numberOfPages = CEILING_DIV_VALUE(
                                        kernelContent.len, UEFI_PAGE_SIZE)},
                      UEFI_PAGE_SIZE);
@@ -68,45 +89,20 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     MemoryInfo memoryInfo = getMemoryInfo();
-
-    /*for (USize i = 0; i < memoryInfo.memoryMapSize /
-     * memoryInfo.descriptorSize;*/
-    /*     i++) {*/
-    /*    MemoryDescriptor *desc =*/
-    /*        (MemoryDescriptor *)((U8 *)memoryInfo.memoryMap +*/
-    /*                             (i * memoryInfo.descriptorSize));*/
-    /*    if ((U64)kernelContent.buf >= (U64)desc->physicalStart &&*/
-    /*        (U64)kernelContent.buf < (U64)desc->physicalStart +*/
-    /*                                     desc->numberOfPages * UEFI_PAGE_SIZE)
-     * {*/
-    /*        KFLUSH_AFTER {*/
-    /*            INFO(STRING("--------------------------\n"));*/
-    /*            INFO(STRING("The physical start: "));*/
-    /*            INFO((void *)desc->physicalStart, NEWLINE);*/
-    /*            INFO(STRING("The end: "));*/
-    /*            INFO((void *)((U64)desc->physicalStart +*/
-    /*                          desc->numberOfPages * UEFI_PAGE_SIZE),*/
-    /*                 NEWLINE);*/
-    /*        }*/
-    /*    }*/
-    /*}*/
-    /**/
-    /*waitKeyThenReset();*/
-
     for (USize i = 0; i < memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
          i++) {
         MemoryDescriptor *desc =
             (MemoryDescriptor *)((U8 *)memoryInfo.memoryMap +
                                  (i * memoryInfo.descriptorSize));
         mapVirtualRegion(desc->physicalStart,
-                         (PagedMemory){.pageStart = (U64)desc->physicalStart,
+                         (PagedMemory){.start = (U64)desc->physicalStart,
                                        .numberOfPages = desc->numberOfPages},
                          UEFI_PAGE_SIZE);
     }
 
     mapVirtualRegion(
         gop->mode->frameBufferBase,
-        (PagedMemory){.pageStart = (U64)gop->mode->frameBufferBase,
+        (PagedMemory){.start = (U64)gop->mode->frameBufferBase,
                       .numberOfPages = CEILING_DIV_VALUE(
                           gop->mode->frameBufferSize, UEFI_PAGE_SIZE)},
         UEFI_PAGE_SIZE);
@@ -125,7 +121,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         allocAndZero(CEILING_DIV_VALUE(KERNEL_PARAMS_SIZE, UEFI_PAGE_SIZE));
 
     mapVirtualRegion(KERNEL_PARAMS_START,
-                     (PagedMemory){.pageStart = kernelParams,
+                     (PagedMemory){.start = kernelParams,
                                    .numberOfPages = CEILING_DIV_VALUE(
                                        KERNEL_PARAMS_SIZE, UEFI_PAGE_SIZE)},
                      UEFI_PAGE_SIZE);
@@ -141,7 +137,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         allocAndZero(CEILING_DIV_VALUE(STACK_SIZE, UEFI_PAGE_SIZE));
 
     mapVirtualRegion(BOTTOM_STACK,
-                     (PagedMemory){.pageStart = stackEnd,
+                     (PagedMemory){.start = stackEnd,
                                    .numberOfPages = CEILING_DIV_VALUE(
                                        STACK_SIZE, UEFI_PAGE_SIZE)},
                      UEFI_PAGE_SIZE);
@@ -169,35 +165,28 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     KFLUSH_AFTER {
+        U64 usedPages = BUMP_ALLOCATOR_PAGE_INITIAL_CAPACITY - bumpFreePages;
         INFO(STRING("Prepared and collected all necessary information to jump "
-                    "to the kernel.\nStarting exit boot services process, no "
-                    "printing after this!\n"));
+                    "to the kernel.\nUsed\n"));
+        INFO(usedPages);
+        INFO(STRING(" pages of "));
+        INFO(UEFI_PAGE_SIZE);
+        INFO(STRING(" bytes = "));
+        INFO(usedPages * UEFI_PAGE_SIZE);
+        INFO(STRING(" total bytes\nto initialize kernel and requisite data "
+                    "structures.\nStarting exit boot services process, no "
+                    "uefi boot services available after this!\n"));
     }
 
     memoryInfo = getMemoryInfo();
-    status = globals.st->boot_services->exit_boot_services(globals.h,
-                                                           memoryInfo.mapKey);
+    KernelMemory stub = stubMemoryBeforeExitBootServices(&memoryInfo);
 
-    if (EFI_ERROR(status)) {
-        status = globals.st->boot_services->free_pages(
-            (PhysicalAddress)memoryInfo.memoryMap,
-            CEILING_DIV_VALUE(memoryInfo.memoryMapSize, UEFI_PAGE_SIZE));
-        EXIT_WITH_MESSAGE_IF(status) {
-            ERROR(STRING("Could not free allocated memory map\r\n"));
-        }
+    // NOTE: Keep this call in between the stub and the creation of available
+    // memory! The stub allocates memory and logs on failure which is not
+    // possible after we have exited boot services
+    disableEFIBootServices(&memoryInfo);
 
-        memoryInfo = getMemoryInfo();
-        status = globals.st->boot_services->exit_boot_services(
-            globals.h, memoryInfo.mapKey);
-    }
-    EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING("could not exit boot services!\r\n"));
-    }
-
-    params->memory =
-        (KernelMemory){.totalDescriptorSize = memoryInfo.memoryMapSize,
-                       .descriptors = memoryInfo.memoryMap,
-                       .descriptorSize = memoryInfo.descriptorSize};
+    params->memory = convertToKernelMemory(&memoryInfo, stub);
 
     jumpIntoKernel(stackPointer);
     return !SUCCESS;

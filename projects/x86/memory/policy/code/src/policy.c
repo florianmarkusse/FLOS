@@ -74,10 +74,10 @@ void *allocContiguousAndMap(U64 numberOfPages,
     U64 physicalAddress =
         allocContiguousPhysicalPages(numberOfPages, conversion.pageSize);
 
-    mapVirtualRegion(virtualAddress,
-                     (PagedMemory){.numberOfPages = numberOfPages,
-                                   .pageStart = physicalAddress},
-                     conversion.pageSize);
+    mapVirtualRegion(
+        virtualAddress,
+        (PagedMemory){.numberOfPages = numberOfPages, .start = physicalAddress},
+        conversion.pageSize);
 
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
     return (void *)virtualAddress;
@@ -98,7 +98,7 @@ void freeMapped(U64 start, U64 bytes) {
     U64 physicalOfPage = getPhysicalAddressFrame(page.entry.value);
 
     PagedMemory pagedEntry =
-        (PagedMemory){.pageStart = physicalOfPage, .numberOfPages = 1};
+        (PagedMemory){.start = physicalOfPage, .numberOfPages = 1};
 
     PageSize previousPageSize = page.pageSize;
     U64 nextPhysical = physicalOfPage + previousPageSize;
@@ -116,7 +116,7 @@ void freeMapped(U64 start, U64 bytes) {
             freePhysicalPage(pagedEntry, previousPageSize);
 
             pagedEntry =
-                (PagedMemory){.pageStart = physicalOfPage, .numberOfPages = 1};
+                (PagedMemory){.start = physicalOfPage, .numberOfPages = 1};
 
             previousPageSize = page.pageSize;
             nextPhysical = physicalOfPage + previousPageSize;

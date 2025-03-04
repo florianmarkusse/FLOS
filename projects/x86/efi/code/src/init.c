@@ -22,14 +22,8 @@
 void bootstrapProcessorWork() {
     disablePIC();
 
-    Status status = globals.st->boot_services->allocate_pages(
-        ALLOCATE_ANY_PAGES, LOADER_DATA,
-        CEILING_DIV_VALUE(3 * sizeof(PhysicalBasePage), UEFI_PAGE_SIZE),
-        &gdtData);
-    EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING("Could not allocate data for disk buffer\n"));
-    }
-
+    gdtData = allocate4KiBPages(
+        CEILING_DIV_VALUE(3 * sizeof(PhysicalBasePage), UEFI_PAGE_SIZE));
     gdtDescriptor = prepNewGDT((PhysicalBasePage *)gdtData);
 
     // NOTE: WHY????
@@ -51,19 +45,11 @@ void calibrateWait() {
     cyclesPerMicroSecond = endCycles - currentCycles / CALIBRATION_MICROSECONDS;
 }
 
-void messageAndExit(string message) {
-    KFLUSH_AFTER {
-        ERROR(message, NEWLINE);
-        ERROR(STRING("Buy newer CPU.\n"));
-    }
-    waitKeyThenReset();
-}
-
 void initArchitecture() {
     asm volatile("cli");
 
     {
-        U64 newCR3 = allocate4KiBPage(1);
+        U64 newCR3 = allocate4KiBPages(1);
         /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
         memset((void *)newCR3, 0, UEFI_PAGE_SIZE);
         level4PageTable = (VirtualPageTable *)newCR3;
@@ -77,38 +63,42 @@ void initArchitecture() {
 
     U32 maxCPUID = CPUID(0).eax;
     if (maxCPUID < 1) {
-        messageAndExit(STRING("CPU does not support CPUID of 1 and above"));
+        EXIT_WITH_MESSAGE {
+            STRING("CPU does not support CPUID of 1 and above");
+        }
     }
 
     CPUIDResult CPUInfo = CPUID(1);
     features.ecx = CPUInfo.ecx;
     features.edx = CPUInfo.edx;
-
     if (!features.APIC) {
-        messageAndExit(STRING("CPU does not support APIC"));
+        EXIT_WITH_MESSAGE { STRING("CPU does not support APIC"); }
     }
 
     U32 BSPID = CPUInfo.ebx >> 24;
 
     if (!features.TSC) {
-        messageAndExit(STRING("CPU does not support Time Stamp Counter"));
+        EXIT_WITH_MESSAGE { STRING("CPU does not support Time Stamp Counter"); }
     }
+    KFLUSH_AFTER { INFO(STRING("Calibrating timer\n")); }
     calibrateWait();
 
     if (!features.PGE) {
-        messageAndExit(STRING("CPU does not support global memory paging!"));
+        EXIT_WITH_MESSAGE {
+            STRING("CPU does not support global memory paging!");
+        }
     }
-    KFLUSH_AFTER { INFO(STRING("Enabling GPE\n")); }
-    CPUEnableGPE();
+    KFLUSH_AFTER { INFO(STRING("Enabling PGE\n")); }
+    CPUEnablePGE();
 
     if (!features.FPU) {
-        messageAndExit(STRING("CPU does not support FPU!"));
+        EXIT_WITH_MESSAGE { STRING("CPU does not support FPU!"); }
     }
     KFLUSH_AFTER { INFO(STRING("Enabling FPU\n")); }
     CPUEnableFPU();
 
     if (!features.SSE) {
-        messageAndExit(STRING("CPU does not support SSE!"));
+        EXIT_WITH_MESSAGE { STRING("CPU does not support SSE!"); }
     }
     KFLUSH_AFTER {
         INFO(STRING(
@@ -117,9 +107,10 @@ void initArchitecture() {
     CPUEnableSSE();
 
     if (!features.PAT) {
-        messageAndExit(STRING("CPU does not support PAT!"));
+        EXIT_WITH_MESSAGE { STRING("CPU does not support PAT!"); }
     }
-    CPUEnablePAT();
+    KFLUSH_AFTER { INFO(STRING("Configuring PAT\n")); }
+    CPUConfigurePAT();
 
     //   if (!features.XSAVE) {
     //       messageAndExit(STRING("CPU does not support XSAVE!"));

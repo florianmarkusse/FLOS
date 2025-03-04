@@ -50,14 +50,10 @@ U64 getPhysicalAddressFrame(U64 virtualPage) {
 
 void initVirtualMemoryManager(KernelMemory kernelMemory) {
     U64 currentHighestAddress = 0;
-    for (U64 i = 0;
-         i < kernelMemory.totalDescriptorSize / kernelMemory.descriptorSize;
-         i++) {
-        MemoryDescriptor *desc =
-            (MemoryDescriptor *)((U8 *)kernelMemory.descriptors +
-                                 (i * kernelMemory.descriptorSize));
+    for (U64 i = 0; i < kernelMemory.memory.len; i++) {
+        PagedMemory paged = kernelMemory.memory.buf[i];
         U64 highestAddress =
-            desc->virtualStart + desc->numberOfPages * PAGE_FRAME_SIZE;
+            paged.start + paged.numberOfPages * PAGE_FRAME_SIZE;
 
         if (highestAddress > currentHighestAddress) {
             currentHighestAddress = highestAddress;

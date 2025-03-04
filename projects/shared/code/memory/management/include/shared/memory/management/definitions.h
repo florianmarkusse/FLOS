@@ -5,7 +5,7 @@
 #include "shared/types/types.h"
 
 typedef struct {
-    U64 pageStart;
+    U64 start;
     U64 numberOfPages;
 } PagedMemory;
 

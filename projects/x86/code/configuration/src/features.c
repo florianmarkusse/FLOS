@@ -90,7 +90,7 @@ typedef struct {
     };
 } XCR0;
 
-void CPUEnableGPE() {
+void CPUEnablePGE() {
     CR4 cr4;
 
     // Read CR4 register
@@ -183,7 +183,7 @@ void CPUEnableSSE() {
     asm volatile("mov %%rax, %%cr4" : : "a"(cr4));
 }
 
-void CPUEnablePAT() {
+void CPUConfigurePAT() {
     PAT patValues = {.value = rdmsr(PAT_LOCATION)};
 
     patValues.pats[3].pat = PAT_WRITE_COMBINGING_WC;

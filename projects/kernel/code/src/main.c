@@ -24,10 +24,8 @@ __attribute__((section("kernel-start"))) int kernelmain() {
         /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
         (KernelParameters *)KERNEL_PARAMS_START;
 
-    KernelMemory kernelMemory = {
-        .totalDescriptorSize = kernelParameters->memory.totalDescriptorSize,
-        .descriptors = kernelParameters->memory.descriptors,
-        .descriptorSize = kernelParameters->memory.descriptorSize};
+    KernelMemory kernelMemory = {.memory = kernelParameters->memory.memory,
+                                 .pages = kernelParameters->memory.pages};
     initMemoryManager(kernelMemory);
 
     void *initMemory = allocAndMap(INIT_MEMORY);

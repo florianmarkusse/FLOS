@@ -82,11 +82,11 @@ typedef struct {
 
 extern CPUFeatures features;
 
-void CPUEnableGPE();
+void CPUEnablePGE();
 void CPUEnableFPU();
 void CPUEnableXSAVE();
 void CPUEnableAVX();
 void CPUEnableSSE();
-void CPUEnablePAT();
+void CPUConfigurePAT();
 
 #endif

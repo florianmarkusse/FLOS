@@ -5,6 +5,9 @@
 #include "abstraction/memory/virtual/map.h"
 #include "shared/assert.h"
 #include "shared/maths/maths.h"
+#ifdef DEBUG
+#include "shared/memory/converter.h"
+#endif
 #include "shared/memory/management/definitions.h"
 #include "shared/types/types.h"
 #include "x86/memory/definitions.h"
@@ -26,7 +29,7 @@ static U8 pageSizeToDepth(PageSize pageSize) {
 }
 
 static U64 getZeroBasePage() {
-    U64 address = allocate4KiBPage(1);
+    U64 address = allocate4KiBPages(1);
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
     memset((void *)address, 0, PAGE_FRAME_SIZE);
     return address;
@@ -51,7 +54,7 @@ void mapVirtualRegionWithFlags(U64 virt, PagedMemory memory, U64 pageSize,
     ASSERT(!(RING_RANGE_VALUE(virt, pageType)));
     ASSERT(!(RING_RANGE_VALUE(memory.pageStart, pageType)));
     U64 virtualEnd = virt + pageType * memory.numberOfPages;
-    for (U64 physical = memory.pageStart; virt < virtualEnd;
+    for (U64 physical = memory.start; virt < virtualEnd;
          virt += pageType, physical += pageType) {
         VirtualPageTable *currentTable = level4PageTable;
 
