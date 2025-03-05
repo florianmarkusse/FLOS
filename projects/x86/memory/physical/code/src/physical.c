@@ -68,20 +68,6 @@ static U64 memoryEntriesInBasePages(U64 num) {
     return (PAGE_FRAME_SIZE * (num)) / sizeof(PagedMemory);
 }
 
-static bool canBeUsedByOS(MemoryType type) {
-    switch (type) {
-    case LOADER_CODE:
-    case LOADER_DATA:
-    case BOOT_SERVICES_CODE:
-    case BOOT_SERVICES_DATA:
-    case CONVENTIONAL_MEMORY:
-    case PERSISTENT_MEMORY:
-        return true;
-    default:
-        return false;
-    }
-}
-
 // NOTE: We can add an index on top of the pages if this function becomes an
 // issue that is based on available pages.
 static U64
@@ -272,17 +258,14 @@ static void initPMM(PageSize pageType) {
     }
 }
 
-static MemoryDescriptor *nextValidDescriptor(U64 *i,
-                                             KernelMemory kernelMemory) {
-    while (*i < kernelMemory.totalDescriptorSize) {
-        MemoryDescriptor *result =
-            (MemoryDescriptor *)((U8 *)kernelMemory.descriptors + *i);
+static PagedMemory *nextValidDescriptor(KernelMemory kernelMemory) {
+    static U64 i = 0;
+    while (i < kernelMemory.memory.len) {
+        PagedMemory *result = &kernelMemory.memory.buf[i];
         // Always increment even if found, so the next caller wont get the same
         // descriptor.
-        *i += kernelMemory.descriptorSize;
-        if (canBeUsedByOS(result->type)) {
-            return result;
-        }
+        i++;
+        return result;
     }
 
     return nullptr;
@@ -300,22 +283,20 @@ void initPhysicalMemoryManager(KernelMemory kernelMemory) {
     hugePMM =
         (PhysicalMemoryManager){.pageSize = HUGE_PAGE, .usedBasePages = 1};
 
-    U64 i = 0;
-
-    MemoryDescriptor *descriptor = nextValidDescriptor(&i, kernelMemory);
+    PagedMemory *descriptor = nextValidDescriptor(kernelMemory);
     if (!descriptor) {
         interruptNoMorePhysicalMemory();
     }
 
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    basePMM.memory.buf = (PagedMemory *)descriptor->physicalStart;
+    basePMM.memory.buf = (PagedMemory *)descriptor->start;
     basePMM.memory.cap = memoryEntriesInBasePages(1);
     basePMM.memory.len = 0;
-    descriptor->physicalStart += PAGE_FRAME_SIZE;
+    descriptor->start += PAGE_FRAME_SIZE;
     descriptor->numberOfPages--;
 
     if (descriptor->numberOfPages == 0) {
-        descriptor = nextValidDescriptor(&i, kernelMemory);
+        descriptor = nextValidDescriptor(kernelMemory);
         if (!descriptor) {
             interruptNoMorePhysicalMemory();
         }
@@ -324,21 +305,20 @@ void initPhysicalMemoryManager(KernelMemory kernelMemory) {
     U64 maxCapacity = memoryEntriesInBasePages(descriptor->numberOfPages);
     PagedMemory_a freeMemoryArray =
         (PagedMemory_a){/* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-                        .buf = (PagedMemory *)descriptor->physicalStart,
+                        .buf = (PagedMemory *)descriptor->start,
                         .len = 0};
     // The memory used to store the free memory is also "free" memory
     // after the PMM is correctly initialized.
-    PagedMemory freeMemoryHolder =
-        (PagedMemory){.start = descriptor->physicalStart,
-                      .numberOfPages = descriptor->numberOfPages};
+    PagedMemory freeMemoryHolder = (PagedMemory){
+        .start = descriptor->start, .numberOfPages = descriptor->numberOfPages};
 
-    while ((descriptor = nextValidDescriptor(&i, kernelMemory))) {
+    while ((descriptor = nextValidDescriptor(kernelMemory))) {
         if (freeMemoryArray.len >= maxCapacity) {
             freePhysicalPages(freeMemoryArray, BASE_PAGE);
             freeMemoryArray.len = 0;
         }
         freeMemoryArray.buf[freeMemoryArray.len] =
-            (PagedMemory){.start = descriptor->physicalStart,
+            (PagedMemory){.start = descriptor->start,
                           .numberOfPages = descriptor->numberOfPages};
         freeMemoryArray.len++;
     }

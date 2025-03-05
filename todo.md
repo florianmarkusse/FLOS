@@ -1,3 +1,5 @@
+- Remove MemoryDescriptor import from kernel
+  - Also MEMORY_ACPI etc.
 - Figure out what to do with memory allocation & mapping in os-loader
 - Fix posix tests in physical memory
 - Rethink memory allocation for kernel structures in uefi and whether or not to add them to free physical memory in kernel --- definitely some bugs now.

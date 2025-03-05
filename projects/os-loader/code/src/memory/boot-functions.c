@@ -58,6 +58,7 @@ KernelMemory stubMemoryBeforeExitBootServices(MemoryInfo *memoryInfo) {
             (numberOfDescriptors +
              ADDITIONAL_CAPACITY_FOR_SPLITTING_MEMORY_DESCRIPTOR),
         UEFI_PAGE_SIZE);
+    result.memory.len = 0;
     result.memory.buf = (PagedMemory *)allocate4KiBPages(result.pages);
 
     return result;
