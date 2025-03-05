@@ -165,17 +165,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     KFLUSH_AFTER {
-        U64 usedPages = BUMP_ALLOCATOR_PAGE_INITIAL_CAPACITY - bumpFreePages;
         INFO(STRING("Prepared and collected all necessary information to jump "
-                    "to the kernel.\nUsed\n"));
-        INFO(usedPages);
-        INFO(STRING(" pages of "));
-        INFO(UEFI_PAGE_SIZE);
-        INFO(STRING(" bytes = "));
-        INFO(usedPages * UEFI_PAGE_SIZE);
-        INFO(STRING(" total bytes\nto initialize kernel and requisite data "
-                    "structures.\nStarting exit boot services process, no "
-                    "uefi boot services available after this!\n"));
+                    "to the kernel.\n"));
     }
 
     memoryInfo = getMemoryInfo();

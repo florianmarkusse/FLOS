@@ -50,6 +50,9 @@ __attribute__((section("kernel-start"))) int kernelmain() {
                                  .screen = (U32 *)kernelParameters->fb.ptr},
                &arena);
     freeMapped((U64)arena.curFree, (U64)(arena.end - arena.curFree));
+    freeMapped(KERNEL_PARAMS_START, KERNEL_PARAMS_SIZE);
+
+    // NOTE: from here, everything is initialized
 
     KFLUSH_AFTER { KLOG(STRING("ITS WEDNESDAY MY DUDES\n")); }
 

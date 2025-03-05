@@ -326,6 +326,10 @@ void initPhysicalMemoryManager(KernelMemory kernelMemory) {
     freePhysicalPages(freeMemoryArray, BASE_PAGE);
     freePhysicalPage(freeMemoryHolder, BASE_PAGE);
 
+    freePhysicalPage((PagedMemory){.start = (U64)kernelMemory.memory.buf,
+                                   .numberOfPages = kernelMemory.pages},
+                     BASE_PAGE);
+
     initPMM(LARGE_PAGE);
     initPMM(HUGE_PAGE);
 }
