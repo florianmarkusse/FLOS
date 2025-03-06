@@ -1,3 +1,6 @@
+- Fix weird BIOP protocol stuff?
+- Look into what actually requires mapping because there is no way we need to identity map all available RAM
+  - Reduce os-loader bump capacity, its now at 64 MiB ...
 - Remove MemoryDescriptor import from kernel
   - Also MEMORY_ACPI etc.
 - Figure out what to do with memory allocation & mapping in os-loader

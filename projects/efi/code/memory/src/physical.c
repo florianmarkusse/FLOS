@@ -7,6 +7,7 @@
 #include "efi/firmware/base.h"
 #include "efi/firmware/system.h"
 #include "efi/globals.h"
+#include "shared/log.h"
 #include "shared/text/string.h"
 #include "shared/types/types.h"
 
@@ -19,7 +20,7 @@ void initBumpAllocator() {
         &bumpStartingAddress);
 
     EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING("Could now initialize bump allocator"));
+        ERROR(STRING("Could not initialize bump allocator"));
     }
 }
 
@@ -39,3 +40,5 @@ U64 allocate4KiBPages(U64 numPages) {
 
     return address;
 }
+
+void freeBumpPages(U64 numPages) { bumpFreePages += numPages; }

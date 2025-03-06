@@ -7,6 +7,7 @@
 #include "efi/firmware/system.h"
 #include "efi/globals.h"
 #include "efi/memory.h"
+#include "shared/log.h"
 #include "shared/maths/maths.h"
 #include "shared/text/string.h"
 

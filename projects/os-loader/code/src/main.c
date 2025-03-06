@@ -61,8 +61,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(kernelFile.lbaStart, NEWLINE);
     }
 
-    string kernelContent =
-        readDiskLbasFromEfiImage(kernelFile.lbaStart, kernelFile.bytes);
+    string kernelContent = readDiskLbasFromCurrentGlobalImage(
+        kernelFile.lbaStart, kernelFile.bytes);
 
     KFLUSH_AFTER {
         INFO(STRING("Read kernel content, at memory location:"));
