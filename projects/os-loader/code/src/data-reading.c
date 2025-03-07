@@ -1,70 +1,58 @@
 #include "os-loader/data-reading.h"
 
 #include "abstraction/log.h"
-#include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/physical/allocation.h"
 #include "efi-to-kernel/generated/kernel-magic.h"
-#include "efi-to-kernel/memory/descriptor.h"
 #include "efi/error.h"
-#include "efi/firmware/base.h"               // for ERROR, Handle
-#include "efi/firmware/block-io.h"           // for BLOCK_IO_PROTOCOL...
+#include "efi/firmware/base.h" // for ERROR, Handle
+#include "efi/firmware/block-io.h"
 #include "efi/firmware/file.h"               // for FileProtocol, FIL...
 #include "efi/firmware/loaded-image.h"       // for LOADED_IMAGE_PROT...
 #include "efi/firmware/simple-file-system.h" // for SIMPLE_FILE_SYSTE...
 #include "efi/firmware/system.h"             // for OPEN_PROTOCOL_BY_...
 #include "efi/globals.h"                     // for globals
 #include "efi/memory.h"
-#include "shared/log.h"
-#include "shared/macros.h"
 #include "shared/maths/maths.h"
 
-typedef struct {
-    Handle toClose;
+static string checkBIOP(Handle handle, U32 mediaIDFromLoadedImage,
+                        U64 startingLBA, U64 bytes) {
+    string result;
+    result.len = 0;
     BlockIoProtocol *biop;
-} FetchedBlockProtocol;
 
-static FetchedBlockProtocol getBlockIOProtocolWithMediaID(U32 mediaID) {
-    USize num_handles = 0;
-    Handle *handle_buffer = nullptr;
-    Status status = globals.st->boot_services->locate_handle_buffer(
-        BY_PROTOCOL, &BLOCK_IO_PROTOCOL_GUID, nullptr, &num_handles,
-        &handle_buffer);
+    Status status = globals.st->boot_services->open_protocol(
+        handle, &BLOCK_IO_PROTOCOL_GUID, (void **)&biop, globals.h, nullptr,
+        OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
     EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING("Could not locate any Block IO Protocols.\n"));
+        ERROR(STRING("Could not Open Block IO protocol on handle\n"));
     }
 
-    BlockIoProtocol *biop;
-    for (USize i = 0; i < num_handles; i++) {
-        status = globals.st->boot_services->open_protocol(
-            handle_buffer[i], &BLOCK_IO_PROTOCOL_GUID, (void **)&biop,
-            globals.h, nullptr, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-        EXIT_WITH_MESSAGE_IF(status) {
-            ERROR(STRING("Could not Open Block IO protocol on handle\n"));
+    U64 alignedBytes = ALIGN_UP_VALUE(bytes, biop->media->blockSize);
+
+    if (biop->media->mediaID == mediaIDFromLoadedImage) {
+        U64 pagesForKernel = CEILING_DIV_VALUE(alignedBytes, UEFI_PAGE_SIZE);
+
+        PhysicalAddress address = allocate4KiBPages(pagesForKernel);
+        status =
+            biop->readBlocks(biop, biop->media->mediaID, startingLBA,
+                             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+                             alignedBytes, (void *)address);
+        if (!(EFI_ERROR(status)) &&
+            !memcmp(KERNEL_MAGIC, (U8 *)address, COUNTOF(KERNEL_MAGIC))) {
+            result = (string){.buf = (U8 *)address, .len = alignedBytes};
+        } else {
+            freeBumpPages(pagesForKernel);
         }
-
-        if (biop->Media->MediaId == mediaID) {
-            status = globals.st->boot_services->free_pool(handle_buffer);
-            EXIT_WITH_MESSAGE_IF(status) {
-                ERROR(STRING("Unable to free handle buffer pool.\n"));
-            }
-            return (FetchedBlockProtocol){.toClose = handle_buffer[i],
-                                          .biop = biop
-
-            };
-        }
-
-        globals.st->boot_services->close_protocol(
-            handle_buffer[i], &BLOCK_IO_PROTOCOL_GUID, globals.h, nullptr);
     }
 
-    EXIT_WITH_MESSAGE {
-        ERROR(STRING("Could not find block IO protocol with media ID: "));
-        ERROR(mediaID, NEWLINE);
-    }
-    __builtin_unreachable();
+    // Close open protocol when done
+    globals.st->boot_services->close_protocol(handle, &BLOCK_IO_PROTOCOL_GUID,
+                                              globals.h, nullptr);
+
+    return result;
 }
 
-string readDiskLbasFromEfiImage(Lba diskLba, USize bytes) {
+string readDiskLbasFromCurrentLoadedImage(Lba diskLba, USize bytes) {
     Status status;
 
     LoadedImageProtocol *lip = nullptr;
@@ -75,49 +63,80 @@ string readDiskLbasFromEfiImage(Lba diskLba, USize bytes) {
         ERROR(STRING("Could not open Loaded Image Protocol\n"));
     }
 
-    BlockIoProtocol *efiImageBiop;
+    BlockIoProtocol *imageBiop;
     status = globals.st->boot_services->open_protocol(
-        lip->device_handle, &BLOCK_IO_PROTOCOL_GUID, (void **)&efiImageBiop,
+        lip->device_handle, &BLOCK_IO_PROTOCOL_GUID, (void **)&imageBiop,
         globals.h, nullptr, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
     EXIT_WITH_MESSAGE_IF(status) {
         ERROR(STRING(
             "Could not open Block IO Protocol for this loaded image.\n"));
     }
 
-    string data;
+    USize numberOfHandles = 0;
+    Handle *handleBuffer = nullptr;
 
-    FetchedBlockProtocol protocol =
-        getBlockIOProtocolWithMediaID(efiImageBiop->Media->MediaId);
-
-    U64 alignedBytes = ALIGN_UP_VALUE(bytes, protocol.biop->Media->BlockSize);
-    PhysicalAddress address =
-        allocate4KiBPages(CEILING_DIV_VALUE(alignedBytes, UEFI_PAGE_SIZE));
-
-    status = protocol.biop->readBlocks(
-        protocol.biop, protocol.biop->Media->MediaId, diskLba,
-        /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-        alignedBytes, (void *)address);
+    status = globals.st->boot_services->locate_handle_buffer(
+        BY_PROTOCOL, &BLOCK_IO_PROTOCOL_GUID, nullptr, &numberOfHandles,
+        &handleBuffer);
     EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING("Could not read blocks for kernel image.\n"));
+        ERROR(STRING("Could not locate any Block IO Protocols.\n"));
     }
 
-    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    data = (string){.buf = (U8 *)address, .len = alignedBytes};
+    string data;
+    data.len = 0;
 
-    if (memcmp(KERNEL_MAGIC, data.buf, COUNTOF(KERNEL_MAGIC))) {
-        EXIT_WITH_MESSAGE {
-            ERROR(STRING("Kernel did not begin with kernel magic!\n"));
-        }
+    for (U64 i = 0; data.len == 0; i++) {
+        data = checkBIOP(handleBuffer[i], imageBiop->media->mediaID, diskLba,
+                         bytes);
     }
 
+    status = globals.st->boot_services->free_pool(handleBuffer);
+    EXIT_WITH_MESSAGE_IF(status) {
+        ERROR(STRING("Could not free handle buffer.\n"));
+    }
     globals.st->boot_services->close_protocol(
-        protocol.toClose, &BLOCK_IO_PROTOCOL_GUID, globals.h, nullptr);
+        lip->device_handle, &BLOCK_IO_PROTOCOL_GUID, globals.h, nullptr);
+    EXIT_WITH_MESSAGE_IF(status) {
+        ERROR(STRING("Could not close lip block io protocol.\n"));
+    }
+    globals.st->boot_services->close_protocol(
+        globals.h, &LOADED_IMAGE_PROTOCOL_GUID, globals.h, nullptr);
+    EXIT_WITH_MESSAGE_IF(status) {
+        ERROR(STRING("Could not close lip protocol.\n"));
+    }
+
+    return data;
+}
+
+U32 getDiskImageMediaID() {
+    Status status;
+
+    // Get media ID for this disk image
+    LoadedImageProtocol *lip = nullptr;
+    status = globals.st->boot_services->open_protocol(
+        globals.h, &LOADED_IMAGE_PROTOCOL_GUID, (void **)&lip, globals.h,
+        nullptr, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+    EXIT_WITH_MESSAGE_IF(status) {
+        ERROR(STRING("Could not open Loaded Image Protocol\n"));
+    }
+
+    BlockIoProtocol *biop;
+    status = globals.st->boot_services->open_protocol(
+        lip->device_handle, &BLOCK_IO_PROTOCOL_GUID, (void **)&biop, globals.h,
+        nullptr, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+    EXIT_WITH_MESSAGE_IF(status) {
+        ERROR(STRING(
+            "Could not open Block IO Protocol for this loaded image.\n"));
+    }
+
+    U32 mediaID = biop->media->mediaID;
+
     globals.st->boot_services->close_protocol(
         lip->device_handle, &BLOCK_IO_PROTOCOL_GUID, globals.h, nullptr);
     globals.st->boot_services->close_protocol(
         globals.h, &LOADED_IMAGE_PROTOCOL_GUID, globals.h, nullptr);
 
-    return data;
+    return mediaID;
 }
 
 typedef enum { BYTE_SIZE = 0, LBA_START = 1 } DataPartitionLayout;

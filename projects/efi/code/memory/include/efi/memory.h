@@ -11,17 +11,6 @@ static constexpr auto BUMP_ALLOCATOR_PAGE_INITIAL_CAPACITY =
 extern U64 bumpStartingAddress;
 extern U64 bumpFreePages;
 
-#define ALLOCATE_WITH_ORIGIN(origin, numPages)                                 \
-    ({                                                                         \
-        KFLUSH_AFTER {                                                         \
-            INFO(STRING("Allocating "));                                       \
-            INFO(numPages);                                                    \
-            INFO(STRING(" from "));                                            \
-            INFO(origin, NEWLINE);                                             \
-        }                                                                      \
-        allocate4KiBPages(numPages);                                           \
-    })
-
 void initBumpAllocator();
 void freeBumpPages(U64 numPages);
 

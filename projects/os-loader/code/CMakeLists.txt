@@ -18,7 +18,6 @@ add_executable(
     ${PROJECT_NAME}
     "src/main.c"
     "src/data-reading.c"
-    "src/data-reading-old.c"
     "src/memory/boot-functions.c"
 )
 

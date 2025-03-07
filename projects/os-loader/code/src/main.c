@@ -61,7 +61,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(kernelFile.lbaStart, NEWLINE);
     }
 
-    string kernelContent = readDiskLbasFromCurrentGlobalImage(
+    string kernelContent = readDiskLbasFromCurrentLoadedImage(
         kernelFile.lbaStart, kernelFile.bytes);
 
     KFLUSH_AFTER {
@@ -116,23 +116,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(gop->mode->frameBufferSize, NEWLINE);
     }
 
-    KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
-    PhysicalAddress kernelParams =
-        allocAndZero(CEILING_DIV_VALUE(KERNEL_PARAMS_SIZE, UEFI_PAGE_SIZE));
-
-    mapVirtualRegion(KERNEL_PARAMS_START,
-                     (PagedMemory){.start = kernelParams,
-                                   .numberOfPages = CEILING_DIV_VALUE(
-                                       KERNEL_PARAMS_SIZE, UEFI_PAGE_SIZE)},
-                     UEFI_PAGE_SIZE);
-
-    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    KernelParameters *params = (KernelParameters *)kernelParams;
-
     KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }
-    // NOTE: It seems we are adding this stuff to the "free" memory in the
-    // kernel. We should somehow distinguish between kernel-required memory that
-    // was allocated by the efi-application and useless memory.
     PhysicalAddress stackEnd =
         allocAndZero(CEILING_DIV_VALUE(STACK_SIZE, UEFI_PAGE_SIZE));
 
@@ -151,6 +135,19 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
         INFO((void *)stackEnd, NEWLINE);
     }
+
+    KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
+    PhysicalAddress kernelParams =
+        allocAndZero(CEILING_DIV_VALUE(KERNEL_PARAMS_SIZE, UEFI_PAGE_SIZE));
+
+    mapVirtualRegion(KERNEL_PARAMS_START,
+                     (PagedMemory){.start = kernelParams,
+                                   .numberOfPages = CEILING_DIV_VALUE(
+                                       KERNEL_PARAMS_SIZE, UEFI_PAGE_SIZE)},
+                     UEFI_PAGE_SIZE);
+
+    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+    KernelParameters *params = (KernelParameters *)kernelParams;
 
     params->fb.columns = gop->mode->info->horizontalResolution;
     params->fb.rows = gop->mode->info->verticalResolution;
