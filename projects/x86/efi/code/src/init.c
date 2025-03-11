@@ -58,47 +58,64 @@ void calibrateWait() {
     cyclesPerMicroSecond = endCycles - currentCycles / CALIBRATION_MICROSECONDS;
 }
 
+// Basic CPUID leafs
+static constexpr auto BASIC_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER = 1;
+
+static constexpr auto BASIC_MAX_REQUIRED_PARAMETER =
+    BASIC_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER;
+
+// Extended CPUID leafs
+static constexpr auto EXTENDED_MAX_VALUE_PARAMETER = 0x80000000;
+static constexpr auto EXTENDED_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER =
+    EXTENDED_MAX_VALUE_PARAMETER + 1;
+
+static constexpr auto EXTENDED_MAX_REQUIRED_PARAMETER =
+    EXTENDED_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER;
+
 void initArchitecture() {
     asm volatile("cli");
 
-    U32 maxCPUID = CPUID(0).eax;
-    if (maxCPUID < 1) {
+    U32 maxBasicCPUID = CPUID(0).eax;
+    if (maxBasicCPUID < BASIC_MAX_REQUIRED_PARAMETER) {
         EXIT_WITH_MESSAGE {
-            STRING("CPU does not support CPUID of 1 and above");
+            ERROR(STRING("CPU does not support required CPUID of "));
+            ERROR(BASIC_MAX_REQUIRED_PARAMETER, NEWLINE);
         }
     }
 
-    CPUIDResult CPUInfo = CPUID(1);
-    features.ecx = CPUInfo.ecx;
-    features.edx = CPUInfo.edx;
+    CPUIDResult processorInfoAndFeatureBits = CPUID(1);
+    features.ecx = processorInfoAndFeatureBits.ecx;
+    features.edx = processorInfoAndFeatureBits.edx;
     if (!features.APIC) {
-        EXIT_WITH_MESSAGE { STRING("CPU does not support APIC"); }
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support APIC")); }
     }
 
-    U32 BSPID = CPUInfo.ebx >> 24;
+    U32 BSPID = processorInfoAndFeatureBits.ebx >> 24;
 
     if (!features.TSC) {
-        EXIT_WITH_MESSAGE { STRING("CPU does not support Time Stamp Counter"); }
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("CPU does not support Time Stamp Counter"));
+        }
     }
     KFLUSH_AFTER { INFO(STRING("Calibrating timer\n")); }
     calibrateWait();
 
     if (!features.PGE) {
         EXIT_WITH_MESSAGE {
-            STRING("CPU does not support global memory paging!");
+            ERROR(STRING("CPU does not support global memory paging!"));
         }
     }
     KFLUSH_AFTER { INFO(STRING("Enabling PGE\n")); }
     CPUEnablePGE();
 
     if (!features.FPU) {
-        EXIT_WITH_MESSAGE { STRING("CPU does not support FPU!"); }
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support FPU!")); }
     }
     KFLUSH_AFTER { INFO(STRING("Enabling FPU\n")); }
     CPUEnableFPU();
 
     if (!features.SSE) {
-        EXIT_WITH_MESSAGE { STRING("CPU does not support SSE!"); }
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support SSE!")); }
     }
     KFLUSH_AFTER {
         INFO(STRING(
@@ -107,19 +124,33 @@ void initArchitecture() {
     CPUEnableSSE();
 
     if (!features.PAT) {
-        EXIT_WITH_MESSAGE { STRING("CPU does not support PAT!"); }
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support PAT!")); }
     }
     KFLUSH_AFTER { INFO(STRING("Configuring PAT\n")); }
     CPUConfigurePAT();
 
+    U32 maxExtendedCPUID = CPUID(EXTENDED_MAX_VALUE_PARAMETER).eax;
+    if (maxExtendedCPUID < EXTENDED_MAX_REQUIRED_PARAMETER) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("CPU does not support extended CPUID of "));
+            ERROR(EXTENDED_MAX_REQUIRED_PARAMETER, NEWLINE);
+        }
+    }
+
+    CPUIDResult extendedProcessorInfoAndFeatureBits =
+        CPUID(EXTENDED_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER);
+    if (!(extendedProcessorInfoAndFeatureBits.edx & (1 << 26))) {
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support Huge Pages!")); }
+    }
+
     //   if (!features.XSAVE) {
-    //       messageAndExit(STRING("CPU does not support XSAVE!"));
+    //       messageAndExit(ERROR(STRING("CPU does not support XSAVE!")));
     //   }
     //   KFLUSH_AFTER { INFO(STRING("Enabling XSAVE\n")); }
     //   CPUEnableXSAVE();
 
     //   if (!features.AVX) {
-    //       messageAndExit(STRING("CPU does not support AVX!"));
+    //       messageAndExit(ERROR(STRING("CPU does not support AVX!")));
     //   }
     //   KFLUSH_AFTER { INFO(STRING("Enabling AVX\n")); }
     //   CPUEnableAVX();

@@ -83,7 +83,7 @@ void identityMapPhysicalMemory(U64 currentHighestAddress) {
     }
 
     KFLUSH_AFTER {
-        INFO(STRING("highest found address: "));
+        INFO(STRING("highest found address in memory: "));
         INFO((void *)currentHighestAddress, NEWLINE);
     }
 

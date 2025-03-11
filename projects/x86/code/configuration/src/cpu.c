@@ -21,15 +21,17 @@ void flushTLB() {
 
 void flushCPUCaches() { asm volatile("wbinvd" ::: "memory"); }
 
-CPUIDResult CPUID(U32 functionID) {
+CPUIDResult CPUIDWithSubleaf(U32 leaf, U32 subleaf) {
     CPUIDResult result;
     asm volatile("cpuid"
                  : "=a"(result.eax), "=b"(result.ebx), "=c"(result.ecx),
                    "=d"(result.edx)
-                 : "a"(functionID)
+                 : "a"(leaf), "c"(subleaf)
                  : "cc");
     return result;
 }
+
+CPUIDResult CPUID(U32 leaf) { return CPUIDWithSubleaf(leaf, 0); }
 
 U64 cyclesPerMicroSecond = 1;
 // 1 millionth of a second

@@ -3,7 +3,7 @@
 #include "x86/configuration/cpu.h"
 #include "x86/memory/pat.h"
 
-CPUFeatures features;
+BASICCPUFeatures features;
 
 typedef struct {
     union {

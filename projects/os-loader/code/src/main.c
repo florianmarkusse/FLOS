@@ -58,10 +58,6 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                                        kernelContent.len, UEFI_PAGE_SIZE)},
                      UEFI_PAGE_SIZE);
 
-    KFLUSH_AFTER {
-        INFO(STRING(
-            "Going to collect necessary info, then exit bootservices\n"));
-    }
     GraphicsOutputProtocol *gop = nullptr;
     Status status = globals.st->boot_services->locate_protocol(
         &GRAPHICS_OUTPUT_PROTOCOL_GUID, nullptr, (void **)&gop);
@@ -76,20 +72,18 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(gop->mode->frameBufferSize, NEWLINE);
     }
 
-    KFLUSH_AFTER { INFO(STRING("Idnetity mapping\n")); }
+    KFLUSH_AFTER { INFO(STRING("Identity mapping all memory\n")); }
     identityMapPhysicalMemory(gop->mode->frameBufferBase +
                               gop->mode->frameBufferSize);
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }
     PhysicalAddress stackEnd =
         allocAndZero(CEILING_DIV_VALUE(STACK_SIZE, UEFI_PAGE_SIZE));
-
     mapVirtualRegion(STACK_END,
                      (PagedMemory){.start = stackEnd,
                                    .numberOfPages = CEILING_DIV_VALUE(
                                        STACK_SIZE, UEFI_PAGE_SIZE)},
                      UEFI_PAGE_SIZE);
-
     KFLUSH_AFTER {
         INFO(STRING("The phyiscal stack will go down from: "));
         INFO((void *)stackEnd + STACK_SIZE, NEWLINE);
@@ -105,13 +99,11 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
     PhysicalAddress kernelParams =
         allocAndZero(CEILING_DIV_VALUE(KERNEL_PARAMS_SIZE, UEFI_PAGE_SIZE));
-
     mapVirtualRegion(KERNEL_PARAMS_START,
                      (PagedMemory){.start = kernelParams,
                                    .numberOfPages = CEILING_DIV_VALUE(
                                        KERNEL_PARAMS_SIZE, UEFI_PAGE_SIZE)},
                      UEFI_PAGE_SIZE);
-
     KFLUSH_AFTER {
         INFO(STRING("The phyiscal kernel params goes from: "));
         INFO((void *)kernelParams, NEWLINE);
