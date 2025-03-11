@@ -21,6 +21,6 @@ MemoryInfo getMemoryInfo();
 KernelMemory stubMemoryBeforeExitBootServices(MemoryInfo *memoryInfo);
 KernelMemory convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory result);
 
-void identityMapPhysicalMemory();
+void identityMapPhysicalMemory(U64 currentHighestAddress);
 
 #endif

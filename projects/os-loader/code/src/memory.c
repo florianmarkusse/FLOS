@@ -69,23 +69,27 @@ KernelMemory stubMemoryBeforeExitBootServices(MemoryInfo *memoryInfo) {
     return result;
 }
 
-void identityMapPhysicalMemory() {
+void identityMapPhysicalMemory(U64 currentHighestAddress) {
     MemoryInfo memoryInfo = getMemoryInfo();
-    U64 highestAddress = 0;
     for (USize i = 0; i < memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
          i++) {
         MemoryDescriptor *desc =
             (MemoryDescriptor *)((U8 *)memoryInfo.memoryMap +
                                  (i * memoryInfo.descriptorSize));
         if (desc->physicalStart + (desc->numberOfPages * UEFI_PAGE_SIZE) >
-            highestAddress) {
-            highestAddress = desc->physicalStart;
+            currentHighestAddress) {
+            currentHighestAddress = desc->physicalStart;
         }
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING("highest found address: "));
+        INFO((void *)currentHighestAddress, NEWLINE);
     }
 
     U64 largestPageSize = pageSizes[MEMORY_PAGE_SIZES_COUNT - 1];
     U64 numberOfRequiredPages =
-        CEILING_DIV_VALUE(highestAddress, largestPageSize);
+        CEILING_DIV_VALUE(currentHighestAddress, largestPageSize);
     mapVirtualRegion(
         0, (PagedMemory){.start = 0, .numberOfPages = numberOfRequiredPages},
         largestPageSize);

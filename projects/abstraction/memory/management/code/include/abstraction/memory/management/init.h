@@ -5,6 +5,6 @@
 #include "shared/types/types.h"
 
 void initMemoryManager(KernelMemory kernelMemory);
-void initScreenMemory(U64 screenAddress, U64 bytes);
+U64 initScreenMemory(U64 physicalScreenAddress, U64 bytes);
 
 #endif

@@ -204,7 +204,7 @@ static void initPMM(PageSize pageType) {
     ASSERT(pageType == LARGE_PAGE || pageType == HUGE_PAGE);
 
     PhysicalMemoryManager *initingManager = getMemoryManager(pageType);
-    ASSERT(initingManager->usedBasePages == 1 &&
+    ASSERT(initingManager->usedBasePages == 0 &&
            initingManager->memory.len == 0);
 
     initingManager->memory.buf =

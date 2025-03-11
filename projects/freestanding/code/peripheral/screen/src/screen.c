@@ -533,14 +533,15 @@ void initScreen(ScreenDimension dimension, Arena *perm) {
     U32 *doubleBuffer =
         NEW(perm, U32, CEILING_DIV_VALUE(dimension.size, (U32)BYTES_PER_PIXEL));
 
-    dim = (ScreenDimension){.screen = dimension.screen,
+    U64 memoryForScreen =
+        initScreenMemory((U64)dimension.screen, dimension.size);
+
+    dim = (ScreenDimension){.screen = (U32 *)memoryForScreen,
                             .backingBuffer = doubleBuffer,
                             .size = dimension.size,
                             .width = dimension.width,
                             .height = dimension.height,
                             .scanline = dimension.scanline};
-
-    initScreenMemory((U64)dim.screen, dim.size);
 
     glyphsPerLine =
         (U16)(dim.width - HORIZONTAL_PIXEL_MARGIN * 2) / (font->width);

@@ -3,6 +3,7 @@
   - Reduce os-loader bump capacity, its now at 64 MiB ...
 - Remove MemoryDescriptor import from kernel
   - Also MEMORY_ACPI etc.
+- rename memory page sizes to more explicit -- BASE_PAGE -> 4KIB_PAGE etc.
 - Remove NOLINTNEXTLINE?
 - Figure out what to do with memory allocation & mapping in os-loader
 - Fix posix tests in physical memory

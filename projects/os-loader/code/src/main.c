@@ -69,14 +69,16 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         ERROR(STRING("Could not locate locate GOP\n"));
     }
 
-    identityMapPhysicalMemory();
-
     KFLUSH_AFTER {
         INFO(STRING("The graphics buffer location is at: "));
-        INFO(gop->mode->frameBufferBase, NEWLINE);
+        INFO((void *)gop->mode->frameBufferBase, NEWLINE);
         INFO(STRING("The graphics buffer size is: "));
         INFO(gop->mode->frameBufferSize, NEWLINE);
     }
+
+    KFLUSH_AFTER { INFO(STRING("Idnetity mapping\n")); }
+    identityMapPhysicalMemory(gop->mode->frameBufferBase +
+                              gop->mode->frameBufferSize);
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }
     PhysicalAddress stackEnd =
