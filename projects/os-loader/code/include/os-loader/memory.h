@@ -21,4 +21,6 @@ MemoryInfo getMemoryInfo();
 KernelMemory stubMemoryBeforeExitBootServices(MemoryInfo *memoryInfo);
 KernelMemory convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory result);
 
+void identityMapPhysicalMemory();
+
 #endif

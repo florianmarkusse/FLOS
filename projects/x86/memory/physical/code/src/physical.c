@@ -14,9 +14,10 @@ U64 allocate4KiBPages(U64 numPages) {
     return allocContiguousPhysicalPages(numPages, BASE_PAGE);
 }
 
-PhysicalMemoryManager basePMM;
-PhysicalMemoryManager largePMM;
-PhysicalMemoryManager hugePMM;
+PhysicalMemoryManager basePMM = (PhysicalMemoryManager){.pageSize = BASE_PAGE};
+PhysicalMemoryManager largePMM =
+    (PhysicalMemoryManager){.pageSize = LARGE_PAGE};
+PhysicalMemoryManager hugePMM = (PhysicalMemoryManager){.pageSize = HUGE_PAGE};
 
 static U64 toLargerPages(U64 numberOfPages) {
     return numberOfPages / PageTableFormat.ENTRIES;
@@ -258,77 +259,20 @@ static void initPMM(PageSize pageType) {
     }
 }
 
-static PagedMemory *nextValidDescriptor(KernelMemory kernelMemory) {
-    static U64 i = 0;
-    while (i < kernelMemory.memory.len) {
-        PagedMemory *result = &kernelMemory.memory.buf[i];
-        // Always increment even if found, so the next caller wont get the same
-        // descriptor.
-        i++;
-        return result;
-    }
-
-    return nullptr;
-}
-
 // Coming into this, All the memory is identity mapped.
 // Having to do some boostrapping here with the base page frame physical
 // manager.
 void initPhysicalMemoryManager(KernelMemory kernelMemory) {
     // Reset the PMMs if they were used previously already
-    basePMM =
-        (PhysicalMemoryManager){.pageSize = BASE_PAGE, .usedBasePages = 1};
-    largePMM =
-        (PhysicalMemoryManager){.pageSize = LARGE_PAGE, .usedBasePages = 1};
-    hugePMM =
-        (PhysicalMemoryManager){.pageSize = HUGE_PAGE, .usedBasePages = 1};
+    basePMM = (PhysicalMemoryManager){.pageSize = BASE_PAGE,
+                                      .usedBasePages = (U32)CEILING_DIV_VALUE(
+                                          kernelMemory.UEFIPages, BASE_PAGE)};
+    basePMM.memory.buf = kernelMemory.memory.buf;
+    basePMM.memory.len = kernelMemory.memory.len;
+    basePMM.memory.cap = memoryEntriesInBasePages(basePMM.usedBasePages);
 
-    PagedMemory *descriptor = nextValidDescriptor(kernelMemory);
-    if (!descriptor) {
-        interruptNoMorePhysicalMemory();
-    }
-
-    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    basePMM.memory.buf = (PagedMemory *)descriptor->start;
-    basePMM.memory.cap = memoryEntriesInBasePages(1);
-    basePMM.memory.len = 0;
-    descriptor->start += PAGE_FRAME_SIZE;
-    descriptor->numberOfPages--;
-
-    if (descriptor->numberOfPages == 0) {
-        descriptor = nextValidDescriptor(kernelMemory);
-        if (!descriptor) {
-            interruptNoMorePhysicalMemory();
-        }
-    }
-
-    U64 maxCapacity = memoryEntriesInBasePages(descriptor->numberOfPages);
-    PagedMemory_a freeMemoryArray =
-        (PagedMemory_a){/* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-                        .buf = (PagedMemory *)descriptor->start,
-                        .len = 0};
-    // The memory used to store the free memory is also "free" memory
-    // after the PMM is correctly initialized.
-    PagedMemory freeMemoryHolder = (PagedMemory){
-        .start = descriptor->start, .numberOfPages = descriptor->numberOfPages};
-
-    while ((descriptor = nextValidDescriptor(kernelMemory))) {
-        if (freeMemoryArray.len >= maxCapacity) {
-            freePhysicalPages(freeMemoryArray, BASE_PAGE);
-            freeMemoryArray.len = 0;
-        }
-        freeMemoryArray.buf[freeMemoryArray.len] =
-            (PagedMemory){.start = descriptor->start,
-                          .numberOfPages = descriptor->numberOfPages};
-        freeMemoryArray.len++;
-    }
-
-    freePhysicalPages(freeMemoryArray, BASE_PAGE);
-    freePhysicalPage(freeMemoryHolder, BASE_PAGE);
-
-    freePhysicalPage((PagedMemory){.start = (U64)kernelMemory.memory.buf,
-                                   .numberOfPages = kernelMemory.pages},
-                     BASE_PAGE);
+    largePMM.usedBasePages = 0;
+    hugePMM.usedBasePages = 0;
 
     initPMM(LARGE_PAGE);
     initPMM(HUGE_PAGE);

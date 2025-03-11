@@ -1,14 +1,17 @@
-#include "os-loader/memory/boot-functions.h"
+#include "os-loader/memory.h"
 
 #include "abstraction/log.h"
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/physical/allocation.h"
+#include "abstraction/memory/virtual/converter.h"
+#include "abstraction/memory/virtual/map.h"
 #include "efi/error.h"
 #include "efi/firmware/system.h"
 #include "efi/globals.h"
 #include "efi/memory.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
+#include "shared/memory/converter.h"
 #include "shared/text/string.h"
 
 PhysicalAddress allocAndZero(USize numPages) {
@@ -54,15 +57,38 @@ KernelMemory stubMemoryBeforeExitBootServices(MemoryInfo *memoryInfo) {
 
     U64 numberOfDescriptors =
         memoryInfo->memoryMapSize / memoryInfo->descriptorSize;
-    result.pages = CEILING_DIV_VALUE(
+    result.UEFIPages = CEILING_DIV_VALUE(
         sizeof(PagedMemory) *
             (numberOfDescriptors +
              ADDITIONAL_CAPACITY_FOR_SPLITTING_MEMORY_DESCRIPTOR),
         UEFI_PAGE_SIZE);
     result.memory.len = 0;
-    result.memory.buf = (PagedMemory *)allocate4KiBPages(result.pages);
+    U64 freeMemoryDescriptorsLocation = allocate4KiBPages(result.UEFIPages);
+    result.memory.buf = (PagedMemory *)freeMemoryDescriptorsLocation;
 
     return result;
+}
+
+void identityMapPhysicalMemory() {
+    MemoryInfo memoryInfo = getMemoryInfo();
+    U64 highestAddress = 0;
+    for (USize i = 0; i < memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
+         i++) {
+        MemoryDescriptor *desc =
+            (MemoryDescriptor *)((U8 *)memoryInfo.memoryMap +
+                                 (i * memoryInfo.descriptorSize));
+        if (desc->physicalStart + (desc->numberOfPages * UEFI_PAGE_SIZE) >
+            highestAddress) {
+            highestAddress = desc->physicalStart;
+        }
+    }
+
+    U64 largestPageSize = pageSizes[MEMORY_PAGE_SIZES_COUNT - 1];
+    U64 numberOfRequiredPages =
+        CEILING_DIV_VALUE(highestAddress, largestPageSize);
+    mapVirtualRegion(
+        0, (PagedMemory){.start = 0, .numberOfPages = numberOfRequiredPages},
+        largestPageSize);
 }
 
 static bool canBeUsedByOS(MemoryType type) {

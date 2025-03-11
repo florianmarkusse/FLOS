@@ -1,5 +1,6 @@
 #include "abstraction/efi.h"
 #include "abstraction/log.h"
+#include "abstraction/memory/physical/allocation.h"
 #include "abstraction/memory/virtual/map.h"
 #include "efi-to-kernel/kernel-parameters.h"  // for KernelParameters
 #include "efi-to-kernel/memory/definitions.h" // for STACK_SIZE
@@ -12,33 +13,13 @@
 #include "efi/firmware/system.h"             // for PhysicalAddress
 #include "efi/globals.h"                     // for globals
 #include "efi/memory.h"
-#include "os-loader/data-reading.h"          // for getKernelInfo
-#include "os-loader/memory/boot-functions.h" // for mapMemoryAt
+#include "os-loader/data-reading.h" // for getKernelInfo
+#include "os-loader/memory.h"       // for mapMemoryAt
 #include "shared/log.h"
 #include "shared/maths/maths.h" // for CEILING_DIV_V...
 #include "shared/memory/management/definitions.h"
 #include "shared/text/string.h" // for CEILING_DIV_V...
 #include "shared/types/types.h" // for U64, U32, USize
-
-static void disableEFIBootServices(MemoryInfo *memoryInfo) {
-    Status status = globals.st->boot_services->exit_boot_services(
-        globals.h, memoryInfo->mapKey);
-    if (EFI_ERROR(status)) {
-        status = globals.st->boot_services->free_pages(
-            (PhysicalAddress)memoryInfo->memoryMap,
-            CEILING_DIV_VALUE(memoryInfo->memoryMapSize, UEFI_PAGE_SIZE));
-        EXIT_WITH_MESSAGE_IF(status) {
-            ERROR(STRING("Could not free allocated memory map\r\n"));
-        }
-
-        *memoryInfo = getMemoryInfo();
-        status = globals.st->boot_services->exit_boot_services(
-            globals.h, memoryInfo->mapKey);
-    }
-    EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING("could not exit boot services!\r\n"));
-    }
-}
 
 Status efi_main(Handle handle, SystemTable *systemtable) {
     globals.h = handle;
@@ -88,26 +69,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         ERROR(STRING("Could not locate locate GOP\n"));
     }
 
-    MemoryInfo memoryInfo = getMemoryInfo();
-    for (USize i = 0; i < memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
-         i++) {
-        MemoryDescriptor *desc =
-            (MemoryDescriptor *)((U8 *)memoryInfo.memoryMap +
-                                 (i * memoryInfo.descriptorSize));
-        mapVirtualRegion(desc->physicalStart,
-                         (PagedMemory){.start = (U64)desc->physicalStart,
-                                       .numberOfPages = desc->numberOfPages},
-                         UEFI_PAGE_SIZE);
-    }
-
-    mapVirtualRegion(
-        gop->mode->frameBufferBase,
-        (PagedMemory){.start = (U64)gop->mode->frameBufferBase,
-                      .numberOfPages = CEILING_DIV_VALUE(
-                          gop->mode->frameBufferSize, UEFI_PAGE_SIZE)},
-        UEFI_PAGE_SIZE);
-
-    globals.frameBufferAddress = gop->mode->frameBufferBase;
+    identityMapPhysicalMemory();
 
     KFLUSH_AFTER {
         INFO(STRING("The graphics buffer location is at: "));
@@ -120,20 +82,22 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     PhysicalAddress stackEnd =
         allocAndZero(CEILING_DIV_VALUE(STACK_SIZE, UEFI_PAGE_SIZE));
 
-    mapVirtualRegion(BOTTOM_STACK,
+    mapVirtualRegion(STACK_END,
                      (PagedMemory){.start = stackEnd,
                                    .numberOfPages = CEILING_DIV_VALUE(
                                        STACK_SIZE, UEFI_PAGE_SIZE)},
                      UEFI_PAGE_SIZE);
-    PhysicalAddress stackPointer = stackEnd + STACK_SIZE;
 
     KFLUSH_AFTER {
-        INFO(STRING("The stack will go down from: "));
-        /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-        INFO((void *)stackPointer, NEWLINE);
+        INFO(STRING("The phyiscal stack will go down from: "));
+        INFO((void *)stackEnd + STACK_SIZE, NEWLINE);
         INFO(STRING("to: "));
-        /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
         INFO((void *)stackEnd, NEWLINE);
+
+        INFO(STRING("The virtual stack will go down from: "));
+        INFO((void *)STACK_START, NEWLINE);
+        INFO(STRING("to: "));
+        INFO((void *)STACK_END, NEWLINE);
     }
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
@@ -145,6 +109,18 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                                    .numberOfPages = CEILING_DIV_VALUE(
                                        KERNEL_PARAMS_SIZE, UEFI_PAGE_SIZE)},
                      UEFI_PAGE_SIZE);
+
+    KFLUSH_AFTER {
+        INFO(STRING("The phyiscal kernel params goes from: "));
+        INFO((void *)kernelParams, NEWLINE);
+        INFO(STRING("to: "));
+        INFO((void *)kernelParams + KERNEL_PARAMS_SIZE, NEWLINE);
+
+        INFO(STRING("The virtual kernel params goes from: "));
+        INFO((void *)KERNEL_PARAMS_START, NEWLINE);
+        INFO(STRING("to: "));
+        INFO((void *)KERNEL_PARAMS_START + KERNEL_PARAMS_SIZE, NEWLINE);
+    }
 
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
     KernelParameters *params = (KernelParameters *)kernelParams;
@@ -166,16 +142,22 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                     "to the kernel.\n"));
     }
 
-    memoryInfo = getMemoryInfo();
+    MemoryInfo memoryInfo = getMemoryInfo();
     KernelMemory stub = stubMemoryBeforeExitBootServices(&memoryInfo);
 
     // NOTE: Keep this call in between the stub and the creation of available
     // memory! The stub allocates memory and logs on failure which is not
-    // possible after we have exited boot services
-    disableEFIBootServices(&memoryInfo);
+    // permissible after we have exited boot services
+    status = globals.st->boot_services->exit_boot_services(globals.h,
+                                                           memoryInfo.mapKey);
+    EXIT_WITH_MESSAGE_IF(status) {
+        ERROR(STRING("could not exit boot services!\n"));
+        ERROR(STRING("Am I running on a buggy implementation that needs to "
+                     "call exit boot services twice?\n"));
+    }
 
     params->memory = convertToKernelMemory(&memoryInfo, stub);
 
-    jumpIntoKernel(stackPointer);
+    jumpIntoKernel(STACK_START);
     return !SUCCESS;
 }

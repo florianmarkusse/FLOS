@@ -14,6 +14,7 @@ static constexpr auto KERNEL_PARAMS_START =
     (KERNEL_SPACE_END - KERNEL_PARAMS_SIZE);
 
 static constexpr auto STACK_SIZE = (1ULL << 14);
-static constexpr auto BOTTOM_STACK = (KERNEL_PARAMS_START - STACK_SIZE);
+static constexpr auto STACK_END = (KERNEL_PARAMS_START - STACK_SIZE);
+static constexpr auto STACK_START = STACK_END + STACK_SIZE;
 
 #endif

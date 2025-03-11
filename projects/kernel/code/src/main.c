@@ -24,9 +24,7 @@ __attribute__((section("kernel-start"))) int kernelmain() {
         /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
         (KernelParameters *)KERNEL_PARAMS_START;
 
-    KernelMemory kernelMemory = {.memory = kernelParameters->memory.memory,
-                                 .pages = kernelParameters->memory.pages};
-    initMemoryManager(kernelMemory);
+    initMemoryManager(kernelParameters->memory);
 
     void *initMemory = allocAndMap(INIT_MEMORY);
     Arena arena = (Arena){.curFree = initMemory,

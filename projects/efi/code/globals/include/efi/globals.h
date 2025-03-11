@@ -3,12 +3,10 @@
 
 #include "efi/firmware/base.h"   // for Handle, SystemTable
 #include "efi/firmware/system.h" // for Handle, SystemTable
-#include "shared/types/types.h"  // for U64, U32
 
 typedef struct {
     Handle h;
     SystemTable *st;
-    U64 frameBufferAddress;
 } Configuration;
 
 extern Configuration globals;

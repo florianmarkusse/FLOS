@@ -5,9 +5,6 @@
 #include "abstraction/memory/virtual/map.h"
 #include "shared/assert.h"
 #include "shared/maths/maths.h"
-#ifdef DEBUG
-#include "shared/memory/converter.h"
-#endif
 #include "shared/memory/management/definitions.h"
 #include "shared/types/types.h"
 #include "x86/memory/definitions.h"
@@ -44,7 +41,6 @@ void mapVirtualRegion(U64 virt, PagedMemory memory, PageSize pageType) {
 // caller wanted to accomplish.
 void mapVirtualRegionWithFlags(U64 virt, PagedMemory memory, U64 pageSize,
                                U64 additionalFlags) {
-    ASSERT(isValidPageSizeForArch(pageSize));
     PageSize pageType = pageSize;
     ASSERT(level4PageTable);
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);

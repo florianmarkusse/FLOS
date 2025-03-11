@@ -1,6 +1,7 @@
 #include "abstraction/log.h"
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/physical/allocation.h"
+#include "abstraction/memory/virtual/map.h"
 #include "efi-to-kernel/memory/descriptor.h"
 #include "efi/error.h"
 #include "efi/firmware/base.h"   // for PhysicalAddress
@@ -20,10 +21,24 @@
 #include "x86/memory/virtual.h"
 
 void bootstrapProcessorWork() {
+    {
+        U64 newCR3 = allocate4KiBPages(1);
+        /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+        memset((void *)newCR3, 0, BASE_PAGE);
+
+        level4PageTable = (VirtualPageTable *)newCR3;
+
+        KFLUSH_AFTER {
+            INFO(STRING("root page table memory location:"));
+            /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+            INFO((void *)level4PageTable, NEWLINE);
+        }
+    }
+
     disablePIC();
 
     gdtData = allocate4KiBPages(
-        CEILING_DIV_VALUE(3 * sizeof(PhysicalBasePage), UEFI_PAGE_SIZE));
+        CEILING_DIV_VALUE(3 * sizeof(PhysicalBasePage), BASE_PAGE));
     gdtDescriptor = prepNewGDT((PhysicalBasePage *)gdtData);
 
     // NOTE: WHY????
@@ -47,19 +62,6 @@ void calibrateWait() {
 
 void initArchitecture() {
     asm volatile("cli");
-
-    {
-        U64 newCR3 = allocate4KiBPages(1);
-        /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-        memset((void *)newCR3, 0, UEFI_PAGE_SIZE);
-        level4PageTable = (VirtualPageTable *)newCR3;
-    }
-
-    KFLUSH_AFTER {
-        INFO(STRING("root page table memory location:"));
-        /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-        INFO((void *)level4PageTable, NEWLINE);
-    }
 
     U32 maxCPUID = CPUID(0).eax;
     if (maxCPUID < 1) {

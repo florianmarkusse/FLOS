@@ -10,74 +10,61 @@
 #include "x86/memory/physical.h"
 #include "x86/memory/policy/virtual.h"
 
-void *allocAndMapExplicit(U64 numberOfPages, U64 preferredPageSizePowerOfTwo) {
-    PageSizeConversion conversion =
-        convertPreferredPageToAvailablePages(preferredPageSizePowerOfTwo);
+static U64 allocateVirtualMemory(Pages pages) {
+    U64 size = pages.numberOfPages * pages.pageSize;
+    return getVirtualMemory(size, pages.pageSize);
+}
 
-    numberOfPages *= conversion.numberOfPages;
+// NOTE: It would be weird if someone asked for 300 pages of 16 MiB, how did
+// you get to this number? I don't see why supporting this is necessary.
+static void ensureNormalNuberOfPages(U64 numberOfPages) {
     if (numberOfPages > PageTableFormat.ENTRIES) {
         interruptTooLargeAllocation();
     }
+}
+
+static void *getVirtualAndPhysicalAndMap(Pages pages) {
+    ensureNormalNuberOfPages(pages.numberOfPages);
+    U64 virtualAddress = allocateVirtualMemory(pages);
+
     PagedMemory pagedMemory[PageTableFormat.ENTRIES];
     PagedMemory_a request =
-        (PagedMemory_a){.buf = pagedMemory, .len = numberOfPages};
-
-    U64 size = conversion.pageSize * request.len;
-    U64 virtualAddress = getVirtualMemory(size, conversion.pageSize);
+        (PagedMemory_a){.buf = pagedMemory, .len = pages.numberOfPages};
     PagedMemory_a physicalAddresses =
-        allocPhysicalPages(request, conversion.pageSize);
-
+        allocPhysicalPages(request, pages.pageSize);
     U64 virtualRegion = virtualAddress;
     for (U64 i = 0; i < physicalAddresses.len; i++) {
         mapVirtualRegion(virtualRegion, physicalAddresses.buf[i],
-                         conversion.pageSize);
+                         pages.pageSize);
         virtualRegion +=
-            physicalAddresses.buf[i].numberOfPages * conversion.pageSize;
+            physicalAddresses.buf[i].numberOfPages * pages.pageSize;
     }
 
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
     return (void *)virtualAddress;
 }
 
-void *allocAndMap(U64 bytes) {
-    PageSize pageSize;
-    U64 inPages;
-    // Note that we do the final possible pageSize outside the loop.
-    for (U64 i = 0; i < MEMORY_PAGE_SIZES_COUNT - 1; i++) {
-        pageSize = pageSizes[i];
-        inPages = CEILING_DIV_VALUE(bytes, pageSize);
-
-        if (i < MEMORY_PAGE_SIZES_COUNT - 1 &&
-            inPages <= PageTableFormat.ENTRIES / 2) {
-            return allocAndMapExplicit(inPages, pageSize);
-        }
-    }
-
-    pageSize = pageSizes[MEMORY_PAGE_SIZES_COUNT - 1];
-    inPages = CEILING_DIV_VALUE(bytes, pageSize);
-
-    return allocAndMapExplicit(inPages, pageSize);
+void *allocAndMapExplicit(Pages pages) {
+    pages = convertPreferredPageToAvailablePages(pages);
+    return getVirtualAndPhysicalAndMap(pages);
 }
 
-void *allocContiguousAndMap(U64 numberOfPages,
-                            U64 preferredPageSizePowerOfTwo) {
-    PageSizeConversion conversion =
-        convertPreferredPageToAvailablePages(preferredPageSizePowerOfTwo);
-    numberOfPages *= conversion.numberOfPages;
-    if (numberOfPages > PageTableFormat.ENTRIES) {
-        interruptTooLargeAllocation();
-    }
+void *allocAndMap(U64 bytes) {
+    Pages pages = convertBytesToPagesRoundingUp(bytes);
+    return getVirtualAndPhysicalAndMap(pages);
+}
 
-    U64 size = numberOfPages * conversion.pageSize;
+void *allocContiguousAndMap(Pages pages) {
+    pages = convertPreferredPageToAvailablePages(pages);
+    ensureNormalNuberOfPages(pages.numberOfPages);
+    U64 virtualAddress = allocateVirtualMemory(pages);
 
-    U64 virtualAddress = getVirtualMemory(size, conversion.pageSize);
     U64 physicalAddress =
-        allocContiguousPhysicalPages(numberOfPages, conversion.pageSize);
-
-    mapVirtualRegion(
-        virtualAddress,
-        (PagedMemory){.numberOfPages = numberOfPages, .start = physicalAddress},
-        conversion.pageSize);
+        allocContiguousPhysicalPages(pages.numberOfPages, pages.pageSize);
+    mapVirtualRegion(virtualAddress,
+                     (PagedMemory){.numberOfPages = pages.numberOfPages,
+                                   .start = physicalAddress},
+                     pages.pageSize);
 
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
     return (void *)virtualAddress;

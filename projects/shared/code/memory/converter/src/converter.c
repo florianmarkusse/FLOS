@@ -11,28 +11,24 @@ static bool isPageSizeValid(U64 pageSize) {
 
 U64 smallestPageSize = 1 << __builtin_ctzl(AVAILABLE_PAGE_SIZES_MASK);
 
-PageSizeConversion convertPreferredPageToAvailablePages(U64 bytesPowerOfTwo) {
-    ASSERT(((bytesPowerOfTwo) & (bytesPowerOfTwo - 1)) == 0);
-    if (bytesPowerOfTwo <= smallestPageSize) {
-        return (PageSizeConversion){.numberOfPages = 1,
-                                    .pageSize = smallestPageSize};
+Pages convertPreferredPageToAvailablePages(Pages pages) {
+    ASSERT(((pages.pageSize) & (pages.pageSize - 1)) == 0);
+    if (pages.pageSize <= smallestPageSize) {
+        return (Pages){.numberOfPages = 1, .pageSize = smallestPageSize};
     }
-    PageSizeConversion result =
-        (PageSizeConversion){.numberOfPages = 1, .pageSize = bytesPowerOfTwo};
-    while (!isPageSizeValid(result.pageSize)) {
-        result.numberOfPages <<= 1;
-        result.pageSize >>= 1;
+    while (!isPageSizeValid(pages.pageSize)) {
+        pages.numberOfPages <<= 1;
+        pages.pageSize >>= 1;
     }
-    return result;
+    return pages;
 }
 
-PageSizeConversion convertBytesToPagesToMapSmartly(U64 bytes) {
+Pages convertBytesToPagesRoundingUp(U64 bytes) {
     if (bytes <= smallestPageSize) {
-        return (PageSizeConversion){.numberOfPages = 1,
-                                    .pageSize = smallestPageSize};
+        return (Pages){.numberOfPages = 1, .pageSize = smallestPageSize};
     }
 
-    PageSizeConversion result;
+    Pages result;
     for (U64 i = MEMORY_PAGE_SIZES_COUNT - 1; i != U64_MAX; i--) {
         if (pageSizes[i] / 2 <= bytes) {
             result.pageSize = pageSizes[i];

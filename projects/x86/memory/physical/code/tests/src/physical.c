@@ -20,8 +20,9 @@
 #include "x86/memory/definitions.h"
 #include "x86/memory/physical.h"
 
-static constexpr auto TOTAL_BASE_PAGES = (U64)(512 * 512 * 5);
-static constexpr auto MEMORY = (PAGE_FRAME_SIZE * TOTAL_BASE_PAGES);
+static constexpr auto TOTAL_PAGES = (U64)(512 * 512 * 5);
+static constexpr auto PAGE_SIZE_TO_USE = PAGE_FRAME_SIZE;
+static constexpr auto MEMORY = (PAGE_SIZE_TO_USE * TOTAL_PAGES);
 
 #define WITH_INIT_TEST(testString)                                             \
     resetTriggeredFaults();                                                    \
@@ -61,24 +62,19 @@ static constexpr auto MEMORY = (PAGE_FRAME_SIZE * TOTAL_BASE_PAGES);
     }
 
 static PhysicalBasePage *memoryStart = nullptr;
-MemoryDescriptor createDescriptor(MemoryType type, U64 numberOfPages,
-                                  U64 *index) {
+PagedMemory createDescriptor(U64 numberOfPages, U64 *index) {
     U64 indexToUse = *index;
 
-    *index += numberOfPages;
-    return (MemoryDescriptor){.type = type,
-                              .attribute = 0,
-                              .virtualStart = (U64)(memoryStart + indexToUse),
-                              .physicalStart = (U64)(memoryStart + indexToUse),
-                              .numberOfPages = numberOfPages};
+    *index += (numberOfPages * PAGE_SIZE_TO_USE);
+    return (PagedMemory){.start = (U64)(memoryStart + indexToUse),
+                         .numberOfPages = numberOfPages};
 }
 
-KernelMemory createKernelMemory(MemoryDescriptor *descriptors, U64 elements) {
-    KernelMemory kernelMemory = {.totalDescriptorSize =
-                                     sizeof(MemoryDescriptor) * elements,
-                                 .descriptorSize = sizeof(MemoryDescriptor),
-                                 .descriptors = descriptors};
-    return kernelMemory;
+KernelMemory createKernelMemory(PagedMemory_a descriptors) {
+    return (KernelMemory){
+        .memory = descriptors,
+        .pages = CEILING_DIV_VALUE(sizeof(PagedMemory) * descriptors.len,
+                                   (U64)PAGE_SIZE_TO_USE)};
 }
 
 void testPhysicalMemoryManagement() {
@@ -112,14 +108,12 @@ void testPhysicalMemoryManagement() {
         TEST_TOPIC(STRING("Initing")) {
             WITH_INIT_TEST(STRING("No available physical memory")) {
                 U64 index = 0;
-                MemoryDescriptor descriptors[] = {
-                    createDescriptor(RESERVED_MEMORY_TYPE, 100, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index)};
-                KernelMemory kernelMemory =
-                    createKernelMemory(descriptors, COUNTOF(descriptors));
+                PagedMemory descriptors[] = {
+                    createDescriptor(100, &index), createDescriptor(1, &index),
+                    createDescriptor(1, &index), createDescriptor(1, &index),
+                    createDescriptor(1, &index)};
+                KernelMemory kernelMemory = createKernelMemory((PagedMemory_a){
+                    .buf = descriptors, .len = COUNTOF(descriptors)});
 
                 EXPECT_SINGLE_FAULT(FAULT_NO_MORE_PHYSICAL_MEMORY);
 
@@ -132,11 +126,9 @@ void testPhysicalMemoryManagement() {
             WITH_INIT_TEST(STRING("Too little available physical memory")) {
                 U64 index = 0;
                 MemoryDescriptor descriptors[] = {
-                    createDescriptor(CONVENTIONAL_MEMORY, 2, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index)};
+                    createDescriptor(2, &index), createDescriptor(1, &index),
+                    createDescriptor(1, &index), createDescriptor(1, &index),
+                    createDescriptor(1, &index)};
                 KernelMemory kernelMemory =
                     createKernelMemory(descriptors, COUNTOF(descriptors));
 
@@ -151,11 +143,9 @@ void testPhysicalMemoryManagement() {
             WITH_INIT_TEST(STRING("Single region of 3 memory pages")) {
                 U64 index = 0;
                 MemoryDescriptor descriptors[] = {
-                    createDescriptor(CONVENTIONAL_MEMORY, 3, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index)};
+                    createDescriptor(3, &index), createDescriptor(1, &index),
+                    createDescriptor(1, &index), createDescriptor(1, &index),
+                    createDescriptor(1, &index)};
                 KernelMemory kernelMemory =
                     createKernelMemory(descriptors, COUNTOF(descriptors));
 
@@ -179,16 +169,11 @@ void testPhysicalMemoryManagement() {
             WITH_INIT_TEST(STRING("3 regions of single page memory")) {
                 U64 index = 0;
                 MemoryDescriptor descriptors[] = {
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(CONVENTIONAL_MEMORY, 1, &index),
-                    createDescriptor(CONVENTIONAL_MEMORY, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(CONVENTIONAL_MEMORY, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index),
-                    createDescriptor(RESERVED_MEMORY_TYPE, 1, &index)};
+                    createDescriptor(1, &index), createDescriptor(1, &index),
+                    createDescriptor(1, &index), createDescriptor(1, &index),
+                    createDescriptor(1, &index), createDescriptor(1, &index),
+                    createDescriptor(1, &index), createDescriptor(1, &index),
+                    createDescriptor(1, &index), createDescriptor(1, &index)};
                 KernelMemory kernelMemory =
                     createKernelMemory(descriptors, COUNTOF(descriptors));
 
@@ -212,12 +197,12 @@ void testPhysicalMemoryManagement() {
             WITH_INIT_TEST(STRING("Multiple regions of memory")) {
                 U64 index = 0;
                 MemoryDescriptor descriptors[] = {
-                    createDescriptor(CONVENTIONAL_MEMORY, 3, &index),
-                    createDescriptor(CONVENTIONAL_MEMORY, 500, &index),
-                    createDescriptor(CONVENTIONAL_MEMORY, 520, &index),
-                    createDescriptor(CONVENTIONAL_MEMORY,
+                    createDescriptor( 3, &index),
+                    createDescriptor( 500, &index),
+                    createDescriptor( 520, &index),
+                    createDescriptor(
                                      PageTableFormat.ENTRIES - 1, &index),
-                    createDescriptor(CONVENTIONAL_MEMORY, 1, &index)};
+                    createDescriptor 1, &index)};
                 KernelMemory kernelMemory =
                     createKernelMemory(descriptors, COUNTOF(descriptors));
 
@@ -243,11 +228,9 @@ void testPhysicalMemoryManagement() {
             WITH_INIT_TEST(STRING("Single-level stealing")) {
                 U64 index = 0;
                 MemoryDescriptor descriptors[] = {
-                    createDescriptor(CONVENTIONAL_MEMORY, 3, &index),
-                    createDescriptor(CONVENTIONAL_MEMORY, 500, &index),
-                    createDescriptor(CONVENTIONAL_MEMORY, 521, &index),
-                    createDescriptor(CONVENTIONAL_MEMORY,
-                                     PageTableFormat.ENTRIES * 5 + 1, &index)};
+                    createDescriptor(3, &index), createDescriptor(500, &index),
+                    createDescriptor(521, &index),
+                    createDescriptor(PageTableFormat.ENTRIES * 5 + 1, &index)};
                 KernelMemory kernelMemory =
                     createKernelMemory(descriptors, COUNTOF(descriptors));
 
@@ -303,9 +286,9 @@ void testPhysicalMemoryManagement() {
             WITH_INIT_TEST(STRING("Multi-level stealing")) {
                 U64 index = 0;
                 MemoryDescriptor descriptors[] = {
-                    createDescriptor(CONVENTIONAL_MEMORY, 3, &index),
+                    createDescriptor(3, &index),
                     createDescriptor(
-                        CONVENTIONAL_MEMORY,
+
                         PageTableFormat.ENTRIES * PageTableFormat.ENTRIES - 3,
                         &index),
                     createDescriptor(CONVENTIONAL_MEMORY,
@@ -377,11 +360,9 @@ void testPhysicalMemoryManagement() {
             WITH_INIT_TEST(STRING("Single-level stealing")) {
                 U64 index = 0;
                 MemoryDescriptor descriptors[] = {
-                    createDescriptor(CONVENTIONAL_MEMORY, 3, &index),
-                    createDescriptor(CONVENTIONAL_MEMORY, 500, &index),
-                    createDescriptor(CONVENTIONAL_MEMORY, 521, &index),
-                    createDescriptor(CONVENTIONAL_MEMORY,
-                                     PageTableFormat.ENTRIES * 5 + 1, &index)};
+                    createDescriptor(3, &index), createDescriptor(500, &index),
+                    createDescriptor(521, &index),
+                    createDescriptor(PageTableFormat.ENTRIES * 5 + 1, &index)};
                 KernelMemory kernelMemory =
                     createKernelMemory(descriptors, COUNTOF(descriptors));
 
@@ -398,9 +379,8 @@ void testPhysicalMemoryManagement() {
                 allocContiguousPhysicalPages(512 * 5, BASE_PAGE);
                 allocContiguousPhysicalPages(12, BASE_PAGE);
 
-                freePhysicalPage(
-                    (PagedMemory){.pageStart = 0, .numberOfPages = 1},
-                    BASE_PAGE);
+                freePhysicalPage((PagedMemory){.start = 0, .numberOfPages = 1},
+                                 BASE_PAGE);
 
                 allocContiguousPhysicalPages(1, BASE_PAGE);
 
@@ -416,13 +396,12 @@ void testPhysicalMemoryManagement() {
             WITH_INIT_TEST(STRING("Multi-level stealing")) {
                 U64 index = 0;
                 MemoryDescriptor descriptors[] = {
-                    createDescriptor(CONVENTIONAL_MEMORY, 3, &index),
+                    createDescriptor(3, &index),
                     createDescriptor(
-                        CONVENTIONAL_MEMORY,
+
                         PageTableFormat.ENTRIES * PageTableFormat.ENTRIES - 3,
                         &index),
-                    createDescriptor(CONVENTIONAL_MEMORY,
-                                     PageTableFormat.ENTRIES *
+                    createDescriptor(PageTableFormat.ENTRIES *
                                          PageTableFormat.ENTRIES,
                                      &index)};
                 KernelMemory kernelMemory =
@@ -454,13 +433,13 @@ void testPhysicalMemoryManagement() {
             STRING("Combining contiguous and incontiguous allocation")) {
             U64 index = 0;
             MemoryDescriptor descriptors[] = {
-                createDescriptor(CONVENTIONAL_MEMORY, 3, &index),
+                createDescriptor(3, &index),
                 createDescriptor(
-                    CONVENTIONAL_MEMORY,
+
                     PageTableFormat.ENTRIES * PageTableFormat.ENTRIES - 3,
                     &index),
                 createDescriptor(
-                    CONVENTIONAL_MEMORY,
+
                     PageTableFormat.ENTRIES * PageTableFormat.ENTRIES, &index)};
             KernelMemory kernelMemory =
                 createKernelMemory(descriptors, COUNTOF(descriptors));
@@ -486,8 +465,8 @@ void testPhysicalMemoryManagement() {
                     BASE_PAGE);
             }
 
-            freePhysicalPage(
-                (PagedMemory){.pageStart = 0, .numberOfPages = 100}, BASE_PAGE);
+            freePhysicalPage((PagedMemory){.start = 0, .numberOfPages = 100},
+                             BASE_PAGE);
 
             for (U64 i = 0; i < 100; i++) {
                 PagedMemory memoryForAddresses[1];
@@ -497,12 +476,12 @@ void testPhysicalMemoryManagement() {
             }
 
             PagedMemory freePages[] = {
-                (PagedMemory){.pageStart = 0, .numberOfPages = 1},
-                (PagedMemory){.pageStart = 0, .numberOfPages = 2},
-                (PagedMemory){.pageStart = 0, .numberOfPages = 3},
-                (PagedMemory){.pageStart = 0, .numberOfPages = 4},
-                (PagedMemory){.pageStart = 0, .numberOfPages = 5},
-                (PagedMemory){.pageStart = 0, .numberOfPages = 6}};
+                (PagedMemory){.start = 0, .numberOfPages = 1},
+                (PagedMemory){.start = 0, .numberOfPages = 2},
+                (PagedMemory){.start = 0, .numberOfPages = 3},
+                (PagedMemory){.start = 0, .numberOfPages = 4},
+                (PagedMemory){.start = 0, .numberOfPages = 5},
+                (PagedMemory){.start = 0, .numberOfPages = 6}};
             freePhysicalPages(
                 (PagedMemory_a){.buf = freePages, .len = COUNTOF(freePages)},
                 HUGE_PAGE);

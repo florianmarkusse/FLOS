@@ -1,4 +1,5 @@
 #include "x86/memory/policy/virtual.h"
+#include "abstraction/memory/management/policy.h"
 
 #include "efi-to-kernel/memory/definitions.h"
 #include "efi-to-kernel/memory/descriptor.h"

@@ -14,12 +14,7 @@ add_project("abstraction/log")
 add_project("abstraction/text/converter")
 include("${REPO_PROJECTS}/print-configuration.cmake")
 
-add_executable(
-    ${PROJECT_NAME}
-    "src/main.c"
-    "src/data-reading.c"
-    "src/memory/boot-functions.c"
-)
+add_executable(${PROJECT_NAME} "src/main.c" "src/data-reading.c" "src/memory.c")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-efi)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation)

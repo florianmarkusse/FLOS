@@ -104,7 +104,7 @@ static constexpr struct {
     U64 PAGE_DIRTY; // The CPU sets this bit when a write to this page occurs
     U64 PAGE_EXTENDED_SIZE; // Must be 0 in level 4 and 1. Created
                             // Huge/large page in level 3/2
-    U64 PAGE_GLOBAL; // Page isn’t f6lushed from caches on address space switch
+    U64 PAGE_GLOBAL; // Page isn’t flushed from caches on address space switch
                      // (PGE bit of CR4 register must be set)
     U64 PAGE_AVAILABLE_9;  // Can be used freely by the OS
     U64 PAGE_AVAILABLE_10; // Can be used freely by the OS

@@ -28,11 +28,12 @@ string ptrToString(void *data, U8_a tmp) {
 
     U64 counter = 2;
     U64 u = (U64)data;
-    for (int i = 2 * sizeof(u) - 1; i >= 0; i--) {
-        tmp.buf[counter++] = hexString[(u >> (4 * i)) & 15];
+    for (U64 i = 2 * sizeof(u) - 1; i < U64_MAX; i--) {
+        tmp.buf[counter] = hexString[(u >> (4 * i)) & 15];
+        counter++;
     }
 
-    return (string){.len = counter - 1, .buf = tmp.buf};
+    return (string){.len = counter, .buf = tmp.buf};
 }
 
 string ptrToStringDefault(void *data) {

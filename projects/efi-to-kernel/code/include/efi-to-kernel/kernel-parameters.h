@@ -14,7 +14,7 @@ typedef struct {
 
 typedef struct {
     PagedMemory_a memory;
-    U64 pages;
+    U64 UEFIPages;
 } KernelMemory;
 
 typedef struct {
