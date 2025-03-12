@@ -5,4 +5,6 @@
 
 extern VirtualPageTable *level4PageTable;
 
+U8 pageSizeToDepth(PageSize pageSize);
+
 #endif

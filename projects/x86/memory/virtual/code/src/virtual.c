@@ -11,7 +11,7 @@
 
 VirtualPageTable *level4PageTable;
 
-static U8 pageSizeToDepth(PageSize pageSize) {
+U8 pageSizeToDepth(PageSize pageSize) {
     switch (pageSize) {
     case X86_4KIB_PAGE: {
         return 4;

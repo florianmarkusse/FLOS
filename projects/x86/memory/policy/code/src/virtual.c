@@ -14,20 +14,6 @@ VirtualRegion higherHalfRegion = {.start = HIGHER_HALF_START,
 // Start is set in the init function.
 VirtualRegion lowerHalfRegion = {.start = 0, .end = LOWER_HALF_END};
 
-static U8 pageSizeToDepth(PageSize pageSize) {
-    switch (pageSize) {
-    case X86_4KIB_PAGE: {
-        return 4;
-    }
-    case X86_2MIB_PAGE: {
-        return 3;
-    }
-    default: {
-        return 2;
-    }
-    }
-}
-
 U64 getVirtualMemory(U64 size, PageSize alignValue) {
     ASSERT(size <= JUMBO_PAGE_SIZE);
     U64 alignedUpValue = ALIGN_UP_VALUE(higherHalfRegion.start, alignValue);
@@ -64,14 +50,18 @@ void initVirtualMemoryManager(KernelMemory kernelMemory) {
     level4PageTable = (VirtualPageTable *)CR3();
 }
 
-static bool isExtendedPageLevel(U8 level) { return level == 1 || level == 2; }
+static bool isExtendedPageLevel(U8 level) {
+    return level == pageSizeToDepth(X86_2MIB_PAGE) ||
+           level == pageSizeToDepth(X86_1GIB_PAGE);
+}
 
 MappedPage getMappedPage(U64 virtual) {
-    U64 pageSize = X86_512GIB_PAGE;
-    VirtualPageTable *currentTable = level4PageTable;
     MappedPage result;
     result.pageSize = X86_256TIB_PAGE;
+
     U64 *address;
+    U64 pageSize = X86_512GIB_PAGE;
+    VirtualPageTable *currentTable = level4PageTable;
     U8 totalDepth = pageSizeToDepth(availablePageSizes[0]);
     for (U8 level = 0; level < totalDepth;
          level++, pageSize /= PageTableFormat.ENTRIES) {
