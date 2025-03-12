@@ -4,7 +4,6 @@
 #include "abstraction/memory/virtual/map.h"
 #include "efi-to-kernel/kernel-parameters.h"  // for KernelParameters
 #include "efi-to-kernel/memory/definitions.h" // for STACK_SIZE
-#include "efi-to-kernel/memory/descriptor.h"  // for MemoryDescriptor
 #include "efi/acpi/rdsp.h"                    // for getRSDP, RSDP...
 #include "efi/error.h"
 #include "efi/firmware/base.h"               // for PhysicalAddress

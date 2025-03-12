@@ -1,6 +1,3 @@
-- Look into what actually requires mapping because there is no way we need to identity map all available RAM
-- Why is my home/ folder everywhere?
-  - Reduce os-loader bump capacity, its now at 64 MiB ...
 - Remove MemoryDescriptor import from kernel
   - Also MEMORY_ACPI etc.
 - rename memory page sizes to more explicit -- BASE_PAGE -> 4KIB_PAGE etc.

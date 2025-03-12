@@ -1,7 +1,6 @@
 #ifndef EFI_TO_KERNEL_KERNEL_PARAMETERS_H
 #define EFI_TO_KERNEL_KERNEL_PARAMETERS_H
 
-#include "efi-to-kernel/memory/descriptor.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/types/types.h"
 typedef struct {

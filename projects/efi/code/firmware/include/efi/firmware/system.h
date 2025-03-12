@@ -14,9 +14,9 @@
  * limited hints on some peculiarities.
  */
 
-#include "efi-to-kernel/memory/descriptor.h"
 #include "efi/acpi/configuration-table.h"
 #include "efi/firmware/base.h"
+#include "efi/firmware/memory.h"
 #include "shared/uuid.h"
 
 /*

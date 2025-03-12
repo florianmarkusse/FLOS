@@ -2,7 +2,6 @@
 
 #include "abstraction/log.h"
 #include "abstraction/memory/physical/allocation.h"
-#include "efi-to-kernel/memory/descriptor.h"
 #include "efi/error.h"
 #include "efi/firmware/base.h"
 #include "efi/firmware/system.h"

@@ -6,7 +6,7 @@
 
 static constexpr U64 UEFI_PAGE_SIZE = 1 << 12;
 static constexpr auto BUMP_ALLOCATOR_PAGE_INITIAL_CAPACITY =
-    (64 * MiB) / UEFI_PAGE_SIZE;
+    (1 * MiB) / UEFI_PAGE_SIZE;
 
 extern U64 bumpStartingAddress;
 extern U64 bumpFreePages;
