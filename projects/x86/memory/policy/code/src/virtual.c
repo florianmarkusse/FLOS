@@ -15,7 +15,7 @@ VirtualRegion higherHalfRegion = {.start = HIGHER_HALF_START,
 VirtualRegion lowerHalfRegion = {.start = 0, .end = LOWER_HALF_END};
 
 U64 getVirtualMemory(U64 size, PageSize alignValue) {
-    ASSERT(size <= JUMBO_PAGE_SIZE);
+    ASSERT(size <= X86_512GIB_PAGE);
     U64 alignedUpValue = ALIGN_UP_VALUE(higherHalfRegion.start, alignValue);
 
     ASSERT(higherHalfRegion.start <= alignedUpValue);
