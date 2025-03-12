@@ -8,49 +8,39 @@ static constexpr struct {
     U64 ENTRIES;
 } PageTableFormat = {.ENTRIES = (1ULL << 9ULL)};
 
-static constexpr auto PAGE_FRAME_SHIFT = 12ULL;
-static constexpr auto PAGE_FRAME_SIZE = (1ULL << PAGE_FRAME_SHIFT);
-static constexpr auto LARGE_PAGE_SIZE =
-    (PAGE_FRAME_SIZE * PageTableFormat.ENTRIES);
-static constexpr auto HUGE_PAGE_SIZE =
-    (LARGE_PAGE_SIZE * PageTableFormat.ENTRIES);
-static constexpr auto JUMBO_PAGE_SIZE =
-    (HUGE_PAGE_SIZE *
-     PageTableFormat.ENTRIES); // Does not exist but comes in handy. 512GiB
-static constexpr auto WUMBO_PAGE_SIZE =
-    (JUMBO_PAGE_SIZE *
-     PageTableFormat.ENTRIES); // Does not exist but comes in handy. 256TiB
-static constexpr auto PAGE_MASK = (PAGE_FRAME_SIZE - 1);
-
 #define MEMORY_PAGE_SIZES_ENUM(VARIANT)                                        \
-    VARIANT(BASE_PAGE, PAGE_FRAME_SIZE)                                        \
-    VARIANT(LARGE_PAGE, LARGE_PAGE_SIZE)                                       \
-    VARIANT(HUGE_PAGE, HUGE_PAGE_SIZE)
+    VARIANT(X86_4KIB_PAGE, (1ULL << (12 + (9 * 0))))                           \
+    VARIANT(X86_2MIB_PAGE, (1ULL << (12 + (9 * 1))))                           \
+    VARIANT(X86_1GIB_PAGE, (1ULL << (12 + (9 * 2))))
+
+// NOTE: Does not really exist in the architecture this OS is targeting.
+static constexpr auto X86_512GIB_PAGE = (1ULL << (12 + (9 * 3)));
+static constexpr auto X86_256TIB_PAGE = (1ULL << (12 + (9 * 4)));
 
 typedef enum : U64 { MEMORY_PAGE_SIZES_ENUM(ENUM_VALUES_VARIANT) } PageSize;
 static constexpr auto MEMORY_PAGE_SIZES_COUNT =
     (0 MEMORY_PAGE_SIZES_ENUM(PLUS_ONE));
 
 // NOTE: Goes from smallest to largest!!!
-extern PageSize pageSizes[MEMORY_PAGE_SIZES_COUNT];
+extern PageSize availablePageSizes[MEMORY_PAGE_SIZES_COUNT];
 
 static constexpr U64 AVAILABLE_PAGE_SIZES_MASK =
-    (PAGE_FRAME_SIZE | LARGE_PAGE_SIZE | HUGE_PAGE_SIZE);
+    (X86_4KIB_PAGE | X86_2MIB_PAGE | X86_1GIB_PAGE);
 
 typedef struct {
-    U8 data[PAGE_FRAME_SIZE];
+    U8 data[X86_4KIB_PAGE];
 } PhysicalBasePage;
 
 typedef struct {
     union {
-        U8 data[LARGE_PAGE_SIZE];
+        U8 data[X86_2MIB_PAGE];
         PhysicalBasePage basePages[PageTableFormat.ENTRIES];
     };
 } PhysicalLargePage;
 
 typedef struct {
     union {
-        U8 data[HUGE_PAGE_SIZE];
+        U8 data[X86_1GIB_PAGE];
         PhysicalBasePage
             basePages[PageTableFormat.ENTRIES * PageTableFormat.ENTRIES];
         PhysicalLargePage largePages[PageTableFormat.ENTRIES];

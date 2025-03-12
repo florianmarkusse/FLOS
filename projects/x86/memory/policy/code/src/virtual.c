@@ -16,10 +16,10 @@ VirtualRegion lowerHalfRegion = {.start = 0, .end = LOWER_HALF_END};
 
 static U8 pageSizeToDepth(PageSize pageSize) {
     switch (pageSize) {
-    case BASE_PAGE: {
+    case X86_4KIB_PAGE: {
         return 4;
     }
-    case LARGE_PAGE: {
+    case X86_2MIB_PAGE: {
         return 3;
     }
     default: {
@@ -52,8 +52,7 @@ void initVirtualMemoryManager(KernelMemory kernelMemory) {
     U64 currentHighestAddress = 0;
     for (U64 i = 0; i < kernelMemory.memory.len; i++) {
         PagedMemory paged = kernelMemory.memory.buf[i];
-        U64 highestAddress =
-            paged.start + paged.numberOfPages * PAGE_FRAME_SIZE;
+        U64 highestAddress = paged.start + paged.numberOfPages * X86_4KIB_PAGE;
 
         if (highestAddress > currentHighestAddress) {
             currentHighestAddress = highestAddress;
@@ -68,12 +67,12 @@ void initVirtualMemoryManager(KernelMemory kernelMemory) {
 static bool isExtendedPageLevel(U8 level) { return level == 1 || level == 2; }
 
 MappedPage getMappedPage(U64 virtual) {
-    U64 pageSize = JUMBO_PAGE_SIZE;
+    U64 pageSize = X86_512GIB_PAGE;
     VirtualPageTable *currentTable = level4PageTable;
     MappedPage result;
-    result.pageSize = WUMBO_PAGE_SIZE;
+    result.pageSize = X86_256TIB_PAGE;
     U64 *address;
-    U8 totalDepth = pageSizeToDepth(BASE_PAGE);
+    U8 totalDepth = pageSizeToDepth(availablePageSizes[0]);
     for (U8 level = 0; level < totalDepth;
          level++, pageSize /= PageTableFormat.ENTRIES) {
         address = &(currentTable->pages[RING_RANGE_VALUE(
@@ -88,7 +87,7 @@ MappedPage getMappedPage(U64 virtual) {
 
         currentTable =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-            (VirtualPageTable *)ALIGN_DOWN_EXP(*address, PAGE_FRAME_SHIFT);
+            (VirtualPageTable *)ALIGN_DOWN_VALUE(*address, X86_4KIB_PAGE);
     }
 
     result.entry = *(VirtualEntry *)address;

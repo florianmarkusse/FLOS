@@ -21,7 +21,7 @@
 #include "x86/memory/physical.h"
 
 static constexpr auto TOTAL_PAGES = (U64)(512 * 512 * 5);
-static constexpr auto PAGE_SIZE_TO_USE = PAGE_FRAME_SIZE;
+static constexpr auto PAGE_SIZE_TO_USE = X86_4KIB_PAGE;
 static constexpr auto MEMORY = (PAGE_SIZE_TO_USE * TOTAL_PAGES);
 
 #define WITH_INIT_TEST(testString)                                             \
@@ -102,7 +102,7 @@ void testPhysicalMemoryManagement() {
     }
 
     memoryStart = (PhysicalBasePage *)ALIGN_UP_VALUE(
-        (U64)pages, PAGE_FRAME_SIZE * 2 * PageTableFormat.ENTRIES);
+        (U64)pages, X86_4KIB_PAGE * 2 * PageTableFormat.ENTRIES);
 
     TEST_TOPIC(STRING("Physical Memory Management")) {
         TEST_TOPIC(STRING("Initing")) {
@@ -159,7 +159,7 @@ void testPhysicalMemoryManagement() {
                 allocPhysicalPages(
                     (PagedMemory_a){.buf = memoryForAddresses,
                                     .len = COUNTOF(memoryForAddresses)},
-                    BASE_PAGE);
+                    X86_4KIB_PAGE);
 
                 TEST_FAILURE {
                     appendExpectedInterrupt(FAULT_NO_MORE_PHYSICAL_MEMORY);
@@ -187,7 +187,7 @@ void testPhysicalMemoryManagement() {
                 allocPhysicalPages(
                     (PagedMemory_a){.buf = memoryForAddresses,
                                     .len = COUNTOF(memoryForAddresses)},
-                    BASE_PAGE);
+                    X86_4KIB_PAGE);
 
                 TEST_FAILURE {
                     appendExpectedInterrupt(FAULT_NO_MORE_PHYSICAL_MEMORY);
@@ -216,7 +216,7 @@ void testPhysicalMemoryManagement() {
                 allocPhysicalPages(
                     (PagedMemory_a){.buf = memoryForAddresses,
                                     .len = COUNTOF(memoryForAddresses)},
-                    LARGE_PAGE);
+                    X86_2MIB_PAGE);
 
                 TEST_FAILURE {
                     appendExpectedInterrupt(FAULT_NO_MORE_PHYSICAL_MEMORY);
@@ -243,7 +243,7 @@ void testPhysicalMemoryManagement() {
                     allocPhysicalPages(
                         (PagedMemory_a){.buf = memoryForAddresses,
                                         .len = COUNTOF(memoryForAddresses)},
-                        LARGE_PAGE);
+                        X86_2MIB_PAGE);
                 }
 
                 for (U64 i = 0; i < 510; i++) {
@@ -251,7 +251,7 @@ void testPhysicalMemoryManagement() {
                     allocPhysicalPages(
                         (PagedMemory_a){.buf = memoryForAddresses,
                                         .len = COUNTOF(memoryForAddresses)},
-                        BASE_PAGE);
+                        X86_4KIB_PAGE);
                 }
 
                 {
@@ -259,7 +259,7 @@ void testPhysicalMemoryManagement() {
                     allocPhysicalPages(
                         (PagedMemory_a){.buf = memoryForAddresses,
                                         .len = COUNTOF(memoryForAddresses)},
-                        LARGE_PAGE);
+                        X86_2MIB_PAGE);
                 }
 
                 for (U64 i = 0; i < 511; i++) {
@@ -267,7 +267,7 @@ void testPhysicalMemoryManagement() {
                     allocPhysicalPages(
                         (PagedMemory_a){.buf = memoryForAddresses,
                                         .len = COUNTOF(memoryForAddresses)},
-                        BASE_PAGE);
+                        X86_4KIB_PAGE);
                 }
 
                 EXPECT_SINGLE_FAULT(FAULT_NO_MORE_PHYSICAL_MEMORY);
@@ -276,7 +276,7 @@ void testPhysicalMemoryManagement() {
                 allocPhysicalPages(
                     (PagedMemory_a){.buf = memoryForAddresses,
                                     .len = COUNTOF(memoryForAddresses)},
-                    BASE_PAGE);
+                    X86_4KIB_PAGE);
 
                 TEST_FAILURE {
                     appendExpectedInterrupt(FAULT_NO_MORE_PHYSICAL_MEMORY);
@@ -307,7 +307,7 @@ void testPhysicalMemoryManagement() {
                     allocPhysicalPages(
                         (PagedMemory_a){.buf = memoryForAddresses,
                                         .len = COUNTOF(memoryForAddresses)},
-                        LARGE_PAGE);
+                        X86_2MIB_PAGE);
                 }
 
                 for (U64 i = 0; i < 509; i++) {
@@ -315,7 +315,7 @@ void testPhysicalMemoryManagement() {
                     allocPhysicalPages(
                         (PagedMemory_a){.buf = memoryForAddresses,
                                         .len = COUNTOF(memoryForAddresses)},
-                        BASE_PAGE);
+                        X86_4KIB_PAGE);
                 }
 
                 for (U64 i = 0; i < 100; i++) {
@@ -323,7 +323,7 @@ void testPhysicalMemoryManagement() {
                     allocPhysicalPages(
                         (PagedMemory_a){.buf = memoryForAddresses,
                                         .len = COUNTOF(memoryForAddresses)},
-                        BASE_PAGE);
+                        X86_4KIB_PAGE);
                 }
 
                 for (U64 i = 0; i < 511; i++) {
@@ -331,7 +331,7 @@ void testPhysicalMemoryManagement() {
                     allocPhysicalPages(
                         (PagedMemory_a){.buf = memoryForAddresses,
                                         .len = COUNTOF(memoryForAddresses)},
-                        LARGE_PAGE);
+                        X86_2MIB_PAGE);
                 }
 
                 for (U64 i = 0; i < 412; i++) {
@@ -339,7 +339,7 @@ void testPhysicalMemoryManagement() {
                     allocPhysicalPages(
                         (PagedMemory_a){.buf = memoryForAddresses,
                                         .len = COUNTOF(memoryForAddresses)},
-                        BASE_PAGE);
+                        X86_4KIB_PAGE);
                 }
 
                 EXPECT_SINGLE_FAULT(FAULT_NO_MORE_PHYSICAL_MEMORY);
@@ -348,7 +348,7 @@ void testPhysicalMemoryManagement() {
                 allocPhysicalPages(
                     (PagedMemory_a){.buf = memoryForAddresses,
                                     .len = COUNTOF(memoryForAddresses)},
-                    HUGE_PAGE);
+                    X86_1GIB_PAGE);
 
                 TEST_FAILURE {
                     appendExpectedInterrupt(FAULT_NO_MORE_PHYSICAL_MEMORY);
@@ -370,23 +370,23 @@ void testPhysicalMemoryManagement() {
 
                 initPhysicalMemoryManager(kernelMemory);
 
-                allocContiguousPhysicalPages(498, BASE_PAGE);
-                allocContiguousPhysicalPages(9, BASE_PAGE);
-                allocContiguousPhysicalPages(2, BASE_PAGE);
-                allocContiguousPhysicalPages(1, BASE_PAGE);
+                allocContiguousPhysicalPages(498, X86_4KIB_PAGE);
+                allocContiguousPhysicalPages(9, X86_4KIB_PAGE);
+                allocContiguousPhysicalPages(2, X86_4KIB_PAGE);
+                allocContiguousPhysicalPages(1, X86_4KIB_PAGE);
 
-                allocContiguousPhysicalPages(500, BASE_PAGE);
-                allocContiguousPhysicalPages(512 * 5, BASE_PAGE);
-                allocContiguousPhysicalPages(12, BASE_PAGE);
+                allocContiguousPhysicalPages(500, X86_4KIB_PAGE);
+                allocContiguousPhysicalPages(512 * 5, X86_4KIB_PAGE);
+                allocContiguousPhysicalPages(12, X86_4KIB_PAGE);
 
                 freePhysicalPage((PagedMemory){.start = 0, .numberOfPages = 1},
-                                 BASE_PAGE);
+                                 X86_4KIB_PAGE);
 
-                allocContiguousPhysicalPages(1, BASE_PAGE);
+                allocContiguousPhysicalPages(1, X86_4KIB_PAGE);
 
                 EXPECT_SINGLE_FAULT(FAULT_NO_MORE_PHYSICAL_MEMORY);
 
-                allocContiguousPhysicalPages(1, BASE_PAGE);
+                allocContiguousPhysicalPages(1, X86_4KIB_PAGE);
 
                 TEST_FAILURE {
                     appendExpectedInterrupt(FAULT_NO_MORE_PHYSICAL_MEMORY);
@@ -411,17 +411,17 @@ void testPhysicalMemoryManagement() {
 
                 initPhysicalMemoryManager(kernelMemory);
 
-                allocContiguousPhysicalPages(511, LARGE_PAGE);
-                allocContiguousPhysicalPages(507, BASE_PAGE);
-                allocContiguousPhysicalPages(2, BASE_PAGE);
+                allocContiguousPhysicalPages(511, X86_2MIB_PAGE);
+                allocContiguousPhysicalPages(507, X86_4KIB_PAGE);
+                allocContiguousPhysicalPages(2, X86_4KIB_PAGE);
 
                 allocContiguousPhysicalPages(PageTableFormat.ENTRIES *
                                                  PageTableFormat.ENTRIES,
-                                             BASE_PAGE);
+                                             X86_4KIB_PAGE);
 
                 EXPECT_SINGLE_FAULT(FAULT_NO_MORE_PHYSICAL_MEMORY);
 
-                allocContiguousPhysicalPages(1, BASE_PAGE);
+                allocContiguousPhysicalPages(1, X86_4KIB_PAGE);
 
                 TEST_FAILURE {
                     appendExpectedInterrupt(FAULT_NO_MORE_PHYSICAL_MEMORY);
@@ -448,31 +448,31 @@ void testPhysicalMemoryManagement() {
 
             initPhysicalMemoryManager(kernelMemory);
 
-            allocContiguousPhysicalPages(511, LARGE_PAGE);
+            allocContiguousPhysicalPages(511, X86_2MIB_PAGE);
 
             for (U64 i = 0; i < 64; i++) {
                 PagedMemory memoryForAddresses[8];
                 allocPhysicalPages(
                     (PagedMemory_a){.buf = memoryForAddresses,
                                     .len = COUNTOF(memoryForAddresses)},
-                    LARGE_PAGE);
+                    X86_2MIB_PAGE);
             }
 
             for (U64 i = 0; i < 509; i++) {
                 PagedMemory memoryForAddresses[1];
                 allocPhysicalPages(
                     (PagedMemory_a){.buf = memoryForAddresses, .len = 1},
-                    BASE_PAGE);
+                    X86_4KIB_PAGE);
             }
 
             freePhysicalPage((PagedMemory){.start = 0, .numberOfPages = 100},
-                             BASE_PAGE);
+                             X86_4KIB_PAGE);
 
             for (U64 i = 0; i < 100; i++) {
                 PagedMemory memoryForAddresses[1];
                 allocPhysicalPages(
                     (PagedMemory_a){.buf = memoryForAddresses, .len = 1},
-                    BASE_PAGE);
+                    X86_4KIB_PAGE);
             }
 
             PagedMemory freePages[] = {
@@ -484,18 +484,18 @@ void testPhysicalMemoryManagement() {
                 (PagedMemory){.start = 0, .numberOfPages = 6}};
             freePhysicalPages(
                 (PagedMemory_a){.buf = freePages, .len = COUNTOF(freePages)},
-                HUGE_PAGE);
+                X86_1GIB_PAGE);
 
             for (U64 i = 0; i < 21; i++) {
                 PagedMemory memoryForAddresses[1];
                 allocPhysicalPages(
                     (PagedMemory_a){.buf = memoryForAddresses, .len = 512},
-                    LARGE_PAGE);
+                    X86_2MIB_PAGE);
             }
 
             EXPECT_SINGLE_FAULT(FAULT_NO_MORE_PHYSICAL_MEMORY);
 
-            allocContiguousPhysicalPages(1, BASE_PAGE);
+            allocContiguousPhysicalPages(1, X86_4KIB_PAGE);
 
             TEST_FAILURE {
                 appendExpectedInterrupt(FAULT_NO_MORE_PHYSICAL_MEMORY);

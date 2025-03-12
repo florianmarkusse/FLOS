@@ -22,7 +22,7 @@ void bootstrapProcessorWork() {
     {
         U64 newCR3 = allocate4KiBPages(1);
         /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-        memset((void *)newCR3, 0, BASE_PAGE);
+        memset((void *)newCR3, 0, X86_4KIB_PAGE);
 
         level4PageTable = (VirtualPageTable *)newCR3;
 
@@ -36,7 +36,7 @@ void bootstrapProcessorWork() {
     disablePIC();
 
     gdtData = allocate4KiBPages(
-        CEILING_DIV_VALUE(3 * sizeof(PhysicalBasePage), BASE_PAGE));
+        CEILING_DIV_VALUE(3 * sizeof(PhysicalBasePage), X86_4KIB_PAGE));
     gdtDescriptor = prepNewGDT((PhysicalBasePage *)gdtData);
 
     // NOTE: WHY????

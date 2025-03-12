@@ -87,7 +87,7 @@ void identityMapPhysicalMemory(U64 currentHighestAddress) {
         INFO((void *)currentHighestAddress, NEWLINE);
     }
 
-    U64 largestPageSize = pageSizes[MEMORY_PAGE_SIZES_COUNT - 1];
+    U64 largestPageSize = availablePageSizes[MEMORY_PAGE_SIZES_COUNT - 1];
     U64 numberOfRequiredPages =
         CEILING_DIV_VALUE(currentHighestAddress, largestPageSize);
     mapVirtualRegion(

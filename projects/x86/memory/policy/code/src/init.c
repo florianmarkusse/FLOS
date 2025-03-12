@@ -17,9 +17,9 @@ void initMemoryManager(KernelMemory kernelMemory) {
 U64 initScreenMemory(U64 physicalScreenAddress, U64 bytes) {
     PagedMemory pagedMemory = {.start = physicalScreenAddress,
                                .numberOfPages =
-                                   CEILING_DIV_VALUE(bytes, LARGE_PAGE)};
-    U64 virtualMemory = getVirtualMemory(bytes, LARGE_PAGE);
-    mapVirtualRegionWithFlags(virtualMemory, pagedMemory, LARGE_PAGE,
+                                   CEILING_DIV_VALUE(bytes, X86_2MIB_PAGE)};
+    U64 virtualMemory = getVirtualMemory(bytes, X86_2MIB_PAGE);
+    mapVirtualRegionWithFlags(virtualMemory, pagedMemory, X86_2MIB_PAGE,
                               PATMapping.MAP_3);
     flushCPUCaches();
 

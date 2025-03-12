@@ -9,10 +9,10 @@
 
 static string pageSizeToString(PageSize pageSize) {
     switch (pageSize) {
-    case BASE_PAGE: {
+    case X86_4KIB_PAGE: {
         return STRING("Base page frame, 4KiB");
     }
-    case LARGE_PAGE: {
+    case X86_2MIB_PAGE: {
         return STRING("Large page, 2MiB");
     }
     default: {

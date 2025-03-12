@@ -30,8 +30,8 @@ Pages convertBytesToPagesRoundingUp(U64 bytes) {
 
     Pages result;
     for (U64 i = MEMORY_PAGE_SIZES_COUNT - 1; i != U64_MAX; i--) {
-        if (pageSizes[i] / 2 <= bytes) {
-            result.pageSize = pageSizes[i];
+        if (availablePageSizes[i] / 2 <= bytes) {
+            result.pageSize = availablePageSizes[i];
             result.numberOfPages = CEILING_DIV_VALUE(bytes, result.pageSize);
             return result;
         }
@@ -42,7 +42,7 @@ Pages convertBytesToPagesRoundingUp(U64 bytes) {
 
 bool isValidPageSizeForArch(U64 pageSize) {
     for (U64 i = 0; i < MEMORY_PAGE_SIZES_COUNT; i++) {
-        if (pageSizes[i] == pageSize) {
+        if (availablePageSizes[i] == pageSize) {
             return true;
         }
     }

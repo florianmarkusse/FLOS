@@ -10,13 +10,13 @@
 
 // NOTE: This is for an abstraction used in virtual allocation.
 U64 allocate4KiBPages(U64 numPages) {
-    return allocContiguousPhysicalPages(numPages, BASE_PAGE);
+    return allocContiguousPhysicalPages(numPages, X86_4KIB_PAGE);
 }
 
-PhysicalMemoryManager basePMM = (PhysicalMemoryManager){.pageSize = BASE_PAGE};
+PhysicalMemoryManager basePMM = (PhysicalMemoryManager){.pageSize = X86_4KIB_PAGE};
 PhysicalMemoryManager largePMM =
-    (PhysicalMemoryManager){.pageSize = LARGE_PAGE};
-PhysicalMemoryManager hugePMM = (PhysicalMemoryManager){.pageSize = HUGE_PAGE};
+    (PhysicalMemoryManager){.pageSize = X86_2MIB_PAGE};
+PhysicalMemoryManager hugePMM = (PhysicalMemoryManager){.pageSize = X86_1GIB_PAGE};
 
 static U64 toLargerPages(U64 numberOfPages) {
     return numberOfPages / PageTableFormat.ENTRIES;
@@ -49,15 +49,15 @@ static void decreasePages(PhysicalMemoryManager *manager, U64 index,
 
 static PhysicalMemoryManager *getMemoryManager(PageSize pageSize) {
     switch (pageSize) {
-    case BASE_PAGE: {
+    case X86_4KIB_PAGE: {
         return &basePMM;
         break;
     }
-    case LARGE_PAGE: {
+    case X86_2MIB_PAGE: {
         return &largePMM;
         break;
     }
-    case HUGE_PAGE: {
+    case X86_1GIB_PAGE: {
         return &hugePMM;
         break;
     }
@@ -65,7 +65,7 @@ static PhysicalMemoryManager *getMemoryManager(PageSize pageSize) {
 }
 
 static U64 memoryEntriesInBasePages(U64 num) {
-    return (PAGE_FRAME_SIZE * (num)) / sizeof(PagedMemory);
+    return (X86_4KIB_PAGE * (num)) / sizeof(PagedMemory);
 }
 
 // NOTE: We can add an index on top of the pages if this function becomes an
@@ -81,7 +81,7 @@ allocContiguousPhysicalPagesWithManager(U64 numberOfPages,
         }
     }
 
-    if (manager->pageSize < HUGE_PAGE) {
+    if (manager->pageSize < X86_1GIB_PAGE) {
         U64 pagesForLargerManager =
             CEILING_DIV_VALUE(numberOfPages, PageTableFormat.ENTRIES);
         U64 address = allocContiguousPhysicalPages(
@@ -129,7 +129,7 @@ allocPhysicalPagesWithManager(PagedMemory_a pages,
         requestedPages -= manager->memory.buf[i].numberOfPages;
     }
 
-    if (manager->pageSize < HUGE_PAGE) {
+    if (manager->pageSize < X86_1GIB_PAGE) {
         // Convert to larger manager request
         // Can slyly use the leftover buffer as it is assumed that it is at
         // least big enough for the smaller buffer so definitely true for the
@@ -200,7 +200,7 @@ void freePhysicalPage(PagedMemory page, PageSize pageSize) {
 }
 
 static void initPMM(PageSize pageType) {
-    ASSERT(pageType == LARGE_PAGE || pageType == HUGE_PAGE);
+    ASSERT(pageType == X86_2MIB_PAGE || pageType == X86_1GIB_PAGE);
 
     PhysicalMemoryManager *initingManager = getMemoryManager(pageType);
     ASSERT(initingManager->usedBasePages == 0 &&
@@ -263,9 +263,9 @@ static void initPMM(PageSize pageType) {
 // manager.
 void initPhysicalMemoryManager(KernelMemory kernelMemory) {
     // Reset the PMMs if they were used previously already
-    basePMM = (PhysicalMemoryManager){.pageSize = BASE_PAGE,
+    basePMM = (PhysicalMemoryManager){.pageSize = X86_4KIB_PAGE,
                                       .usedBasePages = (U32)CEILING_DIV_VALUE(
-                                          kernelMemory.UEFIPages, BASE_PAGE)};
+                                          kernelMemory.UEFIPages, X86_4KIB_PAGE)};
     basePMM.memory.buf = kernelMemory.memory.buf;
     basePMM.memory.len = kernelMemory.memory.len;
     basePMM.memory.cap = memoryEntriesInBasePages(basePMM.usedBasePages);
@@ -273,6 +273,6 @@ void initPhysicalMemoryManager(KernelMemory kernelMemory) {
     largePMM.usedBasePages = 0;
     hugePMM.usedBasePages = 0;
 
-    initPMM(LARGE_PAGE);
-    initPMM(HUGE_PAGE);
+    initPMM(X86_2MIB_PAGE);
+    initPMM(X86_1GIB_PAGE);
 }

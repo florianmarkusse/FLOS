@@ -13,10 +13,10 @@ VirtualPageTable *level4PageTable;
 
 static U8 pageSizeToDepth(PageSize pageSize) {
     switch (pageSize) {
-    case BASE_PAGE: {
+    case X86_4KIB_PAGE: {
         return 4;
     }
-    case LARGE_PAGE: {
+    case X86_2MIB_PAGE: {
         return 3;
     }
     default: {
@@ -28,7 +28,7 @@ static U8 pageSizeToDepth(PageSize pageSize) {
 static U64 getZeroBasePage() {
     U64 address = allocate4KiBPages(1);
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    memset((void *)address, 0, PAGE_FRAME_SIZE);
+    memset((void *)address, 0, X86_4KIB_PAGE);
     return address;
 }
 
@@ -54,7 +54,7 @@ void mapVirtualRegionWithFlags(U64 virt, PagedMemory memory, U64 pageSize,
          virt += pageType, physical += pageType) {
         VirtualPageTable *currentTable = level4PageTable;
 
-        U64 pageSize = JUMBO_PAGE_SIZE;
+        U64 pageSize = X86_512GIB_PAGE;
         for (U8 i = 0; i < depth; i++, pageSize /= PageTableFormat.ENTRIES) {
             U64 *address = &(currentTable->pages[RING_RANGE_VALUE(
                 (virt / pageSize), PageTableFormat.ENTRIES)]);
@@ -63,7 +63,7 @@ void mapVirtualRegionWithFlags(U64 virt, PagedMemory memory, U64 pageSize,
                 U64 value = VirtualPageMasks.PAGE_PRESENT |
                             VirtualPageMasks.PAGE_WRITABLE | physical |
                             additionalFlags;
-                if (pageType == HUGE_PAGE || pageType == LARGE_PAGE) {
+                if (pageType == X86_2MIB_PAGE || pageType == X86_1GIB_PAGE) {
                     value |= VirtualPageMasks.PAGE_EXTENDED_SIZE;
                 }
                 *address = value;
@@ -76,7 +76,7 @@ void mapVirtualRegionWithFlags(U64 virt, PagedMemory memory, U64 pageSize,
 
             currentTable =
                 /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-                (VirtualPageTable *)ALIGN_DOWN_EXP(*address, PAGE_FRAME_SHIFT);
+                (VirtualPageTable *)ALIGN_DOWN_VALUE(*address, X86_4KIB_PAGE);
         }
     }
 }
