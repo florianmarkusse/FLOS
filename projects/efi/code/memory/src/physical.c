@@ -7,21 +7,14 @@
 #include "efi/firmware/system.h"
 #include "efi/globals.h"
 #include "shared/log.h"
+#include "shared/memory/allocator/arena.h"
 #include "shared/text/string.h"
 #include "shared/types/types.h"
 
 U64 bumpStartingAddress = 0;
-U64 bumpFreePages = BUMP_ALLOCATOR_PAGE_INITIAL_CAPACITY;
+U64 bumpFreePages = VIRTUAL_MEMORY_MAPPER_CAPACITY;
 
-void initBumpAllocator() {
-    Status status = globals.st->boot_services->allocate_pages(
-        ALLOCATE_ANY_PAGES, LOADER_DATA, BUMP_ALLOCATOR_PAGE_INITIAL_CAPACITY,
-        &bumpStartingAddress);
-
-    EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING("Could not initialize bump allocator"));
-    }
-}
+void initVirtualMemoryMapper(U64 address) { bumpStartingAddress = address; }
 
 U64 allocate4KiBPages(U64 numPages) {
     ASSERT(bumpStartingAddress);
@@ -32,9 +25,10 @@ U64 allocate4KiBPages(U64 numPages) {
         }
     }
 
-    U64 address = bumpStartingAddress +
-                  ((BUMP_ALLOCATOR_PAGE_INITIAL_CAPACITY - bumpFreePages) *
-                   UEFI_PAGE_SIZE);
+    U64 address =
+        bumpStartingAddress +
+        ((VIRTUAL_MEMORY_MAPPER_CAPACITY - bumpFreePages) * UEFI_PAGE_SIZE);
+
     bumpFreePages -= numPages;
 
     return address;

@@ -1,7 +1,7 @@
 #include "shared/allocator/pool.h"
 
-#include "shared/assert.h" // for ASSERT
 #include "shared/allocator/macros.h"
+#include "shared/assert.h" // for ASSERT
 #include "shared/manipulation/manipulation.h"
 
 void freePool(PoolAllocator *pool) {
@@ -50,7 +50,7 @@ __attribute((malloc)) void *poolAlloc(PoolAllocator *pool, U8 flags) {
         if (flags & NULLPTR_ON_FAIL) {
             return nullptr;
         }
-        __builtin_longjmp(pool->jmp_buf, 1);
+        longjmp(pool->jmp_buf, 1);
     }
 
     pool->head = pool->head->next;

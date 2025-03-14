@@ -1,0 +1,13 @@
+create_abstraction_targets(abstraction-jmp)
+
+if(${ARCHITECTURE} STREQUAL "X86")
+    if(${ENVIRONMENT} STREQUAL "EFI")
+        add_project("x86/efi")
+        abstraction_add_sources(x86-efi)
+    else()
+        add_project("x86")
+        abstraction_add_sources(x86-jmp)
+    endif()
+else()
+    message(FATAL_ERROR "Could not match ARCHITECTURE variable")
+endif()

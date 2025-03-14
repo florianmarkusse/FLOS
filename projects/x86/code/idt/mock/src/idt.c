@@ -1,4 +1,6 @@
 #include "x86/idt.h"
+
+#include "abstraction/jmp.h"
 #include "shared/types/types.h"
 #include "x86/fault.h"
 #include "x86/idt/mock.h"
@@ -11,7 +13,7 @@ void initIDT() {}
 
 void triggerFault(Fault fault) {
     triggeredFaults[fault] = true;
-    __builtin_longjmp(interruptJumper, 1);
+    longjmp(interruptJumper, 1);
 }
 
 void initIDTTest(void *long_jmp[5]) { interruptJumper = long_jmp; }

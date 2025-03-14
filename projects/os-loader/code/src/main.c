@@ -1,4 +1,5 @@
 #include "abstraction/efi.h"
+#include "abstraction/jmp.h"
 #include "abstraction/log.h"
 #include "abstraction/memory/physical/allocation.h"
 #include "abstraction/memory/virtual/map.h"
@@ -16,9 +17,25 @@
 #include "os-loader/memory.h"       // for mapMemoryAt
 #include "shared/log.h"
 #include "shared/maths/maths.h" // for CEILING_DIV_V...
+#include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/text/string.h" // for CEILING_DIV_V...
 #include "shared/types/types.h" // for U64, U32, USize
+
+static Arena initArena() {
+    void *memoryForArena = (void *)getPhysicalMemory(DYNAMIC_MEMORY_CAPACITY,
+                                                     DYNAMIC_MEMORY_ALIGNMENT);
+    Arena arena = (Arena){.curFree = memoryForArena,
+                          .beg = memoryForArena,
+                          .end = memoryForArena + DYNAMIC_MEMORY_CAPACITY};
+    if (setjmp(arena.jmp_buf)) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("Ran out of dynamic memory capacity\n"));
+        }
+    }
+
+    return arena;
+}
 
 Status efi_main(Handle handle, SystemTable *systemtable) {
     globals.h = handle;
@@ -26,131 +43,161 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     globals.st->con_out->reset(globals.st->con_out, false);
     globals.st->con_out->set_attribute(globals.st->con_out,
                                        BACKGROUND_RED | YELLOW);
-    initBumpAllocator();
 
-    initArchitecture();
-
-    KFLUSH_AFTER { INFO(STRING("Going to read kernel info\n")); }
-    DataPartitionFile kernelFile = getKernelInfo();
+    Arena arena = initArena();
+    U64 *testingMyArena = NEW(&arena, U64, 8 * UEFI_PAGE_SIZE);
 
     KFLUSH_AFTER {
-        INFO(STRING("Going to load kernel\n"));
-        INFO(STRING("\tbytes: "));
-        INFO(kernelFile.bytes, NEWLINE);
-        INFO(STRING("\tlba start: "));
-        INFO(kernelFile.lbaStart, NEWLINE);
+        INFO(STRING("I allocetd everyhtig I think.. Aernae staus"));
+        INFO((void *)arena.curFree, NEWLINE);
+        INFO((void *)arena.end, NEWLINE);
     }
 
-    string kernelContent = readDiskLbasFromCurrentLoadedImage(
-        kernelFile.lbaStart, kernelFile.bytes);
+    testingMyArena = NEW(&arena, U64, 1);
 
-    KFLUSH_AFTER {
-        INFO(STRING("Read kernel content, at memory location:"));
-        INFO(kernelContent.buf, NEWLINE);
+    EXIT_WITH_MESSAGE {
+        ERROR(STRING("Waitin here\n"));
+        ERROR(STRING("Waitin here\n"));
+        ERROR(STRING("Waitin here\n"));
     }
 
-    KFLUSH_AFTER { INFO(STRING("Attempting to map memory now\n")); }
-
-    mapVirtualRegion(KERNEL_CODE_START,
-                     (PagedMemory){.start = (U64)kernelContent.buf,
-                                   .numberOfPages = CEILING_DIV_VALUE(
-                                       kernelContent.len, UEFI_PAGE_SIZE)},
-                     UEFI_PAGE_SIZE);
-
-    GraphicsOutputProtocol *gop = nullptr;
-    Status status = globals.st->boot_services->locate_protocol(
-        &GRAPHICS_OUTPUT_PROTOCOL_GUID, nullptr, (void **)&gop);
-    EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING("Could not locate locate GOP\n"));
-    }
-
-    KFLUSH_AFTER {
-        INFO(STRING("The graphics buffer location is at: "));
-        INFO((void *)gop->mode->frameBufferBase, NEWLINE);
-        INFO(STRING("The graphics buffer size is: "));
-        INFO(gop->mode->frameBufferSize, NEWLINE);
-    }
-
-    KFLUSH_AFTER { INFO(STRING("Identity mapping all memory\n")); }
-    identityMapPhysicalMemory(gop->mode->frameBufferBase +
-                              gop->mode->frameBufferSize);
-
-    KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }
-    PhysicalAddress stackEnd =
-        allocAndZero(CEILING_DIV_VALUE(STACK_SIZE, UEFI_PAGE_SIZE));
-    mapVirtualRegion(STACK_END,
-                     (PagedMemory){.start = stackEnd,
-                                   .numberOfPages = CEILING_DIV_VALUE(
-                                       STACK_SIZE, UEFI_PAGE_SIZE)},
-                     UEFI_PAGE_SIZE);
-    KFLUSH_AFTER {
-        INFO(STRING("The phyiscal stack will go down from: "));
-        INFO((void *)stackEnd + STACK_SIZE, NEWLINE);
-        INFO(STRING("to: "));
-        INFO((void *)stackEnd, NEWLINE);
-
-        INFO(STRING("The virtual stack will go down from: "));
-        INFO((void *)STACK_START, NEWLINE);
-        INFO(STRING("to: "));
-        INFO((void *)STACK_END, NEWLINE);
-    }
-
-    KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
-    PhysicalAddress kernelParams =
-        allocAndZero(CEILING_DIV_VALUE(KERNEL_PARAMS_SIZE, UEFI_PAGE_SIZE));
-    mapVirtualRegion(KERNEL_PARAMS_START,
-                     (PagedMemory){.start = kernelParams,
-                                   .numberOfPages = CEILING_DIV_VALUE(
-                                       KERNEL_PARAMS_SIZE, UEFI_PAGE_SIZE)},
-                     UEFI_PAGE_SIZE);
-    KFLUSH_AFTER {
-        INFO(STRING("The phyiscal kernel params goes from: "));
-        INFO((void *)kernelParams, NEWLINE);
-        INFO(STRING("to: "));
-        INFO((void *)kernelParams + KERNEL_PARAMS_SIZE, NEWLINE);
-
-        INFO(STRING("The virtual kernel params goes from: "));
-        INFO((void *)KERNEL_PARAMS_START, NEWLINE);
-        INFO(STRING("to: "));
-        INFO((void *)KERNEL_PARAMS_START + KERNEL_PARAMS_SIZE, NEWLINE);
-    }
+    /*initArchitecture();*/
+    /**/
+    /*KFLUSH_AFTER { INFO(STRING("Going to read kernel info\n")); }*/
+    /*DataPartitionFile kernelFile = getKernelInfo();*/
+    /*if (kernelFile.bytes > KERNEL_CODE_SIZE) {*/
+    /*    EXIT_WITH_MESSAGE {*/
+    /*        ERROR(STRING("the size of the kernel code is too large!\n"));*/
+    /*        ERROR(STRING("Maximum allowed size: "));*/
+    /*        ERROR(KERNEL_CODE_SIZE, NEWLINE);*/
+    /*        ERROR(STRING("Current size: "));*/
+    /*        ERROR(kernelFile.bytes, NEWLINE);*/
+    /*    }*/
+    /*}*/
+    /**/
+    /*KFLUSH_AFTER { INFO(STRING("INBETWEEN\n")); }*/
+    /**/
+    /*EXIT_WITH_MESSAGE { ERROR(STRING("waiting........\n")); }*/
+    /**/
+    /*KFLUSH_AFTER {*/
+    /*    INFO(STRING("Loading kernel into memory\n"));*/
+    /*    INFO(STRING("Bytes: "));*/
+    /*    INFO(kernelFile.bytes, NEWLINE);*/
+    /*    INFO(STRING("LBA: "));*/
+    /*    INFO(kernelFile.lbaStart, NEWLINE);*/
+    /*}*/
+    /*string kernelContent = readDiskLbasFromCurrentLoadedImage(*/
+    /*    kernelFile.lbaStart, kernelFile.bytes);*/
+    /**/
+    /*KFLUSH_AFTER { INFO(STRING("Mapping kernel into location\n")); }*/
+    /*mapWithSmallestNumberOfPagesInKernelMemory(*/
+    /*    KERNEL_CODE_START, (U64)kernelContent.buf, kernelFile.bytes);*/
+    /*KFLUSH_AFTER {*/
+    /*    INFO(STRING("The phyiscal kernel goes from: "));*/
+    /*    INFO((void *)kernelContent.buf, NEWLINE);*/
+    /*    INFO(STRING("to: "));*/
+    /*    INFO((void *)(kernelContent.buf + kernelContent.len), NEWLINE);*/
+    /**/
+    /*    INFO(STRING("The virtual kernel goes from: "));*/
+    /*    INFO((void *)KERNEL_CODE_START, NEWLINE);*/
+    /*    INFO(STRING("to: "));*/
+    /*    INFO((void *)(KERNEL_CODE_START + kernelContent.len), NEWLINE);*/
+    /*}*/
+    /**/
+    /*GraphicsOutputProtocol *gop = nullptr;*/
+    /*Status status = globals.st->boot_services->locate_protocol(*/
+    /*    &GRAPHICS_OUTPUT_PROTOCOL_GUID, nullptr, (void **)&gop);*/
+    /*EXIT_WITH_MESSAGE_IF(status) {*/
+    /*    ERROR(STRING("Could not locate locate GOP\n"));*/
+    /*}*/
+    /**/
+    /*KFLUSH_AFTER {*/
+    /*    INFO(STRING("The graphics buffer location is at: "));*/
+    /*    INFO((void *)gop->mode->frameBufferBase, NEWLINE);*/
+    /*    INFO(STRING("The graphics buffer size is: "));*/
+    /*    INFO(gop->mode->frameBufferSize, NEWLINE);*/
+    /*}*/
+    /**/
+    /*KFLUSH_AFTER { INFO(STRING("Identity mapping all memory\n")); }*/
+    /*identityMapPhysicalMemory(gop->mode->frameBufferBase +*/
+    /*                          gop->mode->frameBufferSize);*/
+    /**/
+    /*KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }*/
+    /*PhysicalAddress stackStart =*/
+    /*    allocate4KiBPages(CEILING_DIV_VALUE(KERNEL_STACK_SIZE,
+     * UEFI_PAGE_SIZE));*/
+    /*mapWithSmallestNumberOfPagesInKernelMemory(KERNEL_STACK_START,
+     * stackStart,*/
+    /*                                           KERNEL_STACK_SIZE);*/
+    /*KFLUSH_AFTER {*/
+    /*    INFO(STRING("The phyiscal stack will go down from: "));*/
+    /*    INFO((void *)stackStart + KERNEL_STACK_SIZE, NEWLINE);*/
+    /*    INFO(STRING("to: "));*/
+    /*    INFO((void *)stackStart, NEWLINE);*/
+    /**/
+    /*    INFO(STRING("The virtual stack will go down from: "));*/
+    /*    INFO((void *)KERNEL_STACK_START + KERNEL_STACK_SIZE, NEWLINE);*/
+    /*    INFO(STRING("to: "));*/
+    /*    INFO((void *)KERNEL_STACK_START, NEWLINE);*/
+    /*}*/
+    /**/
+    /*KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n"));
+     * }*/
+    /*PhysicalAddress kernelParams = allocate4KiBPages(*/
+    /*    CEILING_DIV_VALUE(KERNEL_PARAMS_SIZE, UEFI_PAGE_SIZE));*/
+    /*mapWithSmallestNumberOfPagesInKernelMemory(*/
+    /*    KERNEL_PARAMS_START, kernelParams, KERNEL_PARAMS_SIZE);*/
+    /*KFLUSH_AFTER {*/
+    /*    INFO(STRING("The phyiscal kernel params goes from: "));*/
+    /*    INFO((void *)kernelParams, NEWLINE);*/
+    /*    INFO(STRING("to: "));*/
+    /*    INFO((void *)kernelParams + KERNEL_PARAMS_SIZE, NEWLINE);*/
+    /**/
+    /*    INFO(STRING("The virtual kernel params goes from: "));*/
+    /*    INFO((void *)KERNEL_PARAMS_START, NEWLINE);*/
+    /*    INFO(STRING("to: "));*/
+    /*    INFO((void *)KERNEL_PARAMS_START + KERNEL_PARAMS_SIZE, NEWLINE);*/
+    /*}*/
 
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    KernelParameters *params = (KernelParameters *)kernelParams;
-
-    params->fb.columns = gop->mode->info->horizontalResolution;
-    params->fb.rows = gop->mode->info->verticalResolution;
-    params->fb.scanline = gop->mode->info->pixelsPerScanLine;
-    params->fb.ptr = gop->mode->frameBufferBase;
-    params->fb.size = gop->mode->frameBufferSize;
-
-    RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
-                              globals.st->configuration_table);
-    if (!rsdp.rsdp) {
-        EXIT_WITH_MESSAGE { ERROR(STRING("Could not find an RSDP!\n")); }
-    }
-
-    KFLUSH_AFTER {
-        INFO(STRING("Prepared and collected all necessary information to jump "
-                    "to the kernel.\n"));
-    }
-
-    MemoryInfo memoryInfo = getMemoryInfo();
-    KernelMemory stub = stubMemoryBeforeExitBootServices(&memoryInfo);
-
-    // NOTE: Keep this call in between the stub and the creation of available
-    // memory! The stub allocates memory and logs on failure which is not
-    // permissible after we have exited boot services
-    status = globals.st->boot_services->exit_boot_services(globals.h,
-                                                           memoryInfo.mapKey);
-    EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING("could not exit boot services!\n"));
-        ERROR(STRING("Am I running on a buggy implementation that needs to "
-                     "call exit boot services twice?\n"));
-    }
-
-    params->memory = convertToKernelMemory(&memoryInfo, stub);
-
-    jumpIntoKernel(STACK_START);
-    return !SUCCESS;
+    /*KernelParameters *params = (KernelParameters *)kernelParams;*/
+    /**/
+    /*params->fb.columns = gop->mode->info->horizontalResolution;*/
+    /*params->fb.rows = gop->mode->info->verticalResolution;*/
+    /*params->fb.scanline = gop->mode->info->pixelsPerScanLine;*/
+    /*params->fb.ptr = gop->mode->frameBufferBase;*/
+    /*params->fb.size = gop->mode->frameBufferSize;*/
+    /**/
+    /*RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,*/
+    /*                          globals.st->configuration_table);*/
+    /*if (!rsdp.rsdp) {*/
+    /*    EXIT_WITH_MESSAGE { ERROR(STRING("Could not find an RSDP!\n")); }*/
+    /*}*/
+    /**/
+    /*KFLUSH_AFTER {*/
+    /*    INFO(STRING("Prepared and collected all necessary information to jump
+     * "*/
+    /*                "to the kernel.\n"));*/
+    /*}*/
+    /**/
+    /*MemoryInfo memoryInfo = getMemoryInfo();*/
+    /*KernelMemory stub = stubMemoryBeforeExitBootServices(&memoryInfo);*/
+    /**/
+    /*// NOTE: Keep this call in between the stub and the creation of
+     * available*/
+    /*// memory! The stub allocates memory and logs on failure which is not*/
+    /*// permissible after we have exited boot services*/
+    /*status = globals.st->boot_services->exit_boot_services(globals.h,*/
+    /*                                                       memoryInfo.mapKey);*/
+    /*EXIT_WITH_MESSAGE_IF(status) {*/
+    /*    ERROR(STRING("could not exit boot services!\n"));*/
+    /*    ERROR(STRING("Am I running on a buggy implementation that needs to "*/
+    /*                 "call exit boot services twice?\n"));*/
+    /*}*/
+    /**/
+    /*params->memory = convertToKernelMemory(&memoryInfo, stub);*/
+    /**/
+    /*jumpIntoKernel(KERNEL_STACK_START + KERNEL_STACK_SIZE);*/
+    /**/
+    /*__builtin_unreachable();*/
 }

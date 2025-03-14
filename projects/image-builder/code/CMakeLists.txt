@@ -7,6 +7,7 @@ add_project("posix")
 add_project("efi/uefi")
 add_project("abstraction/log")
 add_project("abstraction/memory/manipulation")
+add_project("abstraction/jmp")
 add_project("abstraction/text/converter")
 include("${REPO_PROJECTS}/print-configuration.cmake")
 
@@ -27,6 +28,7 @@ target_include_directories(
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-log)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-jmp)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-text-converter)
 

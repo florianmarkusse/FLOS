@@ -1,13 +1,14 @@
 #ifndef SHARED_MEMORY_ALLOCATOR_ARENA_H
 #define SHARED_MEMORY_ALLOCATOR_ARENA_H
 
+#include "abstraction/jmp.h"
 #include "shared/types/types.h"
 
 typedef struct {
     U8 *curFree;
     U8 *beg;
     U8 *end;
-    void **jmp_buf;
+    JumpBuffer jmp_buf;
 } Arena;
 
 __attribute((malloc, alloc_align(3))) void *alloc(Arena *a, U64 size, U64 align,

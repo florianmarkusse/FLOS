@@ -1,9 +1,9 @@
 #include "shared/hash/msi/common.h"
 
-#include "shared/types/types.h"
-#include "shared/assert.h" // for ASSERT
 #include "abstraction/memory/manipulation.h"
+#include "shared/assert.h" // for ASSERT
 #include "shared/memory/allocator/macros.h"
+#include "shared/types/types.h"
 
 /**
  * Written assuming that arena bumps up! Otherwise the middle case statement
@@ -15,7 +15,7 @@ void msi_newSet(void *setSlice, U64 size, U64 align, Arena *a) {
 
     if (replica->exp >= 31) {
         ASSERT(false);
-        __builtin_longjmp(a->jmp_buf, 1);
+        longjmp(a->jmp_buf, 1);
     }
 
     U64 cap = 1 << replica->exp;

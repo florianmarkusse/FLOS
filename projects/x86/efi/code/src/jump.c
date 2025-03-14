@@ -1,3 +1,5 @@
+#include "abstraction/efi.h"
+
 #include "efi-to-kernel/memory/definitions.h"
 #include "shared/types/types.h"
 #include "x86/efi/gdt.h"
@@ -8,21 +10,21 @@ void enableNewMemoryMapping() {
     asm volatile("mov %%rax, %%cr3" : : "a"(level4PageTable) : "memory");
 }
 
-void toKernel(U64 stackPointer) {
+void toKernel(U64 newStackPointer) {
     asm volatile("movq %0, %%rsp;"
                  "movq %%rsp, %%rbp;"
                  "cld;"
                  "pushq %1;"
                  "retq"
                  :
-                 : "r"(stackPointer), "r"(KERNEL_CODE_START)
+                 : "r"(newStackPointer), "r"(KERNEL_CODE_START)
                  : "memory");
 }
 
-void jumpIntoKernel(U64 stackPointer) {
+void jumpIntoKernel(U64 newStackPointer) {
     enableNewGDT(gdtDescriptor);
     enableNewMemoryMapping();
-    toKernel(stackPointer);
+    toKernel(newStackPointer);
 
     __builtin_unreachable();
 }

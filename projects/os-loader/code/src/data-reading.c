@@ -27,9 +27,8 @@ static string checkBIOP(Handle handle, U32 mediaIDFromLoadedImage,
         ERROR(STRING("Could not Open Block IO protocol on handle\n"));
     }
 
-    U64 alignedBytes = ALIGN_UP_VALUE(bytes, biop->media->blockSize);
-
     if (biop->media->mediaID == mediaIDFromLoadedImage) {
+        U64 alignedBytes = ALIGN_UP_VALUE(bytes, biop->media->blockSize);
         U64 pagesForKernel = CEILING_DIV_VALUE(alignedBytes, UEFI_PAGE_SIZE);
 
         PhysicalAddress address = allocate4KiBPages(pagesForKernel);

@@ -7,8 +7,12 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
 endif()
 
 add_subdirectory("efi/code")
+
 add_subdirectory("interrupts/code")
+
 add_subdirectory("log/code")
+
+add_subdirectory("jmp/code")
 
 add_subdirectory("memory/management/code")
 add_subdirectory("memory/manipulation/code")

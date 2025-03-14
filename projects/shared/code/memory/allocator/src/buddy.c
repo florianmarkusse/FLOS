@@ -185,7 +185,7 @@ __attribute((malloc)) void *buddyAlloc(BuddyAllocator *buddyAllocator, I64 size,
     if (flags & NULLPTR_ON_FAIL) {
         return nullptr;
     }
-    __builtin_longjmp(buddyAllocator->jmp_buf, 1);
+    longjmp(buddyAllocator->jmp_buf, 1);
 }
 
 void freeBuddy(BuddyAllocator *buddyAllocator, void *data) {

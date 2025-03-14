@@ -12,16 +12,27 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     add_project("efi")
     add_project("efi-to-kernel")
     add_project("abstraction/log")
+    add_project("abstraction/jmp")
     add_project("abstraction/memory/manipulation")
     add_project("abstraction/memory/physical")
     add_project("abstraction/text/converter")
+    add_project("abstraction/efi")
     include(${REPO_PROJECTS}/print-configuration.cmake)
 endif()
 
-add_library(${PROJECT_NAME} OBJECT "src/init.c" "src/jump.c" "src/gdt.c")
+add_library(
+    ${PROJECT_NAME}
+    OBJECT
+    "src/init.c"
+    "src/jump.c"
+    "src/gdt.c"
+    "src/jmp.c"
+)
 
 add_includes_for_sublibrary()
 
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-efi-i)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-jmp-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-log-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-text-converter-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation-i)

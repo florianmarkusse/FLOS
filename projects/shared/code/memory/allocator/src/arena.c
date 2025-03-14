@@ -1,4 +1,5 @@
 #include "shared/memory/allocator/arena.h"
+#include "abstraction/jmp.h"
 #include "abstraction/memory/manipulation.h"
 #include "shared/assert.h" // for ASSERT
 #include "shared/memory/allocator/macros.h"
@@ -14,7 +15,7 @@ __attribute((malloc, alloc_align(3))) void *alloc(Arena *a, U64 size, U64 align,
         if (flags & NULLPTR_ON_FAIL) {
             return nullptr;
         }
-        __builtin_longjmp(a->jmp_buf, 1);
+        longjmp(a->jmp_buf, 1);
     }
     U64 total = size * count;
     U8 *p = a->curFree + padding;

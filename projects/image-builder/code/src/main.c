@@ -7,6 +7,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "abstraction/jmp.h"
 #include "image-builder/configuration.h"
 #include "image-builder/gpt.h"
 #include "image-builder/mbr.h"
@@ -21,8 +22,7 @@
 #include "shared/text/string.h"
 #include "shared/types/types.h"
 
-void *errorHandler[5];
-
+JumpBuffer errorHandler;
 typedef struct {
     int fileDescriptor;
     U64 size;
@@ -43,7 +43,7 @@ File openFile(U8 *name) {
             PLOG(STRING("Error message: "));
             PLOG(STRING_LEN(strerror(errno), strlen(strerror(errno))), NEWLINE);
         }
-        __builtin_longjmp(errorHandler, 1);
+        longjmp(errorHandler, 1);
     }
 
     struct stat buf;
@@ -56,7 +56,7 @@ File openFile(U8 *name) {
             PLOG(STRING("Error message: "));
             PLOG(STRING_LEN(strerror(errno), strlen(strerror(errno))), NEWLINE);
         }
-        __builtin_longjmp(errorHandler, 1);
+        longjmp(errorHandler, 1);
     }
     result.size = buf.st_size;
 
@@ -76,7 +76,7 @@ int createUEFIImage() {
             U8 *errorString = strerror(errno);
             PERROR(STRING_LEN(errorString, strlen(errorString)), NEWLINE);
         }
-        __builtin_longjmp(errorHandler, 1);
+        longjmp(errorHandler, 1);
     }
 
     if (ftruncate(fileDescriptor, configuration.totalImageSizeBytes) == -1) {
@@ -88,7 +88,7 @@ int createUEFIImage() {
             U8 *errorString = strerror(errno);
             PERROR(STRING_LEN(errorString, strlen(errorString)), NEWLINE);
         }
-        __builtin_longjmp(errorHandler, 1);
+        longjmp(errorHandler, 1);
         return 1;
     }
 
@@ -104,7 +104,7 @@ int createUEFIImage() {
             U8 *errorString = strerror(errno);
             PERROR(STRING_LEN(errorString, strlen(errorString)), NEWLINE);
         }
-        __builtin_longjmp(errorHandler, 1);
+        longjmp(errorHandler, 1);
         return 1;
     }
 
@@ -112,12 +112,12 @@ int createUEFIImage() {
     writeGPTs(dataBuffer);
     if (!writeEFISystemPartition(dataBuffer, efiFileInfo.fileDescriptor,
                                  efiFileInfo.size, kernelFileInfo.size)) {
-        __builtin_longjmp(errorHandler, 1);
+        longjmp(errorHandler, 1);
         return 1;
     }
     if (!writeDataPartition(dataBuffer, kernelFileInfo.fileDescriptor,
                             kernelFileInfo.size)) {
-        __builtin_longjmp(errorHandler, 1);
+        longjmp(errorHandler, 1);
         return 1;
     }
 
@@ -137,7 +137,7 @@ static U32 optimalTransferLengthGranularity = 0;
 
 int main(int argc, char **argv) {
     time_t programStartTime = time(NULL);
-    if (__builtin_setjmp(errorHandler)) {
+    if (setjmp(errorHandler)) {
         struct stat fileStat;
         if (stat(configuration.imageName, &fileStat) == -1) {
             PFLUSH_AFTER(STDERR) {
@@ -224,7 +224,7 @@ int main(int argc, char **argv) {
             PERROR(STRING_LEN(LBA_FLAG, strlen(LBA_FLAG)));
             PERROR(STRING(" <logical block size in bytes>]\n"));
         }
-        __builtin_longjmp(errorHandler, 1);
+        longjmp(errorHandler, 1);
     }
 
     efiFileInfo = openFile(efiFile);

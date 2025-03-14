@@ -9,35 +9,54 @@ static bool isPageSizeValid(U64 pageSize) {
     return pageSize & AVAILABLE_PAGE_SIZES_MASK;
 }
 
-U64 smallestPageSize = 1 << __builtin_ctzl(AVAILABLE_PAGE_SIZES_MASK);
+static U64 smallestPageSize = 1ULL
+                              << __builtin_ctzll(AVAILABLE_PAGE_SIZES_MASK);
+static U64 largestPageSize = 1ULL
+                             << (((sizeof(U64) * BITS_PER_BYTE) - 1) -
+                                 __builtin_clzll(AVAILABLE_PAGE_SIZES_MASK));
 
 Pages convertPreferredPageToAvailablePages(Pages pages) {
     ASSERT(((pages.pageSize) & (pages.pageSize - 1)) == 0);
-    if (pages.pageSize <= smallestPageSize) {
+    if (pages.pageSize < smallestPageSize) {
         return (Pages){.numberOfPages = 1, .pageSize = smallestPageSize};
     }
     while (!isPageSizeValid(pages.pageSize)) {
-        pages.numberOfPages <<= 1;
-        pages.pageSize >>= 1;
+        pages.numberOfPages *= 2;
+        pages.pageSize /= 2;
     }
     return pages;
 }
 
 Pages convertBytesToPagesRoundingUp(U64 bytes) {
-    if (bytes <= smallestPageSize) {
-        return (Pages){.numberOfPages = 1, .pageSize = smallestPageSize};
-    }
-
-    Pages result;
-    for (U64 i = MEMORY_PAGE_SIZES_COUNT - 1; i != U64_MAX; i--) {
+    // NOTE: We skip the smallest page size in this loop because the check is
+    // redundant.
+    for (U64 i = MEMORY_PAGE_SIZES_COUNT - 1; i > 0; i--) {
         if (availablePageSizes[i] / 2 <= bytes) {
+            Pages result;
             result.pageSize = availablePageSizes[i];
             result.numberOfPages = CEILING_DIV_VALUE(bytes, result.pageSize);
             return result;
         }
     }
 
-    __builtin_unreachable();
+    return (Pages){.numberOfPages = CEILING_DIV_VALUE(bytes, smallestPageSize),
+                   .pageSize = smallestPageSize};
+}
+
+Pages convertBytesToSmallestNuberOfPages(U64 bytes) {
+    // NOTE: We skip the largest page size in this loop because the check is
+    // redundant.
+    for (U64 i = 0; i < MEMORY_PAGE_SIZES_COUNT - 1; i++) {
+        if (availablePageSizes[i] >= bytes) {
+            return (Pages){.pageSize = availablePageSizes[i],
+                           .numberOfPages = 1};
+        }
+    }
+
+    Pages result;
+    result.pageSize = largestPageSize;
+    result.numberOfPages = CEILING_DIV_VALUE(bytes, result.pageSize);
+    return result;
 }
 
 bool isValidPageSizeForArch(U64 pageSize) {

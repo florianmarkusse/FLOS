@@ -26,7 +26,7 @@ static constexpr auto MEMORY = (PAGE_SIZE_TO_USE * TOTAL_PAGES);
 
 #define WITH_INIT_TEST(testString)                                             \
     resetTriggeredFaults();                                                    \
-    if (__builtin_setjmp(jmp_buf)) {                                           \
+    if (setjmp(jmp_buf)) {                                                     \
         TEST_FAILURE {                                                         \
             PLOG(                                                              \
                 STRING(                                                        \
@@ -38,7 +38,7 @@ static constexpr auto MEMORY = (PAGE_SIZE_TO_USE * TOTAL_PAGES);
     TEST(testString)
 
 #define EXPECT_NO_FAILURE                                                      \
-    if (__builtin_setjmp(jmp_buf)) {                                           \
+    if (setjmp(jmp_buf)) {                                                     \
         static bool expectedFaults[CPU_FAULT_COUNT];                           \
         TEST_FAILURE {                                                         \
             appendInterrupts(expectedFaults, getTriggeredFaults());            \
@@ -47,7 +47,7 @@ static constexpr auto MEMORY = (PAGE_SIZE_TO_USE * TOTAL_PAGES);
     }
 
 #define EXPECT_SINGLE_FAULT(expectedFault)                                     \
-    if (__builtin_setjmp(jmp_buf)) {                                           \
+    if (setjmp(jmp_buf)) {                                                     \
         static bool expectedFaults[CPU_FAULT_COUNT];                           \
         expectedFaults[expectedFault] = true;                                  \
         if (compareInterrupts(expectedFaults)) {                               \
@@ -79,7 +79,7 @@ KernelMemory createKernelMemory(PagedMemory_a descriptors) {
 
 void testPhysicalMemoryManagement() {
     void *jmp_buf[5];
-    if (__builtin_setjmp(jmp_buf)) {
+    if (setjmp(jmp_buf)) {
         TEST_FAILURE {
             PLOG(STRING("Interrupt Jumper was not set up yet!"), NEWLINE);
         }

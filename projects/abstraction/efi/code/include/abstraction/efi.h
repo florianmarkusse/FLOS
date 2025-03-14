@@ -3,6 +3,6 @@
 
 #include "shared/types/types.h"
 void initArchitecture();
-void jumpIntoKernel(U64 stackPointer);
+void jumpIntoKernel(U64 newStackPointer);
 
 #endif

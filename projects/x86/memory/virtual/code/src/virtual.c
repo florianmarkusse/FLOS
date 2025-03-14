@@ -45,10 +45,10 @@ void mapVirtualRegionWithFlags(U64 virt, PagedMemory memory, U64 pageSize,
     ASSERT(level4PageTable);
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
 
-    U8 depth = pageSizeToDepth(pageType);
-
     ASSERT(!(RING_RANGE_VALUE(virt, pageType)));
     ASSERT(!(RING_RANGE_VALUE(memory.start, pageType)));
+
+    U8 depth = pageSizeToDepth(pageType);
     U64 virtualEnd = virt + pageType * memory.numberOfPages;
     for (U64 physical = memory.start; virt < virtualEnd;
          virt += pageType, physical += pageType) {
