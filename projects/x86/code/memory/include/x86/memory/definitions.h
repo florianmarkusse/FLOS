@@ -21,6 +21,8 @@ typedef enum : U64 { MEMORY_PAGE_SIZES_ENUM(ENUM_VALUES_VARIANT) } PageSize;
 static constexpr auto MEMORY_PAGE_SIZES_COUNT =
     (0 MEMORY_PAGE_SIZES_ENUM(PLUS_ONE));
 
+static constexpr auto VIRTUAL_MEMORY_MAPPER_SIZE = X86_4KIB_PAGE;
+
 // NOTE: Goes from smallest to largest!!!
 extern PageSize availablePageSizes[MEMORY_PAGE_SIZES_COUNT];
 

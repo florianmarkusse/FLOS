@@ -7,12 +7,16 @@
 #include "efi-to-kernel/memory/definitions.h" // for STACK_SIZE
 #include "efi/acpi/rdsp.h"                    // for getRSDP, RSDP...
 #include "efi/error.h"
-#include "efi/firmware/base.h"               // for PhysicalAddress
-#include "efi/firmware/graphics-output.h"    // for GRAPHICS_OUTP...
+#include "efi/firmware/base.h" // for PhysicalAddress
+#include "efi/firmware/block-io.h"
+#include "efi/firmware/graphics-output.h" // for GRAPHICS_OUTP...
+#include "efi/firmware/simple-text-input.h"
 #include "efi/firmware/simple-text-output.h" // for SimpleTextOut...
 #include "efi/firmware/system.h"             // for PhysicalAddress
 #include "efi/globals.h"                     // for globals
-#include "efi/memory.h"
+#include "efi/memory/definitions.h"
+#include "efi/memory/physical.h"
+#include "efi/memory/virtual.h"
 #include "os-loader/data-reading.h" // for getKernelInfo
 #include "os-loader/memory.h"       // for mapMemoryAt
 #include "shared/log.h"
@@ -22,9 +26,15 @@
 #include "shared/text/string.h" // for CEILING_DIV_V...
 #include "shared/types/types.h" // for U64, U32, USize
 
-static Arena initArena() {
-    void *memoryForArena = (void *)getPhysicalMemory(DYNAMIC_MEMORY_CAPACITY,
-                                                     DYNAMIC_MEMORY_ALIGNMENT);
+Status efi_main(Handle handle, SystemTable *systemtable) {
+    globals.h = handle;
+    globals.st = systemtable;
+    globals.st->con_out->reset(globals.st->con_out, false);
+    globals.st->con_out->set_attribute(globals.st->con_out,
+                                       BACKGROUND_RED | YELLOW);
+
+    void *memoryForArena = (void *)getAlignedPhysicalMemory(
+        DYNAMIC_MEMORY_CAPACITY, DYNAMIC_MEMORY_ALIGNMENT);
     Arena arena = (Arena){.curFree = memoryForArena,
                           .beg = memoryForArena,
                           .end = memoryForArena + DYNAMIC_MEMORY_CAPACITY};
@@ -33,61 +43,44 @@ static Arena initArena() {
             ERROR(STRING("Ran out of dynamic memory capacity\n"));
         }
     }
+    initVirtualMemoryMapper(getAlignedPhysicalMemoryWithArena(
+        VIRTUAL_MEMORY_MAPPER_CAPACITY, VIRTUAL_MEMORY_MAPPER_ALIGNMENT,
+        arena));
 
-    return arena;
-}
+    initArchitecture(arena);
 
-Status efi_main(Handle handle, SystemTable *systemtable) {
-    globals.h = handle;
-    globals.st = systemtable;
-    globals.st->con_out->reset(globals.st->con_out, false);
-    globals.st->con_out->set_attribute(globals.st->con_out,
-                                       BACKGROUND_RED | YELLOW);
-
-    Arena arena = initArena();
-    U64 *testingMyArena = NEW(&arena, U64, 8 * UEFI_PAGE_SIZE);
-
-    KFLUSH_AFTER {
-        INFO(STRING("I allocetd everyhtig I think.. Aernae staus"));
-        INFO((void *)arena.curFree, NEWLINE);
-        INFO((void *)arena.end, NEWLINE);
+    KFLUSH_AFTER { INFO(STRING("gOING TO READ KERNEL INFO\n")); }
+    KFLUSH_AFTER { INFO(STRING("Going to read kernel info\n")); }
+    DataPartitionFile kernelFile = getKernelInfo(arena);
+    if (kernelFile.bytes > KERNEL_CODE_MAX_ALIGNMENT) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("the size of the kernel code is too large!\n"));
+            ERROR(STRING("Maximum allowed size: "));
+            ERROR(KERNEL_CODE_MAX_ALIGNMENT, NEWLINE);
+            ERROR(STRING("Current size: "));
+            ERROR(kernelFile.bytes, NEWLINE);
+        }
     }
-
-    testingMyArena = NEW(&arena, U64, 1);
+    KFLUSH_AFTER {
+        INFO(STRING("Loading kernel into memory\n"));
+        INFO(STRING("Bytes: "));
+        INFO(kernelFile.bytes, NEWLINE);
+        INFO(STRING("LBA: "));
+        INFO(kernelFile.lbaStart, NEWLINE);
+    }
+    string kernelContent = readDiskLbasFromCurrentLoadedImage(
+        kernelFile.lbaStart, kernelFile.bytes, arena);
+    KFLUSH_AFTER {
+        INFO(STRING("The phyiscal kernel location:\n"));
+        INFO((void *)kernelContent.buf, NEWLINE);
+        INFO((void *)(kernelContent.buf + kernelContent.len), NEWLINE);
+    }
 
     EXIT_WITH_MESSAGE {
-        ERROR(STRING("Waitin here\n"));
-        ERROR(STRING("Waitin here\n"));
-        ERROR(STRING("Waitin here\n"));
+        ERROR(
+            STRING("------------------------------------------------------\n"));
     }
 
-    /*initArchitecture();*/
-    /**/
-    /*KFLUSH_AFTER { INFO(STRING("Going to read kernel info\n")); }*/
-    /*DataPartitionFile kernelFile = getKernelInfo();*/
-    /*if (kernelFile.bytes > KERNEL_CODE_SIZE) {*/
-    /*    EXIT_WITH_MESSAGE {*/
-    /*        ERROR(STRING("the size of the kernel code is too large!\n"));*/
-    /*        ERROR(STRING("Maximum allowed size: "));*/
-    /*        ERROR(KERNEL_CODE_SIZE, NEWLINE);*/
-    /*        ERROR(STRING("Current size: "));*/
-    /*        ERROR(kernelFile.bytes, NEWLINE);*/
-    /*    }*/
-    /*}*/
-    /**/
-    /*KFLUSH_AFTER { INFO(STRING("INBETWEEN\n")); }*/
-    /**/
-    /*EXIT_WITH_MESSAGE { ERROR(STRING("waiting........\n")); }*/
-    /**/
-    /*KFLUSH_AFTER {*/
-    /*    INFO(STRING("Loading kernel into memory\n"));*/
-    /*    INFO(STRING("Bytes: "));*/
-    /*    INFO(kernelFile.bytes, NEWLINE);*/
-    /*    INFO(STRING("LBA: "));*/
-    /*    INFO(kernelFile.lbaStart, NEWLINE);*/
-    /*}*/
-    /*string kernelContent = readDiskLbasFromCurrentLoadedImage(*/
-    /*    kernelFile.lbaStart, kernelFile.bytes);*/
     /**/
     /*KFLUSH_AFTER { INFO(STRING("Mapping kernel into location\n")); }*/
     /*mapWithSmallestNumberOfPagesInKernelMemory(*/

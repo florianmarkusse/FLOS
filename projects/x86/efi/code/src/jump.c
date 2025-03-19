@@ -7,7 +7,7 @@
 #include "x86/memory/virtual.h"
 
 void enableNewMemoryMapping() {
-    asm volatile("mov %%rax, %%cr3" : : "a"(level4PageTable) : "memory");
+    asm volatile("mov %%rax, %%cr3" : : "a"(rootPageTable) : "memory");
 }
 
 void toKernel(U64 newStackPointer) {

@@ -9,7 +9,7 @@
 #include "shared/types/types.h"
 #include "x86/memory/definitions.h"
 
-VirtualPageTable *level4PageTable;
+VirtualPageTable *rootPageTable;
 
 U8 pageSizeToDepth(PageSize pageSize) {
     switch (pageSize) {
@@ -26,7 +26,7 @@ U8 pageSizeToDepth(PageSize pageSize) {
 }
 
 static U64 getZeroBasePage() {
-    U64 address = allocate4KiBPages(1);
+    U64 address = getPageForMappingVirtualMemory();
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
     memset((void *)address, 0, X86_4KIB_PAGE);
     return address;
@@ -52,7 +52,7 @@ void mapVirtualRegionWithFlags(U64 virt, PagedMemory memory, U64 pageSize,
     U64 virtualEnd = virt + pageType * memory.numberOfPages;
     for (U64 physical = memory.start; virt < virtualEnd;
          virt += pageType, physical += pageType) {
-        VirtualPageTable *currentTable = level4PageTable;
+        VirtualPageTable *currentTable = rootPageTable;
 
         U64 pageSize = X86_512GIB_PAGE;
         for (U8 i = 0; i < depth; i++, pageSize /= PageTableFormat.ENTRIES) {

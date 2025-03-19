@@ -47,7 +47,7 @@ void initVirtualMemoryManager(KernelMemory kernelMemory) {
     lowerHalfRegion.start = currentHighestAddress;
 
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    level4PageTable = (VirtualPageTable *)CR3();
+    rootPageTable = (VirtualPageTable *)CR3();
 }
 
 static bool isExtendedPageLevel(U8 level) {
@@ -55,18 +55,18 @@ static bool isExtendedPageLevel(U8 level) {
            level == pageSizeToDepth(X86_1GIB_PAGE);
 }
 
-MappedPage getMappedPage(U64 virtual) {
+MappedPage getMappedPage(U64 virt) {
     MappedPage result;
     result.pageSize = X86_256TIB_PAGE;
 
     U64 *address;
     U64 pageSize = X86_512GIB_PAGE;
-    VirtualPageTable *currentTable = level4PageTable;
+    VirtualPageTable *currentTable = rootPageTable;
     U8 totalDepth = pageSizeToDepth(availablePageSizes[0]);
     for (U8 level = 0; level < totalDepth;
          level++, pageSize /= PageTableFormat.ENTRIES) {
         address = &(currentTable->pages[RING_RANGE_VALUE(
-            (virtual / pageSize), PageTableFormat.ENTRIES)]);
+            (virt / pageSize), PageTableFormat.ENTRIES)]);
         result.pageSize /= PageTableFormat.ENTRIES;
 
         if (isExtendedPageLevel(level) &&

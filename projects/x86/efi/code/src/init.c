@@ -5,7 +5,7 @@
 #include "efi/firmware/base.h"   // for PhysicalAddress
 #include "efi/firmware/system.h" // for PhysicalAddress
 #include "efi/globals.h"
-#include "efi/memory.h"
+#include "efi/memory/physical.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
 #include "shared/text/string.h"
@@ -18,25 +18,25 @@
 #include "x86/memory/pat.h"
 #include "x86/memory/virtual.h"
 
-void bootstrapProcessorWork() {
+void bootstrapProcessorWork(Arena scratch) {
     {
-        U64 newCR3 = allocate4KiBPages(1);
+        U64 newCR3 = getPageForMappingVirtualMemory();
         /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
         memset((void *)newCR3, 0, X86_4KIB_PAGE);
 
-        level4PageTable = (VirtualPageTable *)newCR3;
+        rootPageTable = (VirtualPageTable *)newCR3;
 
         KFLUSH_AFTER {
             INFO(STRING("root page table memory location:"));
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-            INFO((void *)level4PageTable, NEWLINE);
+            INFO((void *)rootPageTable, NEWLINE);
         }
     }
 
     disablePIC();
 
-    gdtData = allocate4KiBPages(
-        CEILING_DIV_VALUE(3 * sizeof(PhysicalBasePage), X86_4KIB_PAGE));
+    gdtData = getAlignedPhysicalMemoryWithArena(
+        sizeof(PhysicalBasePage) * 3, alignof(PhysicalBasePage), scratch);
     gdtDescriptor = prepNewGDT((PhysicalBasePage *)gdtData);
 
     // NOTE: WHY????
@@ -72,7 +72,7 @@ static constexpr auto EXTENDED_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER =
 static constexpr auto EXTENDED_MAX_REQUIRED_PARAMETER =
     EXTENDED_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER;
 
-void initArchitecture() {
+void initArchitecture(Arena scratch) {
     asm volatile("cli");
 
     U32 maxBasicCPUID = CPUID(0).eax;
@@ -156,5 +156,5 @@ void initArchitecture() {
     //   CPUEnableAVX();
 
     KFLUSH_AFTER { INFO(STRING("Bootstrap processor work\n")); }
-    bootstrapProcessorWork();
+    bootstrapProcessorWork(scratch);
 }

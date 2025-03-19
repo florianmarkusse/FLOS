@@ -9,14 +9,16 @@
 #include "shared/types/types.h" // for U64, U32, U8
 
 // NOTE: This is for an abstraction used in virtual allocation.
-U64 allocate4KiBPages(U64 numPages) {
-    return allocContiguousPhysicalPages(numPages, X86_4KIB_PAGE);
+U64 getPageForMappingVirtualMemory() {
+    return allocContiguousPhysicalPages(1, X86_4KIB_PAGE);
 }
 
-PhysicalMemoryManager basePMM = (PhysicalMemoryManager){.pageSize = X86_4KIB_PAGE};
+PhysicalMemoryManager basePMM =
+    (PhysicalMemoryManager){.pageSize = X86_4KIB_PAGE};
 PhysicalMemoryManager largePMM =
     (PhysicalMemoryManager){.pageSize = X86_2MIB_PAGE};
-PhysicalMemoryManager hugePMM = (PhysicalMemoryManager){.pageSize = X86_1GIB_PAGE};
+PhysicalMemoryManager hugePMM =
+    (PhysicalMemoryManager){.pageSize = X86_1GIB_PAGE};
 
 static U64 toLargerPages(U64 numberOfPages) {
     return numberOfPages / PageTableFormat.ENTRIES;
@@ -263,9 +265,10 @@ static void initPMM(PageSize pageType) {
 // manager.
 void initPhysicalMemoryManager(KernelMemory kernelMemory) {
     // Reset the PMMs if they were used previously already
-    basePMM = (PhysicalMemoryManager){.pageSize = X86_4KIB_PAGE,
-                                      .usedBasePages = (U32)CEILING_DIV_VALUE(
-                                          kernelMemory.UEFIPages, X86_4KIB_PAGE)};
+    basePMM =
+        (PhysicalMemoryManager){.pageSize = X86_4KIB_PAGE,
+                                .usedBasePages = (U32)CEILING_DIV_VALUE(
+                                    kernelMemory.UEFIPages, X86_4KIB_PAGE)};
     basePMM.memory.buf = kernelMemory.memory.buf;
     basePMM.memory.len = kernelMemory.memory.len;
     basePMM.memory.cap = memoryEntriesInBasePages(basePMM.usedBasePages);

@@ -17,7 +17,7 @@ static string patEncodingToString[PAT_ENCODING_COUNT] = {
 
 void appendVirtualMemoryManagerStatus() {
     KLOG(STRING("CR3/root page table address is: "));
-    KLOG((void *)level4PageTable, NEWLINE);
+    KLOG((void *)rootPageTable, NEWLINE);
 
     PAT patValues = {.value = rdmsr(PAT_LOCATION)};
     KLOG(STRING("PAT MSR set to:\n"));

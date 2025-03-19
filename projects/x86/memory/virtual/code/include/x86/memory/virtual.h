@@ -3,7 +3,7 @@
 
 #include "x86/memory/definitions.h"
 
-extern VirtualPageTable *level4PageTable;
+extern VirtualPageTable *rootPageTable;
 
 U8 pageSizeToDepth(PageSize pageSize);
 

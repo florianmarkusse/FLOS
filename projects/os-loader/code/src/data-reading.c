@@ -3,19 +3,25 @@
 #include "abstraction/log.h"
 #include "abstraction/memory/physical/allocation.h"
 #include "efi-to-kernel/generated/kernel-magic.h"
+#include "efi-to-kernel/memory/definitions.h"
 #include "efi/error.h"
 #include "efi/firmware/base.h" // for ERROR, Handle
 #include "efi/firmware/block-io.h"
 #include "efi/firmware/file.h"               // for FileProtocol, FIL...
 #include "efi/firmware/loaded-image.h"       // for LOADED_IMAGE_PROT...
 #include "efi/firmware/simple-file-system.h" // for SIMPLE_FILE_SYSTE...
-#include "efi/firmware/system.h"             // for OPEN_PROTOCOL_BY_...
-#include "efi/globals.h"                     // for globals
-#include "efi/memory.h"
+#include "efi/firmware/simple-text-input.h"
+#include "efi/firmware/system.h" // for OPEN_PROTOCOL_BY_...
+#include "efi/globals.h"         // for globals
+#include "efi/memory/definitions.h"
+#include "efi/memory/physical.h"
+#include "efi/memory/virtual.h"
+#include "shared/log.h"
 #include "shared/maths/maths.h"
+#include "shared/memory/converter.h"
 
-static string checkBIOP(Handle handle, U32 mediaIDFromLoadedImage,
-                        U64 startingLBA, U64 bytes) {
+static string fetchBIOPFromKernel(Handle handle, U32 mediaIDFromLoadedImage,
+                                  U64 startingLBA, U64 bytes, Arena scratch) {
     string result;
     result.len = 0;
     BlockIoProtocol *biop;
@@ -27,31 +33,80 @@ static string checkBIOP(Handle handle, U32 mediaIDFromLoadedImage,
         ERROR(STRING("Could not Open Block IO protocol on handle\n"));
     }
 
-    if (biop->media->mediaID == mediaIDFromLoadedImage) {
-        U64 alignedBytes = ALIGN_UP_VALUE(bytes, biop->media->blockSize);
-        U64 pagesForKernel = CEILING_DIV_VALUE(alignedBytes, UEFI_PAGE_SIZE);
+    KFLUSH_AFTER {
+        INFO(STRING("[BIOP] "));
+        INFO(STRING("media id: "));
+        INFO(biop->media->mediaID);
+        INFO(STRING("logical: "));
+        INFO(biop->media->logicalPartition);
+        INFO(STRING(" blockSize: "));
+        INFO(biop->media->blockSize);
+        INFO(STRING(" lastBlock: "));
+        INFO(biop->media->lastBlock, NEWLINE);
+    }
 
-        PhysicalAddress address = allocate4KiBPages(pagesForKernel);
-        status =
-            biop->readBlocks(biop, biop->media->mediaID, startingLBA,
-                             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-                             alignedBytes, (void *)address);
-        if (!(EFI_ERROR(status)) &&
-            !memcmp(KERNEL_MAGIC, (U8 *)address, COUNTOF(KERNEL_MAGIC))) {
-            result = (string){.buf = (U8 *)address, .len = alignedBytes};
+    U64 alignedBytes = ALIGN_UP_VALUE(bytes, biop->media->blockSize);
+
+    U64 *blockAddress =
+        (U64 *)NEW(&scratch, U8, alignedBytes, 0, biop->media->blockSize);
+
+    KFLUSH_AFTER {
+        INFO(STRING("It will be read first on address "));
+        INFO((void *)blockAddress);
+    }
+
+    status = biop->readBlocks(biop, biop->media->mediaID, 0,
+                              /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+                              alignedBytes, (void *)blockAddress);
+    if (!(EFI_ERROR(status)) &&
+        !memcmp(KERNEL_MAGIC, (void *)blockAddress, COUNTOF(KERNEL_MAGIC))) {
+        U64 alignment = MAX(biop->media->blockSize,
+                            convertPreferredPageToAvailablePages(
+                                (Pages){.pageSize = KERNEL_CODE_MAX_ALIGNMENT,
+                                        .numberOfPages = 1})
+                                .pageSize);
+        U64 kernelAddress =
+            getAlignedPhysicalMemoryWithArena(bytes, alignment, scratch);
+
+        KFLUSH_AFTER {
+            INFO(STRING("Copying to "));
+            INFO((void *)kernelAddress, NEWLINE);
+        }
+
+        memcpy((void *)kernelAddress, blockAddress, bytes);
+        result = (string){.buf = (void *)blockAddress, .len = bytes};
+    } else {
+        if (EFI_ERROR(status)) {
+            KFLUSH_AFTER { ERROR(STRING("Reading failed h,mmmm\n")); }
         } else {
-            freeBumpPages(pagesForKernel);
+            KFLUSH_AFTER { ERROR(STRING("Faild memcmp? \n")); }
+        }
+
+        if (status == DEVICE_ERROR) {
+            KFLUSH_AFTER { ERROR(STRING("device error....\n")); }
+        }
+        if (status == NO_MEDIA) {
+            KFLUSH_AFTER { ERROR(STRING("no media....\n")); }
+        }
+        if (status == MEDIA_CHANGED) {
+            KFLUSH_AFTER { ERROR(STRING("media changed\n")); }
+        }
+        if (status == BAD_BUFFER_SIZE) {
+            KFLUSH_AFTER { ERROR(STRING("baed buffer size\n")); }
+        }
+        if (status == BAD_BUFFER_SIZE) {
+            KFLUSH_AFTER { ERROR(STRING("invalid parameter\n")); }
         }
     }
 
-    // Close open protocol when done
     globals.st->boot_services->close_protocol(handle, &BLOCK_IO_PROTOCOL_GUID,
                                               globals.h, nullptr);
 
     return result;
 }
 
-string readDiskLbasFromCurrentLoadedImage(Lba diskLba, USize bytes) {
+string readDiskLbasFromCurrentLoadedImage(Lba diskLba, USize bytes,
+                                          Arena scratch) {
     Status status;
 
     LoadedImageProtocol *lip = nullptr;
@@ -84,9 +139,45 @@ string readDiskLbasFromCurrentLoadedImage(Lba diskLba, USize bytes) {
     string data;
     data.len = 0;
 
-    for (U64 i = 0; data.len == 0; i++) {
-        data = checkBIOP(handleBuffer[i], imageBiop->media->mediaID, diskLba,
-                         bytes);
+    KFLUSH_AFTER {
+        ERROR(STRING("Loaded image media id: "));
+        ERROR(imageBiop->media->mediaID, NEWLINE);
+    }
+
+    for (U64 i = 0; data.len == 0 && i < numberOfHandles; i++) {
+        InputKey key;
+        while (globals.st->con_in->read_key_stroke(globals.st->con_in, &key) !=
+               SUCCESS) {
+            ;
+        }
+        globals.st->con_in->reset(globals.st->con_in, true);
+        EXIT_WITH_MESSAGE_IF(status) {
+            ERROR(STRING("Could not reset con in.\n"));
+        }
+        data = fetchBIOPFromKernel(handleBuffer[i], imageBiop->media->mediaID,
+                                   diskLba, bytes, scratch);
+    }
+    if (data.len == 0) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("Could not load kernel!\n"));
+            ERROR(STRING("Number of handles: "));
+            ERROR(numberOfHandles, NEWLINE);
+        }
+    } else {
+        KFLUSH_AFTER {
+            ERROR(STRING("Loaded kernel\n"));
+            ERROR(STRING("location: "));
+            ERROR(data.buf, NEWLINE);
+            ERROR(STRING("len: "));
+            ERROR(data.len, NEWLINE);
+        }
+
+        InputKey key;
+        while (globals.st->con_in->read_key_stroke(globals.st->con_in, &key) !=
+               SUCCESS) {
+            ;
+        }
+        globals.st->con_in->reset(globals.st->con_in, true);
     }
 
     status = globals.st->boot_services->free_pool(handleBuffer);
@@ -104,13 +195,19 @@ string readDiskLbasFromCurrentLoadedImage(Lba diskLba, USize bytes) {
         ERROR(STRING("Could not close lip protocol.\n"));
     }
 
+    KFLUSH_AFTER { ERROR(STRING("After closing protocsl")); }
+    InputKey key;
+    while (globals.st->con_in->read_key_stroke(globals.st->con_in, &key) !=
+           SUCCESS) {
+        ;
+    }
+
     return data;
 }
 
 U32 getDiskImageMediaID() {
     Status status;
 
-    // Get media ID for this disk image
     LoadedImageProtocol *lip = nullptr;
     status = globals.st->boot_services->open_protocol(
         globals.h, &LOADED_IMAGE_PROTOCOL_GUID, (void **)&lip, globals.h,
@@ -140,7 +237,7 @@ U32 getDiskImageMediaID() {
 
 typedef enum { BYTE_SIZE = 0, LBA_START = 1 } DataPartitionLayout;
 
-DataPartitionFile getKernelInfo() {
+DataPartitionFile getKernelInfo(Arena scratch) {
     LoadedImageProtocol *lip = 0;
     Status status = globals.st->boot_services->open_protocol(
         globals.h, &LOADED_IMAGE_PROTOCOL_GUID, (void **)&lip, globals.h,
@@ -175,10 +272,7 @@ DataPartitionFile getKernelInfo() {
 
     string dataFile;
     dataFile.len = file_info.fileSize;
-    PhysicalAddress dataFileAddress =
-        allocate4KiBPages(CEILING_DIV_VALUE(dataFile.len, UEFI_PAGE_SIZE));
-    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    dataFile.buf = (U8 *)dataFileAddress;
+    dataFile.buf = NEW(&scratch, U8, dataFile.len, 0, UEFI_PAGE_SIZE);
 
     status = file->read(file, &dataFile.len, dataFile.buf);
     if (EFI_ERROR(status) || dataFile.len != file_info.fileSize) {
