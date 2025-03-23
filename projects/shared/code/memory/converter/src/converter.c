@@ -5,7 +5,7 @@
 #include "shared/maths/maths.h"
 #include "shared/types/types.h"
 static bool isPageSizeValid(U64 pageSize) {
-    ASSERT(((pageSize) & (pageSize - 1)) == 0);
+    ASSERT(!(RING_RANGE_VALUE(pageSize, pageSize)));
     return pageSize & AVAILABLE_PAGE_SIZES_MASK;
 }
 
@@ -43,28 +43,50 @@ Pages convertBytesToPagesRoundingUp(U64 bytes) {
                    .pageSize = smallestPageSize};
 }
 
-Pages convertBytesToSmallestNuberOfPages(U64 bytes) {
-    // NOTE: We skip the largest page size in this loop because the check is
-    // redundant.
-    for (U64 i = 0; i < MEMORY_PAGE_SIZES_COUNT - 1; i++) {
-        if (availablePageSizes[i] >= bytes) {
-            return (Pages){.pageSize = availablePageSizes[i],
-                           .numberOfPages = 1};
-        }
+static U64 largestAlignedPage(U64 address) {
+    ASSERT(!(RING_RANGE_VALUE(address, smallestPageSize)));
+
+    if (address == 0) {
+        return availablePageSizes[MEMORY_PAGE_SIZES_COUNT - 1];
     }
 
-    Pages result;
-    result.pageSize = largestPageSize;
-    result.numberOfPages = CEILING_DIV_VALUE(bytes, result.pageSize);
+    U64 result = 1 << __builtin_ctzll(address);
+    while (!isPageSizeValid(result)) {
+        result /= 2;
+    }
+
     return result;
 }
 
-bool isValidPageSizeForArch(U64 pageSize) {
-    for (U64 i = 0; i < MEMORY_PAGE_SIZES_COUNT; i++) {
-        if (availablePageSizes[i] == pageSize) {
-            return true;
-        }
+U64 static getLargestAlignedPageSize(U64 virt, U64 physical) {
+    U64 virtPage = largestAlignedPage(virt);
+    U64 physPage = largestAlignedPage(physical);
+
+    return MIN(virtPage, physPage);
+}
+
+U64 static getAlignedBytes(U64 bytes) {
+    return MIN(MAX(ceilingPowerOf2(bytes), smallestPageSize), largestPageSize);
+}
+
+U64 convertToMostFittingAlignedPageSize(U64 virt, U64 physical, U64 bytes) {
+    U64 alignedBytes = getAlignedBytes(bytes);
+    while (!isPageSizeValid(alignedBytes)) {
+        // NOTE: decrease page size because we don't want to go a larger page
+        // size than bytes
+        alignedBytes /= 2;
     }
 
-    return false;
+    return MIN(getLargestAlignedPageSize(virt, physical), alignedBytes);
+}
+
+U64 convertToLargestAlignedPageSize(U64 virt, U64 physical, U64 bytes) {
+    U64 alignedBytes = getAlignedBytes(bytes);
+    while (!isPageSizeValid(alignedBytes)) {
+        // NOTE: increase page size because we can go to a larger page
+        // size than bytes
+        alignedBytes *= 2;
+    }
+
+    return MIN(getLargestAlignedPageSize(virt, physical), alignedBytes);
 }

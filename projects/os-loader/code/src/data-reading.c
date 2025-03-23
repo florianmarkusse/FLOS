@@ -20,12 +20,16 @@
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
 
-static string fetchBIOPFromKernel(Handle handle, U32 mediaIDFromLoadedImage,
-                                  U64 startingLBA, U64 bytes, Arena scratch) {
+// We first read memory into scratch memory before copying it to the actual
+// memory location that we want it in. UEFI's readBlocks implementation has a
+// bug on my hardware with reading blocks into addresses that are above 4GiB and
+// the aligned memory address can end up being at this level. So we add an
+// intermediat step in between.
+static string fetchKernelThroughBIOP(Handle handle, U64 bytes, Arena scratch) {
     string result;
     result.len = 0;
-    BlockIoProtocol *biop;
 
+    BlockIoProtocol *biop;
     Status status = globals.st->boot_services->open_protocol(
         handle, &BLOCK_IO_PROTOCOL_GUID, (void **)&biop, globals.h, nullptr,
         OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
@@ -33,70 +37,22 @@ static string fetchBIOPFromKernel(Handle handle, U32 mediaIDFromLoadedImage,
         ERROR(STRING("Could not Open Block IO protocol on handle\n"));
     }
 
-    KFLUSH_AFTER {
-        INFO(STRING("[BIOP] "));
-        INFO(STRING("media id: "));
-        INFO(biop->media->mediaID);
-        INFO(STRING("logical: "));
-        INFO(biop->media->logicalPartition);
-        INFO(STRING(" blockSize: "));
-        INFO(biop->media->blockSize);
-        INFO(STRING(" lastBlock: "));
-        INFO(biop->media->lastBlock, NEWLINE);
-    }
-
     U64 alignedBytes = ALIGN_UP_VALUE(bytes, biop->media->blockSize);
 
     U64 *blockAddress =
         (U64 *)NEW(&scratch, U8, alignedBytes, 0, biop->media->blockSize);
-
-    KFLUSH_AFTER {
-        INFO(STRING("It will be read first on address "));
-        INFO((void *)blockAddress);
-    }
 
     status = biop->readBlocks(biop, biop->media->mediaID, 0,
                               /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
                               alignedBytes, (void *)blockAddress);
     if (!(EFI_ERROR(status)) &&
         !memcmp(KERNEL_MAGIC, (void *)blockAddress, COUNTOF(KERNEL_MAGIC))) {
-        U64 alignment = MAX(biop->media->blockSize,
-                            convertPreferredPageToAvailablePages(
-                                (Pages){.pageSize = KERNEL_CODE_MAX_ALIGNMENT,
-                                        .numberOfPages = 1})
-                                .pageSize);
-        U64 kernelAddress =
-            getAlignedPhysicalMemoryWithArena(bytes, alignment, scratch);
-
-        KFLUSH_AFTER {
-            INFO(STRING("Copying to "));
-            INFO((void *)kernelAddress, NEWLINE);
-        }
+        U64 kernelAddress = getAlignedPhysicalMemoryWithArena(
+            bytes, KERNEL_STRUCTURES_PREFERRED_ALIGNMENT, UEFI_PAGE_SIZE,
+            scratch);
 
         memcpy((void *)kernelAddress, blockAddress, bytes);
-        result = (string){.buf = (void *)blockAddress, .len = bytes};
-    } else {
-        if (EFI_ERROR(status)) {
-            KFLUSH_AFTER { ERROR(STRING("Reading failed h,mmmm\n")); }
-        } else {
-            KFLUSH_AFTER { ERROR(STRING("Faild memcmp? \n")); }
-        }
-
-        if (status == DEVICE_ERROR) {
-            KFLUSH_AFTER { ERROR(STRING("device error....\n")); }
-        }
-        if (status == NO_MEDIA) {
-            KFLUSH_AFTER { ERROR(STRING("no media....\n")); }
-        }
-        if (status == MEDIA_CHANGED) {
-            KFLUSH_AFTER { ERROR(STRING("media changed\n")); }
-        }
-        if (status == BAD_BUFFER_SIZE) {
-            KFLUSH_AFTER { ERROR(STRING("baed buffer size\n")); }
-        }
-        if (status == BAD_BUFFER_SIZE) {
-            KFLUSH_AFTER { ERROR(STRING("invalid parameter\n")); }
-        }
+        result = (string){.buf = (void *)kernelAddress, .len = bytes};
     }
 
     globals.st->boot_services->close_protocol(handle, &BLOCK_IO_PROTOCOL_GUID,
@@ -105,8 +61,7 @@ static string fetchBIOPFromKernel(Handle handle, U32 mediaIDFromLoadedImage,
     return result;
 }
 
-string readDiskLbasFromCurrentLoadedImage(Lba diskLba, USize bytes,
-                                          Arena scratch) {
+string readKernelFromCurrentLoadedImage(U64 bytes, Arena scratch) {
     Status status;
 
     LoadedImageProtocol *lip = nullptr;
@@ -139,45 +94,15 @@ string readDiskLbasFromCurrentLoadedImage(Lba diskLba, USize bytes,
     string data;
     data.len = 0;
 
-    KFLUSH_AFTER {
-        ERROR(STRING("Loaded image media id: "));
-        ERROR(imageBiop->media->mediaID, NEWLINE);
-    }
-
     for (U64 i = 0; data.len == 0 && i < numberOfHandles; i++) {
-        InputKey key;
-        while (globals.st->con_in->read_key_stroke(globals.st->con_in, &key) !=
-               SUCCESS) {
-            ;
-        }
-        globals.st->con_in->reset(globals.st->con_in, true);
-        EXIT_WITH_MESSAGE_IF(status) {
-            ERROR(STRING("Could not reset con in.\n"));
-        }
-        data = fetchBIOPFromKernel(handleBuffer[i], imageBiop->media->mediaID,
-                                   diskLba, bytes, scratch);
+        data = fetchKernelThroughBIOP(handleBuffer[i], bytes, scratch);
     }
     if (data.len == 0) {
         EXIT_WITH_MESSAGE {
-            ERROR(STRING("Could not load kernel!\n"));
-            ERROR(STRING("Number of handles: "));
+            ERROR(STRING("Could not load kernel from any available block "
+                         "protocol!\nNumber of handles: "));
             ERROR(numberOfHandles, NEWLINE);
         }
-    } else {
-        KFLUSH_AFTER {
-            ERROR(STRING("Loaded kernel\n"));
-            ERROR(STRING("location: "));
-            ERROR(data.buf, NEWLINE);
-            ERROR(STRING("len: "));
-            ERROR(data.len, NEWLINE);
-        }
-
-        InputKey key;
-        while (globals.st->con_in->read_key_stroke(globals.st->con_in, &key) !=
-               SUCCESS) {
-            ;
-        }
-        globals.st->con_in->reset(globals.st->con_in, true);
     }
 
     status = globals.st->boot_services->free_pool(handleBuffer);
@@ -193,13 +118,6 @@ string readDiskLbasFromCurrentLoadedImage(Lba diskLba, USize bytes,
         globals.h, &LOADED_IMAGE_PROTOCOL_GUID, globals.h, nullptr);
     EXIT_WITH_MESSAGE_IF(status) {
         ERROR(STRING("Could not close lip protocol.\n"));
-    }
-
-    KFLUSH_AFTER { ERROR(STRING("After closing protocsl")); }
-    InputKey key;
-    while (globals.st->con_in->read_key_stroke(globals.st->con_in, &key) !=
-           SUCCESS) {
-        ;
     }
 
     return data;
@@ -235,9 +153,7 @@ U32 getDiskImageMediaID() {
     return mediaID;
 }
 
-typedef enum { BYTE_SIZE = 0, LBA_START = 1 } DataPartitionLayout;
-
-DataPartitionFile getKernelInfo(Arena scratch) {
+U64 getKernelBytes(Arena scratch) {
     LoadedImageProtocol *lip = 0;
     Status status = globals.st->boot_services->open_protocol(
         globals.h, &LOADED_IMAGE_PROTOCOL_GUID, (void **)&lip, globals.h,
@@ -293,39 +209,27 @@ DataPartitionFile getKernelInfo(Arena scratch) {
 
     // Assumes the below file structure:
     // KERNEL_SIZE_BYTES=132456
-    // KERNEL_START_LBA=123
     StringIter lines;
-    DataPartitionFile kernelFile;
-    DataPartitionLayout layout = BYTE_SIZE;
     TOKENIZE_STRING(dataFile, lines, '\n', 0) {
         StringIter tokens;
         bool second = false;
         TOKENIZE_STRING(lines.string, tokens, '=', 0) {
             if (second) {
-                switch (layout) {
-                case BYTE_SIZE: {
-                    U64 bytes = 0;
-                    for (U64 i = 0; i < tokens.string.len; i++) {
-                        bytes = bytes * 10 + (tokens.string.buf[i] - '0');
-                    }
+                U64 bytes = 0;
+                for (U64 i = 0; i < tokens.string.len; i++) {
+                    bytes = bytes * 10 + (tokens.string.buf[i] - '0');
+                }
 
-                    kernelFile.bytes = bytes;
-                    break;
-                }
-                case LBA_START: {
-                    U64 lbaStart = 0;
-                    for (U64 i = 0; i < tokens.string.len; i++) {
-                        lbaStart = lbaStart * 10 + (tokens.string.buf[i] - '0');
-                    }
-                    kernelFile.lbaStart = lbaStart;
-                    break;
-                }
-                }
+                return bytes;
+            } else {
+                second = true;
             }
-            second = true;
         }
-        layout++;
     }
 
-    return kernelFile;
+    EXIT_WITH_MESSAGE {
+        ERROR(STRING("kernel.inf file was not in expected format\n"));
+    }
+
+    __builtin_unreachable();
 }

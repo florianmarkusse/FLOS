@@ -19,8 +19,8 @@ U64 initScreenMemory(U64 physicalScreenAddress, U64 bytes) {
                                .numberOfPages =
                                    CEILING_DIV_VALUE(bytes, X86_2MIB_PAGE)};
     U64 virtualMemory = getVirtualMemory(bytes, X86_2MIB_PAGE);
-    mapVirtualRegionWithFlags(virtualMemory, pagedMemory, X86_2MIB_PAGE,
-                              PATMapping.MAP_3);
+    mapVirtualRegionsWithFlags(virtualMemory, pagedMemory, X86_2MIB_PAGE,
+                               PATMapping.MAP_3);
     flushCPUCaches();
 
     return virtualMemory;

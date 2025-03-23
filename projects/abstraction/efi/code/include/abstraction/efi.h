@@ -6,5 +6,6 @@
 
 void initArchitecture(Arena scratch);
 void jumpIntoKernel(U64 newStackPointer);
+U64 initScreenMemory(U64 physicalScreenAddress, U64 bytes);
 
 #endif

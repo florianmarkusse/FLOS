@@ -5,9 +5,11 @@
 #include "abstraction/memory/virtual/map.h"
 #include "shared/assert.h"
 #include "shared/maths/maths.h"
+#include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/types/types.h"
 #include "x86/memory/definitions.h"
+#include "x86/memory/flags.h"
 
 VirtualPageTable *rootPageTable;
 
@@ -19,7 +21,7 @@ U8 pageSizeToDepth(PageSize pageSize) {
     case X86_2MIB_PAGE: {
         return 3;
     }
-    default: {
+    case X86_1GIB_PAGE: {
         return 2;
     }
     }
@@ -32,26 +34,61 @@ static U64 getZeroBasePage() {
     return address;
 }
 
-void mapVirtualRegion(U64 virt, PagedMemory memory, PageSize pageType) {
-    mapVirtualRegionWithFlags(virt, memory, pageType, 0);
-}
-
 // The caller should take care that the virtual address and physical
 // address are correctly aligned. If they are not, not sure what the
 // caller wanted to accomplish.
-void mapVirtualRegionWithFlags(U64 virt, PagedMemory memory, U64 pageSize,
-                               U64 additionalFlags) {
-    PageSize pageType = pageSize;
-    ASSERT(level4PageTable);
+void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
+    ASSERT(rootPageTable);
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
+    ASSERT(!(RING_RANGE_VALUE(virt, mappingSize)));
+    ASSERT(!(RING_RANGE_VALUE(physical, mappingSize)));
 
+    U8 depth = pageSizeToDepth(mappingSize);
+    VirtualPageTable *currentTable = rootPageTable;
+
+    U64 pageSize = X86_512GIB_PAGE;
+    for (U8 i = 0; i < depth; i++, pageSize /= PageTableFormat.ENTRIES) {
+        U64 *address = &(currentTable->pages[RING_RANGE_VALUE(
+            (virt / pageSize), PageTableFormat.ENTRIES)]);
+
+        if (i == depth - 1) {
+            U64 value = physical | flags;
+            if (pageSize == X86_2MIB_PAGE || pageSize == X86_1GIB_PAGE) {
+                value |= VirtualPageMasks.PAGE_EXTENDED_SIZE;
+            }
+            *address = value;
+        } else if (!*address) {
+            U64 value = KERNEL_STANDARD_PAGE_FLAGS;
+            value |= getZeroBasePage();
+            *address = value;
+        }
+
+        currentTable =
+            /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+            (VirtualPageTable *)ALIGN_DOWN_VALUE(*address, X86_4KIB_PAGE);
+    }
+}
+
+void mapPage(U64 virt, U64 physical, U64 mappingSize) {
+    return mapPageWithFlags(virt, physical, mappingSize,
+                            KERNEL_STANDARD_PAGE_FLAGS);
+}
+
+// TODO: Delete this funciton???
+// The caller should take care that the virtual address and physical
+// address are correctly aligned. If they are not, not sure what the
+// caller wanted to accomplish.
+void mapVirtualRegionsWithFlags(U64 virt, PagedMemory memory, PageSize pageSize,
+                                U64 additionalFlags) {
+    ASSERT(rootPageTable);
+    ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
     ASSERT(!(RING_RANGE_VALUE(virt, pageType)));
     ASSERT(!(RING_RANGE_VALUE(memory.start, pageType)));
 
-    U8 depth = pageSizeToDepth(pageType);
-    U64 virtualEnd = virt + pageType * memory.numberOfPages;
+    U8 depth = pageSizeToDepth(pageSize);
+    U64 virtualEnd = virt + pageSize * memory.numberOfPages;
     for (U64 physical = memory.start; virt < virtualEnd;
-         virt += pageType, physical += pageType) {
+         virt += pageSize, physical += pageSize) {
         VirtualPageTable *currentTable = rootPageTable;
 
         U64 pageSize = X86_512GIB_PAGE;
@@ -63,7 +100,7 @@ void mapVirtualRegionWithFlags(U64 virt, PagedMemory memory, U64 pageSize,
                 U64 value = VirtualPageMasks.PAGE_PRESENT |
                             VirtualPageMasks.PAGE_WRITABLE | physical |
                             additionalFlags;
-                if (pageType == X86_2MIB_PAGE || pageType == X86_1GIB_PAGE) {
+                if (pageSize == X86_2MIB_PAGE || pageSize == X86_1GIB_PAGE) {
                     value |= VirtualPageMasks.PAGE_EXTENDED_SIZE;
                 }
                 *address = value;
@@ -79,4 +116,9 @@ void mapVirtualRegionWithFlags(U64 virt, PagedMemory memory, U64 pageSize,
                 (VirtualPageTable *)ALIGN_DOWN_VALUE(*address, X86_4KIB_PAGE);
         }
     }
+}
+
+// TODO: delete this ?!
+void mapVirtualRegions(U64 virt, PagedMemory memory, PageSize pageType) {
+    mapVirtualRegionsWithFlags(virt, memory, pageType, 0);
 }

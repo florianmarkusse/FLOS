@@ -16,10 +16,11 @@ static constexpr auto DYNAMIC_MEMORY_ALIGNMENT = UEFI_PAGE_SIZE;
 KernelMemory stubMemoryBeforeExitBootServices(MemoryInfo *memoryInfo);
 KernelMemory convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory result);
 
-void mapWithSmallestNumberOfPagesInKernelMemory(U64 virt, U64 physical,
-                                                U64 bytes);
-void identityMapPhysicalMemory(U64 currentHighestAddress);
-
 void findKernelMemory(U64 alignment, U64 numberOfThreads);
+
+U64 mapContiguousPhysicalMemoryWithFlags(U64 virt, U64 physical, U64 bytes,
+                                         U64 flags);
+U64 mapContiguousPhysicalMemory(U64 virt, U64 physical, U64 bytes);
+U64 mapInContiguousPhysicalMemory(U64 virt, U64 physical, U64 bytes);
 
 #endif

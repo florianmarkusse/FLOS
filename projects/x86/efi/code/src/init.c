@@ -1,3 +1,5 @@
+#include "abstraction/efi.h"
+
 #include "abstraction/log.h"
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/physical/allocation.h"
@@ -19,24 +21,23 @@
 #include "x86/memory/virtual.h"
 
 void bootstrapProcessorWork(Arena scratch) {
-    {
-        U64 newCR3 = getPageForMappingVirtualMemory();
+    U64 newCR3 = getPageForMappingVirtualMemory();
+    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+    memset((void *)newCR3, 0, X86_4KIB_PAGE);
+
+    rootPageTable = (VirtualPageTable *)newCR3;
+
+    KFLUSH_AFTER {
+        INFO(STRING("root page table memory location:"));
         /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-        memset((void *)newCR3, 0, X86_4KIB_PAGE);
-
-        rootPageTable = (VirtualPageTable *)newCR3;
-
-        KFLUSH_AFTER {
-            INFO(STRING("root page table memory location:"));
-            /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-            INFO((void *)rootPageTable, NEWLINE);
-        }
+        INFO((void *)rootPageTable, NEWLINE);
     }
 
     disablePIC();
 
     gdtData = getAlignedPhysicalMemoryWithArena(
-        sizeof(PhysicalBasePage) * 3, alignof(PhysicalBasePage), scratch);
+        sizeof(PhysicalBasePage) * 3, alignof(PhysicalBasePage),
+        alignof(PhysicalBasePage), scratch);
     gdtDescriptor = prepNewGDT((PhysicalBasePage *)gdtData);
 
     // NOTE: WHY????

@@ -1,5 +1,6 @@
 #include "efi/memory/physical.h"
 #include "abstraction/log.h"
+#include "efi-to-kernel/memory/definitions.h"
 #include "efi/error.h"
 #include "efi/firmware/base.h"
 #include "efi/globals.h"
@@ -15,6 +16,24 @@ void fillMemoryInfo(MemoryInfo *memoryInfo) {
     EXIT_WITH_MESSAGE_IF(status) {
         ERROR(STRING("Getting memory map failed!\n"));
     }
+}
+
+U64 findHighestMemoryAddress(U64 currentHighestAddress, Arena scratch) {
+    MemoryInfo memoryInfo = prepareMemoryInfo();
+
+    memoryInfo.memoryMap = (MemoryDescriptor *)NEW(
+        &scratch, U8, memoryInfo.memoryMapSize, 0, UEFI_PAGE_SIZE);
+
+    fillMemoryInfo(&memoryInfo);
+
+    FOR_EACH_DESCRIPTOR(&memoryInfo, desc) {
+        if (desc->physicalStart + (desc->numberOfPages * UEFI_PAGE_SIZE) >
+            currentHighestAddress) {
+            currentHighestAddress = desc->physicalStart;
+        }
+    }
+
+    return currentHighestAddress;
 }
 
 MemoryInfo prepareMemoryInfo() {
@@ -55,16 +74,18 @@ static bool canBeUsedInEFI(MemoryType type) {
     return type == CONVENTIONAL_MEMORY;
 }
 
-static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes, U64 alignment) {
-    for (U64 largerAlignment = (MAX(alignment, MIN_POSSIBLE_ALIGNMENT) << 1);
-         largerAlignment != 0; largerAlignment <<= 1) {
+static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
+                             U64 preferredAlignment, U64 minimumAlignment) {
+    ASSERT(preferredAlignment >= minimumAlignment);
+
+    for (U64 alignment = MAX(preferredAlignment, MIN_POSSIBLE_ALIGNMENT);
+         alignment >= minimumAlignment; alignment /= 2) {
         FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
             if (!canBeUsedInEFI(desc->type)) {
                 continue;
             }
 
-            if (RING_RANGE_VALUE(desc->physicalStart, alignment) ||
-                !RING_RANGE_VALUE(desc->physicalStart, largerAlignment)) {
+            if (RING_RANGE_VALUE(desc->physicalStart, alignment)) {
                 continue;
             }
 
@@ -89,56 +110,25 @@ static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes, U64 alignment) {
     __builtin_unreachable();
 }
 
-U64 getAlignedPhysicalMemoryWithArena(U64 bytes, U64 alignment, Arena scratch) {
-    alignmentChecks(alignment);
+U64 getAlignedPhysicalMemoryWithArena(U64 bytes, U64 preferredAlignment,
+                                      U64 minimumAlignment, Arena scratch) {
+    alignmentChecks(preferredAlignment);
+    alignmentChecks(minimumAlignment);
     MemoryInfo memoryInfo = prepareMemoryInfo();
 
-    Arena copy = scratch;
     memoryInfo.memoryMap = (MemoryDescriptor *)NEW(
         &scratch, U8, memoryInfo.memoryMapSize, 0, UEFI_PAGE_SIZE);
 
     fillMemoryInfo(&memoryInfo);
 
-    U64 result = findAlignedMemory(&memoryInfo, bytes, alignment);
-
-    memoryInfo = prepareMemoryInfo();
-
-    memoryInfo.memoryMap = (MemoryDescriptor *)NEW(
-        &copy, U8, memoryInfo.memoryMapSize, 0, UEFI_PAGE_SIZE);
-
-    fillMemoryInfo(&memoryInfo);
-
-    bool found = false;
-    FOR_EACH_DESCRIPTOR(&memoryInfo, desc) {
-        if (desc->physicalStart <= result &&
-            desc->physicalStart + desc->numberOfPages * UEFI_PAGE_SIZE >=
-                result + bytes) {
-            found = true;
-            KFLUSH_AFTER {
-                INFO(STRING("Found the descriptor in new memory map after "
-                            "allocating...\n"));
-                INFO(STRING("start: "));
-                INFO((void *)desc->physicalStart);
-                INFO(STRING(" end: "));
-                INFO((void *)(desc->physicalStart +
-                              desc->numberOfPages * UEFI_PAGE_SIZE));
-                INFO(STRING(" loader data type?: "));
-                INFO((bool)(desc->type == LOADER_DATA));
-                INFO(STRING(" returning: "));
-                INFO((void *)result, NEWLINE);
-            }
-        }
-    }
-
-    if (!found) {
-        KFLUSH_AFTER { INFO(STRING("NO NO NO\n")); }
-    }
-
-    return result;
+    return findAlignedMemory(&memoryInfo, bytes, preferredAlignment,
+                             minimumAlignment);
 }
 
-U64 getAlignedPhysicalMemory(U64 bytes, U64 alignment) {
-    alignmentChecks(alignment);
+U64 getAlignedPhysicalMemory(U64 bytes, U64 preferredAlignment,
+                             U64 minimumAlignment) {
+    alignmentChecks(preferredAlignment);
+    alignmentChecks(minimumAlignment);
     MemoryInfo memoryInfo = prepareMemoryInfo();
 
     // NOTE: Adding an extra page here to acoount for allocation below
@@ -152,7 +142,8 @@ U64 getAlignedPhysicalMemory(U64 bytes, U64 alignment) {
     }
 
     fillMemoryInfo(&memoryInfo);
-    U64 result = findAlignedMemory(&memoryInfo, bytes, alignment);
+    U64 result = findAlignedMemory(&memoryInfo, bytes, preferredAlignment,
+                                   minimumAlignment);
 
     status = globals.st->boot_services->free_pages(
         (U64)memoryInfo.memoryMap,

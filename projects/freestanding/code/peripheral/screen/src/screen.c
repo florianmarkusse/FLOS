@@ -548,8 +548,8 @@ void initScreen(ScreenDimension dimension, Arena *perm) {
     glyphsPerColumn =
         (U16)(dim.height - VERTICAL_PIXEL_MARGIN * 2) / (font->height);
 
-    ringGlyphsPerLine = (U16)next_pow2(glyphsPerLine);
-    ringGlyphsPerColumn = (U16)next_pow2((glyphsPerColumn + 1));
+    ringGlyphsPerLine = (U16)ceilingPowerOf2(glyphsPerLine);
+    ringGlyphsPerColumn = (U16)ceilingPowerOf2((glyphsPerColumn + 1));
     if (glyphsPerColumn == ringGlyphsPerColumn) {
         // Need to make screenLinesCopy a power of 2 larger because of
         // implementation.

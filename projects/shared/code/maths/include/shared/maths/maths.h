@@ -3,8 +3,21 @@
 
 #include "shared/types/types.h"
 
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MIN2(a, b) ((a) < (b) ? (a) : (b))
+#define MAX2(a, b) ((a) > (b) ? (a) : (b))
+
+#define MIN3(a, b, c) MIN2(MIN2(a, b), c)
+#define MAX3(a, b, c) MAX2(MAX2(a, b), c)
+
+#define MIN4(a, b, c, d) MIN2(MIN3(a, b, c), d)
+#define MAX4(a, b, c, d) MAX2(MAX3(a, b, c), d)
+
+#define MIN(...) MIN_N(__VA_ARGS__, MIN4, MIN3, MIN2)(__VA_ARGS__)
+#define MAX(...) MAX_N(__VA_ARGS__, MAX4, MAX3, MAX2)(__VA_ARGS__)
+
+#define MIN_N(_1, _2, _3, _4, NAME, ...) NAME
+#define MAX_N(_1, _2, _3, _4, NAME, ...) NAME
+
 #define ABS(x) (((x) < 0) ? (-(x)) : (x))
 
 // These operations are only defined for powers of 2 !!!
@@ -37,38 +50,8 @@
 #define RING_MINUS(val, amount, ringSize)                                      \
     (((val) - (amount)) & ((ringSize) - 1))
 
-static inline U64 next_pow2(U64 x) {
-    return x == 1 ? 1 : 1 << (64 - __builtin_clzll(x - 1));
-}
-
-static inline U64 what_pow2(U64 x) { return 63 - __builtin_clzll(x); }
-
-#define NEXT_POWER_OF_2(x)                                                     \
-    ({                                                                         \
-        typeof(x) _x = (x);                                                    \
-        _x--;                                                                  \
-        _x |= _x >> 1;                                                         \
-        _x |= _x >> 2;                                                         \
-        _x |= _x >> 4;                                                         \
-        _x |= _x >> 8;                                                         \
-        _x = _Generic((x),                                                     \
-            U16: _x,                                                           \
-            U32: (_x | _x >> 16),                                              \
-            U64: (_x | _x >> 16));                                             \
-        _x = _Generic((x), U16: _x, U32: _x, U64: (_x | _x >> 32));            \
-        _x++;                                                                  \
-        _x;                                                                    \
-    })
-
-/*#define NEXT_POWER_OF_2(x) \*/
-/*    ({ \*/
-/*        U64 _x = (x); \*/
-/*        _x--; \*/
-/*        _x = (1ULL << (sizeof(x) * 8 - _Generic((x), \*/
-/*                                       U32: __builtin_clz(_x), \*/
-/*                                       U64: __builtin_clzll(_x)))); \*/
-/*        _x; \*/
-/*    })*/
+// Moves value up to the closest power of 2. Unchanged if already a power of 2
+U64 ceilingPowerOf2(U64 x);
 
 U64 power(U64 base, U64 exponent);
 

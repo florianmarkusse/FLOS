@@ -437,12 +437,6 @@ bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U64 efiSizeBytes,
             KLOG_APPEND(FAT32FileBuffer, STRING("KERNEL_SIZE_BYTES="));
         FAT32FileBuffer += KLOG_APPEND(FAT32FileBuffer, kernelSizeBytes);
         FAT32FileBuffer += KLOG_APPEND(FAT32FileBuffer, STRING("\n"));
-
-        FAT32FileBuffer +=
-            KLOG_APPEND(FAT32FileBuffer, STRING("KERNEL_START_LBA="));
-        FAT32FileBuffer +=
-            KLOG_APPEND(FAT32FileBuffer, configuration.dataPartitionStartLBA);
-        FAT32FileBuffer += KLOG_APPEND(FAT32FileBuffer, STRING("\n"));
     }
 
     CREATE_FAT32_FILE("DISKDATAINF", efiFLOSCluster, FAT32FileBuffer,

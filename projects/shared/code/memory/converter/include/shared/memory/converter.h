@@ -11,13 +11,21 @@ typedef struct {
 
 typedef ARRAY(Pages) Pages_a;
 
-U64 getLargerPageSizesThan(U64 pageSize);
+// TODO: rethink returning Pages from here instead of just a U64 ??
 Pages convertPreferredPageToAvailablePages(Pages pages);
 
 // Converts the given bytes to a sensible conversion of available page sizes.
 // I.e., If you pass (1 MiB >= x >= 2MiB), it will return 1 page of size 2 MiB.
 Pages convertBytesToPagesRoundingUp(U64 bytes);
-Pages convertBytesToSmallestNuberOfPages(U64 bytes);
 
-bool isValidPageSizeForArch(U64 pageSize);
+// Can be used for finding the right mqpping sizes. When addresses have
+// differing alignments, the largest page size won't change. However, if you
+// start both at (1 GiB - 2 MiB), it will return a page size of 2 MiB on the
+// fist call. Of course, afterwards, it might return 1 GiB.
+
+// Will find the most fitting aligned page size, never going beyond bytes.
+U64 convertToMostFittingAlignedPageSize(U64 virt, U64 physical, U64 bytes);
+
+// Will find the largest aligned page size, can go beyond the number of bytes.
+U64 convertToLargestAlignedPageSize(U64 virt, U64 physical, U64 bytes);
 #endif

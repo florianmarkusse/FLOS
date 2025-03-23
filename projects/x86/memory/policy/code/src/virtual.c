@@ -9,8 +9,9 @@
 #include "x86/memory/pat.h"
 #include "x86/memory/virtual.h"
 
+// FIXME: this is now wrong! Need to set start in the init function here too!
 VirtualRegion higherHalfRegion = {.start = HIGHER_HALF_START,
-                                  .end = KERNEL_SPACE_START};
+                                  .end = KERNEL_CODE_START};
 // Start is set in the init function.
 VirtualRegion lowerHalfRegion = {.start = 0, .end = LOWER_HALF_END};
 

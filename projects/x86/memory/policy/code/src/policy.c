@@ -34,8 +34,8 @@ static void *getVirtualAndPhysicalAndMap(Pages pages) {
         allocPhysicalPages(request, pages.pageSize);
     U64 virtualRegion = virtualAddress;
     for (U64 i = 0; i < physicalAddresses.len; i++) {
-        mapVirtualRegion(virtualRegion, physicalAddresses.buf[i],
-                         pages.pageSize);
+        mapVirtualRegions(virtualRegion, physicalAddresses.buf[i],
+                          pages.pageSize);
         virtualRegion +=
             physicalAddresses.buf[i].numberOfPages * pages.pageSize;
     }
@@ -61,10 +61,10 @@ void *allocContiguousAndMap(Pages pages) {
 
     U64 physicalAddress =
         allocContiguousPhysicalPages(pages.numberOfPages, pages.pageSize);
-    mapVirtualRegion(virtualAddress,
-                     (PagedMemory){.numberOfPages = pages.numberOfPages,
-                                   .start = physicalAddress},
-                     pages.pageSize);
+    mapVirtualRegions(virtualAddress,
+                      (PagedMemory){.numberOfPages = pages.numberOfPages,
+                                    .start = physicalAddress},
+                      pages.pageSize);
 
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
     return (void *)virtualAddress;

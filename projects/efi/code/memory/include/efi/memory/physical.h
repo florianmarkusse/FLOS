@@ -16,8 +16,11 @@ typedef struct {
 MemoryInfo prepareMemoryInfo();
 void fillMemoryInfo(MemoryInfo *memoryInfo);
 
-U64 getAlignedPhysicalMemoryWithArena(U64 bytes, U64 alignment, Arena scratch);
-U64 getAlignedPhysicalMemory(U64 bytes, U64 alignment);
+U64 findHighestMemoryAddress(U64 currentHighestAddress, Arena scratch);
+U64 getAlignedPhysicalMemoryWithArena(U64 bytes, U64 preferredAlignment,
+                                      U64 minimumAlignment, Arena scratch);
+U64 getAlignedPhysicalMemory(U64 bytes, U64 preferredAlignment,
+                             U64 minimumAlignment);
 
 #define FOR_EACH_DESCRIPTOR(memoryInfoAddress, descriptorName)                 \
     for (MemoryDescriptor *descriptorName = (memoryInfoAddress)->memoryMap;    \

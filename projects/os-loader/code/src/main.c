@@ -26,6 +26,8 @@
 #include "shared/text/string.h" // for CEILING_DIV_V...
 #include "shared/types/types.h" // for U64, U32, USize
 
+static U64 kernelFreeVirtualMemory = HIGHER_HALF_START;
+
 Status efi_main(Handle handle, SystemTable *systemtable) {
     globals.h = handle;
     globals.st = systemtable;
@@ -34,7 +36,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                                        BACKGROUND_RED | YELLOW);
 
     void *memoryForArena = (void *)getAlignedPhysicalMemory(
-        DYNAMIC_MEMORY_CAPACITY, DYNAMIC_MEMORY_ALIGNMENT);
+        DYNAMIC_MEMORY_CAPACITY, DYNAMIC_MEMORY_ALIGNMENT,
+        DYNAMIC_MEMORY_ALIGNMENT);
     Arena arena = (Arena){.curFree = memoryForArena,
                           .beg = memoryForArena,
                           .end = memoryForArena + DYNAMIC_MEMORY_CAPACITY};
@@ -45,35 +48,124 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
     initVirtualMemoryMapper(getAlignedPhysicalMemoryWithArena(
         VIRTUAL_MEMORY_MAPPER_CAPACITY, VIRTUAL_MEMORY_MAPPER_ALIGNMENT,
-        arena));
+        VIRTUAL_MEMORY_MAPPER_ALIGNMENT, arena));
 
     initArchitecture(arena);
 
-    KFLUSH_AFTER { INFO(STRING("gOING TO READ KERNEL INFO\n")); }
-    KFLUSH_AFTER { INFO(STRING("Going to read kernel info\n")); }
-    DataPartitionFile kernelFile = getKernelInfo(arena);
-    if (kernelFile.bytes > KERNEL_CODE_MAX_ALIGNMENT) {
+    KFLUSH_AFTER { INFO(STRING("Going to fetch kernel bytes\n")); }
+    U64 kernelBytes = getKernelBytes(arena);
+    if (kernelBytes > KERNEL_CODE_MAX_SIZE) {
         EXIT_WITH_MESSAGE {
-            ERROR(STRING("the size of the kernel code is too large!\n"));
-            ERROR(STRING("Maximum allowed size: "));
-            ERROR(KERNEL_CODE_MAX_ALIGNMENT, NEWLINE);
-            ERROR(STRING("Current size: "));
-            ERROR(kernelFile.bytes, NEWLINE);
+            ERROR(STRING(
+                "the kernel is too large!\nMaximum allowed kernel size: "));
+            ERROR(KERNEL_CODE_MAX_SIZE, NEWLINE);
+            ERROR(STRING("Current kernel size: "));
+            ERROR(kernelBytes, NEWLINE);
         }
     }
     KFLUSH_AFTER {
         INFO(STRING("Loading kernel into memory\n"));
         INFO(STRING("Bytes: "));
-        INFO(kernelFile.bytes, NEWLINE);
-        INFO(STRING("LBA: "));
-        INFO(kernelFile.lbaStart, NEWLINE);
+        INFO(kernelBytes, NEWLINE);
     }
-    string kernelContent = readDiskLbasFromCurrentLoadedImage(
-        kernelFile.lbaStart, kernelFile.bytes, arena);
+
+    string kernelContent = readKernelFromCurrentLoadedImage(kernelBytes, arena);
+
+    KFLUSH_AFTER { INFO(STRING("mAPPING kernel into location\n")); }
+    mapContiguousPhysicalMemory(KERNEL_CODE_START, (U64)kernelContent.buf,
+                                kernelContent.len);
+
     KFLUSH_AFTER {
-        INFO(STRING("The phyiscal kernel location:\n"));
+        INFO(STRING("The phyiscal kernel:\nstart: "));
         INFO((void *)kernelContent.buf, NEWLINE);
+        INFO(STRING("stop:  "));
         INFO((void *)(kernelContent.buf + kernelContent.len), NEWLINE);
+
+        INFO(STRING("The virtual kernel:\nstart: "));
+        INFO((void *)KERNEL_CODE_START, NEWLINE);
+        INFO(STRING("stop:  "));
+        INFO((void *)(KERNEL_CODE_START + kernelContent.len), NEWLINE);
+    }
+
+    KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }
+    U64 stackAddress = getAlignedPhysicalMemoryWithArena(
+        KERNEL_STACK_SIZE, KERNEL_STRUCTURES_PREFERRED_ALIGNMENT,
+        KERNEL_STACK_ALIGNMENT, arena);
+
+    KFLUSH_AFTER { INFO(STRING("Mapping stack into location\n")); }
+    // NOTE: Overflow precaution
+    kernelFreeVirtualMemory += KERNEL_STACK_SIZE;
+    kernelFreeVirtualMemory = ALIGN_UP_VALUE(
+        kernelFreeVirtualMemory, KERNEL_STRUCTURES_PREFERRED_ALIGNMENT);
+
+    U64 stackVirtualStart = kernelFreeVirtualMemory;
+    kernelFreeVirtualMemory = mapContiguousPhysicalMemory(
+        kernelFreeVirtualMemory, stackAddress, KERNEL_STACK_SIZE);
+
+    KFLUSH_AFTER {
+        INFO(STRING("The phyiscal stack:\ndown from: "));
+        INFO((void *)stackAddress + KERNEL_STACK_SIZE, NEWLINE);
+        INFO(STRING("until:     "));
+        INFO((void *)stackAddress, NEWLINE);
+
+        INFO(STRING("The virtual stack:\ndown from: "));
+        INFO((void *)stackVirtualStart + KERNEL_STACK_SIZE, NEWLINE);
+        INFO(STRING("until:     "));
+        INFO((void *)stackVirtualStart, NEWLINE);
+    }
+
+    GraphicsOutputProtocol *gop = nullptr;
+    Status status = globals.st->boot_services->locate_protocol(
+        &GRAPHICS_OUTPUT_PROTOCOL_GUID, nullptr, (void **)&gop);
+    EXIT_WITH_MESSAGE_IF(status) {
+        ERROR(STRING("Could not locate locate GOP\n"));
+    }
+
+    KFLUSH_AFTER { INFO(STRING("Mapping screen memory into location\n")); }
+    U64 screenMemoryVirtualStart = kernelFreeVirtualMemory;
+    kernelFreeVirtualMemory = ALIGN_UP_VALUE(
+        kernelFreeVirtualMemory, KERNEL_STRUCTURES_PREFERRED_ALIGNMENT);
+    mapContiguousPhysicalMemoryWithFlags(
+        kernelFreeVirtualMemory, gop->mode->frameBufferBase,
+        gop->mode->frameBufferSize,
+        KERNEL_STANDARD_PAGE_FLAGS | KERNEL_SCREEN_MEMORY_PAGE_FLAGS);
+
+    KFLUSH_AFTER {
+        INFO(STRING("The graphics buffer physical location:\nstart: "));
+        INFO((void *)gop->mode->frameBufferBase, NEWLINE);
+        INFO(STRING("stop:  "));
+        INFO((void *)(gop->mode->frameBufferBase + gop->mode->frameBufferSize),
+             NEWLINE);
+
+        INFO(STRING("The graphics buffer virtual location:\nstart: "));
+        INFO((void *)screenMemoryVirtualStart, NEWLINE);
+        INFO(STRING("stop:  "));
+        INFO((void *)(screenMemoryVirtualStart + gop->mode->frameBufferSize),
+             NEWLINE);
+    }
+
+    U64 highestAddress = findHighestMemoryAddress(
+        gop->mode->frameBufferBase + gop->mode->frameBufferSize, arena);
+    KFLUSH_AFTER {
+        INFO(STRING("Identity mapping all memory, highest address found: "));
+        INFO((void *)highestAddress, NEWLINE);
+    }
+    mapContiguousPhysicalMemory(0, 0, highestAddress);
+
+    PhysicalAddress kernelParams = getAlignedPhysicalMemoryWithArena(
+        KERNEL_PARAMS_SIZE, KERNEL_PARAMS_ALIGNMENT, KERNEL_PARAMS_ALIGNMENT,
+        arena);
+
+    KFLUSH_AFTER {
+        INFO(STRING("The phyiscal kernel params:\nstart: "));
+        INFO((void *)kernelParams, NEWLINE);
+        INFO(STRING("stop:  "));
+        INFO((void *)(kernelParams + KERNEL_PARAMS_SIZE), NEWLINE);
+
+        INFO(STRING("The virtual kernel params (identity mapped):\nstart: "));
+        INFO((void *)kernelParams, NEWLINE);
+        INFO(STRING("stop:  "));
+        INFO((void *)(kernelParams + KERNEL_PARAMS_SIZE), NEWLINE);
     }
 
     EXIT_WITH_MESSAGE {
@@ -81,76 +173,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
             STRING("------------------------------------------------------\n"));
     }
 
-    /**/
-    /*KFLUSH_AFTER { INFO(STRING("Mapping kernel into location\n")); }*/
-    /*mapWithSmallestNumberOfPagesInKernelMemory(*/
-    /*    KERNEL_CODE_START, (U64)kernelContent.buf, kernelFile.bytes);*/
-    /*KFLUSH_AFTER {*/
-    /*    INFO(STRING("The phyiscal kernel goes from: "));*/
-    /*    INFO((void *)kernelContent.buf, NEWLINE);*/
-    /*    INFO(STRING("to: "));*/
-    /*    INFO((void *)(kernelContent.buf + kernelContent.len), NEWLINE);*/
-    /**/
-    /*    INFO(STRING("The virtual kernel goes from: "));*/
-    /*    INFO((void *)KERNEL_CODE_START, NEWLINE);*/
-    /*    INFO(STRING("to: "));*/
-    /*    INFO((void *)(KERNEL_CODE_START + kernelContent.len), NEWLINE);*/
-    /*}*/
-    /**/
-    /*GraphicsOutputProtocol *gop = nullptr;*/
-    /*Status status = globals.st->boot_services->locate_protocol(*/
-    /*    &GRAPHICS_OUTPUT_PROTOCOL_GUID, nullptr, (void **)&gop);*/
-    /*EXIT_WITH_MESSAGE_IF(status) {*/
-    /*    ERROR(STRING("Could not locate locate GOP\n"));*/
-    /*}*/
-    /**/
-    /*KFLUSH_AFTER {*/
-    /*    INFO(STRING("The graphics buffer location is at: "));*/
-    /*    INFO((void *)gop->mode->frameBufferBase, NEWLINE);*/
-    /*    INFO(STRING("The graphics buffer size is: "));*/
-    /*    INFO(gop->mode->frameBufferSize, NEWLINE);*/
-    /*}*/
-    /**/
-    /*KFLUSH_AFTER { INFO(STRING("Identity mapping all memory\n")); }*/
-    /*identityMapPhysicalMemory(gop->mode->frameBufferBase +*/
-    /*                          gop->mode->frameBufferSize);*/
-    /**/
-    /*KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }*/
-    /*PhysicalAddress stackStart =*/
-    /*    allocate4KiBPages(CEILING_DIV_VALUE(KERNEL_STACK_SIZE,
-     * UEFI_PAGE_SIZE));*/
-    /*mapWithSmallestNumberOfPagesInKernelMemory(KERNEL_STACK_START,
-     * stackStart,*/
-    /*                                           KERNEL_STACK_SIZE);*/
-    /*KFLUSH_AFTER {*/
-    /*    INFO(STRING("The phyiscal stack will go down from: "));*/
-    /*    INFO((void *)stackStart + KERNEL_STACK_SIZE, NEWLINE);*/
-    /*    INFO(STRING("to: "));*/
-    /*    INFO((void *)stackStart, NEWLINE);*/
-    /**/
-    /*    INFO(STRING("The virtual stack will go down from: "));*/
-    /*    INFO((void *)KERNEL_STACK_START + KERNEL_STACK_SIZE, NEWLINE);*/
-    /*    INFO(STRING("to: "));*/
-    /*    INFO((void *)KERNEL_STACK_START, NEWLINE);*/
-    /*}*/
-    /**/
     /*KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n"));
      * }*/
-    /*PhysicalAddress kernelParams = allocate4KiBPages(*/
-    /*    CEILING_DIV_VALUE(KERNEL_PARAMS_SIZE, UEFI_PAGE_SIZE));*/
-    /*mapWithSmallestNumberOfPagesInKernelMemory(*/
-    /*    KERNEL_PARAMS_START, kernelParams, KERNEL_PARAMS_SIZE);*/
-    /*KFLUSH_AFTER {*/
-    /*    INFO(STRING("The phyiscal kernel params goes from: "));*/
-    /*    INFO((void *)kernelParams, NEWLINE);*/
-    /*    INFO(STRING("to: "));*/
-    /*    INFO((void *)kernelParams + KERNEL_PARAMS_SIZE, NEWLINE);*/
-    /**/
-    /*    INFO(STRING("The virtual kernel params goes from: "));*/
-    /*    INFO((void *)KERNEL_PARAMS_START, NEWLINE);*/
-    /*    INFO(STRING("to: "));*/
-    /*    INFO((void *)KERNEL_PARAMS_START + KERNEL_PARAMS_SIZE, NEWLINE);*/
-    /*}*/
 
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
     /*KernelParameters *params = (KernelParameters *)kernelParams;*/

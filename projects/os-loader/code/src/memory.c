@@ -47,40 +47,47 @@ KernelMemory stubMemoryBeforeExitBootServices(MemoryInfo *memoryInfo) {
     /*return result;*/
 }
 
-void mapWithSmallestNumberOfPagesInKernelMemory(U64 virt, U64 physical,
-                                                U64 bytes) {
-    Pages pagesToMap = convertBytesToSmallestNuberOfPages(bytes);
-    mapVirtualRegion(virt,
-                     (PagedMemory){.start = (U64)physical,
-                                   .numberOfPages = pagesToMap.numberOfPages},
-                     pagesToMap.pageSize);
+static U64 mapMemory(U64 virt, U64 physical, U64 mappingSize, U64 numberOfPages,
+                     U64 flags) {
+    U64 virtualEnd = virt + mappingSize * numberOfPages;
+    for (; virt < virtualEnd; virt += mappingSize, physical += mappingSize) {
+        mapPageWithFlags(virt, physical, mappingSize, flags);
+    }
+    return virtualEnd;
 }
 
-void identityMapPhysicalMemory(U64 currentHighestAddress) {
-    /*MemoryInfo memoryInfo = getMemoryInfo();*/
-    /*FOR_EACH_DESCRIPTOR(&memoryInfo, desc) {*/
-    /*    if (desc->physicalStart + (desc->numberOfPages * UEFI_PAGE_SIZE) >*/
-    /*        currentHighestAddress) {*/
-    /*        currentHighestAddress = desc->physicalStart;*/
-    /*    }*/
-    /*}*/
-    /**/
-    /*KFLUSH_AFTER {*/
-    /*    INFO(STRING("highest found address in memory: "));*/
-    /*    INFO((void *)currentHighestAddress, NEWLINE);*/
-    /*}*/
-    /**/
-    /*mapWithSmallestNumberOfPagesInKernelMemory(0, 0, currentHighestAddress);*/
+U64 mapContiguousPhysicalMemoryWithFlags(U64 virt, U64 physical, U64 bytes,
+                                         U64 flags) {
+    U64 mappingSize = convertToLargestAlignedPageSize(virt, physical, bytes);
+    U64 numberOfPages = CEILING_DIV_VALUE(bytes, mappingSize);
+
+    return mapMemory(virt, physical, mappingSize, numberOfPages, flags);
+}
+
+U64 mapContiguousPhysicalMemory(U64 virt, U64 physical, U64 bytes) {
+    return mapContiguousPhysicalMemoryWithFlags(virt, physical, bytes,
+                                                KERNEL_STANDARD_PAGE_FLAGS);
+}
+
+U64 mapInContiguousPhysicalMemory(U64 virt, U64 physical, U64 bytes) {
+    U64 mappingSize =
+        convertToMostFittingAlignedPageSize(virt, physical, bytes);
+    U64 numberOfPages = CEILING_DIV_VALUE(bytes, mappingSize);
+
+    return mapMemory(virt, physical, mappingSize, numberOfPages,
+                     KERNEL_STANDARD_PAGE_FLAGS);
 }
 
 KernelMemory convertToKernelMemory(MemoryInfo *memoryInfo,
                                    KernelMemory result) {
-    /*U64 usedPages = VIRTUAL_MEMORY_MAPPER_CAPACITY - virtualMemoryMapperEmd;*/
+    /*U64 usedPages = VIRTUAL_MEMORY_MAPPER_CAPACITY -
+     * virtualMemoryMapperEmd;*/
     /**/
     /*FOR_EACH_DESCRIPTOR(memoryInfo, desc) {*/
     /*    if (canBeUsedByOS(desc->type)) {*/
     /*        U64 endAddress =*/
-    /*            desc->physicalStart + desc->numberOfPages * UEFI_PAGE_SIZE;*/
+    /*            desc->physicalStart + desc->numberOfPages *
+     * UEFI_PAGE_SIZE;*/
     /*        if (virtualMemoryMapperFree >= desc->physicalStart &&*/
     /*            virtualMemoryMapperFree < endAddress) {*/
     /*            U64 beforeFreePages =*/
@@ -94,11 +101,13 @@ KernelMemory convertToKernelMemory(MemoryInfo *memoryInfo,
     /*            }*/
     /**/
     /*            U64 afterStart =*/
-    /*                virtualMemoryMapperFree + (usedPages * UEFI_PAGE_SIZE);*/
+    /*                virtualMemoryMapperFree + (usedPages *
+     * UEFI_PAGE_SIZE);*/
     /*            U64 afterFreePages = (endAddress - afterStart) /
      * UEFI_PAGE_SIZE;*/
     /*            if (afterFreePages > 0) {*/
-    /*                result.memory.buf[result.memory.len] = (PagedMemory){*/
+    /*                result.memory.buf[result.memory.len] =
+     * (PagedMemory){*/
     /*                    .start = afterStart, .numberOfPages =
      * afterFreePages};*/
     /*                result.memory.len++;*/
