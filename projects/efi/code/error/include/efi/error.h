@@ -10,7 +10,7 @@ void waitKeyThenReset();
     for (auto MACRO_VAR(i) = 0; MACRO_VAR(i) < 1;                              \
          MACRO_VAR(i) = 1, flushStandardBuffer(), waitKeyThenReset())
 
-#define EXIT_WITH_MESSAGE_IF(status)                                           \
+#define EXIT_WITH_MESSAGE_IF_EFI_ERROR(status)                                           \
     if (EFI_ERROR(status))                                                     \
     EXIT_WITH_MESSAGE
 

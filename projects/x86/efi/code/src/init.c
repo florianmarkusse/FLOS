@@ -35,9 +35,9 @@ void bootstrapProcessorWork(Arena scratch) {
 
     disablePIC();
 
-    gdtData = getAlignedPhysicalMemoryWithArena(
-        sizeof(PhysicalBasePage) * 3, alignof(PhysicalBasePage),
-        alignof(PhysicalBasePage), scratch);
+    gdtData =
+        allocateKernelStructure(sizeof(PhysicalBasePage) * 3,
+                                alignof(PhysicalBasePage), false, scratch);
     gdtDescriptor = prepNewGDT((PhysicalBasePage *)gdtData);
 
     // NOTE: WHY????
@@ -48,7 +48,7 @@ void bootstrapProcessorWork(Arena scratch) {
 
 // NOTE: this should be done per core probably?
 static constexpr auto CALIBRATION_MICROSECONDS = 100;
-void calibrateWait() {
+static void calibrateWait() {
     U32 edx;
     U32 eax;
     asm volatile("rdtscp" : "=a"(eax), "=d"(edx));

@@ -7,36 +7,10 @@
 #include "efi/memory/definitions.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
+#include "shared/memory/converter.h"
 #include "shared/memory/sizes.h"
 
-void fillMemoryInfo(MemoryInfo *memoryInfo) {
-    Status status = globals.st->boot_services->get_memory_map(
-        &memoryInfo->memoryMapSize, memoryInfo->memoryMap, &memoryInfo->mapKey,
-        &memoryInfo->descriptorSize, &memoryInfo->descriptorVersion);
-    EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING("Getting memory map failed!\n"));
-    }
-}
-
-U64 findHighestMemoryAddress(U64 currentHighestAddress, Arena scratch) {
-    MemoryInfo memoryInfo = prepareMemoryInfo();
-
-    memoryInfo.memoryMap = (MemoryDescriptor *)NEW(
-        &scratch, U8, memoryInfo.memoryMapSize, 0, UEFI_PAGE_SIZE);
-
-    fillMemoryInfo(&memoryInfo);
-
-    FOR_EACH_DESCRIPTOR(&memoryInfo, desc) {
-        if (desc->physicalStart + (desc->numberOfPages * UEFI_PAGE_SIZE) >
-            currentHighestAddress) {
-            currentHighestAddress = desc->physicalStart;
-        }
-    }
-
-    return currentHighestAddress;
-}
-
-MemoryInfo prepareMemoryInfo() {
+static MemoryInfo prepareMemoryInfo() {
     MemoryInfo memoryInfo = {0};
 
     // Call GetMemoryMap with initial buffer size of 0 to retrieve the
@@ -54,20 +28,60 @@ MemoryInfo prepareMemoryInfo() {
     return memoryInfo;
 }
 
-static constexpr auto MAX_ALLOWED_ALIGNEMT = 1 * GiB;
-static constexpr auto MIN_POSSIBLE_ALIGNMENT = UEFI_PAGE_SIZE;
+static void fillMemoryInfo(MemoryInfo *memoryInfo) {
+    Status status = globals.st->boot_services->get_memory_map(
+        &memoryInfo->memoryMapSize, memoryInfo->memoryMap, &memoryInfo->mapKey,
+        &memoryInfo->descriptorSize, &memoryInfo->descriptorVersion);
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+        ERROR(STRING("Getting memory map failed!\n"));
+    }
+}
 
-static void alignmentChecks(U64 alignment) {
-    ASSERT(((alignment) & (alignment - 1)) == 0);
-    if (alignment > MAX_ALLOWED_ALIGNEMT) {
+static constexpr auto MAX_KERNEL_STRUCTURES = 16;
+U64_max_a kernelStructureLocations;
+
+void initKernelStructureLocations(Arena *perm) {
+    kernelStructureLocations = (U64_max_a){
+        .buf = NEW(perm, U64, MAX_KERNEL_STRUCTURES),
+        .len = 0,
+        .cap = MAX_KERNEL_STRUCTURES,
+    };
+}
+
+void addAddressToKernelStructure(U64 address) {
+    if (kernelStructureLocations.len >= kernelStructureLocations.cap) {
         EXIT_WITH_MESSAGE {
-            ERROR(STRING("alignment exceeded maximum allowed alignment.\n"));
-            ERROR(STRING("Request alignment: "));
-            ERROR(alignment, NEWLINE);
-            ERROR(STRING("Maximum allowed alignment: "));
-            ERROR(MAX_ALLOWED_ALIGNEMT, NEWLINE);
+            ERROR(STRING("Too many kernel structure locations added!\n"));
         }
     }
+    kernelStructureLocations.buf[kernelStructureLocations.len] = address;
+    kernelStructureLocations.len++;
+
+    KFLUSH_AFTER {
+        INFO(STRING("len is now: "));
+        INFO(kernelStructureLocations.len, NEWLINE);
+    }
+}
+
+MemoryInfo getMemoryInfo(Arena *perm) {
+    MemoryInfo memoryInfo = prepareMemoryInfo();
+    memoryInfo.memoryMap = (MemoryDescriptor *)NEW(
+        perm, U8, memoryInfo.memoryMapSize, 0, UEFI_PAGE_SIZE);
+    fillMemoryInfo(&memoryInfo);
+    return memoryInfo;
+}
+
+U64 findHighestMemoryAddress(U64 currentHighestAddress, Arena scratch) {
+    MemoryInfo memoryInfo = getMemoryInfo(&scratch);
+
+    FOR_EACH_DESCRIPTOR(&memoryInfo, desc) {
+        U64 end = desc->physicalStart + (desc->numberOfPages * UEFI_PAGE_SIZE);
+        if (end > currentHighestAddress) {
+            currentHighestAddress = end;
+        }
+    }
+
+    return currentHighestAddress;
 }
 
 static bool canBeUsedInEFI(MemoryType type) {
@@ -75,33 +89,48 @@ static bool canBeUsedInEFI(MemoryType type) {
 }
 
 static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
-                             U64 preferredAlignment, U64 minimumAlignment) {
-    ASSERT(preferredAlignment >= minimumAlignment);
+                             U64 minimumAlignment,
+                             bool tryEncompassingVirtual) {
+    U64 alignment = pageEncompassing(minimumAlignment);
+    if (tryEncompassingVirtual) {
+        alignment = MAX(alignment, pageEncompassing(bytes));
+    }
 
-    for (U64 alignment = MAX(preferredAlignment, MIN_POSSIBLE_ALIGNMENT);
-         alignment >= minimumAlignment; alignment /= 2) {
+    for (; alignment >= minimumAlignment; alignment = decreasePage(alignment)) {
         FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
             if (!canBeUsedInEFI(desc->type)) {
                 continue;
             }
 
-            if (RING_RANGE_VALUE(desc->physicalStart, alignment)) {
+            U64 alignedAddress = ALIGN_UP_VALUE(desc->physicalStart, alignment);
+            U64 originalSize = desc->numberOfPages * UEFI_PAGE_SIZE;
+            if (alignedAddress >= desc->physicalStart + originalSize) {
                 continue;
             }
 
-            if (desc->numberOfPages * UEFI_PAGE_SIZE < bytes) {
+            U64 padding = alignedAddress - desc->physicalStart;
+            U64 alignedSize = originalSize - padding;
+            if (alignedSize < bytes) {
                 continue;
             }
 
             U64 address = desc->physicalStart;
             Status status = globals.st->boot_services->allocate_pages(
                 ALLOCATE_ADDRESS, LOADER_DATA,
-                CEILING_DIV_VALUE(bytes, UEFI_PAGE_SIZE), &address);
-            EXIT_WITH_MESSAGE_IF(status) {
+                CEILING_DIV_VALUE(padding + bytes, UEFI_PAGE_SIZE), &address);
+            EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
                 ERROR(STRING("allocating pages for memory failed!\n"));
             }
 
-            return address;
+            if (padding) {
+                status = globals.st->boot_services->free_pages(
+                    address, CEILING_DIV_VALUE(padding, UEFI_PAGE_SIZE));
+                EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+                    ERROR(STRING("Freeing padded memory failed!\n"));
+                }
+            }
+
+            return alignedAddress;
         }
     }
 
@@ -110,47 +139,28 @@ static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
     __builtin_unreachable();
 }
 
-U64 getAlignedPhysicalMemoryWithArena(U64 bytes, U64 preferredAlignment,
-                                      U64 minimumAlignment, Arena scratch) {
-    alignmentChecks(preferredAlignment);
-    alignmentChecks(minimumAlignment);
-    MemoryInfo memoryInfo = prepareMemoryInfo();
+U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
+                            bool tryEncompassingVirtual, Arena scratch) {
+    MemoryInfo memoryInfo = getMemoryInfo(&scratch);
 
-    memoryInfo.memoryMap = (MemoryDescriptor *)NEW(
-        &scratch, U8, memoryInfo.memoryMapSize, 0, UEFI_PAGE_SIZE);
+    U64 result = findAlignedMemory(&memoryInfo, bytes, minimumAlignment,
+                                   tryEncompassingVirtual);
 
-    fillMemoryInfo(&memoryInfo);
-
-    return findAlignedMemory(&memoryInfo, bytes, preferredAlignment,
-                             minimumAlignment);
+    addAddressToKernelStructure(result);
+    return result;
 }
 
-U64 getAlignedPhysicalMemory(U64 bytes, U64 preferredAlignment,
-                             U64 minimumAlignment) {
-    alignmentChecks(preferredAlignment);
-    alignmentChecks(minimumAlignment);
-    MemoryInfo memoryInfo = prepareMemoryInfo();
-
-    // NOTE: Adding an extra page here to acoount for allocation below
-    memoryInfo.memoryMapSize += UEFI_PAGE_SIZE;
+U64 allocateUnalignedMemory(U64 bytes, bool isKernelStructure) {
+    U64 address = 0;
     Status status = globals.st->boot_services->allocate_pages(
         ALLOCATE_ANY_PAGES, LOADER_DATA,
-        CEILING_DIV_VALUE(memoryInfo.memoryMapSize, UEFI_PAGE_SIZE),
-        (PhysicalAddress *)&memoryInfo.memoryMap);
-    EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING("allocating pages for getting memory map failed!\n"));
+        CEILING_DIV_VALUE(bytes, UEFI_PAGE_SIZE), &address);
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+        ERROR(STRING("allocating unaligned memory failed!\n"));
     }
 
-    fillMemoryInfo(&memoryInfo);
-    U64 result = findAlignedMemory(&memoryInfo, bytes, preferredAlignment,
-                                   minimumAlignment);
-
-    status = globals.st->boot_services->free_pages(
-        (U64)memoryInfo.memoryMap,
-        CEILING_DIV_VALUE(memoryInfo.memoryMapSize, UEFI_PAGE_SIZE));
-    EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING("Freeing allocated memory for memory map failed!\n"));
+    if (isKernelStructure) {
+        addAddressToKernelStructure(address);
     }
-
-    return result;
+    return address;
 }

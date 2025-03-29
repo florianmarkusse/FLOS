@@ -58,6 +58,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-peripheral-screen)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-text)
+target_link_libraries(${PROJECT_NAME} PRIVATE shared-maths)
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-allocator)
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-converter)
 

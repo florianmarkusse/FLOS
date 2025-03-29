@@ -7,24 +7,64 @@
 #include "efi/error.h"
 #include "efi/firmware/base.h" // for ERROR, Handle
 #include "efi/firmware/block-io.h"
-#include "efi/firmware/file.h"               // for FileProtocol, FIL...
-#include "efi/firmware/loaded-image.h"       // for LOADED_IMAGE_PROT...
+#include "efi/firmware/file.h"         // for FileProtocol, FIL...
+#include "efi/firmware/loaded-image.h" // for LOADED_IMAGE_PROT...
+#include "efi/firmware/partition-information.h"
 #include "efi/firmware/simple-file-system.h" // for SIMPLE_FILE_SYSTE...
 #include "efi/firmware/simple-text-input.h"
 #include "efi/firmware/system.h" // for OPEN_PROTOCOL_BY_...
 #include "efi/globals.h"         // for globals
 #include "efi/memory/definitions.h"
 #include "efi/memory/physical.h"
-#include "efi/memory/virtual.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
+
+// NOTE: Once my firmware supports a PartitionInformationProtocol, this function
+// can be used to check for the right block protocol. Until then, it cannot.
+static void checkForPartitionGUID(Handle handle) {
+    PartitionInformationProtocol *partitionInfo;
+    Status status = globals.st->boot_services->open_protocol(
+        handle, &PARTITION_INFO_PROTOCOL_GUID, (void **)&partitionInfo,
+        globals.h, nullptr, OPEN_PROTOCOL_GET_PROTOCOL);
+
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+        ERROR(STRING("Could not find partition info protocol."));
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING("resvision: "));
+        INFO(partitionInfo->revision, NEWLINE);
+        INFO(STRING("Type: "));
+        INFO(partitionInfo->type, NEWLINE);
+        INFO(STRING("System: "));
+        INFO(partitionInfo->system, NEWLINE);
+    }
+
+    if (partitionInfo->type == PARTITION_TYPE_MBR) {
+        KFLUSH_AFTER { INFO(STRING("Is MBR")); }
+    }
+
+    if (partitionInfo->type == PARTITION_TYPE_GPT) {
+        GPTPartitionEntry *header = &partitionInfo->gpt;
+        if (UUIDEquals(header->partitionTypeGUID, FLOS_BASIC_DATA_GUID)) {
+            KFLUSH_AFTER { INFO(STRING("Found one with my GUID!!!")); }
+        }
+    }
+
+    EXIT_WITH_MESSAGE {
+        ERROR(STRING("ALL BAD!"));
+        ERROR(STRING("ALL BAD!"));
+        ERROR(STRING("ALL BAD!"));
+        ERROR(STRING("ALL BAD!"));
+    }
+}
 
 // We first read memory into scratch memory before copying it to the actual
 // memory location that we want it in. UEFI's readBlocks implementation has a
 // bug on my hardware with reading blocks into addresses that are above 4GiB and
 // the aligned memory address can end up being at this level. So we add an
-// intermediat step in between.
+// intermediate step in between.
 static string fetchKernelThroughBIOP(Handle handle, U64 bytes, Arena scratch) {
     string result;
     result.len = 0;
@@ -33,26 +73,28 @@ static string fetchKernelThroughBIOP(Handle handle, U64 bytes, Arena scratch) {
     Status status = globals.st->boot_services->open_protocol(
         handle, &BLOCK_IO_PROTOCOL_GUID, (void **)&biop, globals.h, nullptr,
         OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-    EXIT_WITH_MESSAGE_IF(status) {
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not Open Block IO protocol on handle\n"));
     }
 
-    U64 alignedBytes = ALIGN_UP_VALUE(bytes, biop->media->blockSize);
+    if (biop->media->blockSize > 0 && biop->media->logicalPartition) {
+        U64 alignedBytes = ALIGN_UP_VALUE(bytes, biop->media->blockSize);
 
-    U64 *blockAddress =
-        (U64 *)NEW(&scratch, U8, alignedBytes, 0, biop->media->blockSize);
+        U64 *blockAddress =
+            (U64 *)NEW(&scratch, U8, alignedBytes, 0, biop->media->blockSize);
 
-    status = biop->readBlocks(biop, biop->media->mediaID, 0,
-                              /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-                              alignedBytes, (void *)blockAddress);
-    if (!(EFI_ERROR(status)) &&
-        !memcmp(KERNEL_MAGIC, (void *)blockAddress, COUNTOF(KERNEL_MAGIC))) {
-        U64 kernelAddress = getAlignedPhysicalMemoryWithArena(
-            bytes, KERNEL_STRUCTURES_PREFERRED_ALIGNMENT, UEFI_PAGE_SIZE,
-            scratch);
+        status =
+            biop->readBlocks(biop, biop->media->mediaID, 0,
+                             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+                             alignedBytes, (void *)blockAddress);
+        if (!(EFI_ERROR(status)) && !memcmp(KERNEL_MAGIC, (void *)blockAddress,
+                                            COUNTOF(KERNEL_MAGIC))) {
+            U64 kernelAddress =
+                allocateKernelStructure(bytes, 0, true, scratch);
 
-        memcpy((void *)kernelAddress, blockAddress, bytes);
-        result = (string){.buf = (void *)kernelAddress, .len = bytes};
+            memcpy((void *)kernelAddress, blockAddress, bytes);
+            result = (string){.buf = (void *)kernelAddress, .len = bytes};
+        }
     }
 
     globals.st->boot_services->close_protocol(handle, &BLOCK_IO_PROTOCOL_GUID,
@@ -68,17 +110,8 @@ string readKernelFromCurrentLoadedImage(U64 bytes, Arena scratch) {
     status = globals.st->boot_services->open_protocol(
         globals.h, &LOADED_IMAGE_PROTOCOL_GUID, (void **)&lip, globals.h,
         nullptr, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-    EXIT_WITH_MESSAGE_IF(status) {
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not open Loaded Image Protocol\n"));
-    }
-
-    BlockIoProtocol *imageBiop;
-    status = globals.st->boot_services->open_protocol(
-        lip->device_handle, &BLOCK_IO_PROTOCOL_GUID, (void **)&imageBiop,
-        globals.h, nullptr, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-    EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING(
-            "Could not open Block IO Protocol for this loaded image.\n"));
     }
 
     USize numberOfHandles = 0;
@@ -87,7 +120,7 @@ string readKernelFromCurrentLoadedImage(U64 bytes, Arena scratch) {
     status = globals.st->boot_services->locate_handle_buffer(
         BY_PROTOCOL, &BLOCK_IO_PROTOCOL_GUID, nullptr, &numberOfHandles,
         &handleBuffer);
-    EXIT_WITH_MESSAGE_IF(status) {
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not locate any Block IO Protocols.\n"));
     }
 
@@ -106,51 +139,21 @@ string readKernelFromCurrentLoadedImage(U64 bytes, Arena scratch) {
     }
 
     status = globals.st->boot_services->free_pool(handleBuffer);
-    EXIT_WITH_MESSAGE_IF(status) {
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not free handle buffer.\n"));
     }
     globals.st->boot_services->close_protocol(
         lip->device_handle, &BLOCK_IO_PROTOCOL_GUID, globals.h, nullptr);
-    EXIT_WITH_MESSAGE_IF(status) {
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not close lip block io protocol.\n"));
     }
     globals.st->boot_services->close_protocol(
         globals.h, &LOADED_IMAGE_PROTOCOL_GUID, globals.h, nullptr);
-    EXIT_WITH_MESSAGE_IF(status) {
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not close lip protocol.\n"));
     }
 
     return data;
-}
-
-U32 getDiskImageMediaID() {
-    Status status;
-
-    LoadedImageProtocol *lip = nullptr;
-    status = globals.st->boot_services->open_protocol(
-        globals.h, &LOADED_IMAGE_PROTOCOL_GUID, (void **)&lip, globals.h,
-        nullptr, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-    EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING("Could not open Loaded Image Protocol\n"));
-    }
-
-    BlockIoProtocol *biop;
-    status = globals.st->boot_services->open_protocol(
-        lip->device_handle, &BLOCK_IO_PROTOCOL_GUID, (void **)&biop, globals.h,
-        nullptr, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-    EXIT_WITH_MESSAGE_IF(status) {
-        ERROR(STRING(
-            "Could not open Block IO Protocol for this loaded image.\n"));
-    }
-
-    U32 mediaID = biop->media->mediaID;
-
-    globals.st->boot_services->close_protocol(
-        lip->device_handle, &BLOCK_IO_PROTOCOL_GUID, globals.h, nullptr);
-    globals.st->boot_services->close_protocol(
-        globals.h, &LOADED_IMAGE_PROTOCOL_GUID, globals.h, nullptr);
-
-    return mediaID;
 }
 
 U64 getKernelBytes(Arena scratch) {
@@ -158,7 +161,7 @@ U64 getKernelBytes(Arena scratch) {
     Status status = globals.st->boot_services->open_protocol(
         globals.h, &LOADED_IMAGE_PROTOCOL_GUID, (void **)&lip, globals.h,
         nullptr, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-    EXIT_WITH_MESSAGE_IF(status) {
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not open Loaded Image Protocol\n"));
     }
 
@@ -166,25 +169,29 @@ U64 getKernelBytes(Arena scratch) {
     status = globals.st->boot_services->open_protocol(
         lip->device_handle, &SIMPLE_FILE_SYSTEM_PROTOCOL_GUID, (void **)&sfsp,
         globals.h, nullptr, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-    EXIT_WITH_MESSAGE_IF(status) {
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not open Simple File System Protocol\n"));
     }
 
     FileProtocol *root = nullptr;
     status = sfsp->openVolume(sfsp, &root);
-    EXIT_WITH_MESSAGE_IF(status) {
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not Open Volume for root directory in ESP\n"));
     }
 
     FileProtocol *file = nullptr;
     status =
         root->open(root, &file, u"\\EFI\\FLOS\\KERNEL.INF", FILE_MODE_READ, 0);
-    EXIT_WITH_MESSAGE_IF(status) { ERROR(STRING("Could not Open File\n")); }
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+        ERROR(STRING("Could not Open File\n"));
+    }
 
     FileInfo file_info;
     USize file_info_size = sizeof(file_info);
     status = file->getInfo(file, &FILE_INFO_ID, &file_info_size, &file_info);
-    EXIT_WITH_MESSAGE_IF(status) { ERROR(STRING("Could not get file info\n")); }
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+        ERROR(STRING("Could not get file info\n"));
+    }
 
     string dataFile;
     dataFile.len = file_info.fileSize;

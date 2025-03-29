@@ -17,6 +17,7 @@
 static constexpr auto INIT_MEMORY = (64 * MiB);
 
 __attribute__((section("kernel-start"))) int kernelmain() {
+    asm volatile("1: jmp 1b");
     initIDT();
     // TODO: [X86] I need to enable NMIs here also again!
 

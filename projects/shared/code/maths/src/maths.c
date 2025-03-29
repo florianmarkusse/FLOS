@@ -2,7 +2,10 @@
 #include "shared/types/types.h"
 
 U64 ceilingPowerOf2(U64 x) {
-    return x == 1 ? 1 : 1 << (64 - __builtin_clzll(x - 1));
+    if (x <= 1) {
+        return 1;
+    }
+    return 1ULL << ((sizeof(U64) * BITS_PER_BYTE) - __builtin_clzll(x - 1));
 }
 
 U64 power(U64 base, U64 exponent) {

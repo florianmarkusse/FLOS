@@ -5,15 +5,6 @@
 #include "shared/types/types.h"
 
 typedef struct {
-    U8 bootIndicator;
-    U8 startingCHS[3];
-    U8 osType;
-    U8 endingCHS[3];
-    U32 startingLBA;
-    U32 sizeLBA;
-} __attribute__((packed)) MBRPartition;
-
-typedef struct {
     U8 bootCode[440];
     U32 MBRSignature;
     U16 unknown;

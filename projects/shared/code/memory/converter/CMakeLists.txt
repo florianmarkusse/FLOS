@@ -7,3 +7,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE shared-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-virtual-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation-i)
+# TODO: remove
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-log-i)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-text-converter-i)

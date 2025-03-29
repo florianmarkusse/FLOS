@@ -33,3 +33,7 @@ void setUUIDType(UUID *uuid, U8 version, UUIDVariant variant) {
     }
     }
 }
+
+bool UUIDEquals(UUID a, UUID b) {
+    return a.u64[0] == b.u64[0] && a.u64[1] == b.u64[1];
+}

@@ -6,3 +6,4 @@ add_includes_for_sublibrary()
 target_link_libraries(${PROJECT_NAME} INTERFACE shared-i)
 
 target_link_libraries(${PROJECT_NAME} INTERFACE efi-i)
+target_link_libraries(${PROJECT_NAME} INTERFACE efi-uefi-i)

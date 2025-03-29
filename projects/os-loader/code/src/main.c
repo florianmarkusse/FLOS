@@ -2,6 +2,7 @@
 #include "abstraction/jmp.h"
 #include "abstraction/log.h"
 #include "abstraction/memory/physical/allocation.h"
+#include "abstraction/memory/virtual/converter.h"
 #include "abstraction/memory/virtual/map.h"
 #include "efi-to-kernel/kernel-parameters.h"  // for KernelParameters
 #include "efi-to-kernel/memory/definitions.h" // for STACK_SIZE
@@ -16,7 +17,6 @@
 #include "efi/globals.h"                     // for globals
 #include "efi/memory/definitions.h"
 #include "efi/memory/physical.h"
-#include "efi/memory/virtual.h"
 #include "os-loader/data-reading.h" // for getKernelInfo
 #include "os-loader/memory.h"       // for mapMemoryAt
 #include "shared/log.h"
@@ -35,9 +35,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     globals.st->con_out->set_attribute(globals.st->con_out,
                                        BACKGROUND_RED | YELLOW);
 
-    void *memoryForArena = (void *)getAlignedPhysicalMemory(
-        DYNAMIC_MEMORY_CAPACITY, DYNAMIC_MEMORY_ALIGNMENT,
-        DYNAMIC_MEMORY_ALIGNMENT);
+    void *memoryForArena =
+        (void *)allocateUnalignedMemory(DYNAMIC_MEMORY_CAPACITY, false);
     Arena arena = (Arena){.curFree = memoryForArena,
                           .beg = memoryForArena,
                           .end = memoryForArena + DYNAMIC_MEMORY_CAPACITY};
@@ -46,9 +45,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
             ERROR(STRING("Ran out of dynamic memory capacity\n"));
         }
     }
-    initVirtualMemoryMapper(getAlignedPhysicalMemoryWithArena(
-        VIRTUAL_MEMORY_MAPPER_CAPACITY, VIRTUAL_MEMORY_MAPPER_ALIGNMENT,
-        VIRTUAL_MEMORY_MAPPER_ALIGNMENT, arena));
+    initKernelStructureLocations(&arena);
 
     initArchitecture(arena);
 
@@ -71,9 +68,14 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     string kernelContent = readKernelFromCurrentLoadedImage(kernelBytes, arena);
 
-    KFLUSH_AFTER { INFO(STRING("mAPPING kernel into location\n")); }
-    mapContiguousPhysicalMemory(KERNEL_CODE_START, (U64)kernelContent.buf,
-                                kernelContent.len);
+    KFLUSH_AFTER { INFO(STRING("Mapping kernel into location\n")); }
+    if (mapMemory(KERNEL_CODE_START, (U64)kernelContent.buf,
+                  kernelContent.len) < KERNEL_CODE_START) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING(
+                "Kernel mapping overflowed out of the address space!\n"));
+        }
+    }
 
     KFLUSH_AFTER {
         INFO(STRING("The phyiscal kernel:\nstart: "));
@@ -88,19 +90,18 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }
-    U64 stackAddress = getAlignedPhysicalMemoryWithArena(
-        KERNEL_STACK_SIZE, KERNEL_STRUCTURES_PREFERRED_ALIGNMENT,
-        KERNEL_STACK_ALIGNMENT, arena);
+    U64 stackAddress =
+        allocateKernelStructure(KERNEL_STACK_SIZE, 0, true, arena);
 
     KFLUSH_AFTER { INFO(STRING("Mapping stack into location\n")); }
     // NOTE: Overflow precaution
     kernelFreeVirtualMemory += KERNEL_STACK_SIZE;
-    kernelFreeVirtualMemory = ALIGN_UP_VALUE(
-        kernelFreeVirtualMemory, KERNEL_STRUCTURES_PREFERRED_ALIGNMENT);
+    kernelFreeVirtualMemory =
+        alignVirtual(kernelFreeVirtualMemory, stackAddress, KERNEL_STACK_SIZE);
 
     U64 stackVirtualStart = kernelFreeVirtualMemory;
-    kernelFreeVirtualMemory = mapContiguousPhysicalMemory(
-        kernelFreeVirtualMemory, stackAddress, KERNEL_STACK_SIZE);
+    kernelFreeVirtualMemory =
+        mapMemory(kernelFreeVirtualMemory, stackAddress, KERNEL_STACK_SIZE);
 
     KFLUSH_AFTER {
         INFO(STRING("The phyiscal stack:\ndown from: "));
@@ -112,20 +113,23 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)stackVirtualStart + KERNEL_STACK_SIZE, NEWLINE);
         INFO(STRING("until:     "));
         INFO((void *)stackVirtualStart, NEWLINE);
+        INFO(STRING("virt free memory is now at:     "));
+        INFO((void *)kernelFreeVirtualMemory, NEWLINE);
     }
 
     GraphicsOutputProtocol *gop = nullptr;
     Status status = globals.st->boot_services->locate_protocol(
         &GRAPHICS_OUTPUT_PROTOCOL_GUID, nullptr, (void **)&gop);
-    EXIT_WITH_MESSAGE_IF(status) {
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not locate locate GOP\n"));
     }
 
     KFLUSH_AFTER { INFO(STRING("Mapping screen memory into location\n")); }
+    kernelFreeVirtualMemory =
+        alignVirtual(kernelFreeVirtualMemory, gop->mode->frameBufferBase,
+                     gop->mode->frameBufferSize);
     U64 screenMemoryVirtualStart = kernelFreeVirtualMemory;
-    kernelFreeVirtualMemory = ALIGN_UP_VALUE(
-        kernelFreeVirtualMemory, KERNEL_STRUCTURES_PREFERRED_ALIGNMENT);
-    mapContiguousPhysicalMemoryWithFlags(
+    kernelFreeVirtualMemory = mapMemoryWithFlags(
         kernelFreeVirtualMemory, gop->mode->frameBufferBase,
         gop->mode->frameBufferSize,
         KERNEL_STANDARD_PAGE_FLAGS | KERNEL_SCREEN_MEMORY_PAGE_FLAGS);
@@ -142,6 +146,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(STRING("stop:  "));
         INFO((void *)(screenMemoryVirtualStart + gop->mode->frameBufferSize),
              NEWLINE);
+        INFO(STRING("virt free memory is now at:     "));
+        INFO((void *)kernelFreeVirtualMemory, NEWLINE);
     }
 
     U64 highestAddress = findHighestMemoryAddress(
@@ -150,11 +156,11 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(STRING("Identity mapping all memory, highest address found: "));
         INFO((void *)highestAddress, NEWLINE);
     }
-    mapContiguousPhysicalMemory(0, 0, highestAddress);
+    mapMemory(0, 0, highestAddress);
 
-    PhysicalAddress kernelParams = getAlignedPhysicalMemoryWithArena(
-        KERNEL_PARAMS_SIZE, KERNEL_PARAMS_ALIGNMENT, KERNEL_PARAMS_ALIGNMENT,
-        arena);
+    KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
+    U64 kernelParams = allocateKernelStructure(
+        KERNEL_PARAMS_SIZE, KERNEL_PARAMS_ALIGNMENT, false, arena);
 
     KFLUSH_AFTER {
         INFO(STRING("The phyiscal kernel params:\nstart: "));
@@ -168,53 +174,43 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)(kernelParams + KERNEL_PARAMS_SIZE), NEWLINE);
     }
 
-    EXIT_WITH_MESSAGE {
-        ERROR(
-            STRING("------------------------------------------------------\n"));
+    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+    KernelParameters *params = (KernelParameters *)kernelParams;
+
+    params->fb.columns = gop->mode->info->horizontalResolution;
+    params->fb.rows = gop->mode->info->verticalResolution;
+    params->fb.scanline = gop->mode->info->pixelsPerScanLine;
+    params->fb.ptr = gop->mode->frameBufferBase;
+    params->fb.size = gop->mode->frameBufferSize;
+
+    RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
+                              globals.st->configuration_table);
+    if (!rsdp.rsdp) {
+        EXIT_WITH_MESSAGE { ERROR(STRING("Could not find an RSDP!\n")); }
     }
 
-    /*KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n"));
-     * }*/
+    KFLUSH_AFTER {
+        INFO(STRING("Prepared and collected all necessary information to jump"
+                    "to the kernel.\n"));
+    }
 
-    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    /*KernelParameters *params = (KernelParameters *)kernelParams;*/
-    /**/
-    /*params->fb.columns = gop->mode->info->horizontalResolution;*/
-    /*params->fb.rows = gop->mode->info->verticalResolution;*/
-    /*params->fb.scanline = gop->mode->info->pixelsPerScanLine;*/
-    /*params->fb.ptr = gop->mode->frameBufferBase;*/
-    /*params->fb.size = gop->mode->frameBufferSize;*/
-    /**/
-    /*RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,*/
-    /*                          globals.st->configuration_table);*/
-    /*if (!rsdp.rsdp) {*/
-    /*    EXIT_WITH_MESSAGE { ERROR(STRING("Could not find an RSDP!\n")); }*/
-    /*}*/
-    /**/
-    /*KFLUSH_AFTER {*/
-    /*    INFO(STRING("Prepared and collected all necessary information to jump
-     * "*/
-    /*                "to the kernel.\n"));*/
-    /*}*/
-    /**/
-    /*MemoryInfo memoryInfo = getMemoryInfo();*/
-    /*KernelMemory stub = stubMemoryBeforeExitBootServices(&memoryInfo);*/
-    /**/
-    /*// NOTE: Keep this call in between the stub and the creation of
-     * available*/
-    /*// memory! The stub allocates memory and logs on failure which is not*/
-    /*// permissible after we have exited boot services*/
-    /*status = globals.st->boot_services->exit_boot_services(globals.h,*/
-    /*                                                       memoryInfo.mapKey);*/
-    /*EXIT_WITH_MESSAGE_IF(status) {*/
-    /*    ERROR(STRING("could not exit boot services!\n"));*/
-    /*    ERROR(STRING("Am I running on a buggy implementation that needs to "*/
-    /*                 "call exit boot services twice?\n"));*/
-    /*}*/
-    /**/
-    /*params->memory = convertToKernelMemory(&memoryInfo, stub);*/
-    /**/
-    /*jumpIntoKernel(KERNEL_STACK_START + KERNEL_STACK_SIZE);*/
-    /**/
-    /*__builtin_unreachable();*/
+    allocateSpaceForKernelMemory(arena, &params->memory);
+
+    /* NOTE: Keep this call in between the stub and the creation of available */
+    /* memory! The stub allocates memory and logs on failure which is not */
+    /* permissible after we have exited boot services */
+    MemoryInfo memoryInfo = getMemoryInfo(&arena);
+    status = globals.st->boot_services->exit_boot_services(globals.h,
+                                                           memoryInfo.mapKey);
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+        ERROR(STRING("could not exit boot services!\n"));
+        ERROR(STRING("Am I running on a buggy implementation that needs to "
+                     "call exit boot services twice?\n"));
+    }
+
+    convertToKernelMemory(&memoryInfo, &params->memory);
+
+    jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE);
+
+    __builtin_unreachable();
 }

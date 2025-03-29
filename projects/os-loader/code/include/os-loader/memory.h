@@ -8,19 +8,19 @@
 #include "efi/memory/physical.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
+#include "shared/memory/sizes.h"
 #include "shared/types/types.h" // for USize, U64, U32
 
-static constexpr auto DYNAMIC_MEMORY_CAPACITY = 64 * UEFI_PAGE_SIZE;
-static constexpr auto DYNAMIC_MEMORY_ALIGNMENT = UEFI_PAGE_SIZE;
+static constexpr auto DYNAMIC_MEMORY_CAPACITY = 1 * MiB;
 
-KernelMemory stubMemoryBeforeExitBootServices(MemoryInfo *memoryInfo);
-KernelMemory convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory result);
+void allocateSpaceForKernelMemory(Arena scratch, KernelMemory *location);
+void convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory *location);
 
 void findKernelMemory(U64 alignment, U64 numberOfThreads);
 
-U64 mapContiguousPhysicalMemoryWithFlags(U64 virt, U64 physical, U64 bytes,
-                                         U64 flags);
-U64 mapContiguousPhysicalMemory(U64 virt, U64 physical, U64 bytes);
-U64 mapInContiguousPhysicalMemory(U64 virt, U64 physical, U64 bytes);
+U64 alignVirtual(U64 physical, U64 virt, U64 bytes);
+
+U64 mapMemoryWithFlags(U64 virt, U64 physical, U64 bytes, U64 flags);
+U64 mapMemory(U64 virt, U64 physical, U64 bytes);
 
 #endif

@@ -15,7 +15,7 @@
 #include "shared/memory/converter.h"
 #include "shared/text/string.h"
 
-static bool canBeUsedByOS(MemoryType type) {
+static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     switch (type) {
     case LOADER_CODE:
     case LOADER_DATA:
@@ -30,95 +30,85 @@ static bool canBeUsedByOS(MemoryType type) {
 }
 
 static constexpr auto ADDITIONAL_CAPACITY_FOR_SPLITTING_MEMORY_DESCRIPTOR = 1;
-KernelMemory stubMemoryBeforeExitBootServices(MemoryInfo *memoryInfo) {
-    /*KernelMemory result;*/
-    /**/
-    /*U64 numberOfDescriptors =*/
-    /*    memoryInfo->memoryMapSize / memoryInfo->descriptorSize;*/
-    /*result.UEFIPages = CEILING_DIV_VALUE(*/
-    /*    sizeof(PagedMemory) **/
-    /*        (numberOfDescriptors +*/
-    /*         ADDITIONAL_CAPACITY_FOR_SPLITTING_MEMORY_DESCRIPTOR),*/
-    /*    UEFI_PAGE_SIZE);*/
-    /*result.memory.len = 0;*/
-    /*U64 freeMemoryDescriptorsLocation = allocate4KiBPages(result.UEFIPages);*/
-    /*result.memory.buf = (PagedMemory *)freeMemoryDescriptorsLocation;*/
-    /**/
-    /*return result;*/
+void allocateSpaceForKernelMemory(Arena scratch, KernelMemory *location) {
+    MemoryInfo memoryInfo = getMemoryInfo(&scratch);
+    U64 numberOfDescriptors =
+        memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
+    U64 bytes = sizeof(PagedMemory) *
+                (numberOfDescriptors +
+                 ADDITIONAL_CAPACITY_FOR_SPLITTING_MEMORY_DESCRIPTOR);
+
+    PagedMemory *freeMemoryDescriptorsLocation =
+        (PagedMemory *)allocateKernelStructure(bytes, 0, false, scratch);
+
+    *location =
+        (KernelMemory){.UEFIPages = CEILING_DIV_VALUE(bytes, UEFI_PAGE_SIZE),
+                       .memory.len = 0,
+                       .memory.buf = freeMemoryDescriptorsLocation};
 }
 
-static U64 mapMemory(U64 virt, U64 physical, U64 mappingSize, U64 numberOfPages,
-                     U64 flags) {
-    U64 virtualEnd = virt + mappingSize * numberOfPages;
-    for (; virt < virtualEnd; virt += mappingSize, physical += mappingSize) {
+U64 alignVirtual(U64 virt, U64 physical, U64 bytes) {
+    U64 alignment = pageEncompassing(bytes * 2);
+
+    virt = ALIGN_UP_VALUE(virt, alignment);
+    virt = virt | RING_RANGE_VALUE(physical, alignment);
+
+    return virt;
+}
+
+U64 mapMemoryWithFlags(U64 virt, U64 physical, U64 bytes, U64 flags) {
+    KFLUSH_AFTER {
+        INFO(STRING("virt: "));
+        INFO((void *)virt);
+        INFO(STRING(" physical: "));
+        INFO((void *)physical);
+        INFO(STRING(" bytes: "));
+        INFO(bytes);
+        INFO(STRING(" flags: "));
+        INFO(flags, NEWLINE);
+    }
+
+    for (U64 bytesMapped = 0, mappingSize; bytesMapped < bytes;
+         virt += mappingSize, physical += mappingSize,
+             bytesMapped += mappingSize) {
+        mappingSize = pageSizeLeastLargerThan(physical, bytes - bytesMapped);
+
+        KFLUSH_AFTER {
+            INFO(STRING("I found a mapping size of: "));
+            INFO(mappingSize);
+            INFO(STRING(":mapping  "));
+            INFO((void *)virt);
+            INFO(STRING("to "));
+            INFO((void *)physical, NEWLINE);
+        }
+
         mapPageWithFlags(virt, physical, mappingSize, flags);
     }
-    return virtualEnd;
+    return virt;
 }
 
-U64 mapContiguousPhysicalMemoryWithFlags(U64 virt, U64 physical, U64 bytes,
-                                         U64 flags) {
-    U64 mappingSize = convertToLargestAlignedPageSize(virt, physical, bytes);
-    U64 numberOfPages = CEILING_DIV_VALUE(bytes, mappingSize);
-
-    return mapMemory(virt, physical, mappingSize, numberOfPages, flags);
+U64 mapMemory(U64 virt, U64 physical, U64 bytes) {
+    return mapMemoryWithFlags(virt, physical, bytes,
+                              KERNEL_STANDARD_PAGE_FLAGS);
 }
 
-U64 mapContiguousPhysicalMemory(U64 virt, U64 physical, U64 bytes) {
-    return mapContiguousPhysicalMemoryWithFlags(virt, physical, bytes,
-                                                KERNEL_STANDARD_PAGE_FLAGS);
+static bool isKernelStructure(U64 address) {
+    for (U64 i = 0; i < kernelStructureLocations.len; i++) {
+        if (kernelStructureLocations.buf[i] == address) {
+            return true;
+        }
+    }
+    return false;
 }
 
-U64 mapInContiguousPhysicalMemory(U64 virt, U64 physical, U64 bytes) {
-    U64 mappingSize =
-        convertToMostFittingAlignedPageSize(virt, physical, bytes);
-    U64 numberOfPages = CEILING_DIV_VALUE(bytes, mappingSize);
-
-    return mapMemory(virt, physical, mappingSize, numberOfPages,
-                     KERNEL_STANDARD_PAGE_FLAGS);
-}
-
-KernelMemory convertToKernelMemory(MemoryInfo *memoryInfo,
-                                   KernelMemory result) {
-    /*U64 usedPages = VIRTUAL_MEMORY_MAPPER_CAPACITY -
-     * virtualMemoryMapperEmd;*/
-    /**/
-    /*FOR_EACH_DESCRIPTOR(memoryInfo, desc) {*/
-    /*    if (canBeUsedByOS(desc->type)) {*/
-    /*        U64 endAddress =*/
-    /*            desc->physicalStart + desc->numberOfPages *
-     * UEFI_PAGE_SIZE;*/
-    /*        if (virtualMemoryMapperFree >= desc->physicalStart &&*/
-    /*            virtualMemoryMapperFree < endAddress) {*/
-    /*            U64 beforeFreePages =*/
-    /*                (virtualMemoryMapperFree - desc->physicalStart) /*/
-    /*                UEFI_PAGE_SIZE;*/
-    /*            if (beforeFreePages > 0) {*/
-    /*                result.memory.buf[result.memory.len] =*/
-    /*                    (PagedMemory){.start = desc->physicalStart,*/
-    /*                                  .numberOfPages = beforeFreePages};*/
-    /*                result.memory.len++;*/
-    /*            }*/
-    /**/
-    /*            U64 afterStart =*/
-    /*                virtualMemoryMapperFree + (usedPages *
-     * UEFI_PAGE_SIZE);*/
-    /*            U64 afterFreePages = (endAddress - afterStart) /
-     * UEFI_PAGE_SIZE;*/
-    /*            if (afterFreePages > 0) {*/
-    /*                result.memory.buf[result.memory.len] =
-     * (PagedMemory){*/
-    /*                    .start = afterStart, .numberOfPages =
-     * afterFreePages};*/
-    /*                result.memory.len++;*/
-    /*            }*/
-    /*        } else {*/
-    /*            result.memory.buf[result.memory.len] =*/
-    /*                (PagedMemory){.start = desc->physicalStart,*/
-    /*                              .numberOfPages = desc->numberOfPages};*/
-    /*            result.memory.len++;*/
-    /*        }*/
-    /*    }*/
-    /*}*/
-    /*return result;*/
+void convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory *location) {
+    FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
+        if (memoryTypeCanBeUsedByKernel(desc->type) &&
+            !isKernelStructure(desc->physicalStart)) {
+            location->memory.buf[location->memory.len] =
+                (PagedMemory){.start = desc->physicalStart,
+                              .numberOfPages = desc->numberOfPages};
+            location->memory.len++;
+        }
+    }
 }

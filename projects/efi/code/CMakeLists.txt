@@ -14,6 +14,7 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     add_project("abstraction/memory/virtual")
     add_project("abstraction/log")
     add_project("abstraction/jmp")
+    add_project("efi/uefi")
     add_project("abstraction/text/converter")
 
     include("${REPO_PROJECTS}/print-configuration.cmake")
