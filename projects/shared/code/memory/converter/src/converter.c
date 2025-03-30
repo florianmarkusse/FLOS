@@ -11,16 +11,10 @@ static bool isPageSizeValid(U64 pageSize) {
     return pageSize & AVAILABLE_PAGE_SIZES_MASK;
 }
 
-static U64 smallestPageSize = 1ULL
-                              << __builtin_ctzll(AVAILABLE_PAGE_SIZES_MASK);
-static U64 largestPageSize = 1ULL
-                             << (((sizeof(U64) * BITS_PER_BYTE) - 1) -
-                                 __builtin_clzll(AVAILABLE_PAGE_SIZES_MASK));
-
 Pages convertPreferredPageToAvailablePages(Pages pages) {
     ASSERT(((pages.pageSize) & (pages.pageSize - 1)) == 0);
-    if (pages.pageSize < smallestPageSize) {
-        return (Pages){.numberOfPages = 1, .pageSize = smallestPageSize};
+    if (pages.pageSize < SMALLEST_VIRTUAL_PAGE) {
+        return (Pages){.numberOfPages = 1, .pageSize = SMALLEST_VIRTUAL_PAGE};
     }
     while (!isPageSizeValid(pages.pageSize)) {
         pages.numberOfPages *= 2;
@@ -41,24 +35,30 @@ Pages convertBytesToPagesRoundingUp(U64 bytes) {
         }
     }
 
-    return (Pages){.numberOfPages = CEILING_DIV_VALUE(bytes, smallestPageSize),
-                   .pageSize = smallestPageSize};
+    return (Pages){.numberOfPages =
+                       CEILING_DIV_VALUE(bytes, SMALLEST_VIRTUAL_PAGE),
+                   .pageSize = SMALLEST_VIRTUAL_PAGE};
 }
 
 U64 static pageAligned(U64 bytes) {
-    return MIN(MAX(ceilingPowerOf2(bytes), smallestPageSize), largestPageSize);
+    return MIN(MAX(ceilingPowerOf2(bytes), SMALLEST_VIRTUAL_PAGE),
+               LARGEST_VIRTUAL_PAGE);
 }
 
-U64 decreasePage(U64 pageSize) {
-    if (pageSize == smallestPageSize) {
-        return 0;
-    }
+U64 increasePageSize(U64 pageSize) {
+    U64 largerPages =
+        (~((pageSize | (pageSize - 1)))) & AVAILABLE_PAGE_SIZES_MASK;
+
+    return largerPages & -largerPages;
+}
+
+U64 decreasePageSize(U64 pageSize) {
     U64 smallerPages = ((pageSize - 1) & AVAILABLE_PAGE_SIZES_MASK);
     return 1ULL << (((sizeof(U64) * BITS_PER_BYTE) - 1) -
                     (__builtin_clzll(smallerPages)));
 }
 
-U64 pageEncompassing(U64 bytes) {
+U64 pageSizeEncompassing(U64 bytes) {
     U64 result = pageAligned(bytes);
 
     while (!isPageSizeValid(result)) {
@@ -69,10 +69,10 @@ U64 pageEncompassing(U64 bytes) {
 }
 
 static U64 largestAlignedPage(U64 address) {
-    ASSERT(!(RING_RANGE_VALUE(address, smallestPageSize)));
+    ASSERT(!(RING_RANGE_VALUE(address, SMALLEST_VIRTUAL_PAGE)));
 
     if (address == 0) {
-        return largestPageSize;
+        return LARGEST_VIRTUAL_PAGE;
     }
 
     U64 result = (1ULL << __builtin_ctzll(address));

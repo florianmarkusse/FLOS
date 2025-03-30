@@ -48,7 +48,7 @@ void allocateSpaceForKernelMemory(Arena scratch, KernelMemory *location) {
 }
 
 U64 alignVirtual(U64 virt, U64 physical, U64 bytes) {
-    U64 alignment = pageEncompassing(bytes * 2);
+    U64 alignment = pageSizeEncompassing(bytes * 2);
 
     virt = ALIGN_UP_VALUE(virt, alignment);
     virt = virt | RING_RANGE_VALUE(physical, alignment);

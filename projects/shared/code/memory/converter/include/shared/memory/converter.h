@@ -29,9 +29,10 @@ U64 convertToMostFittingAlignedPageSize(U64 virt, U64 physical, U64 bytes);
 // Will find the largest aligned page size, can go beyond the number of bytes.
 U64 convertToLargestAlignedPageSize(U64 virt, U64 physical, U64 bytes);
 
-U64 decreasePage(U64 pageSize);
+U64 increasePageSize(U64 pageSize);
+U64 decreasePageSize(U64 pageSize);
 
-U64 pageEncompassing(U64 bytes);
+U64 pageSizeEncompassing(U64 bytes);
 
 U64 pageSizeLeastLargerThan(U64 address, U64 bytes);
 U64 pageSizeFitting(U64 address, U64 bytes);

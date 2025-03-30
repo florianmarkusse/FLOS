@@ -26,6 +26,11 @@ extern PageSize availablePageSizes[MEMORY_PAGE_SIZES_COUNT];
 
 static constexpr U64 AVAILABLE_PAGE_SIZES_MASK =
     (X86_4KIB_PAGE | X86_2MIB_PAGE | X86_1GIB_PAGE);
+static constexpr U64 SMALLEST_VIRTUAL_PAGE =
+    1ULL << __builtin_ctzll(AVAILABLE_PAGE_SIZES_MASK);
+static constexpr U64 LARGEST_VIRTUAL_PAGE =
+    1ULL << (((sizeof(U64) * BITS_PER_BYTE) - 1) -
+             __builtin_clzll(AVAILABLE_PAGE_SIZES_MASK));
 
 typedef struct {
     U8 data[X86_4KIB_PAGE];

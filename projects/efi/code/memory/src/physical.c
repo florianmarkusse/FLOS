@@ -1,5 +1,6 @@
 #include "efi/memory/physical.h"
 #include "abstraction/log.h"
+#include "abstraction/memory/virtual/converter.h"
 #include "efi-to-kernel/memory/definitions.h"
 #include "efi/error.h"
 #include "efi/firmware/base.h"
@@ -88,21 +89,57 @@ static bool canBeUsedInEFI(MemoryType type) {
     return type == CONVENTIONAL_MEMORY;
 }
 
+typedef struct {
+    U64 address;
+    U64 alignedAddress;
+    U64 padding;
+} AlignedMemory;
+
+static void setIfBetterDescriptor(AlignedMemory *current,
+                                  AlignedMemory proposed, U64 largerPageSize) {
+    if (current->address == U64_MAX) {
+        *current = proposed;
+        return;
+    } else {
+        if (!RING_RANGE_VALUE(current->alignedAddress, largerPageSize)) {
+            if (RING_RANGE_VALUE(proposed.alignedAddress, largerPageSize)) {
+                *current = proposed;
+                return;
+            }
+        }
+
+        if (current->padding > proposed.padding) {
+            *current = proposed;
+            return;
+        }
+    }
+}
+
 static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
                              U64 minimumAlignment,
                              bool tryEncompassingVirtual) {
-    U64 alignment = pageEncompassing(minimumAlignment);
+    U64 pageSize = pageSizeEncompassing(minimumAlignment);
     if (tryEncompassingVirtual) {
-        alignment = MAX(alignment, pageEncompassing(bytes));
+        pageSize = MAX(pageSize, pageSizeEncompassing(bytes));
     }
 
-    for (; alignment >= minimumAlignment; alignment = decreasePage(alignment)) {
+    U64 largerPageSize;
+    if (pageSize == LARGEST_VIRTUAL_PAGE) {
+        largerPageSize = LARGEST_VIRTUAL_PAGE;
+    } else {
+        largerPageSize = increasePageSize(pageSize);
+    }
+
+    AlignedMemory bestDescriptor = {
+        .address = U64_MAX, .alignedAddress = U64_MAX, .padding = U64_MAX};
+    for (; pageSize >= minimumAlignment;
+         largerPageSize = pageSize, pageSize = decreasePageSize(pageSize)) {
         FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
             if (!canBeUsedInEFI(desc->type)) {
                 continue;
             }
 
-            U64 alignedAddress = ALIGN_UP_VALUE(desc->physicalStart, alignment);
+            U64 alignedAddress = ALIGN_UP_VALUE(desc->physicalStart, pageSize);
             U64 originalSize = desc->numberOfPages * UEFI_PAGE_SIZE;
             if (alignedAddress >= desc->physicalStart + originalSize) {
                 continue;
@@ -114,23 +151,38 @@ static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
                 continue;
             }
 
-            U64 address = desc->physicalStart;
+            setIfBetterDescriptor(
+                &bestDescriptor,
+                (AlignedMemory){.address = desc->physicalStart,
+                                .alignedAddress = alignedAddress,
+                                .padding = padding},
+                largerPageSize);
+        }
+
+        if (bestDescriptor.address != U64_MAX) {
             Status status = globals.st->boot_services->allocate_pages(
                 ALLOCATE_ADDRESS, LOADER_DATA,
-                CEILING_DIV_VALUE(padding + bytes, UEFI_PAGE_SIZE), &address);
+                CEILING_DIV_VALUE(bestDescriptor.padding + bytes,
+                                  UEFI_PAGE_SIZE),
+                &bestDescriptor.address);
             EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
                 ERROR(STRING("allocating pages for memory failed!\n"));
             }
 
-            if (padding) {
+            if (bestDescriptor.padding) {
                 status = globals.st->boot_services->free_pages(
-                    address, CEILING_DIV_VALUE(padding, UEFI_PAGE_SIZE));
+                    bestDescriptor.address,
+                    CEILING_DIV_VALUE(bestDescriptor.padding, UEFI_PAGE_SIZE));
                 EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
                     ERROR(STRING("Freeing padded memory failed!\n"));
                 }
             }
 
-            return alignedAddress;
+            return bestDescriptor.alignedAddress;
+        }
+
+        if (pageSize == SMALLEST_VIRTUAL_PAGE) {
+            break;
         }
     }
 
