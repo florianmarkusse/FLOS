@@ -11,17 +11,11 @@
 // ...
 // 0xFFFFFFFFFFFFFFFF
 
-#include "efi-to-kernel/kernel-parameters.h"
 #include "shared/memory/sizes.h"
 
 static constexpr auto LOWER_HALF_END = 0x0000FFFFFFFFFFFF;
 
 static constexpr auto HIGHER_HALF_START = 0xFFFF800000000000;
-
-static constexpr auto KERNEL_STRUCTURES_PREFERRED_ALIGNMENT = 1 * GiB;
-
-static constexpr auto KERNEL_PARAMS_SIZE = sizeof(KernelParameters);
-static constexpr auto KERNEL_PARAMS_ALIGNMENT = alignof(KernelParameters);
 
 static constexpr auto KERNEL_STACK_SIZE = 2 * MiB;
 static constexpr auto KERNEL_STACK_ALIGNMENT =

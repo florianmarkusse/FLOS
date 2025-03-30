@@ -16,48 +16,44 @@
 
 static constexpr auto INIT_MEMORY = (64 * MiB);
 
-__attribute__((section("kernel-start"))) int kernelmain() {
-    asm volatile("1: jmp 1b");
+__attribute__((section("kernel-start"))) int
+kernelmain(KernelParameters *kernelParams) {
     initIDT();
     // TODO: [X86] I need to enable NMIs here also again!
 
-    /*KernelParameters *kernelParameters =*/
-    /*    (KernelParameters *)KERNEL_PARAMS_START;*/
-    /**/
-    /*initMemoryManager(kernelParameters->memory);*/
-    /**/
-    /*void *initMemory = allocAndMap(INIT_MEMORY);*/
-    /*Arena arena = (Arena){.curFree = initMemory,*/
-    /*                      .beg = initMemory,*/
-    /*                      .end = initMemory + INIT_MEMORY};*/
-    /*JumpBuffer jumper;*/
-    /*if (setjmp(jumper)) {*/
-    /*    KFLUSH_AFTER { KLOG(STRING("Ran out of init memory capacity\n")); }*/
-    /*    while (1) {*/
-    /*        ;*/
-    /*    }*/
-    /*}*/
-    /*arena.jmp_buf = jumper;*/
-    /**/
-    /*initLogger(&arena);*/
-    /*initScreen((ScreenDimension){.scanline = kernelParameters->fb.scanline,*/
-    /*                             .size = kernelParameters->fb.size,*/
-    /*                             .width = kernelParameters->fb.columns,*/
-    /*                             .height = kernelParameters->fb.rows,*/
-    /*                             .screen = (U32 *)kernelParameters->fb.ptr},*/
-    /*           &arena);*/
+    initMemoryManager(kernelParams->memory);
+
+    void *initMemory = allocAndMap(INIT_MEMORY);
+    Arena arena = (Arena){.curFree = initMemory,
+                          .beg = initMemory,
+                          .end = initMemory + INIT_MEMORY};
+    if (setjmp(arena.jmp_buf)) {
+        KFLUSH_AFTER { KLOG(STRING("Ran out of init memory capacity\n")); }
+        while (1) {
+            ;
+        }
+    }
+
+    initLogger(&arena);
+    initScreen((ScreenDimension){.scanline = kernelParams->fb.scanline,
+                                 .size = kernelParams->fb.size,
+                                 .width = kernelParams->fb.columns,
+                                 .height = kernelParams->fb.rows,
+                                 .screen = (U32 *)kernelParams->fb.ptr},
+               &arena);
+
+    // TODO: Fix this once we redo the memory management systems!!!
     /*freeMapped((U64)arena.curFree, (U64)(arena.end - arena.curFree));*/
-    /*freeMapped(KERNEL_PARAMS_START, KERNEL_PARAMS_SIZE);*/
-    /**/
-    /*// NOTE: from here, everything is initialized*/
-    /**/
-    /*KFLUSH_AFTER { KLOG(STRING("ITS WEDNESDAY MY DUDES\n")); }*/
-    /**/
-    /*KFLUSH_AFTER {*/
-    /*    //*/
-    /*    appendMemoryManagementStatus();*/
-    /*}*/
-    /**/
+    /*freeMapped((U64)kernelParams, sizeof(kernelParams));*/
+
+    // NOTE: from here, everything is initialized
+    KFLUSH_AFTER { KLOG(STRING("ITS WEDNESDAY MY DUDES\n")); }
+
+    KFLUSH_AFTER {
+        //
+        appendMemoryManagementStatus();
+    }
+
     while (1) {
         ;
     }

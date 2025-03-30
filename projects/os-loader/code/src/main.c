@@ -159,29 +159,28 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     mapMemory(0, 0, highestAddress);
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
-    U64 kernelParams = allocateKernelStructure(
-        KERNEL_PARAMS_SIZE, KERNEL_PARAMS_ALIGNMENT, false, arena);
+    KernelParameters *kernelParams =
+        (KernelParameters *)allocateKernelStructure(
+            sizeof(KernelParameters), alignof(KernelParameters), false, arena);
+    void *kernelParamsEnd = ((U8 *)kernelParams) + sizeof(KernelParameters);
 
     KFLUSH_AFTER {
         INFO(STRING("The phyiscal kernel params:\nstart: "));
         INFO((void *)kernelParams, NEWLINE);
         INFO(STRING("stop:  "));
-        INFO((void *)(kernelParams + KERNEL_PARAMS_SIZE), NEWLINE);
+        INFO(kernelParamsEnd, NEWLINE);
 
         INFO(STRING("The virtual kernel params (identity mapped):\nstart: "));
         INFO((void *)kernelParams, NEWLINE);
         INFO(STRING("stop:  "));
-        INFO((void *)(kernelParams + KERNEL_PARAMS_SIZE), NEWLINE);
+        INFO(kernelParamsEnd, NEWLINE);
     }
 
-    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    KernelParameters *params = (KernelParameters *)kernelParams;
-
-    params->fb.columns = gop->mode->info->horizontalResolution;
-    params->fb.rows = gop->mode->info->verticalResolution;
-    params->fb.scanline = gop->mode->info->pixelsPerScanLine;
-    params->fb.ptr = gop->mode->frameBufferBase;
-    params->fb.size = gop->mode->frameBufferSize;
+    kernelParams->fb.columns = gop->mode->info->horizontalResolution;
+    kernelParams->fb.rows = gop->mode->info->verticalResolution;
+    kernelParams->fb.scanline = gop->mode->info->pixelsPerScanLine;
+    kernelParams->fb.ptr = gop->mode->frameBufferBase;
+    kernelParams->fb.size = gop->mode->frameBufferSize;
 
     RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
                               globals.st->configuration_table);
@@ -194,7 +193,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                     "to the kernel.\n"));
     }
 
-    allocateSpaceForKernelMemory(arena, &params->memory);
+    allocateSpaceForKernelMemory(arena, &kernelParams->memory);
 
     /* NOTE: Keep this call in between the stub and the creation of available */
     /* memory! The stub allocates memory and logs on failure which is not */
@@ -208,9 +207,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                      "call exit boot services twice?\n"));
     }
 
-    convertToKernelMemory(&memoryInfo, &params->memory);
+    convertToKernelMemory(&memoryInfo, &kernelParams->memory);
 
-    jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE);
+    jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE, kernelParams);
 
     __builtin_unreachable();
 }

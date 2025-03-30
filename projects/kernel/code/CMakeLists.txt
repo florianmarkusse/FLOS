@@ -72,7 +72,9 @@ add_custom_target(
     ${BINARIZER}
     ALL
     COMMAND
-        objcopy -O binary ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}
+        objcopy -O binary --strip-all --remove-section=.interp
+        --remove-section=.symtab --remove-section=.shstrtab
+        --remove-section=.strtab ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME_BIN}
     COMMAND
         mkdir -p ${KERNEL_MAGIC_FOLDER} && python3
