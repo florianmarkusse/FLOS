@@ -111,4 +111,18 @@ void convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory *location) {
             location->memory.len++;
         }
     }
+
+    for (U64 i = 0; i < location->memory.len - 1; i++) {
+        U64 currentSmallest = i;
+        for (U64 j = i + 1; j < location->memory.len; j++) {
+            if (location->memory.buf[j].numberOfPages <
+                location->memory.buf[currentSmallest].numberOfPages) {
+                currentSmallest = j;
+            }
+        }
+
+        PagedMemory copy = location->memory.buf[i];
+        location->memory.buf[i] = location->memory.buf[currentSmallest];
+        location->memory.buf[currentSmallest] = copy;
+    }
 }

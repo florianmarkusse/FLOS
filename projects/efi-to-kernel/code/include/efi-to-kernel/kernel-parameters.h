@@ -18,7 +18,7 @@ typedef struct {
 
 typedef struct {
     FrameBuffer fb;
-    KernelMemory memory;
+    KernelMemory kernelMemory;
 } KernelParameters;
 
 #endif

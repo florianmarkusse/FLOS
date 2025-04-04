@@ -193,7 +193,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                     "to the kernel.\n"));
     }
 
-    allocateSpaceForKernelMemory(arena, &kernelParams->memory);
+    allocateSpaceForKernelMemory(arena, &kernelParams->kernelMemory);
 
     /* NOTE: Keep this call in between the stub and the creation of available */
     /* memory! The stub allocates memory and logs on failure which is not */
@@ -207,7 +207,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                      "call exit boot services twice?\n"));
     }
 
-    convertToKernelMemory(&memoryInfo, &kernelParams->memory);
+    convertToKernelMemory(&memoryInfo, &kernelParams->kernelMemory);
 
     jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE, kernelParams);
 

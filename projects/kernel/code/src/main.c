@@ -7,6 +7,7 @@
 #include "efi-to-kernel/memory/definitions.h" // for KERNEL_PARAMS_START
 #include "freestanding/log/init.h"
 #include "freestanding/peripheral/screen.h"
+#include "shared/log.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/sizes.h"
 #include "shared/text/string.h"
@@ -14,14 +15,14 @@
 
 // void appendDescriptionHeaders(RSDPResult rsdp);
 
-static constexpr auto INIT_MEMORY = (64 * MiB);
+static constexpr auto INIT_MEMORY = (1 * MiB);
 
 __attribute__((section("kernel-start"))) int
 kernelmain(KernelParameters *kernelParams) {
     initIDT();
     // TODO: [X86] I need to enable NMIs here also again!
 
-    initMemoryManager(kernelParams->memory);
+    initMemoryManager(kernelParams->kernelMemory);
 
     void *initMemory = allocAndMap(INIT_MEMORY);
     Arena arena = (Arena){.curFree = initMemory,
@@ -54,13 +55,21 @@ kernelmain(KernelParameters *kernelParams) {
         appendMemoryManagementStatus();
     }
 
+    KFLUSH_AFTER {
+        for (U64 i = 0; i < kernelParams->kernelMemory.memory.len - 1; i++) {
+            INFO(kernelParams->kernelMemory.memory.buf[i].numberOfPages);
+            INFO(STRING("\t"));
+        }
+    }
+
     while (1) {
         ;
     }
 }
 
-// typedef enum { RSDT, XSDT, NUM_DESCRIPTION_TABLES } DescriptionTableVersion;
-// static USize entrySizes[NUM_DESCRIPTION_TABLES] = {
+// typedef enum { RSDT, XSDT, NUM_DESCRIPTION_TABLES }
+// DescriptionTableVersion; static USize entrySizes[NUM_DESCRIPTION_TABLES]
+// = {
 //     sizeof(U32),
 //     sizeof(U64),
 // };
@@ -119,7 +128,8 @@ kernelmain(KernelParameters *kernelParams) {
 //             break;
 //         }
 //         default: {
-//             LOG(STRING("Did not implement anything for this yet"), NEWLINE);
+//             LOG(STRING("Did not implement anything for this yet"),
+//             NEWLINE);
 //         }
 //         }
 //
