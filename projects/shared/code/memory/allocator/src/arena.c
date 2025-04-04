@@ -21,10 +21,5 @@ __attribute((malloc, alloc_align(3))) void *alloc(Arena *a, U64 size, U64 align,
     U8 *p = a->curFree + padding;
     a->curFree += padding + total;
 
-#ifdef POSIX
-    // Memory is already zeroed on this platform for security reasons
-    return p;
-#else
     return flags & ZERO_MEMORY ? memset(p, 0, total) : p;
-#endif
 }

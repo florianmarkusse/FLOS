@@ -1,5 +1,11 @@
 project(shared-trees-red-black-tests LANGUAGES C)
-add_executable(${PROJECT_NAME} "src/main.c" "src/physical.c")
+add_executable(
+    ${PROJECT_NAME}
+    "src/main.c"
+    "src/insert.c"
+    "src/delete.c"
+    "src/correct.c"
+)
 
 target_include_directories(
     ${PROJECT_NAME}
@@ -7,21 +13,15 @@ target_include_directories(
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation-i)
-target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-interrupts)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-log)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-jmp)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-log)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-text-converter)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE efi-to-kernel-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE posix-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE posix-test-framework)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE x86-i)
-target_link_libraries(${PROJECT_NAME} PRIVATE x86-idt-mock)
-target_link_libraries(${PROJECT_NAME} PRIVATE x86-fault-print)
-target_link_libraries(${PROJECT_NAME} PRIVATE x86-fault-print-test)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE x86-memory-physical)
-
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-text)
+target_link_libraries(${PROJECT_NAME} PRIVATE shared-trees-red-black)
+target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-allocator)

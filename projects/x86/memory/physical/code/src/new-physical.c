@@ -9,7 +9,8 @@
 #include "shared/maths/maths.h"
 #include "shared/types/types.h" // for U64, U32, U8
 
-// Coming into this, All the memory is identity mapped and sorted from least
-// number of pages to most number of pages Having to do some boostrapping here
-// with the base page frame physical manager.
+// NOTE: Do I need to take care that I don't give someone address 0 if that is
+// ever free??? Coming into this, All the memory is identity mapped and sorted
+// from least number of pages to most number of pages Having to do some
+// boostrapping here with the base page frame physical manager.
 void initPhysicalMemoryManager(KernelMemory kernelMemory) {}

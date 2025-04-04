@@ -1,1 +1,1 @@
-include(red-black)
+add_subdirectory(red-black)

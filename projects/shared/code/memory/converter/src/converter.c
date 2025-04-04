@@ -1,9 +1,7 @@
 #include "shared/memory/converter.h"
 
-#include "abstraction/log.h"
 #include "abstraction/memory/virtual/converter.h"
 #include "shared/assert.h"
-#include "shared/log.h"
 #include "shared/maths/maths.h"
 #include "shared/types/types.h"
 static bool isPageSizeValid(U64 pageSize) {
