@@ -8,7 +8,6 @@
 #include "shared/trees/red-black.h"
 #include "shared/types/array-types.h"
 
-static constexpr auto MAX_NODES_TEST_TREE = 256;
 typedef ARRAY(RedBlackNode *) RedBlackNodePtr_a;
 
 static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
@@ -57,8 +56,36 @@ static void inOrderTraversal(RedBlackNode *node, RedBlackNodePtr_a *values) {
     inOrderTraversal(node->children[RIGHT_CHILD], values);
 }
 
-static bool isBinarySearchTree(RedBlackNode *node) {
-    RedBlackNode *_buffer[MAX_NODES_TEST_TREE];
+static constexpr auto MAX_TREE_HEIGHT = 256;
+static U64 nodeCount(RedBlackNode *tree) {
+    RedBlackNode *buffer[MAX_TREE_HEIGHT];
+    U64 len = 0;
+
+    U64 result = 0;
+
+    buffer[len] = tree;
+    len++;
+    while (len > 0) {
+        RedBlackNode *node = buffer[len - 1];
+        len--;
+        result++;
+
+        for (U64 i = 0; i < CHILD_COUNT; i++) {
+            if (node->children[i]) {
+                if (len > MAX_TREE_HEIGHT) {
+                    return 0;
+                }
+                buffer[len] = node->children[i];
+                len++;
+            }
+        }
+    }
+
+    return result;
+}
+
+static bool isBinarySearchTree(RedBlackNode *node, U64 nodes, Arena scratch) {
+    RedBlackNode **_buffer = NEW(&scratch, RedBlackNode *, nodes);
     RedBlackNodePtr_a inOrderValues = {.buf = _buffer, .len = 0};
 
     inOrderTraversal(node, &inOrderValues);
@@ -87,8 +114,9 @@ static bool redParentHasRedChild(RedBlackNode *node, U64 childIndex) {
     return false;
 }
 
-static bool anyRedNodeHasRedChild(RedBlackNode *tree) {
-    RedBlackNode *buffer[MAX_NODES_TEST_TREE];
+static bool anyRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
+                                  Arena scratch) {
+    RedBlackNode **buffer = NEW(&scratch, RedBlackNode *, nodes);
     U64 len = 0;
 
     buffer[len] = tree;
@@ -108,14 +136,11 @@ static bool anyRedNodeHasRedChild(RedBlackNode *tree) {
             }
         }
 
-        if (node->children[LEFT_CHILD]) {
-            buffer[len] = node->children[LEFT_CHILD];
-            len++;
-        }
-
-        if (node->children[RIGHT_CHILD]) {
-            buffer[len] = node->children[RIGHT_CHILD];
-            len++;
+        for (U64 i = 0; i < CHILD_COUNT; i++) {
+            if (node->children[i]) {
+                buffer[len] = node->children[i];
+                len++;
+            }
         }
     }
 
@@ -139,8 +164,9 @@ static void collectBlackHeightsForEachPath(RedBlackNode *node,
     }
 }
 
-static bool pathsFromNodeHaveSameBlackHeight(RedBlackNode *tree) {
-    RedBlackNode *buffer[MAX_NODES_TEST_TREE];
+static bool pathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
+                                             Arena scratch) {
+    RedBlackNode **buffer = NEW(&scratch, RedBlackNode *, nodes);
     U64 len = 0;
 
     buffer[len] = tree;
@@ -150,7 +176,7 @@ static bool pathsFromNodeHaveSameBlackHeight(RedBlackNode *tree) {
         RedBlackNode *node = buffer[len - 1];
         len--;
 
-        U64 _blackHeightsBuffer[MAX_NODES_TEST_TREE];
+        U64 *_blackHeightsBuffer = NEW(&scratch, U64, nodes);
         U64_a blackHeights = {.buf = _blackHeightsBuffer, .len = 0};
 
         collectBlackHeightsForEachPath(node, &blackHeights, 0);
@@ -174,14 +200,11 @@ static bool pathsFromNodeHaveSameBlackHeight(RedBlackNode *tree) {
             }
         }
 
-        if (node->children[LEFT_CHILD]) {
-            buffer[len] = node->children[LEFT_CHILD];
-            len++;
-        }
-
-        if (node->children[RIGHT_CHILD]) {
-            buffer[len] = node->children[RIGHT_CHILD];
-            len++;
+        for (U64 i = 0; i < CHILD_COUNT; i++) {
+            if (node->children[i]) {
+                buffer[len] = node->children[i];
+                len++;
+            }
         }
     }
 
@@ -194,7 +217,15 @@ void assertRedBlackTreeValid(RedBlackNode *tree, Arena scratch) {
         return;
     }
 
-    if (!isBinarySearchTree(tree)) {
+    U64 nodes = nodeCount(tree);
+    if (!nodes) {
+        TEST_FAILURE {
+            INFO(STRING("Tree has too many nodes to assert correctness!"));
+            printRedBlackTree(tree, tree);
+        }
+    }
+
+    if (!isBinarySearchTree(tree, nodes, scratch)) {
         return;
     }
 
@@ -206,11 +237,11 @@ void assertRedBlackTreeValid(RedBlackNode *tree, Arena scratch) {
         return;
     }
 
-    if (anyRedNodeHasRedChild(tree)) {
+    if (anyRedNodeHasRedChild(tree, nodes, scratch)) {
         return;
     }
 
-    if (!pathsFromNodeHaveSameBlackHeight(tree)) {
+    if (!pathsFromNodeHaveSameBlackHeight(tree, nodes, scratch)) {
         return;
     }
 

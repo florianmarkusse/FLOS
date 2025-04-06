@@ -14,9 +14,10 @@ static U64 insert_2[] = {3, 2, 1};
 static U64 insert_3[] = {466, 48966, 4348, 463241, 54};
 static U64 insert_4[] = {8756453, 4624, 465435};
 static U64 insert_5[] = {5, 9, 7};
+static U64 insert_6[] = {};
 
 static TestInsert testCases[] = {
-    {.name = STRING("Null tree"),
+    {.name = STRING("Test 1"),
      .array = {.buf = insert_1, .len = COUNTOF(insert_1)}},
     {.name = STRING("Test 2"),
      .array = {.buf = insert_2, .len = COUNTOF(insert_2)}},
@@ -26,6 +27,8 @@ static TestInsert testCases[] = {
      .array = {.buf = insert_4, .len = COUNTOF(insert_4)}},
     {.name = STRING("Test 5"),
      .array = {.buf = insert_5, .len = COUNTOF(insert_5)}},
+    {.name = STRING("Null"),
+     .array = {.buf = insert_6, .len = COUNTOF(insert_6)}},
 };
 static constexpr auto TEST_CASES_LEN = COUNTOF(testCases);
 

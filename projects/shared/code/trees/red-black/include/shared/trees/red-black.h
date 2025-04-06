@@ -8,12 +8,13 @@ typedef enum { BLACK = 0, RED = 1 } RedBlackColor;
 
 static constexpr auto LEFT_CHILD = 0;
 static constexpr auto RIGHT_CHILD = 1;
+static constexpr auto CHILD_COUNT = 2;
 
 typedef struct RedBlackNode RedBlackNode;
 struct RedBlackNode {
     U64 value;
     RedBlackColor color;
-    RedBlackNode *children[2];
+    RedBlackNode *children[CHILD_COUNT];
 };
 
 void insertRedBlackNode(RedBlackNode **node, U64 value, Arena *perm);
