@@ -5,9 +5,8 @@
 #include "shared/types/types.h"
 
 typedef enum { BLACK = 0, RED = 1 } RedBlackColor;
+typedef enum { LEFT_CHILD = 0, RIGHT_CHILD = 1 } RedBlackDirection;
 
-static constexpr auto LEFT_CHILD = 0;
-static constexpr auto RIGHT_CHILD = 1;
 static constexpr auto CHILD_COUNT = 2;
 
 typedef struct RedBlackNode RedBlackNode;
@@ -17,7 +16,7 @@ struct RedBlackNode {
     RedBlackNode *children[CHILD_COUNT];
 };
 
-void insertRedBlackNode(RedBlackNode **node, U64 value, Arena *perm);
+void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode);
 void deleteRedBlackNode(RedBlackNode *tree, RedBlackNode *node);
 RedBlackNode *findRedBlackNodeLeastBiggestValue(RedBlackNode *tree, U64 value);
 

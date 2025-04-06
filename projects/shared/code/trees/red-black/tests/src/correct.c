@@ -40,7 +40,8 @@ static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
                       badNode);
 }
 
-static void printRedBlackTree(RedBlackNode *root, RedBlackNode *badNode) {
+static void printRedBlackTreeWithBadNode(RedBlackNode *root,
+                                         RedBlackNode *badNode) {
     INFO(STRING("Red-Black Tree Structure:"), NEWLINE);
     printTreeIndented(root, 0, STRING("Root---"), badNode);
 }
@@ -95,7 +96,7 @@ static bool isBinarySearchTree(RedBlackNode *node, U64 nodes, Arena scratch) {
         if (previous > inOrderValues.buf[i]->value) {
             TEST_FAILURE {
                 INFO(STRING("Not a Binary Search Tree!\n"));
-                printRedBlackTree(node, inOrderValues.buf[i]);
+                printRedBlackTreeWithBadNode(node, inOrderValues.buf[i]);
             }
             return false;
         }
@@ -105,9 +106,9 @@ static bool isBinarySearchTree(RedBlackNode *node, U64 nodes, Arena scratch) {
     return true;
 }
 
-static bool redParentHasRedChild(RedBlackNode *node, U64 childIndex) {
-    if (node->children[childIndex] &&
-        node->children[childIndex]->color == RED) {
+static bool redParentHasRedChild(RedBlackNode *node,
+                                 RedBlackDirection direction) {
+    if (node->children[direction] && node->children[direction]->color == RED) {
         return true;
     }
 
@@ -130,7 +131,7 @@ static bool anyRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
                 redParentHasRedChild(node, RIGHT_CHILD)) {
                 TEST_FAILURE {
                     INFO(STRING("Node has a red child!\n"));
-                    printRedBlackTree(tree, node);
+                    printRedBlackTreeWithBadNode(tree, node);
                 }
                 return true;
             }
@@ -186,7 +187,7 @@ static bool pathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
             if (blackHeights.buf[i] != first) {
                 TEST_FAILURE {
                     INFO(STRING("Found differing black heights!\n"));
-                    printRedBlackTree(tree, node);
+                    printRedBlackTreeWithBadNode(tree, node);
 
                     INFO(STRING("Black heights calculated (left-to-right):"));
                     for (U64 j = 0; j < blackHeights.len; j++) {
@@ -221,7 +222,7 @@ void assertRedBlackTreeValid(RedBlackNode *tree, Arena scratch) {
     if (!nodes) {
         TEST_FAILURE {
             INFO(STRING("Tree has too many nodes to assert correctness!"));
-            printRedBlackTree(tree, tree);
+            printRedBlackTreeWithBadNode(tree, tree);
         }
     }
 
@@ -232,7 +233,7 @@ void assertRedBlackTreeValid(RedBlackNode *tree, Arena scratch) {
     if (tree->color == RED) {
         TEST_FAILURE {
             INFO(STRING("Root is not black!\n"));
-            printRedBlackTree(tree, tree);
+            printRedBlackTreeWithBadNode(tree, tree);
         }
         return;
     }
@@ -244,6 +245,8 @@ void assertRedBlackTreeValid(RedBlackNode *tree, Arena scratch) {
     if (!pathsFromNodeHaveSameBlackHeight(tree, nodes, scratch)) {
         return;
     }
+
+    KFLUSH_AFTER { printRedBlackTreeWithBadNode(tree, tree); }
 
     testSuccess();
 }
