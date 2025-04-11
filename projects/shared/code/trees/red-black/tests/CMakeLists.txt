@@ -1,11 +1,5 @@
 project(shared-trees-red-black-tests LANGUAGES C)
-add_executable(
-    ${PROJECT_NAME}
-    "src/main.c"
-    "src/insert.c"
-    "src/delete.c"
-    "src/correct.c"
-)
+add_executable(${PROJECT_NAME} "src/main.c" "src/test.c" "src/correct.c")
 
 target_include_directories(
     ${PROJECT_NAME}

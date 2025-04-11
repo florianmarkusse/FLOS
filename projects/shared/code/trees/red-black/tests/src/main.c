@@ -3,8 +3,7 @@
 #include "shared/log.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/sizes.h"
-#include "shared/trees/red-black/tests/delete.h"
-#include "shared/trees/red-black/tests/insert.h"
+#include "shared/trees/red-black/tests/test.h"
 
 #include <errno.h>
 #include <stddef.h>
@@ -35,8 +34,7 @@ int main() {
 
     testSuiteStart(STRING("Red-Black Trees"));
 
-    testRedBlackTreeInserts(arena);
-    testRedBlackTreeDeletes(arena);
+    testRedBlackTrees(arena);
 
     return testSuiteFinish();
 }

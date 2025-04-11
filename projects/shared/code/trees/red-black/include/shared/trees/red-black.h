@@ -11,13 +11,17 @@ static constexpr auto CHILD_COUNT = 2;
 
 typedef struct RedBlackNode RedBlackNode;
 struct RedBlackNode {
-    U64 value;
+    RedBlackNode
+        *children[CHILD_COUNT]; // NOTE: Keep this as the first elements. This
+                                // is used in the insert so that children->[0]
+                                // and a RedBlackNode* are the same location for
+                                // doing inserts.
     RedBlackColor color;
-    RedBlackNode *children[CHILD_COUNT];
+    U64 value;
 };
 
 void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode);
-void deleteRedBlackNode(RedBlackNode *tree, RedBlackNode *node);
+RedBlackNode *deleteRedBlackNode(RedBlackNode **tree, U64 value);
 RedBlackNode *findRedBlackNodeLeastBiggestValue(RedBlackNode *tree, U64 value);
 
 #endif

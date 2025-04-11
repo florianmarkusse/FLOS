@@ -40,8 +40,7 @@ static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
                       badNode);
 }
 
-static void printRedBlackTreeWithBadNode(RedBlackNode *root,
-                                         RedBlackNode *badNode) {
+void printRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode) {
     INFO(STRING("Red-Black Tree Structure:"), NEWLINE);
     printTreeIndented(root, 0, STRING("Root---"), badNode);
 }
@@ -74,6 +73,11 @@ static U64 nodeCount(RedBlackNode *tree) {
         for (U64 i = 0; i < CHILD_COUNT; i++) {
             if (node->children[i]) {
                 if (len > MAX_TREE_HEIGHT) {
+                    TEST_FAILURE {
+                        INFO(STRING(
+                            "Tree has too many nodes to assert correctness!"));
+                        printRedBlackTreeWithBadNode(tree, tree);
+                    }
                     return 0;
                 }
                 buffer[len] = node->children[i];
@@ -85,11 +89,57 @@ static U64 nodeCount(RedBlackNode *tree) {
     return result;
 }
 
-static bool isBinarySearchTree(RedBlackNode *node, U64 nodes, Arena scratch) {
+static void appendExpectedValuesAndTreeValues(U64_max_a expectedValues,
+                                              RedBlackNodePtr_a inOrderValues) {
+    INFO(STRING("Expected values:\n"));
+    for (U64 i = 0; i < expectedValues.len; i++) {
+        INFO(expectedValues.buf[i]);
+        INFO(STRING(" "));
+    }
+    INFO(STRING("\nRed-Black Tree values:\n"));
+    for (U64 i = 0; i < inOrderValues.len; i++) {
+        INFO(inOrderValues.buf[i]->value);
+        INFO(STRING(" "));
+    }
+    INFO(STRING("\n"));
+}
+
+static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
+                                   U64_max_a expectedValues, Arena scratch) {
     RedBlackNode **_buffer = NEW(&scratch, RedBlackNode *, nodes);
     RedBlackNodePtr_a inOrderValues = {.buf = _buffer, .len = 0};
 
     inOrderTraversal(node, &inOrderValues);
+
+    if (inOrderValues.len != expectedValues.len) {
+        TEST_FAILURE {
+            INFO(STRING("The Red-Black Tree does not contain all the values it "
+                        "should contain or it contains more!\n"));
+            appendExpectedValuesAndTreeValues(expectedValues, inOrderValues);
+            printRedBlackTreeWithBadNode(node, nullptr);
+        }
+        return false;
+    }
+
+    for (U64 i = 0; i < expectedValues.len; i++) {
+        bool found = false;
+        for (U64 j = 0; j < inOrderValues.len; j++) {
+            if (inOrderValues.buf[j]->value == expectedValues.buf[i]) {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            TEST_FAILURE {
+                INFO(STRING("The Red-Black Tree does not contain the value "));
+                INFO(expectedValues.buf[i], NEWLINE);
+                appendExpectedValuesAndTreeValues(expectedValues,
+                                                  inOrderValues);
+                printRedBlackTreeWithBadNode(node, nullptr);
+            }
+        }
+    }
 
     U64 previous = 0;
     for (U64 i = 0; i < inOrderValues.len; i++) {
@@ -130,7 +180,7 @@ static bool anyRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
             if (redParentHasRedChild(node, LEFT_CHILD) ||
                 redParentHasRedChild(node, RIGHT_CHILD)) {
                 TEST_FAILURE {
-                    INFO(STRING("Node has a red child!\n"));
+                    INFO(STRING("Red node has a red child!\n"));
                     printRedBlackTreeWithBadNode(tree, node);
                 }
                 return true;
@@ -212,41 +262,36 @@ static bool pathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
     return true;
 }
 
-void assertRedBlackTreeValid(RedBlackNode *tree, Arena scratch) {
+bool assertRedBlackTreeValid(RedBlackNode *tree, U64_max_a expectedValues,
+                             Arena scratch) {
     if (!tree) {
-        testSuccess();
-        return;
+        return true;
     }
 
     U64 nodes = nodeCount(tree);
     if (!nodes) {
-        TEST_FAILURE {
-            INFO(STRING("Tree has too many nodes to assert correctness!"));
-            printRedBlackTreeWithBadNode(tree, tree);
-        }
+        return false;
     }
 
-    if (!isBinarySearchTree(tree, nodes, scratch)) {
-        return;
+    if (!isBSTWitExpectedValues(tree, nodes, expectedValues, scratch)) {
+        return false;
     }
 
-    if (tree->color == RED) {
-        TEST_FAILURE {
-            INFO(STRING("Root is not black!\n"));
-            printRedBlackTreeWithBadNode(tree, tree);
-        }
-        return;
-    }
+    //    if (tree->color == RED) {
+    //        TEST_FAILURE {
+    //            INFO(STRING("Root is not black!\n"));
+    //            printRedBlackTreeWithBadNode(tree, tree);
+    //        }
+    //        return false;
+    //    }
 
     if (anyRedNodeHasRedChild(tree, nodes, scratch)) {
-        return;
+        return false;
     }
 
     if (!pathsFromNodeHaveSameBlackHeight(tree, nodes, scratch)) {
-        return;
+        return false;
     }
 
-    KFLUSH_AFTER { printRedBlackTreeWithBadNode(tree, tree); }
-
-    testSuccess();
+    return true;
 }

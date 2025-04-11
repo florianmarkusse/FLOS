@@ -3,6 +3,10 @@
 
 #include "shared/memory/allocator/arena.h"
 #include "shared/trees/red-black.h"
+#include "shared/types/array-types.h"
 
-void assertRedBlackTreeValid(RedBlackNode *tree, Arena scratch);
+bool assertRedBlackTreeValid(RedBlackNode *tree, U64_max_a expectedValues,
+                             Arena scratch);
+
+void printRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode);
 #endif
