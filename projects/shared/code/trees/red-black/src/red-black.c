@@ -210,10 +210,15 @@ RedBlackNode *deleteRedBlackNode(RedBlackNode **tree, U64 value) {
         len++;
     }
 
+    // If there is no right child, we can delete by having the parent of current
+    // now point to current's left child instead of current.
     if (!(current->children[RIGHT_CHILD])) {
         visitedNodes[len - 1].node->children[visitedNodes[len - 1].direction] =
             current->children[LEFT_CHILD];
-    } else {
+    }
+    // Find the sucessor node in the subtree of current's left chld. Done by
+    // repeetedly going to the left child.
+    else {
         visitedNodes[len].node = current;
         visitedNodes[len].direction = RIGHT_CHILD;
         U64 foundNodeIndex = len;
@@ -233,6 +238,8 @@ RedBlackNode *deleteRedBlackNode(RedBlackNode **tree, U64 value) {
             current = next;
         }
 
+        // Swap the values around. Naturally, the node pointers can be swapped
+        // too.
         U64 foundNodeValue = visitedNodes[foundNodeIndex].node->value;
         visitedNodes[foundNodeIndex].node->value = current->value;
         current->value = foundNodeValue;
@@ -241,6 +248,9 @@ RedBlackNode *deleteRedBlackNode(RedBlackNode **tree, U64 value) {
             current->children[RIGHT_CHILD];
     }
 
+    // Fix the violations present by removing the current node. Note that this
+    // node does not have to be the node that originally contained the value to
+    // be deleted.
     if (current->color == BLACK) {
         while (len >= 2) {
             RedBlackNode *childDeficitBlackDirection =
@@ -258,10 +268,4 @@ RedBlackNode *deleteRedBlackNode(RedBlackNode **tree, U64 value) {
     }
 
     return current;
-}
-
-RedBlackNode *findRedBlackNodeLeastBiggestValue(RedBlackNode *tree, U64 value) {
-    // do stuff
-    //
-    //
 }
