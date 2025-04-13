@@ -17,8 +17,8 @@ static RedBlackDirection calculateDirection(U64 value,
     return LEFT_CHILD;
 }
 
-static bool rebalanceInsert(RedBlackDirection direction,
-                            VisitedNode visitedNodes[MAX_HEIGHT], U64 len) {
+static U64 rebalanceInsert(RedBlackDirection direction,
+                           VisitedNode visitedNodes[MAX_HEIGHT], U64 len) {
     RedBlackNode *grandParent = visitedNodes[len - 3].node;
     RedBlackNode *parent = visitedNodes[len - 2].node;
     RedBlackNode *node = visitedNodes[len - 1].node;
@@ -29,7 +29,7 @@ static bool rebalanceInsert(RedBlackDirection direction,
         parent->color = BLACK;
         grandParent->color = RED;
 
-        return false;
+        return len - 2;
     }
 
     //      x
@@ -60,7 +60,7 @@ static bool rebalanceInsert(RedBlackDirection direction,
     grandParent->color = RED;
     parent->color = BLACK;
 
-    return true;
+    return 0;
 }
 
 void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
@@ -104,11 +104,8 @@ void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
 
     // Check for violations
     while (len >= 4 && visitedNodes[len - 2].node->color == RED) {
-        if (rebalanceInsert(visitedNodes[len - 3].direction, visitedNodes,
-                            len)) {
-            break;
-        }
-        len -= 2;
+        len =
+            rebalanceInsert(visitedNodes[len - 3].direction, visitedNodes, len);
     }
 
     (*tree)->color = BLACK;
