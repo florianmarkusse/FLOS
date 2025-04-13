@@ -22,94 +22,83 @@ typedef struct {
     TreeOperation_a operations;
 } TestCase;
 
-// Insert-only tests (unchanged in behavior)
-static TreeOperation operations1[] = {{37, INSERT}, {14, INSERT}, {25, INSERT},
-                                      {1, INSERT},  {18, INSERT}, {50, INSERT},
-                                      {42, INSERT}, {26, INSERT}, {9, INSERT},
-                                      {12, INSERT}, {38, INSERT}};
+static TreeOperation noOperations[] = {
+    // Empty test case
+};
 
-static TreeOperation operations2[] = {{100, INSERT}, {50, INSERT}, {25, INSERT},
-                                      {75, INSERT},  {10, INSERT}, {40, INSERT},
-                                      {60, INSERT},  {80, INSERT}, {90, INSERT},
-                                      {30, INSERT},  {20, INSERT}};
-
-static TreeOperation operations3[] = {
+static TreeOperation insert1[] = {{37, INSERT}, {14, INSERT}, {25, INSERT},
+                                  {1, INSERT},  {18, INSERT}, {50, INSERT},
+                                  {42, INSERT}, {26, INSERT}, {9, INSERT},
+                                  {12, INSERT}, {38, INSERT}};
+static TreeOperation insert2[] = {{100, INSERT}, {50, INSERT}, {25, INSERT},
+                                  {75, INSERT},  {10, INSERT}, {40, INSERT},
+                                  {60, INSERT},  {80, INSERT}, {90, INSERT},
+                                  {30, INSERT},  {20, INSERT}};
+static TreeOperation insert3[] = {
     {1999, INSERT}, {2021, INSERT}, {100, INSERT}, {300, INSERT},
     {150, INSERT},  {1200, INSERT}, {50, INSERT},  {987, INSERT},
     {6000, INSERT}, {5678, INSERT}};
 
-// Mixed insert and delete tests
-static TreeOperation operations4[] = {
-    {873, INSERT}, {582, INSERT}, {312, INSERT}, {54, INSERT},
-    {712, INSERT}, {946, INSERT}, {402, INSERT}, {833, INSERT},
-    {166, INSERT}, {712, DELETE}, {582, DELETE}, {946, DELETE}};
-
-static TreeOperation operations5[] = {
-    {550, INSERT},  {367, INSERT}, {472, INSERT},  {812, INSERT},
-    {1500, INSERT}, {689, INSERT}, {1450, INSERT}, {23, INSERT},
-    {875, INSERT},  {812, DELETE}, {367, DELETE},  {23, DELETE}};
-
-static TreeOperation operations6[] = {
+static TreeOperation mixed1[] = {{873, INSERT}, {582, INSERT}, {312, INSERT},
+                                 {54, INSERT},  {712, INSERT}, {946, INSERT},
+                                 {402, INSERT}, {833, INSERT}, {166, INSERT},
+                                 {712, DELETE}, {582, DELETE}, {946, DELETE}};
+static TreeOperation mixed2[] = {{550, INSERT},  {367, INSERT},  {472, INSERT},
+                                 {812, INSERT},  {1500, INSERT}, {689, INSERT},
+                                 {1450, INSERT}, {23, INSERT},   {875, INSERT},
+                                 {812, DELETE},  {367, DELETE},  {23, DELETE}};
+static TreeOperation mixed3[] = {
     {215, INSERT}, {778, INSERT}, {144, INSERT}, {310, INSERT}, {188, INSERT},
     {50, INSERT},  {25, INSERT},  {563, INSERT}, {137, INSERT}, {980, INSERT},
     {249, INSERT}, {500, INSERT}, {215, DELETE}, {144, DELETE}, {980, DELETE}};
-
-static TreeOperation operations7[] = {
+static TreeOperation mixed4[] = {
     {45, INSERT}, {16, INSERT}, {78, INSERT}, {34, INSERT},
     {52, INSERT}, {67, INSERT}, {89, INSERT}, {25, INSERT},
     {12, INSERT}, {40, INSERT}, {3, INSERT},  {56, INSERT},
     {25, DELETE}, {89, DELETE}, {3, DELETE},  {16, DELETE}};
-
-static TreeOperation operations8[] = {
+static TreeOperation mixed5[] = {
     {888, INSERT}, {543, INSERT}, {555, INSERT}, {234, INSERT}, {984, INSERT},
     {432, INSERT}, {1, INSERT},   {999, INSERT}, {777, INSERT}, {900, INSERT},
     {888, DELETE}, {1, DELETE},   {999, DELETE}};
-
-static TreeOperation operations9[] = {
+static TreeOperation mixed6[] = {
     {122, INSERT}, {45, INSERT}, {67, INSERT}, {89, INSERT}, {12, INSERT},
     {35, INSERT},  {56, INSERT}, {13, INSERT}, {78, INSERT}, {99, INSERT},
     {111, INSERT}, {35, DELETE}, {45, DELETE}, {78, DELETE}, {111, DELETE}};
-
-static TreeOperation operations10[] = {
+static TreeOperation mixed7[] = {
     {11111, INSERT}, {22222, INSERT}, {33333, INSERT}, {44444, INSERT},
     {55555, INSERT}, {66666, INSERT}, {77777, INSERT}, {88888, INSERT},
     {99999, INSERT}, {12345, INSERT}, {98765, INSERT}, {55555, DELETE},
     {88888, DELETE}, {11111, DELETE}};
-
-static TreeOperation operations11[] = {
-    // Empty test case
-};
-
-static TreeOperation operations12[] = {
+static TreeOperation mixed8[] = {
     {33333, INSERT}, {44444, INSERT}, {55555, INSERT},
     {55554, INSERT}, {55555, DELETE},
 };
 
 static TestCase testCases[] = {
-    {.name = STRING("Test 1"),
-     .operations = {.buf = operations1, .len = COUNTOF(operations1)}},
-    {.name = STRING("Test 2"),
-     .operations = {.buf = operations2, .len = COUNTOF(operations2)}},
-    {.name = STRING("Test 3"),
-     .operations = {.buf = operations3, .len = COUNTOF(operations3)}},
-    {.name = STRING("Test 4"),
-     .operations = {.buf = operations4, .len = COUNTOF(operations4)}},
-    {.name = STRING("Test 5"),
-     .operations = {.buf = operations5, .len = COUNTOF(operations5)}},
-    {.name = STRING("Test 6"),
-     .operations = {.buf = operations6, .len = COUNTOF(operations6)}},
-    {.name = STRING("Test 7"),
-     .operations = {.buf = operations7, .len = COUNTOF(operations7)}},
-    {.name = STRING("Test 8"),
-     .operations = {.buf = operations8, .len = COUNTOF(operations8)}},
-    {.name = STRING("Test 9"),
-     .operations = {.buf = operations9, .len = COUNTOF(operations9)}},
-    {.name = STRING("Test 10"),
-     .operations = {.buf = operations10, .len = COUNTOF(operations10)}},
-    {.name = STRING("Empty Tree"),
-     .operations = {.buf = operations11, .len = COUNTOF(operations11)}},
-    {.name = STRING("Test 12"),
-     .operations = {.buf = operations12, .len = COUNTOF(operations12)}},
+    {.name = STRING("No operations"),
+     .operations = {.buf = noOperations, .len = COUNTOF(noOperations)}},
+    {.name = STRING("Insert only 1"),
+     .operations = {.buf = insert1, .len = COUNTOF(insert1)}},
+    {.name = STRING("Insert only 2"),
+     .operations = {.buf = insert2, .len = COUNTOF(insert2)}},
+    {.name = STRING("Insert onlt 3"),
+     .operations = {.buf = insert3, .len = COUNTOF(insert3)}},
+    {.name = STRING("Mixed operations 1"),
+     .operations = {.buf = mixed1, .len = COUNTOF(mixed1)}},
+    {.name = STRING("Mixed operations 2"),
+     .operations = {.buf = mixed2, .len = COUNTOF(mixed2)}},
+    {.name = STRING("Mixed operations 3"),
+     .operations = {.buf = mixed3, .len = COUNTOF(mixed3)}},
+    {.name = STRING("Mixed operations 4"),
+     .operations = {.buf = mixed4, .len = COUNTOF(mixed4)}},
+    {.name = STRING("Mixed operations 5"),
+     .operations = {.buf = mixed5, .len = COUNTOF(mixed5)}},
+    {.name = STRING("Mixed operations 6"),
+     .operations = {.buf = mixed6, .len = COUNTOF(mixed6)}},
+    {.name = STRING("Mixed operations 7"),
+     .operations = {.buf = mixed7, .len = COUNTOF(mixed7)}},
+    {.name = STRING("Mixed operations 8"),
+     .operations = {.buf = mixed8, .len = COUNTOF(mixed8)}},
 };
 static constexpr auto TEST_CASES_LEN = COUNTOF(testCases);
 
@@ -178,7 +167,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
 }
 
 void testRedBlackTrees(Arena scratch) {
-    TEST_TOPIC(STRING("Inserts")) {
+    TEST_TOPIC(STRING("Operations")) {
         for (U64 i = 0; i < TEST_CASES_LEN; i++) {
             TEST(testCases[i].name) {
                 testTree(testCases[i].operations, scratch);

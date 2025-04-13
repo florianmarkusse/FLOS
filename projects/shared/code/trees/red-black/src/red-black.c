@@ -111,6 +111,87 @@ void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
     (*tree)->color = BLACK;
 }
 
+// We have 2 subtrees hanbing from visitedNodes - 1, the subtree of direction
+// and the subtree of !direction (other direction). the subtree of direction has
+// 1 less black height than the other subtree. The potential tree above these
+// subtrees is now also missing a black node. Fixing the deficiency by removing
+// a black node from the other direction subtree means that we stil need to
+// address that proble. On the other hand, coloring a node black in the
+// direction subtree immediately solves the deficiency in the whole tree.
+static U64 rebalanceDelete(RedBlackDirection direction,
+                           VisitedNode visitedNodes[MAX_HEIGHT], U64 len) {
+    RedBlackNode *node = visitedNodes[len - 1].node;
+    RedBlackNode *childOtherDirection = node->children[!direction];
+    // Ensure the other child is colored black, we "push" the problem a level
+    // down in the process.
+    if (childOtherDirection->color == RED) {
+        childOtherDirection->color = BLACK;
+        node->color = RED;
+
+        node->children[!direction] = childOtherDirection->children[direction];
+        childOtherDirection->children[direction] = node;
+        visitedNodes[len - 2].node->children[visitedNodes[len - 2].direction] =
+            childOtherDirection;
+
+        visitedNodes[len - 1].node = childOtherDirection;
+        visitedNodes[len].node = node;
+        visitedNodes[len].direction = direction;
+        len++;
+
+        childOtherDirection = node->children[!direction];
+    }
+
+    RedBlackNode *innerChildOtherDirection =
+        childOtherDirection->children[direction];
+    RedBlackNode *outerChildOtherDirection =
+        childOtherDirection->children[!direction];
+    // Bubble up the problem by 1 level.
+    if (((!innerChildOtherDirection) ||
+         innerChildOtherDirection->color == BLACK) &&
+        ((!outerChildOtherDirection) ||
+         outerChildOtherDirection->color == BLACK)) {
+        childOtherDirection->color = RED;
+
+        return len - 1;
+    }
+
+    //      x
+    //       \
+    //        y
+    //         \
+    //      (NOT RED)
+    if ((!outerChildOtherDirection) ||
+        outerChildOtherDirection->color == BLACK) {
+        childOtherDirection->color = RED;
+        innerChildOtherDirection->color = BLACK;
+
+        childOtherDirection->children[direction] =
+            innerChildOtherDirection->children[!direction];
+        innerChildOtherDirection->children[!direction] = childOtherDirection;
+        node->children[!direction] = innerChildOtherDirection;
+
+        RedBlackNode *temp = childOtherDirection;
+        childOtherDirection = innerChildOtherDirection;
+        outerChildOtherDirection = temp;
+    }
+
+    //      x
+    //       \
+    //        y
+    //         \
+    //        (RED)
+    childOtherDirection->color = node->color;
+    node->color = BLACK;
+    outerChildOtherDirection->color = BLACK;
+
+    node->children[!direction] = childOtherDirection->children[direction];
+    childOtherDirection->children[direction] = node;
+    visitedNodes[len - 2].node->children[visitedNodes[len - 2].direction] =
+        childOtherDirection;
+
+    return 0;
+}
+
 // Assumes the value is inside the tree
 RedBlackNode *deleteRedBlackNode(RedBlackNode **tree, U64 value) {
     // Search
@@ -161,145 +242,18 @@ RedBlackNode *deleteRedBlackNode(RedBlackNode **tree, U64 value) {
     }
 
     if (current->color == BLACK) {
-        while (true) {
-            RedBlackNode *node = visitedNodes[len - 1].node;
+        while (len >= 2) {
             RedBlackNode *childDeficitBlackDirection =
-                node->children[visitedNodes[len - 1].direction];
-
+                visitedNodes[len - 1]
+                    .node->children[visitedNodes[len - 1].direction];
             if (childDeficitBlackDirection &&
                 childDeficitBlackDirection->color == RED) {
                 childDeficitBlackDirection->color = BLACK;
                 break;
             }
 
-            if (len < 2) {
-                // Just the tree node left
-                break;
-            }
-
-            RedBlackNode *childOtherDirection =
-                node->children[!(visitedNodes[len - 1].direction)];
-            if (visitedNodes[len - 1].direction == LEFT_CHILD) {
-                if (childOtherDirection->color == RED) {
-                    childOtherDirection->color = BLACK;
-                    node->color = RED;
-
-                    node->children[RIGHT_CHILD] =
-                        childOtherDirection->children[LEFT_CHILD];
-                    childOtherDirection->children[LEFT_CHILD] = node;
-                    visitedNodes[len - 2]
-                        .node->children[visitedNodes[len - 2].direction] =
-                        childOtherDirection;
-
-                    visitedNodes[len - 1].node = childOtherDirection;
-                    visitedNodes[len].node = node;
-                    visitedNodes[len].direction = LEFT_CHILD;
-                    len++;
-
-                    childOtherDirection = node->children[RIGHT_CHILD];
-                }
-
-                RedBlackNode *leftChildOtherDirection =
-                    childOtherDirection->children[LEFT_CHILD];
-                RedBlackNode *rightChildOtherDirection =
-                    childOtherDirection->children[RIGHT_CHILD];
-                if (((!leftChildOtherDirection) ||
-                     leftChildOtherDirection->color == BLACK) &&
-                    ((!rightChildOtherDirection) ||
-                     rightChildOtherDirection->color == BLACK)) {
-                    childOtherDirection->color = RED;
-                } else {
-                    if ((!rightChildOtherDirection) ||
-                        rightChildOtherDirection->color == BLACK) {
-                        childOtherDirection->color = RED;
-                        leftChildOtherDirection->color = BLACK;
-
-                        childOtherDirection->children[LEFT_CHILD] =
-                            leftChildOtherDirection->children[RIGHT_CHILD];
-                        leftChildOtherDirection->children[RIGHT_CHILD] =
-                            childOtherDirection;
-                        node->children[RIGHT_CHILD] = leftChildOtherDirection;
-
-                        RedBlackNode *temp = childOtherDirection;
-                        childOtherDirection = leftChildOtherDirection;
-                        rightChildOtherDirection = temp;
-                    }
-
-                    childOtherDirection->color = node->color;
-                    node->color = BLACK;
-                    rightChildOtherDirection->color = BLACK;
-
-                    node->children[RIGHT_CHILD] =
-                        childOtherDirection->children[LEFT_CHILD];
-                    childOtherDirection->children[LEFT_CHILD] = node;
-                    visitedNodes[len - 2]
-                        .node->children[visitedNodes[len - 2].direction] =
-                        childOtherDirection;
-
-                    break;
-                }
-            } else {
-                if (childOtherDirection->color == RED) {
-                    childOtherDirection->color = BLACK;
-                    node->color = RED;
-
-                    node->children[LEFT_CHILD] =
-                        childOtherDirection->children[RIGHT_CHILD];
-                    childOtherDirection->children[RIGHT_CHILD] = node;
-                    visitedNodes[len - 2]
-                        .node->children[visitedNodes[len - 2].direction] =
-                        childOtherDirection;
-
-                    visitedNodes[len - 1].node = childOtherDirection;
-                    visitedNodes[len].node = node;
-                    visitedNodes[len].direction = RIGHT_CHILD;
-                    len++;
-
-                    childOtherDirection = node->children[LEFT_CHILD];
-                }
-
-                RedBlackNode *rightChildOtherDirection =
-                    childOtherDirection->children[RIGHT_CHILD];
-                RedBlackNode *leftChildOtherDirection =
-                    childOtherDirection->children[LEFT_CHILD];
-                if (((!rightChildOtherDirection) ||
-                     rightChildOtherDirection->color == BLACK) &&
-                    ((!leftChildOtherDirection) ||
-                     leftChildOtherDirection->color == BLACK)) {
-                    childOtherDirection->color = RED;
-                } else {
-                    if ((!leftChildOtherDirection) ||
-                        leftChildOtherDirection->color == BLACK) {
-                        childOtherDirection->color = RED;
-                        rightChildOtherDirection->color = BLACK;
-
-                        childOtherDirection->children[RIGHT_CHILD] =
-                            rightChildOtherDirection->children[LEFT_CHILD];
-                        rightChildOtherDirection->children[LEFT_CHILD] =
-                            childOtherDirection;
-                        node->children[LEFT_CHILD] = rightChildOtherDirection;
-
-                        RedBlackNode *temp = childOtherDirection;
-                        childOtherDirection = rightChildOtherDirection;
-                        leftChildOtherDirection = temp;
-                    }
-
-                    childOtherDirection->color = node->color;
-                    node->color = BLACK;
-                    leftChildOtherDirection->color = BLACK;
-
-                    node->children[LEFT_CHILD] =
-                        childOtherDirection->children[RIGHT_CHILD];
-                    childOtherDirection->children[RIGHT_CHILD] = node;
-                    visitedNodes[len - 2]
-                        .node->children[visitedNodes[len - 2].direction] =
-                        childOtherDirection;
-
-                    break;
-                }
-            }
-
-            len--;
+            len = rebalanceDelete(visitedNodes[len - 1].direction, visitedNodes,
+                                  len);
         }
     }
 
