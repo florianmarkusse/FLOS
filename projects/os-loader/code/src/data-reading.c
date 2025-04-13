@@ -14,11 +14,11 @@
 #include "efi/firmware/simple-text-input.h"
 #include "efi/firmware/system.h" // for OPEN_PROTOCOL_BY_...
 #include "efi/globals.h"         // for globals
-#include "efi/memory/definitions.h"
 #include "efi/memory/physical.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
+#include "shared/memory/management/definitions.h"
 
 // NOTE: Once my firmware supports a PartitionInformationProtocol, this function
 // can be used to check for the right block protocol. Until then, it cannot.

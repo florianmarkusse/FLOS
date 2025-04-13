@@ -16,7 +16,7 @@ static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
         return;
     }
 
-    printTreeIndented(node->children[RIGHT_CHILD], depth + 1, STRING("R---"),
+    printTreeIndented(node->children[RB_TREE_RIGHT], depth + 1, STRING("R---"),
                       badNode);
 
     for (int i = 0; i < depth; i++) {
@@ -24,9 +24,9 @@ static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
     }
     INFO(prefix);
     INFO(STRING("Value: "));
-    INFO(node->value);
+    INFO(node->bytes);
     INFO(STRING(", Color: "));
-    INFO(node->color == RED ? STRING("RED") : STRING("BLACK"));
+    INFO(node->color == RB_TREE_RED ? STRING("RED") : STRING("BLACK"));
 
     if (node == badNode) {
         appendColor(COLOR_RED, STDOUT);
@@ -36,7 +36,7 @@ static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
 
     INFO(STRING("\n"));
 
-    printTreeIndented(node->children[LEFT_CHILD], depth + 1, STRING("L---"),
+    printTreeIndented(node->children[RB_TREE_LEFT], depth + 1, STRING("L---"),
                       badNode);
 }
 
@@ -50,10 +50,10 @@ static void inOrderTraversal(RedBlackNode *node, RedBlackNodePtr_a *values) {
         return;
     }
 
-    inOrderTraversal(node->children[LEFT_CHILD], values);
+    inOrderTraversal(node->children[RB_TREE_LEFT], values);
     values->buf[values->len] = node;
     values->len++;
-    inOrderTraversal(node->children[RIGHT_CHILD], values);
+    inOrderTraversal(node->children[RB_TREE_RIGHT], values);
 }
 
 static constexpr auto MAX_TREE_HEIGHT = 256;
@@ -70,7 +70,7 @@ static U64 nodeCount(RedBlackNode *tree) {
         len--;
         result++;
 
-        for (U64 i = 0; i < CHILD_COUNT; i++) {
+        for (U64 i = 0; i < RB_TREE_CHILD_COUNT; i++) {
             if (node->children[i]) {
                 if (len > MAX_TREE_HEIGHT) {
                     TEST_FAILURE {
@@ -98,7 +98,7 @@ static void appendExpectedValuesAndTreeValues(U64_max_a expectedValues,
     }
     INFO(STRING("\nRed-Black Tree values:\n"));
     for (U64 i = 0; i < inOrderValues.len; i++) {
-        INFO(inOrderValues.buf[i]->value);
+        INFO(inOrderValues.buf[i]->bytes);
         INFO(STRING(" "));
     }
     INFO(STRING("\n"));
@@ -124,7 +124,7 @@ static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
     for (U64 i = 0; i < expectedValues.len; i++) {
         bool found = false;
         for (U64 j = 0; j < inOrderValues.len; j++) {
-            if (inOrderValues.buf[j]->value == expectedValues.buf[i]) {
+            if (inOrderValues.buf[j]->bytes == expectedValues.buf[i]) {
                 found = true;
                 break;
             }
@@ -143,14 +143,14 @@ static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
 
     U64 previous = 0;
     for (U64 i = 0; i < inOrderValues.len; i++) {
-        if (previous > inOrderValues.buf[i]->value) {
+        if (previous > inOrderValues.buf[i]->bytes) {
             TEST_FAILURE {
                 INFO(STRING("Not a Binary Search Tree!\n"));
                 printRedBlackTreeWithBadNode(node, inOrderValues.buf[i]);
             }
             return false;
         }
-        previous = inOrderValues.buf[i]->value;
+        previous = inOrderValues.buf[i]->bytes;
     }
 
     return true;
@@ -158,7 +158,8 @@ static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
 
 static bool redParentHasRedChild(RedBlackNode *node,
                                  RedBlackDirection direction) {
-    if (node->children[direction] && node->children[direction]->color == RED) {
+    if (node->children[direction] &&
+        node->children[direction]->color == RB_TREE_RED) {
         return true;
     }
 
@@ -176,9 +177,9 @@ static bool anyRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
         RedBlackNode *node = buffer[len - 1];
         len--;
 
-        if (node->color == RED) {
-            if (redParentHasRedChild(node, LEFT_CHILD) ||
-                redParentHasRedChild(node, RIGHT_CHILD)) {
+        if (node->color == RB_TREE_RED) {
+            if (redParentHasRedChild(node, RB_TREE_LEFT) ||
+                redParentHasRedChild(node, RB_TREE_RIGHT)) {
                 TEST_FAILURE {
                     INFO(STRING("Red node has a red child!\n"));
                     printRedBlackTreeWithBadNode(tree, node);
@@ -187,7 +188,7 @@ static bool anyRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
             }
         }
 
-        for (U64 i = 0; i < CHILD_COUNT; i++) {
+        for (U64 i = 0; i < RB_TREE_CHILD_COUNT; i++) {
             if (node->children[i]) {
                 buffer[len] = node->children[i];
                 len++;
@@ -204,13 +205,13 @@ static void collectBlackHeightsForEachPath(RedBlackNode *node,
         blackHeights->buf[blackHeights->len] = current + 1;
         blackHeights->len++;
     } else {
-        if (node->color == BLACK) {
+        if (node->color == RB_TREE_BLACK) {
             current++;
         }
 
-        collectBlackHeightsForEachPath(node->children[LEFT_CHILD], blackHeights,
-                                       current);
-        collectBlackHeightsForEachPath(node->children[RIGHT_CHILD],
+        collectBlackHeightsForEachPath(node->children[RB_TREE_LEFT],
+                                       blackHeights, current);
+        collectBlackHeightsForEachPath(node->children[RB_TREE_RIGHT],
                                        blackHeights, current);
     }
 }
@@ -251,7 +252,7 @@ static bool pathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
             }
         }
 
-        for (U64 i = 0; i < CHILD_COUNT; i++) {
+        for (U64 i = 0; i < RB_TREE_CHILD_COUNT; i++) {
             if (node->children[i]) {
                 buffer[len] = node->children[i];
                 len++;

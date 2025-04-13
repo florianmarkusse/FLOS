@@ -5,10 +5,10 @@
 #include "efi/error.h"
 #include "efi/firmware/base.h"
 #include "efi/globals.h"
-#include "efi/memory/definitions.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
+#include "shared/memory/management/definitions.h"
 #include "shared/memory/sizes.h"
 
 static MemoryInfo prepareMemoryInfo() {
@@ -57,11 +57,6 @@ void addAddressToKernelStructure(U64 address) {
     }
     kernelStructureLocations.buf[kernelStructureLocations.len] = address;
     kernelStructureLocations.len++;
-
-    KFLUSH_AFTER {
-        INFO(STRING("len is now: "));
-        INFO(kernelStructureLocations.len, NEWLINE);
-    }
 }
 
 MemoryInfo getMemoryInfo(Arena *perm) {

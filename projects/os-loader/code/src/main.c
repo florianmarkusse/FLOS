@@ -15,7 +15,6 @@
 #include "efi/firmware/simple-text-output.h" // for SimpleTextOut...
 #include "efi/firmware/system.h"             // for PhysicalAddress
 #include "efi/globals.h"                     // for globals
-#include "efi/memory/definitions.h"
 #include "efi/memory/physical.h"
 #include "os-loader/data-reading.h" // for getKernelInfo
 #include "os-loader/memory.h"       // for mapMemoryAt

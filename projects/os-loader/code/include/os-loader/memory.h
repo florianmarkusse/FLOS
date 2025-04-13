@@ -4,7 +4,6 @@
 #include "efi-to-kernel/kernel-parameters.h"
 #include "efi/firmware/base.h" // for PhysicalAddress
 #include "efi/firmware/memory.h"
-#include "efi/memory/definitions.h"
 #include "efi/memory/physical.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"

@@ -12,11 +12,12 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     add_project("abstraction/memory/manipulation")
     add_project("abstraction/log")
     add_project("abstraction/interrupts")
+    add_project("abstraction/jmp")
     add_project("abstraction/text/converter")
     include("${REPO_PROJECTS}/print-configuration.cmake")
 endif()
 
-add_library(${PROJECT_NAME} OBJECT "src/physical.c")
+add_library(${PROJECT_NAME} OBJECT "src/new-physical.c")
 
 add_includes_for_sublibrary()
 
@@ -29,6 +30,7 @@ add_subdirectory(status)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-physical-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-interrupts-i)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-jmp-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE x86-i)
 

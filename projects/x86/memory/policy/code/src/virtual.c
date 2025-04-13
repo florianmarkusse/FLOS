@@ -37,14 +37,16 @@ U64 getPhysicalAddressFrame(U64 virtualPage) {
 
 void initVirtualMemoryManager(KernelMemory kernelMemory) {
     U64 currentHighestAddress = 0;
-    for (U64 i = 0; i < kernelMemory.memory.len; i++) {
-        PagedMemory paged = kernelMemory.memory.buf[i];
-        U64 highestAddress = paged.start + paged.numberOfPages * X86_4KIB_PAGE;
-
-        if (highestAddress > currentHighestAddress) {
-            currentHighestAddress = highestAddress;
-        }
-    }
+    // FIXME THIS!
+    // for (U64 i = 0; i < kernelMemory.memory.len; i++) {
+    //     PagedMemory paged = kernelMemory.memory.buf[i];
+    //     U64 highestAddress = paged.start + paged.numberOfPages *
+    //     X86_4KIB_PAGE;
+    //
+    //     if (highestAddress > currentHighestAddress) {
+    //         currentHighestAddress = highestAddress;
+    //     }
+    // }
     lowerHalfRegion.start = currentHighestAddress;
 
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */

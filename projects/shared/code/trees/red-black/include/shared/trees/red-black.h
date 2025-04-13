@@ -4,20 +4,21 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/types/types.h"
 
-typedef enum { BLACK = 0, RED = 1 } RedBlackColor;
-typedef enum { LEFT_CHILD = 0, RIGHT_CHILD = 1 } RedBlackDirection;
+typedef enum { RB_TREE_BLACK = 0, RB_TREE_RED = 1 } RedBlackColor;
+typedef enum { RB_TREE_LEFT = 0, RB_TREE_RIGHT = 1 } RedBlackDirection;
 
-static constexpr auto CHILD_COUNT = 2;
+static constexpr auto RB_TREE_CHILD_COUNT = 2;
 
 typedef struct RedBlackNode RedBlackNode;
 struct RedBlackNode {
-    RedBlackNode
-        *children[CHILD_COUNT]; // NOTE: Keep this as the first elements. This
-                                // is used in the insert so that children->[0]
-                                // and a RedBlackNode* are the same location for
-                                // doing inserts.
+    RedBlackNode *
+        children[RB_TREE_CHILD_COUNT]; // NOTE: Keep this as the first elements.
+                                       // This is used in the insert so that
+                                       // children->[0] and a RedBlackNode* are
+                                       // the same location for doing inserts.
     RedBlackColor color;
-    U64 value;
+    U64 bytes;
+    U64 start;
 };
 
 void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode);

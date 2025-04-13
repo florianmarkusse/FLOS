@@ -8,12 +8,12 @@
 #include "efi/error.h"
 #include "efi/firmware/system.h"
 #include "efi/globals.h"
-#include "efi/memory/definitions.h"
 #include "efi/memory/physical.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
 #include "shared/text/string.h"
+#include "shared/trees/red-black.h"
 
 static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     switch (type) {
@@ -29,22 +29,30 @@ static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     }
 }
 
-static constexpr auto ADDITIONAL_CAPACITY_FOR_SPLITTING_MEMORY_DESCRIPTOR = 1;
 void allocateSpaceForKernelMemory(Arena scratch, KernelMemory *location) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
     U64 numberOfDescriptors =
         memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
-    U64 bytes = sizeof(PagedMemory) *
-                (numberOfDescriptors +
-                 ADDITIONAL_CAPACITY_FOR_SPLITTING_MEMORY_DESCRIPTOR);
+    U64 totalNumberOfDescriptors = ((numberOfDescriptors * 3) / 2);
+    U64 bytes = sizeof(RedBlackNode) * totalNumberOfDescriptors;
 
-    PagedMemory *freeMemoryDescriptorsLocation =
-        (PagedMemory *)allocateKernelStructure(bytes, 0, false, scratch);
+    U8 *freeMemoryDescriptorsLocation =
+        (U8 *)allocateKernelStructure(bytes, 0, false, scratch);
+    if (!freeMemoryDescriptorsLocation) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("Received the 0 memory address to use for the memory "
+                         "descriptors allocator!\n"));
+        }
+    }
+    Arena physicalMemoryArena =
+        (Arena){.curFree = freeMemoryDescriptorsLocation,
+                .beg = freeMemoryDescriptorsLocation,
+                .end = freeMemoryDescriptorsLocation + bytes};
 
-    *location =
-        (KernelMemory){.UEFIPages = CEILING_DIV_VALUE(bytes, UEFI_PAGE_SIZE),
-                       .memory.len = 0,
-                       .memory.buf = freeMemoryDescriptorsLocation};
+    RedBlackNode *tree = NEW(&physicalMemoryArena, RedBlackNode);
+    tree = nullptr;
+
+    *location = (KernelMemory){.allocator = physicalMemoryArena, .tree = tree};
 }
 
 U64 alignVirtual(U64 virt, U64 physical, U64 bytes) {
@@ -105,24 +113,19 @@ void convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory *location) {
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
         if (memoryTypeCanBeUsedByKernel(desc->type) &&
             !isKernelStructure(desc->physicalStart)) {
-            location->memory.buf[location->memory.len] =
-                (PagedMemory){.start = desc->physicalStart,
-                              .numberOfPages = desc->numberOfPages};
-            location->memory.len++;
-        }
-    }
+            if (desc->physicalStart == 0) {
+                if (desc->numberOfPages == 1) {
+                    continue;
+                }
 
-    for (U64 i = 0; i < location->memory.len - 1; i++) {
-        U64 currentSmallest = i;
-        for (U64 j = i + 1; j < location->memory.len; j++) {
-            if (location->memory.buf[j].numberOfPages <
-                location->memory.buf[currentSmallest].numberOfPages) {
-                currentSmallest = j;
+                desc->physicalStart += UEFI_PAGE_SIZE;
+                desc->physicalStart--;
             }
-        }
 
-        PagedMemory copy = location->memory.buf[i];
-        location->memory.buf[i] = location->memory.buf[currentSmallest];
-        location->memory.buf[currentSmallest] = copy;
+            RedBlackNode *node = NEW(&location->allocator, RedBlackNode);
+            node->bytes = desc->numberOfPages * UEFI_PAGE_SIZE;
+            node->start = desc->physicalStart;
+            insertRedBlackNode(&location->tree, node);
+        }
     }
 }

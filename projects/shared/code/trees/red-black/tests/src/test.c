@@ -113,7 +113,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
     for (U64 i = 0; i < operations.len; i++) {
         if (operations.buf[i].type == INSERT) {
             RedBlackNode *createdNode = NEW(&scratch, RedBlackNode);
-            createdNode->value = operations.buf[i].value;
+            createdNode->bytes = operations.buf[i].value;
             insertRedBlackNode(&tree, createdNode);
 
             if (expectedValues.len >= MAX_NODES_IN_TREE) {
@@ -122,7 +122,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                                 "Increase max size or decrease expected nodes "
                                 "in Red-Black tree. Current maximum size: "));
                     INFO(MAX_NODES_IN_TREE, NEWLINE);
-                    printRedBlackTreeWithBadNode(tree, tree);
+                    printRedBlackTreeWithBadNode(tree, nullptr);
                 }
                 return;
             }
@@ -131,14 +131,14 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         } else {
             RedBlackNode *deleted =
                 deleteRedBlackNode(&tree, operations.buf[i].value);
-            if (deleted->value != operations.buf[i].value) {
+            if (deleted->bytes != operations.buf[i].value) {
                 TEST_FAILURE {
                     INFO(STRING("Deleted value does not equal the value that "
                                 "should have been deleted!\nExpected to be "
                                 "deleted value: "));
                     INFO(operations.buf[i].value, NEWLINE);
                     INFO(STRING("Actual deleted value: "));
-                    INFO(deleted->value, NEWLINE);
+                    INFO(deleted->bytes, NEWLINE);
                 }
                 return;
             }
