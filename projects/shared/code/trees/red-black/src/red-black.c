@@ -17,6 +17,52 @@ static RedBlackDirection calculateDirection(U64 value,
     return LEFT_CHILD;
 }
 
+static bool rebalanceInsert(RedBlackDirection direction,
+                            VisitedNode visitedNodes[MAX_HEIGHT], U64 len) {
+    RedBlackNode *grandParent = visitedNodes[len - 3].node;
+    RedBlackNode *parent = visitedNodes[len - 2].node;
+    RedBlackNode *node = visitedNodes[len - 1].node;
+
+    RedBlackNode *uncle = grandParent->children[!direction];
+    if (uncle && uncle->color == RED) {
+        uncle->color = BLACK;
+        parent->color = BLACK;
+        grandParent->color = RED;
+
+        return false;
+    }
+
+    //      x
+    //     /
+    //    y
+    //     \
+    //      z
+    if (visitedNodes[len - 2].direction == !direction) {
+        parent->children[!direction] = node->children[direction];
+        node->children[direction] = parent;
+        grandParent->children[direction] = node;
+
+        node = node->children[direction];
+        parent = grandParent->children[direction];
+    }
+
+    //      x
+    //     /
+    //    y
+    //   /
+    //  z
+    grandParent->children[direction] = parent->children[!direction];
+    parent->children[!direction] = grandParent;
+    visitedNodes[len - 4].node->children[visitedNodes[len - 4].direction] =
+        parent; // NOTE: Can also be that we are setting the new
+                // root pointer here!
+
+    grandParent->color = RED;
+    parent->color = BLACK;
+
+    return true;
+}
+
 void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
     createdNode->children[LEFT_CHILD] = nullptr;
     createdNode->children[RIGHT_CHILD] = nullptr;
@@ -34,19 +80,23 @@ void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
     visitedNodes[0].direction = LEFT_CHILD;
     U64 len = 1;
 
-    RedBlackNode **current = tree;
-    while (*current) {
-        visitedNodes[len].node = *current;
+    RedBlackNode *current = *tree;
+    while (1) {
+        visitedNodes[len].node = current;
         visitedNodes[len].direction =
-            calculateDirection(createdNode->value, *current);
-        current = &(*current)->children[visitedNodes[len].direction];
-
+            calculateDirection(createdNode->value, current);
         len++;
+
+        RedBlackNode *next = current->children[visitedNodes[len - 1].direction];
+        if (!next) {
+            break;
+        }
+        current = next;
     }
 
     // Insert
     createdNode->color = RED;
-    *current = createdNode;
+    current->children[visitedNodes[len - 1].direction] = createdNode;
 
     // NOTE: we should never be looking at [len - 1].direction!
     visitedNodes[len].node = createdNode;
@@ -54,77 +104,11 @@ void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
 
     // Check for violations
     while (len >= 4 && visitedNodes[len - 2].node->color == RED) {
-        RedBlackNode *grandParent = visitedNodes[len - 3].node;
-        RedBlackNode *parent = visitedNodes[len - 2].node;
-        RedBlackNode *node = visitedNodes[len - 1].node;
-        // left side rebalance
-        // Symmetric with right side rebalance below
-        // NOTE: do take into account that we are turning the root black at the
-        // end!
-        if (visitedNodes[len - 3].direction == LEFT_CHILD) {
-            RedBlackNode *uncle = grandParent->children[RIGHT_CHILD];
-            if (uncle && uncle->color == RED) {
-                uncle->color = BLACK;
-                parent->color = BLACK;
-                grandParent->color = RED;
-                len -= 2;
-            } else {
-                if (visitedNodes[len - 2].direction == RIGHT_CHILD) {
-                    parent->children[RIGHT_CHILD] = node->children[LEFT_CHILD];
-                    node->children[LEFT_CHILD] = parent;
-                    grandParent->children[LEFT_CHILD] = node;
-
-                    node = node->children[LEFT_CHILD];
-                    parent = grandParent->children[LEFT_CHILD];
-                }
-
-                grandParent->children[LEFT_CHILD] =
-                    parent->children[RIGHT_CHILD];
-                parent->children[RIGHT_CHILD] = grandParent;
-                visitedNodes[len - 4]
-                    .node->children[visitedNodes[len - 4].direction] =
-                    parent; // NOTE: Can also be that we are setting the new
-                            // root pointer here!
-
-                grandParent->color = RED;
-                parent->color = BLACK;
-
-                break;
-            }
+        if (rebalanceInsert(visitedNodes[len - 3].direction, visitedNodes,
+                            len)) {
+            break;
         }
-        // right side rebalance
-        else {
-            RedBlackNode *uncle = grandParent->children[LEFT_CHILD];
-            if (uncle && uncle->color == RED) {
-                uncle->color = BLACK;
-                parent->color = BLACK;
-                grandParent->color = RED;
-
-                len -= 2;
-            } else {
-                if (visitedNodes[len - 2].direction == LEFT_CHILD) {
-                    parent->children[LEFT_CHILD] = node->children[RIGHT_CHILD];
-                    node->children[RIGHT_CHILD] = parent;
-                    grandParent->children[RIGHT_CHILD] = node;
-
-                    node = node->children[RIGHT_CHILD];
-                    parent = grandParent->children[RIGHT_CHILD];
-                }
-
-                grandParent->children[RIGHT_CHILD] =
-                    parent->children[LEFT_CHILD];
-                parent->children[LEFT_CHILD] = grandParent;
-                visitedNodes[len - 4]
-                    .node->children[visitedNodes[len - 4].direction] =
-                    parent; // NOTE: Can also be that we are setting the new
-                            // root pointer here!
-
-                grandParent->color = RED;
-                parent->color = BLACK;
-
-                break;
-            }
-        }
+        len -= 2;
     }
 
     (*tree)->color = BLACK;
