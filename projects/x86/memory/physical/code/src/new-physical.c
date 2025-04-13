@@ -12,14 +12,24 @@
 #include "shared/maths/maths.h"
 #include "shared/types/types.h" // for U64, U32, U8
 
-static constexpr auto TREE_SIZE = 16 * KiB;
-static constexpr auto FREE_LIST_TREE_SIZE = 16 * KiB;
+typedef MAX_LENGTH_ARRAY(RedBlackNode) RedBlackNode_max_a;
 
 static RedBlackNode *tree;
 static Arena allocatable;
+static RedBlackNode_max_a freeList;
+
+static Memoory allocInternal(U64 bytes) {}
+
+Memory allocPhysicalMemory(U64 bytes) {}
+
+// TODO: Make this architecture agnostic?
+U64 getPageForMappingVirtualMemory() {
+    // TODO: THIS!
+    return allocContiguousPhysicalPages(1, X86_4KIB_PAGE);
+}
 
 // NOTE: Coming into this, All the memory is identity mapped. Having to do some
-// boostrapping here with the base page frame physical manager.
+// boostrapping here.
 void initPhysicalMemoryManager(KernelMemory kernelMemory) {
     tree = kernelMemory.tree;
 
