@@ -53,27 +53,34 @@ static TreeOperation insertDelete3[] = {
     {249, INSERT}, {500, INSERT}, {215, DELETE}, {144, DELETE}, {980, DELETE}};
 
 static TreeOperation insertDeleteAtLeast1[] = {
-    {45, INSERT}, {16, INSERT}, {78, INSERT}, {34, INSERT},
-    {52, INSERT}, {67, INSERT}, {89, INSERT}, {25, INSERT},
-    {12, INSERT}, {40, INSERT}, {3, INSERT},  {56, INSERT},
-    {25, DELETE}, {89, DELETE}, {3, DELETE},  {16, DELETE}};
+    {45, INSERT},          {16, INSERT},          {78, INSERT},
+    {34, INSERT},          {52, INSERT},          {67, INSERT},
+    {89, INSERT},          {25, INSERT},          {12, INSERT},
+    {40, INSERT},          {3, INSERT},           {56, INSERT},
+    {20, DELETE_AT_LEAST}, {88, DELETE_AT_LEAST}, {2, DELETE_AT_LEAST},
+    {16, DELETE_AT_LEAST}};
 static TreeOperation insertDeleteAtLeast2[] = {
-    {888, INSERT}, {543, INSERT}, {555, INSERT}, {234, INSERT}, {984, INSERT},
-    {432, INSERT}, {1, INSERT},   {999, INSERT}, {777, INSERT}, {900, INSERT},
-    {888, DELETE}, {1, DELETE},   {999, DELETE}};
+    {888, INSERT},         {543, INSERT},          {555, INSERT},
+    {234, INSERT},         {984, INSERT},          {432, INSERT},
+    {1, INSERT},           {999, INSERT},          {777, INSERT},
+    {900, INSERT},         {778, DELETE_AT_LEAST}, {1, DELETE_AT_LEAST},
+    {999, DELETE_AT_LEAST}};
 static TreeOperation insertDeleteAtLeast3[] = {
-    {122, INSERT}, {45, INSERT}, {67, INSERT}, {89, INSERT}, {12, INSERT},
-    {35, INSERT},  {56, INSERT}, {13, INSERT}, {78, INSERT}, {99, INSERT},
-    {111, INSERT}, {35, DELETE}, {45, DELETE}, {78, DELETE}, {111, DELETE}};
+    {122, INSERT},         {45, INSERT},          {67, INSERT},
+    {89, INSERT},          {12, INSERT},          {35, INSERT},
+    {56, INSERT},          {13, INSERT},          {78, INSERT},
+    {99, INSERT},          {111, INSERT},         {35, DELETE_AT_LEAST},
+    {45, DELETE_AT_LEAST}, {70, DELETE_AT_LEAST}, {111, DELETE_AT_LEAST}};
 
 static TreeOperation mixed7[] = {
-    {11111, INSERT}, {22222, INSERT}, {33333, INSERT}, {44444, INSERT},
-    {55555, INSERT}, {66666, INSERT}, {77777, INSERT}, {88888, INSERT},
-    {99999, INSERT}, {12345, INSERT}, {98765, INSERT}, {55555, DELETE},
-    {88888, DELETE}, {11111, DELETE}};
+    {11111, INSERT},          {22222, INSERT},         {33333, INSERT},
+    {44444, INSERT},          {55555, INSERT},         {66666, INSERT},
+    {77777, INSERT},          {88888, INSERT},         {99999, INSERT},
+    {12345, INSERT},          {98765, INSERT},         {55555, DELETE},
+    {88880, DELETE_AT_LEAST}, {11111, DELETE_AT_LEAST}};
 static TreeOperation mixed8[] = {
-    {33333, INSERT}, {44444, INSERT}, {55555, INSERT},
-    {55554, INSERT}, {55554, DELETE},
+    {33333, INSERT}, {44444, INSERT},          {55555, INSERT},
+    {55554, INSERT}, {55554, DELETE_AT_LEAST}, {55554, DELETE_AT_LEAST},
 };
 
 static TestCase testCases[] = {
