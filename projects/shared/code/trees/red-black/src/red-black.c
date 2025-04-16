@@ -192,6 +192,101 @@ static U64 rebalanceDelete(RedBlackDirection direction,
     return 0;
 }
 
+static RedBlackNode *deleteNodeInPath(VisitedNode visitedNodes[MAX_HEIGHT],
+                                      U64 len, RedBlackNode *toDelete) {
+    // If there is no right child, we can delete by having the parent of
+    // toDelete now point to toDelete's left child instead of toDelete.
+    if (!(toDelete->children[RB_TREE_RIGHT])) {
+        visitedNodes[len - 1].node->children[visitedNodes[len - 1].direction] =
+            toDelete->children[RB_TREE_LEFT];
+    }
+    // Find the sucessor node in the subtree of toDelete's left chld. Done by
+    // repeetedly going to the left child.
+    else {
+        visitedNodes[len].node = toDelete;
+        visitedNodes[len].direction = RB_TREE_RIGHT;
+        U64 foundNodeIndex = len;
+        toDelete = toDelete->children[visitedNodes[len].direction];
+        len++;
+
+        while (true) {
+            RedBlackNode *next = toDelete->children[RB_TREE_LEFT];
+            if (!next) {
+                break;
+            }
+
+            visitedNodes[len].node = toDelete;
+            visitedNodes[len].direction = RB_TREE_LEFT;
+            len++;
+
+            toDelete = next;
+        }
+
+        // Swap the values around. Naturally, the node pointers can be swapped
+        // too.
+        U64 foundNodeBytes = visitedNodes[foundNodeIndex].node->bytes;
+        U64 foundNodeStart = visitedNodes[foundNodeIndex].node->start;
+        visitedNodes[foundNodeIndex].node->bytes = toDelete->bytes;
+        visitedNodes[foundNodeIndex].node->start = toDelete->start;
+        toDelete->bytes = foundNodeBytes;
+        toDelete->start = foundNodeStart;
+
+        visitedNodes[len - 1].node->children[visitedNodes[len - 1].direction] =
+            toDelete->children[RB_TREE_RIGHT];
+    }
+
+    // Fix the violations present by removing the toDelete node. Note that this
+    // node does not have to be the node that originally contained the value to
+    // be deleted.
+    if (toDelete->color == RB_TREE_BLACK) {
+        while (len >= 2) {
+            RedBlackNode *childDeficitBlackDirection =
+                visitedNodes[len - 1]
+                    .node->children[visitedNodes[len - 1].direction];
+            if (childDeficitBlackDirection &&
+                childDeficitBlackDirection->color == RB_TREE_RED) {
+                childDeficitBlackDirection->color = RB_TREE_BLACK;
+                break;
+            }
+
+            len = rebalanceDelete(visitedNodes[len - 1].direction, visitedNodes,
+                                  len);
+        }
+    }
+
+    return toDelete;
+}
+
+RedBlackNode *deleteAtLeastRedBlackNode(RedBlackNode **tree, U64 value) {
+    // Search
+    VisitedNode visitedNodes[MAX_HEIGHT];
+
+    visitedNodes[0].node = (RedBlackNode *)tree;
+    visitedNodes[0].direction = RB_TREE_LEFT;
+    U64 len = 1;
+
+    RedBlackNode *potential = *tree;
+    RedBlackNode *current = nullptr;
+
+    while (potential) {
+        if (potential->bytes == value) {
+            current = potential;
+            break;
+        } else if (current->bytes > value) {
+            current = potential;
+            potential = potential->children[RB_TREE_LEFT];
+        } else {
+            potential = potential->children[RB_TREE_RIGHT];
+        }
+    }
+
+    if (!current) {
+        return nullptr;
+    }
+
+    return deleteNodeInPath(visitedNodes, len, current);
+}
+
 // Assumes the value is inside the tree
 RedBlackNode *deleteRedBlackNode(RedBlackNode **tree, U64 value) {
     // Search
