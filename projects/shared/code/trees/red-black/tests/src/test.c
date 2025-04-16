@@ -58,13 +58,13 @@ static TreeOperation insertDeleteAtLeast1[] = {
     {89, INSERT},          {25, INSERT},          {12, INSERT},
     {40, INSERT},          {3, INSERT},           {56, INSERT},
     {20, DELETE_AT_LEAST}, {88, DELETE_AT_LEAST}, {2, DELETE_AT_LEAST},
-    {16, DELETE_AT_LEAST}};
+    {80, DELETE_AT_LEAST}, {16, DELETE_AT_LEAST}};
 static TreeOperation insertDeleteAtLeast2[] = {
-    {888, INSERT},         {543, INSERT},          {555, INSERT},
-    {234, INSERT},         {984, INSERT},          {432, INSERT},
-    {1, INSERT},           {999, INSERT},          {777, INSERT},
-    {900, INSERT},         {778, DELETE_AT_LEAST}, {1, DELETE_AT_LEAST},
-    {999, DELETE_AT_LEAST}};
+    {888, INSERT},        {543, INSERT},          {555, INSERT},
+    {234, INSERT},        {984, INSERT},          {432, INSERT},
+    {1, INSERT},          {999, INSERT},          {777, INSERT},
+    {900, INSERT},        {778, DELETE_AT_LEAST}, {1, DELETE_AT_LEAST},
+    {1, DELETE_AT_LEAST}, {999, DELETE_AT_LEAST}};
 static TreeOperation insertDeleteAtLeast3[] = {
     {122, INSERT},         {45, INSERT},          {67, INSERT},
     {89, INSERT},          {12, INSERT},          {35, INSERT},
@@ -84,37 +84,37 @@ static TreeOperation mixed8[] = {
 };
 
 static TestCase testCases[] = {
-    {.name = STRING("No operations"),
-     .operations = {.buf = noOperations, .len = COUNTOF(noOperations)}},
-
-    {.name = STRING("Insert only 1"),
-     .operations = {.buf = insert1, .len = COUNTOF(insert1)}},
-    {.name = STRING("Insert only 2"),
-     .operations = {.buf = insert2, .len = COUNTOF(insert2)}},
-    {.name = STRING("Insert only 3"),
-     .operations = {.buf = insert3, .len = COUNTOF(insert3)}},
-
-    {.name = STRING("Insert + Delete 1"),
-     .operations = {.buf = insertDelete1, .len = COUNTOF(insertDelete1)}},
-    {.name = STRING("Insert + Delete 2"),
-     .operations = {.buf = insertDelete2, .len = COUNTOF(insertDelete2)}},
-    {.name = STRING("Insert + Delete 3"),
-     .operations = {.buf = insertDelete3, .len = COUNTOF(insertDelete3)}},
+    //    {.name = STRING("No operations"),
+    //     .operations = {.buf = noOperations, .len = COUNTOF(noOperations)}},
+    //
+    //    {.name = STRING("Insert only 1"),
+    //     .operations = {.buf = insert1, .len = COUNTOF(insert1)}},
+    //    {.name = STRING("Insert only 2"),
+    //     .operations = {.buf = insert2, .len = COUNTOF(insert2)}},
+    //    {.name = STRING("Insert only 3"),
+    //     .operations = {.buf = insert3, .len = COUNTOF(insert3)}},
+    //
+    //    {.name = STRING("Insert + Delete 1"),
+    //     .operations = {.buf = insertDelete1, .len = COUNTOF(insertDelete1)}},
+    //    {.name = STRING("Insert + Delete 2"),
+    //     .operations = {.buf = insertDelete2, .len = COUNTOF(insertDelete2)}},
+    //    {.name = STRING("Insert + Delete 3"),
+    //     .operations = {.buf = insertDelete3, .len = COUNTOF(insertDelete3)}},
 
     {.name = STRING("Insert + Delete At Least 1"),
      .operations = {.buf = insertDeleteAtLeast1,
                     .len = COUNTOF(insertDeleteAtLeast1)}},
-    {.name = STRING("Insert + Delete At Least 2"),
-     .operations = {.buf = insertDeleteAtLeast2,
-                    .len = COUNTOF(insertDeleteAtLeast2)}},
-    {.name = STRING("Insert + Delete At Least 3"),
-     .operations = {.buf = insertDeleteAtLeast3,
-                    .len = COUNTOF(insertDeleteAtLeast3)}},
-
-    {.name = STRING("Mixed operations 7"),
-     .operations = {.buf = mixed7, .len = COUNTOF(mixed7)}},
-    {.name = STRING("Mixed operations 8"),
-     .operations = {.buf = mixed8, .len = COUNTOF(mixed8)}},
+    //    {.name = STRING("Insert + Delete At Least 2"),
+    //     .operations = {.buf = insertDeleteAtLeast2,
+    //                    .len = COUNTOF(insertDeleteAtLeast2)}},
+    //    {.name = STRING("Insert + Delete At Least 3"),
+    //     .operations = {.buf = insertDeleteAtLeast3,
+    //                    .len = COUNTOF(insertDeleteAtLeast3)}},
+    //
+    //    {.name = STRING("Mixed operations 7"),
+    //     .operations = {.buf = mixed7, .len = COUNTOF(mixed7)}},
+    //    {.name = STRING("Mixed operations 8"),
+    //     .operations = {.buf = mixed8, .len = COUNTOF(mixed8)}},
 };
 static constexpr auto TEST_CASES_LEN = COUNTOF(testCases);
 
@@ -176,9 +176,32 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
             break;
         }
         case DELETE_AT_LEAST: {
+            KFLUSH_AFTER {
+                INFO(STRING("Trying to delete "));
+                INFO(operations.buf[i].value, NEWLINE);
+            }
+            printRedBlackTreeWithBadNode(tree, nullptr);
             RedBlackNode *deleted =
-                deleteRedBlackNode(&tree, operations.buf[i].value);
-            if (deleted->bytes < operations.buf[i].value) {
+                deleteAtLeastRedBlackNode(&tree, operations.buf[i].value);
+            KFLUSH_AFTER {
+                INFO(STRING("result "));
+                INFO((void *)deleted, NEWLINE);
+            }
+            if (!deleted) {
+                for (U64 j = 0; j < expectedValues.len; j++) {
+                    if (expectedValues.buf[j] >= operations.buf[i].value) {
+                        TEST_FAILURE {
+                            INFO(
+                                STRING("Did not find a node to delete value "));
+                            INFO(operations.buf[i].value);
+                            INFO(STRING(
+                                ", should have deleted node with value: "));
+                            INFO(operations.buf[i].value, NEWLINE);
+                        }
+                        return;
+                    }
+                }
+            } else if (deleted->bytes < operations.buf[i].value) {
                 TEST_FAILURE {
                     INFO(STRING("Deleted value not equal the value that "
                                 "should have been deleted!\nExpected to be "

@@ -272,7 +272,7 @@ RedBlackNode *deleteAtLeastRedBlackNode(RedBlackNode **tree, U64 value) {
         if (potential->bytes == value) {
             current = potential;
             break;
-        } else if (current->bytes > value) {
+        } else if (potential->bytes > value) {
             visitedNodes[len].node = potential;
             visitedNodes[len].direction = RB_TREE_LEFT;
             len++;

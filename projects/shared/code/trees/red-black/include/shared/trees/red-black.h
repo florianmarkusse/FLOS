@@ -23,5 +23,6 @@ struct RedBlackNode {
 
 void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode);
 RedBlackNode *deleteRedBlackNode(RedBlackNode **tree, U64 value);
+RedBlackNode *deleteAtLeastRedBlackNode(RedBlackNode **tree, U64 value);
 
 #endif
