@@ -84,37 +84,37 @@ static TreeOperation mixed8[] = {
 };
 
 static TestCase testCases[] = {
-    //    {.name = STRING("No operations"),
-    //     .operations = {.buf = noOperations, .len = COUNTOF(noOperations)}},
-    //
-    //    {.name = STRING("Insert only 1"),
-    //     .operations = {.buf = insert1, .len = COUNTOF(insert1)}},
-    //    {.name = STRING("Insert only 2"),
-    //     .operations = {.buf = insert2, .len = COUNTOF(insert2)}},
-    //    {.name = STRING("Insert only 3"),
-    //     .operations = {.buf = insert3, .len = COUNTOF(insert3)}},
-    //
-    //    {.name = STRING("Insert + Delete 1"),
-    //     .operations = {.buf = insertDelete1, .len = COUNTOF(insertDelete1)}},
-    //    {.name = STRING("Insert + Delete 2"),
-    //     .operations = {.buf = insertDelete2, .len = COUNTOF(insertDelete2)}},
-    //    {.name = STRING("Insert + Delete 3"),
-    //     .operations = {.buf = insertDelete3, .len = COUNTOF(insertDelete3)}},
+    {.name = STRING("No operations"),
+     .operations = {.buf = noOperations, .len = COUNTOF(noOperations)}},
+
+    {.name = STRING("Insert only 1"),
+     .operations = {.buf = insert1, .len = COUNTOF(insert1)}},
+    {.name = STRING("Insert only 2"),
+     .operations = {.buf = insert2, .len = COUNTOF(insert2)}},
+    {.name = STRING("Insert only 3"),
+     .operations = {.buf = insert3, .len = COUNTOF(insert3)}},
+
+    {.name = STRING("Insert + Delete 1"),
+     .operations = {.buf = insertDelete1, .len = COUNTOF(insertDelete1)}},
+    {.name = STRING("Insert + Delete 2"),
+     .operations = {.buf = insertDelete2, .len = COUNTOF(insertDelete2)}},
+    {.name = STRING("Insert + Delete 3"),
+     .operations = {.buf = insertDelete3, .len = COUNTOF(insertDelete3)}},
 
     {.name = STRING("Insert + Delete At Least 1"),
      .operations = {.buf = insertDeleteAtLeast1,
                     .len = COUNTOF(insertDeleteAtLeast1)}},
-    //    {.name = STRING("Insert + Delete At Least 2"),
-    //     .operations = {.buf = insertDeleteAtLeast2,
-    //                    .len = COUNTOF(insertDeleteAtLeast2)}},
-    //    {.name = STRING("Insert + Delete At Least 3"),
-    //     .operations = {.buf = insertDeleteAtLeast3,
-    //                    .len = COUNTOF(insertDeleteAtLeast3)}},
-    //
-    //    {.name = STRING("Mixed operations 7"),
-    //     .operations = {.buf = mixed7, .len = COUNTOF(mixed7)}},
-    //    {.name = STRING("Mixed operations 8"),
-    //     .operations = {.buf = mixed8, .len = COUNTOF(mixed8)}},
+    {.name = STRING("Insert + Delete At Least 2"),
+     .operations = {.buf = insertDeleteAtLeast2,
+                    .len = COUNTOF(insertDeleteAtLeast2)}},
+    {.name = STRING("Insert + Delete At Least 3"),
+     .operations = {.buf = insertDeleteAtLeast3,
+                    .len = COUNTOF(insertDeleteAtLeast3)}},
+
+    {.name = STRING("Mixed operations 7"),
+     .operations = {.buf = mixed7, .len = COUNTOF(mixed7)}},
+    {.name = STRING("Mixed operations 8"),
+     .operations = {.buf = mixed8, .len = COUNTOF(mixed8)}},
 };
 static constexpr auto TEST_CASES_LEN = COUNTOF(testCases);
 
@@ -176,17 +176,8 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
             break;
         }
         case DELETE_AT_LEAST: {
-            KFLUSH_AFTER {
-                INFO(STRING("Trying to delete "));
-                INFO(operations.buf[i].value, NEWLINE);
-            }
-            printRedBlackTreeWithBadNode(tree, nullptr);
             RedBlackNode *deleted =
                 deleteAtLeastRedBlackNode(&tree, operations.buf[i].value);
-            KFLUSH_AFTER {
-                INFO(STRING("result "));
-                INFO((void *)deleted, NEWLINE);
-            }
             if (!deleted) {
                 for (U64 j = 0; j < expectedValues.len; j++) {
                     if (expectedValues.buf[j] >= operations.buf[i].value) {
@@ -201,6 +192,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                         return;
                     }
                 }
+                break;
             } else if (deleted->bytes < operations.buf[i].value) {
                 TEST_FAILURE {
                     INFO(STRING("Deleted value not equal the value that "
@@ -211,27 +203,25 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                     INFO(deleted->bytes, NEWLINE);
                 }
                 return;
-            }
-
-            U64 indexToRemove = 0;
-            U64 valueToRemove = U64_MAX;
-            for (U64 j = 0; j < expectedValues.len; j++) {
-                if (expectedValues.buf[j] >= operations.buf[i].value) {
-                    if (expectedValues.buf[j] < valueToRemove) {
-                        indexToRemove = j;
-                        valueToRemove = expectedValues.buf[j];
+            } else {
+                U64 indexToRemove = 0;
+                U64 valueToRemove = U64_MAX;
+                for (U64 j = 0; j < expectedValues.len; j++) {
+                    if (expectedValues.buf[j] >= operations.buf[i].value) {
+                        if (expectedValues.buf[j] < valueToRemove) {
+                            indexToRemove = j;
+                            valueToRemove = expectedValues.buf[j];
+                        }
                     }
                 }
+
+                expectedValues.buf[indexToRemove] =
+                    expectedValues.buf[expectedValues.len - 1];
+                expectedValues.len--;
+                break;
             }
-
-            expectedValues.buf[indexToRemove] =
-                expectedValues.buf[expectedValues.len - 1];
-            expectedValues.len--;
-            break;
         }
         }
-
-        // printRedBlackTreeWithBadNode(tree, nullptr);
 
         if (!assertRedBlackTreeValid(tree, expectedValues, scratch)) {
             return;

@@ -258,41 +258,37 @@ static RedBlackNode *deleteNodeInPath(VisitedNode visitedNodes[MAX_HEIGHT],
 }
 
 RedBlackNode *deleteAtLeastRedBlackNode(RedBlackNode **tree, U64 value) {
-    // Search
     VisitedNode visitedNodes[MAX_HEIGHT];
 
     visitedNodes[0].node = (RedBlackNode *)tree;
     visitedNodes[0].direction = RB_TREE_LEFT;
     U64 len = 1;
 
-    RedBlackNode *potential = *tree;
-    RedBlackNode *current = nullptr;
+    U64 bestWithVisitedNodesLen = 0;
 
-    while (potential) {
+    for (RedBlackNode *potential = *tree; potential;) {
         if (potential->bytes == value) {
-            current = potential;
-            break;
-        } else if (potential->bytes > value) {
-            visitedNodes[len].node = potential;
-            visitedNodes[len].direction = RB_TREE_LEFT;
-            len++;
-
-            current = potential;
-            potential = potential->children[RB_TREE_LEFT];
-        } else {
-            visitedNodes[len].node = potential;
-            visitedNodes[len].direction = RB_TREE_RIGHT;
-            len++;
-
-            potential = potential->children[RB_TREE_RIGHT];
+            return deleteNodeInPath(visitedNodes, len, potential);
         }
+
+        if (potential->bytes > value) {
+            bestWithVisitedNodesLen = len;
+        }
+
+        RedBlackDirection dir = calculateDirection(value, potential);
+        visitedNodes[len].node = potential;
+        visitedNodes[len].direction = dir;
+        len++;
+
+        potential = potential->children[dir];
     }
 
-    if (!current) {
+    if (bestWithVisitedNodesLen == 0) {
         return nullptr;
     }
 
-    return deleteNodeInPath(visitedNodes, len, current);
+    return deleteNodeInPath(visitedNodes, bestWithVisitedNodesLen,
+                            visitedNodes[bestWithVisitedNodesLen].node);
 }
 
 // Assumes the value is inside the tree

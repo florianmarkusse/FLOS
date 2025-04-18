@@ -138,6 +138,7 @@ static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
                                                   inOrderValues);
                 printRedBlackTreeWithBadNode(node, nullptr);
             }
+            return false;
         }
     }
 
