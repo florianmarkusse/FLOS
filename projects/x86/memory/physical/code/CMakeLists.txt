@@ -17,7 +17,7 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     include("${REPO_PROJECTS}/print-configuration.cmake")
 endif()
 
-add_library(${PROJECT_NAME} OBJECT "src/new-physical.c")
+add_library(${PROJECT_NAME} OBJECT "src/physical.c")
 
 add_includes_for_sublibrary()
 

@@ -16,10 +16,9 @@ typedef struct {
 
 MemoryInfo getMemoryInfo(Arena *perm);
 
-extern U64_max_a kernelStructureLocations;
+extern Memory_max_a kernelStructureLocations;
 
 void initKernelStructureLocations(Arena *perm);
-void addAddressToKernelStructure(U64 address);
 
 U64 findHighestMemoryAddress(U64 currentHighestAddress, Arena scratch);
 U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,

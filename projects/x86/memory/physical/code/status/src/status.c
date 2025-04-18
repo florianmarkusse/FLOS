@@ -7,45 +7,26 @@
 #include "x86/memory/definitions.h"
 #include "x86/memory/physical.h"
 
-static string pageSizeToString(PageSize pageSize) {
-    switch (pageSize) {
-    case X86_4KIB_PAGE: {
-        return STRING("Base page frame, 4KiB");
+static void preOrder(RedBlackNode *current, U64 *totalValue) {
+    if (!current) {
+        return;
     }
-    case X86_2MIB_PAGE: {
-        return STRING("Large page, 2MiB");
-    }
-    default: {
-        return STRING("Huge page, 1GiB");
-    }
-    }
-}
 
-static void appendPMMStatus(PhysicalMemoryManager manager) {
-    KLOG(STRING("Type: "));
-    KLOG(pageSizeToString(manager.pageSize), NEWLINE);
-    KLOG(STRING("Used base page frames for internal structure: "));
-    KLOG(manager.usedBasePages, NEWLINE);
-    KLOG(STRING("Free pages:\t"));
-    U64 totalPages = 0;
-    for (U64 i = 0; i < manager.memory.len; i++) {
-        KLOG(manager.memory.buf[i].numberOfPages);
-        KLOG(STRING(" "));
-        totalPages += manager.memory.buf[i].numberOfPages;
-    }
-    KLOG(STRING(" Total: "));
-    KLOG(totalPages, NEWLINE);
-    KLOG(STRING("Total memory regions:\t"));
-    KLOG(manager.memory.len, NEWLINE);
+    preOrder(current->children[RB_TREE_LEFT], totalValue);
+
+    KLOG(current->memory.bytes);
+    KLOG(STRING(" "));
+    *totalValue += current->memory.start;
+
+    preOrder(current->children[RB_TREE_RIGHT], totalValue);
 }
 
 void appendPhysicalMemoryManagerStatus() {
     KLOG(STRING("Physical Memory status\n"));
     KLOG(STRING("================\n"));
-    appendPMMStatus(basePMM);
-    KLOG(STRING("================\n"));
-    appendPMMStatus(largePMM);
-    KLOG(STRING("================\n"));
-    appendPMMStatus(hugePMM);
-    KLOG(STRING("================\n"));
+    U64 totalMemory = 0;
+    preOrder(tree, &totalMemory);
+    KLOG(STRING("\n================\n"));
+    KLOG(STRING("Total memory: "));
+    KLOG(totalMemory, NEWLINE);
 }

@@ -2,6 +2,8 @@
 #define SHARED_TREES_RED_BLACK_H
 
 #include "shared/memory/allocator/arena.h"
+#include "shared/memory/management/definitions.h"
+#include "shared/types/array-types.h"
 #include "shared/types/types.h"
 
 typedef enum { RB_TREE_BLACK = 0, RB_TREE_RED = 1 } RedBlackColor;
@@ -17,9 +19,10 @@ struct RedBlackNode {
                                        // children->[0] and a RedBlackNode* are
                                        // the same location for doing inserts.
     RedBlackColor color;
-    U64 bytes;
-    U64 start;
+    Memory memory;
 };
+
+typedef ARRAY(RedBlackNode *) RedBlackNodePtr_a;
 
 void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode);
 RedBlackNode *deleteRedBlackNode(RedBlackNode **tree, U64 value);

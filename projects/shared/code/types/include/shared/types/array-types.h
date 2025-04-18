@@ -1,6 +1,7 @@
 #ifndef SHARED_TYPES_ARRAY_TYPES_H
 #define SHARED_TYPES_ARRAY_TYPES_H
 
+#include "shared/memory/management/definitions.h"
 #include "shared/types/array.h"
 #include "shared/types/types.h"
 

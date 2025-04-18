@@ -130,7 +130,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         switch (operations.buf[i].type) {
         case INSERT: {
             RedBlackNode *createdNode = NEW(&scratch, RedBlackNode);
-            createdNode->bytes = operations.buf[i].value;
+            createdNode->memory.bytes = operations.buf[i].value;
             insertRedBlackNode(&tree, createdNode);
 
             if (expectedValues.len >= MAX_NODES_IN_TREE) {
@@ -150,14 +150,14 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         case DELETE: {
             RedBlackNode *deleted =
                 deleteRedBlackNode(&tree, operations.buf[i].value);
-            if (deleted->bytes != operations.buf[i].value) {
+            if (deleted->memory.bytes != operations.buf[i].value) {
                 TEST_FAILURE {
                     INFO(STRING("Deleted value does not equal the value that "
                                 "should have been deleted!\nExpected to be "
                                 "deleted value: "));
                     INFO(operations.buf[i].value, NEWLINE);
                     INFO(STRING("Actual deleted value: "));
-                    INFO(deleted->bytes, NEWLINE);
+                    INFO(deleted->memory.bytes, NEWLINE);
                 }
                 return;
             }
@@ -193,14 +193,14 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                     }
                 }
                 break;
-            } else if (deleted->bytes < operations.buf[i].value) {
+            } else if (deleted->memory.bytes < operations.buf[i].value) {
                 TEST_FAILURE {
                     INFO(STRING("Deleted value not equal the value that "
                                 "should have been deleted!\nExpected to be "
                                 "deleted value: "));
                     INFO(operations.buf[i].value, NEWLINE);
                     INFO(STRING("Actual deleted value: "));
-                    INFO(deleted->bytes, NEWLINE);
+                    INFO(deleted->memory.bytes, NEWLINE);
                 }
                 return;
             } else {

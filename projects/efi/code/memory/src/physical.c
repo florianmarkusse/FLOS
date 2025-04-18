@@ -39,23 +39,24 @@ static void fillMemoryInfo(MemoryInfo *memoryInfo) {
 }
 
 static constexpr auto MAX_KERNEL_STRUCTURES = 16;
-U64_max_a kernelStructureLocations;
+Memory_max_a kernelStructureLocations;
 
-void initKernelStructureLocations(Arena *perm) {
-    kernelStructureLocations = (U64_max_a){
-        .buf = NEW(perm, U64, MAX_KERNEL_STRUCTURES),
+static void initKernelStructureLocations(Arena *perm) {
+    kernelStructureLocations = (Memory_max_a){
+        .buf = NEW(perm, Memory, MAX_KERNEL_STRUCTURES),
         .len = 0,
         .cap = MAX_KERNEL_STRUCTURES,
     };
 }
 
-void addAddressToKernelStructure(U64 address) {
+void addAddressToKernelStructure(U64 address, U64 bytes) {
     if (kernelStructureLocations.len >= kernelStructureLocations.cap) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING("Too many kernel structure locations added!\n"));
         }
     }
-    kernelStructureLocations.buf[kernelStructureLocations.len] = address;
+    kernelStructureLocations.buf[kernelStructureLocations.len] =
+        (Memory){.start = address, .bytes = bytes};
     kernelStructureLocations.len++;
 }
 
@@ -193,7 +194,7 @@ U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
     U64 result = findAlignedMemory(&memoryInfo, bytes, minimumAlignment,
                                    tryEncompassingVirtual);
 
-    addAddressToKernelStructure(result);
+    addAddressToKernelStructure(result, bytes);
     return result;
 }
 
@@ -207,7 +208,7 @@ U64 allocateUnalignedMemory(U64 bytes, bool isKernelStructure) {
     }
 
     if (isKernelStructure) {
-        addAddressToKernelStructure(address);
+        addAddressToKernelStructure(address, bytes);
     }
     return address;
 }

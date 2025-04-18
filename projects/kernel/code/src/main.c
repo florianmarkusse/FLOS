@@ -15,7 +15,7 @@
 
 // void appendDescriptionHeaders(RSDPResult rsdp);
 
-static constexpr auto INIT_MEMORY = (1 * MiB);
+static constexpr auto INIT_MEMORY = (16 * MiB);
 
 __attribute__((section("kernel-start"))) int
 kernelmain(KernelParameters *kernelParams) {
@@ -24,44 +24,38 @@ kernelmain(KernelParameters *kernelParams) {
 
     initMemoryManager(kernelParams->kernelMemory);
 
-    //    void *initMemory = allocAndMap(INIT_MEMORY);
-    //    Arena arena = (Arena){.curFree = initMemory,
-    //                          .beg = initMemory,
-    //                          .end = initMemory + INIT_MEMORY};
-    //    if (setjmp(arena.jmp_buf)) {
-    //        KFLUSH_AFTER { KLOG(STRING("Ran out of init memory capacity\n"));
-    //        } while (1) {
-    //            ;
-    //        }
-    //    }
-    //
-    //    initLogger(&arena);
-    //    initScreen((ScreenDimension){.scanline = kernelParams->fb.scanline,
-    //                                 .size = kernelParams->fb.size,
-    //                                 .width = kernelParams->fb.columns,
-    //                                 .height = kernelParams->fb.rows,
-    //                                 .screen = (U32 *)kernelParams->fb.ptr},
-    //               &arena);
-    //
-    //    // TODO: Fix this once we redo the memory management systems!!!
-    //    /*freeMapped((U64)arena.curFree, (U64)(arena.end - arena.curFree));*/
-    //    /*freeMapped((U64)kernelParams, sizeof(kernelParams));*/
-    //
-    //    // NOTE: from here, everything is initialized
-    //    KFLUSH_AFTER { KLOG(STRING("ITS WEDNESDAY MY DUDES\n")); }
+    void *initMemory = (void *)allocAndMap(INIT_MEMORY);
+    Arena arena = (Arena){.curFree = initMemory,
+                          .beg = initMemory,
+                          .end = initMemory + INIT_MEMORY};
+    if (setjmp(arena.jmp_buf)) {
+        KFLUSH_AFTER { KLOG(STRING("Ran out of init memory capacity\n")); }
+        while (1) {
+            ;
+        }
+    }
 
-    //    KFLUSH_AFTER {
-    //        //
-    //        appendMemoryManagementStatus();
-    //    }
+    initLogger(&arena);
+    initScreen((ScreenDimension){.scanline = kernelParams->fb.scanline,
+                                 .size = kernelParams->fb.size,
+                                 .width = kernelParams->fb.columns,
+                                 .height = kernelParams->fb.rows,
+                                 .screen = (U32 *)kernelParams->fb.ptr},
+               &arena);
 
-    //    KFLUSH_AFTER {
-    //        for (U64 i = 0; i < kernelParams->kernelMemory.memory.len - 1;
-    //        i++) {
-    //            INFO(kernelParams->kernelMemory.memory.buf[i].numberOfPages);
-    //            INFO(STRING("\t"));
-    //        }
-    //    }
+    // TODO: Fix this once we redo the memory management systems!!!
+    freeMapped((Memory){.start = (U64)arena.curFree,
+                        .bytes = (U64)(arena.end - arena.curFree)});
+    freeMapped(
+        (Memory){.start = (U64)kernelParams, .bytes = sizeof(kernelParams)});
+
+    // NOTE: from here, everything is initialized
+    KFLUSH_AFTER { KLOG(STRING("ITS WEDNESDAY MY DUDES\n")); }
+
+    KFLUSH_AFTER {
+        //
+        appendMemoryManagementStatus();
+    }
 
     while (1) {
         ;

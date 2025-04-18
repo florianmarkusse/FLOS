@@ -100,9 +100,25 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes) {
                               KERNEL_STANDARD_PAGE_FLAGS);
 }
 
-static bool isKernelStructure(U64 address) {
+static bool kernelStructure(U64 address, KernelMemory *location) {
     for (U64 i = 0; i < kernelStructureLocations.len; i++) {
-        if (kernelStructureLocations.buf[i] == address) {
+        if (kernelStructureLocations.buf[i].start == address) {
+            // TODO: This works too wall????
+
+            //   U64 remainingMemory =
+            //       UEFI_PAGE_SIZE -
+            //       (RING_RANGE_VALUE(kernelStructureLocations.buf[i].bytes,
+            //                         UEFI_PAGE_SIZE));
+            //   if (remainingMemory) {
+            //       RedBlackNode *node = NEW(&location->allocator,
+            //       RedBlackNode); node->memory =
+            //           (Memory){.bytes = remainingMemory,
+            //                    .start = kernelStructureLocations.buf[i].start
+            //                    +
+            //                             kernelStructureLocations.buf[i].bytes};
+            //       insertRedBlackNode(&location->tree, node);
+            //   }
+
             return true;
         }
     }
@@ -111,8 +127,11 @@ static bool isKernelStructure(U64 address) {
 
 void convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory *location) {
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
-        if (memoryTypeCanBeUsedByKernel(desc->type) &&
-            !isKernelStructure(desc->physicalStart)) {
+        if (memoryTypeCanBeUsedByKernel(desc->type)) {
+            if (kernelStructure(desc->physicalStart, location)) {
+                continue;
+            }
+
             if (desc->physicalStart == 0) {
                 if (desc->numberOfPages == 1) {
                     continue;
@@ -123,8 +142,8 @@ void convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory *location) {
             }
 
             RedBlackNode *node = NEW(&location->allocator, RedBlackNode);
-            node->bytes = desc->numberOfPages * UEFI_PAGE_SIZE;
-            node->start = desc->physicalStart;
+            node->memory.bytes = desc->numberOfPages * UEFI_PAGE_SIZE;
+            node->memory.start = desc->physicalStart;
             insertRedBlackNode(&location->tree, node);
         }
     }

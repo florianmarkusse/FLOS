@@ -8,8 +8,6 @@
 #include "shared/trees/red-black.h"
 #include "shared/types/array-types.h"
 
-typedef ARRAY(RedBlackNode *) RedBlackNodePtr_a;
-
 static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
                               RedBlackNode *badNode) {
     if (!node) {
@@ -24,7 +22,7 @@ static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
     }
     INFO(prefix);
     INFO(STRING("Value: "));
-    INFO(node->bytes);
+    INFO(node->memory.bytes);
     INFO(STRING(", Color: "));
     INFO(node->color == RB_TREE_RED ? STRING("RED") : STRING("BLACK"));
 
@@ -98,7 +96,7 @@ static void appendExpectedValuesAndTreeValues(U64_max_a expectedValues,
     }
     INFO(STRING("\nRed-Black Tree values:\n"));
     for (U64 i = 0; i < inOrderValues.len; i++) {
-        INFO(inOrderValues.buf[i]->bytes);
+        INFO(inOrderValues.buf[i]->memory.bytes);
         INFO(STRING(" "));
     }
     INFO(STRING("\n"));
@@ -124,7 +122,7 @@ static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
     for (U64 i = 0; i < expectedValues.len; i++) {
         bool found = false;
         for (U64 j = 0; j < inOrderValues.len; j++) {
-            if (inOrderValues.buf[j]->bytes == expectedValues.buf[i]) {
+            if (inOrderValues.buf[j]->memory.bytes == expectedValues.buf[i]) {
                 found = true;
                 break;
             }
@@ -144,14 +142,14 @@ static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
 
     U64 previous = 0;
     for (U64 i = 0; i < inOrderValues.len; i++) {
-        if (previous > inOrderValues.buf[i]->bytes) {
+        if (previous > inOrderValues.buf[i]->memory.bytes) {
             TEST_FAILURE {
                 INFO(STRING("Not a Binary Search Tree!\n"));
                 printRedBlackTreeWithBadNode(node, inOrderValues.buf[i]);
             }
             return false;
         }
-        previous = inOrderValues.buf[i]->bytes;
+        previous = inOrderValues.buf[i]->memory.bytes;
     }
 
     return true;

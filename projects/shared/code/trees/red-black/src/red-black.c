@@ -11,7 +11,7 @@ typedef struct {
 
 static RedBlackDirection calculateDirection(U64 value,
                                             RedBlackNode *toCompare) {
-    if (value >= toCompare->bytes) {
+    if (value >= toCompare->memory.bytes) {
         return RB_TREE_RIGHT;
     }
     return RB_TREE_LEFT;
@@ -84,7 +84,7 @@ void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
     while (1) {
         visitedNodes[len].node = current;
         visitedNodes[len].direction =
-            calculateDirection(createdNode->bytes, current);
+            calculateDirection(createdNode->memory.bytes, current);
         len++;
 
         RedBlackNode *next = current->children[visitedNodes[len - 1].direction];
@@ -224,12 +224,14 @@ static RedBlackNode *deleteNodeInPath(VisitedNode visitedNodes[MAX_HEIGHT],
 
         // Swap the values around. Naturally, the node pointers can be swapped
         // too.
-        U64 foundNodeBytes = visitedNodes[foundNodeIndex].node->bytes;
-        U64 foundNodeStart = visitedNodes[foundNodeIndex].node->start;
-        visitedNodes[foundNodeIndex].node->bytes = toDelete->bytes;
-        visitedNodes[foundNodeIndex].node->start = toDelete->start;
-        toDelete->bytes = foundNodeBytes;
-        toDelete->start = foundNodeStart;
+        U64 foundNodeBytes = visitedNodes[foundNodeIndex].node->memory.bytes;
+        U64 foundNodeStart = visitedNodes[foundNodeIndex].node->memory.start;
+        visitedNodes[foundNodeIndex].node->memory.bytes =
+            toDelete->memory.bytes;
+        visitedNodes[foundNodeIndex].node->memory.start =
+            toDelete->memory.start;
+        toDelete->memory.bytes = foundNodeBytes;
+        toDelete->memory.start = foundNodeStart;
 
         visitedNodes[len - 1].node->children[visitedNodes[len - 1].direction] =
             toDelete->children[RB_TREE_RIGHT];
@@ -267,11 +269,11 @@ RedBlackNode *deleteAtLeastRedBlackNode(RedBlackNode **tree, U64 value) {
     U64 bestWithVisitedNodesLen = 0;
 
     for (RedBlackNode *potential = *tree; potential;) {
-        if (potential->bytes == value) {
+        if (potential->memory.bytes == value) {
             return deleteNodeInPath(visitedNodes, len, potential);
         }
 
-        if (potential->bytes > value) {
+        if (potential->memory.bytes > value) {
             bestWithVisitedNodesLen = len;
         }
 
@@ -301,7 +303,7 @@ RedBlackNode *deleteRedBlackNode(RedBlackNode **tree, U64 value) {
     U64 len = 1;
 
     RedBlackNode *current = *tree;
-    while (current->bytes != value) {
+    while (current->memory.bytes != value) {
         visitedNodes[len].node = current;
         visitedNodes[len].direction = calculateDirection(value, current);
         current = current->children[visitedNodes[len].direction];
