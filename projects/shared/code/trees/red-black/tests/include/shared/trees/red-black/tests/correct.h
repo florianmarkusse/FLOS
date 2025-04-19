@@ -8,5 +8,5 @@
 bool assertRedBlackTreeValid(RedBlackNode *tree, U64_max_a expectedValues,
                              Arena scratch);
 
-void printRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode);
+void appendRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode);
 #endif

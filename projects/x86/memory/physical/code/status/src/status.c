@@ -16,7 +16,7 @@ static void preOrder(RedBlackNode *current, U64 *totalValue) {
 
     KLOG(current->memory.bytes);
     KLOG(STRING(" "));
-    *totalValue += current->memory.start;
+    *totalValue += current->memory.bytes;
 
     preOrder(current->children[RB_TREE_RIGHT], totalValue);
 }
@@ -29,4 +29,5 @@ void appendPhysicalMemoryManagerStatus() {
     KLOG(STRING("\n================\n"));
     KLOG(STRING("Total memory: "));
     KLOG(totalMemory, NEWLINE);
+    // appendRedBlackTree(tree);
 }

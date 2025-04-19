@@ -49,10 +49,8 @@ void allocateSpaceForKernelMemory(Arena scratch, KernelMemory *location) {
                 .beg = freeMemoryDescriptorsLocation,
                 .end = freeMemoryDescriptorsLocation + bytes};
 
-    RedBlackNode *tree = NEW(&physicalMemoryArena, RedBlackNode);
-    tree = nullptr;
-
-    *location = (KernelMemory){.allocator = physicalMemoryArena, .tree = tree};
+    *location =
+        (KernelMemory){.allocator = physicalMemoryArena, .tree = nullptr};
 }
 
 U64 alignVirtual(U64 virt, U64 physical, U64 bytes) {
@@ -126,6 +124,8 @@ static bool kernelStructure(U64 address, KernelMemory *location) {
 }
 
 void convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory *location) {
+    RedBlackNode *root = nullptr;
+
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
         if (memoryTypeCanBeUsedByKernel(desc->type)) {
             if (kernelStructure(desc->physicalStart, location)) {
@@ -144,7 +144,9 @@ void convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory *location) {
             RedBlackNode *node = NEW(&location->allocator, RedBlackNode);
             node->memory.bytes = desc->numberOfPages * UEFI_PAGE_SIZE;
             node->memory.start = desc->physicalStart;
-            insertRedBlackNode(&location->tree, node);
+            insertRedBlackNode(&root, node);
         }
     }
+
+    location->tree = root;
 }

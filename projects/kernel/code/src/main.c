@@ -43,11 +43,11 @@ kernelmain(KernelParameters *kernelParams) {
                                  .screen = (U32 *)kernelParams->fb.ptr},
                &arena);
 
-    // TODO: Fix this once we redo the memory management systems!!!
     freeMapped((Memory){.start = (U64)arena.curFree,
                         .bytes = (U64)(arena.end - arena.curFree)});
+    // TODO: WRONG!
     freeMapped(
-        (Memory){.start = (U64)kernelParams, .bytes = sizeof(kernelParams)});
+        (Memory){.start = (U64)kernelParams, .bytes = sizeof(*kernelParams)});
 
     // NOTE: from here, everything is initialized
     KFLUSH_AFTER { KLOG(STRING("ITS WEDNESDAY MY DUDES\n")); }

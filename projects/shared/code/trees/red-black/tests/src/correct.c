@@ -38,7 +38,7 @@ static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
                       badNode);
 }
 
-void printRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode) {
+void appendRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode) {
     INFO(STRING("Red-Black Tree Structure:"), NEWLINE);
     printTreeIndented(root, 0, STRING("Root---"), badNode);
 }
@@ -74,7 +74,7 @@ static U64 nodeCount(RedBlackNode *tree) {
                     TEST_FAILURE {
                         INFO(STRING(
                             "Tree has too many nodes to assert correctness!"));
-                        printRedBlackTreeWithBadNode(tree, tree);
+                        appendRedBlackTreeWithBadNode(tree, tree);
                     }
                     return 0;
                 }
@@ -114,7 +114,7 @@ static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
             INFO(STRING("The Red-Black Tree does not contain all the values it "
                         "should contain or it contains more!\n"));
             appendExpectedValuesAndTreeValues(expectedValues, inOrderValues);
-            printRedBlackTreeWithBadNode(node, nullptr);
+            appendRedBlackTreeWithBadNode(node, nullptr);
         }
         return false;
     }
@@ -134,7 +134,7 @@ static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
                 INFO(expectedValues.buf[i], NEWLINE);
                 appendExpectedValuesAndTreeValues(expectedValues,
                                                   inOrderValues);
-                printRedBlackTreeWithBadNode(node, nullptr);
+                appendRedBlackTreeWithBadNode(node, nullptr);
             }
             return false;
         }
@@ -145,7 +145,7 @@ static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
         if (previous > inOrderValues.buf[i]->memory.bytes) {
             TEST_FAILURE {
                 INFO(STRING("Not a Binary Search Tree!\n"));
-                printRedBlackTreeWithBadNode(node, inOrderValues.buf[i]);
+                appendRedBlackTreeWithBadNode(node, inOrderValues.buf[i]);
             }
             return false;
         }
@@ -181,7 +181,7 @@ static bool anyRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
                 redParentHasRedChild(node, RB_TREE_RIGHT)) {
                 TEST_FAILURE {
                     INFO(STRING("Red node has a red child!\n"));
-                    printRedBlackTreeWithBadNode(tree, node);
+                    appendRedBlackTreeWithBadNode(tree, node);
                 }
                 return true;
             }
@@ -237,7 +237,7 @@ static bool pathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
             if (blackHeights.buf[i] != first) {
                 TEST_FAILURE {
                     INFO(STRING("Found differing black heights!\n"));
-                    printRedBlackTreeWithBadNode(tree, node);
+                    appendRedBlackTreeWithBadNode(tree, node);
 
                     INFO(STRING("Black heights calculated (left-to-right):"));
                     for (U64 j = 0; j < blackHeights.len; j++) {

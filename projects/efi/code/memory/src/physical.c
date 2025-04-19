@@ -49,12 +49,27 @@ static void initKernelStructureLocations(Arena *perm) {
     };
 }
 
-void addAddressToKernelStructure(U64 address, U64 bytes) {
+static void addAddressToKernelStructure(U64 address, U64 bytes) {
     if (kernelStructureLocations.len >= kernelStructureLocations.cap) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING("Too many kernel structure locations added!\n"));
         }
     }
+
+    KFLUSH_AFTER {
+        U64 partialUEFIPageBytes = RING_RANGE_VALUE(bytes, UEFI_PAGE_SIZE);
+        U64 freeMemory = 0;
+        if (partialUEFIPageBytes) {
+            freeMemory = UEFI_PAGE_SIZE - partialUEFIPageBytes;
+        }
+        INFO(STRING("Added "));
+        INFO(bytes);
+        INFO(STRING(" to kernel structure.\nWhat should be added to free "
+                    "memory list is "));
+        INFO(freeMemory);
+        INFO(STRING(" bytes.\n"));
+    }
+
     kernelStructureLocations.buf[kernelStructureLocations.len] =
         (Memory){.start = address, .bytes = bytes};
     kernelStructureLocations.len++;
