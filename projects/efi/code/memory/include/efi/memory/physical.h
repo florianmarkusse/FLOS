@@ -3,6 +3,7 @@
 
 #include "efi/firmware/memory.h"
 #include "shared/memory/allocator/arena.h"
+#include "shared/memory/management/definitions.h"
 #include "shared/types/array-types.h"
 #include "shared/types/types.h"
 

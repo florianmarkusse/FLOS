@@ -35,3 +35,8 @@ Will currently (probably) break intermittently because of interrupts clobbering 
 # First compile with -e flag to create stderr.txt file for a project.
 dependencies/include-what-you-use/fix_includes.py --reorder --nocomments < projects/image-builder/code/stderr.txt
 ```
+
+### UEFI improvements once upgraded to new firmware !!
+
+1. Use `PartitionInformationProtocol`
+2. Use custom Memory Type to mark free kernel memory
