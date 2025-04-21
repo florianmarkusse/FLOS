@@ -45,7 +45,6 @@ kernelmain(KernelParameters *kernelParams) {
 
     freeMapped((Memory){.start = (U64)arena.curFree,
                         .bytes = (U64)(arena.end - arena.curFree)});
-    // TODO: WRONG!
     freeMapped(
         (Memory){.start = (U64)kernelParams, .bytes = sizeof(*kernelParams)});
 

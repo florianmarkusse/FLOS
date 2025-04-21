@@ -38,7 +38,6 @@ static void fillMemoryInfo(MemoryInfo *memoryInfo) {
     }
 }
 
-static constexpr auto MAX_KERNEL_STRUCTURES = 16;
 Memory_max_a kernelStructureLocations;
 
 static void initKernelStructureLocations(Arena *perm) {
@@ -54,20 +53,6 @@ static void addAddressToKernelStructure(U64 address, U64 bytes) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING("Too many kernel structure locations added!\n"));
         }
-    }
-
-    KFLUSH_AFTER {
-        U64 partialUEFIPageBytes = RING_RANGE_VALUE(bytes, UEFI_PAGE_SIZE);
-        U64 freeMemory = 0;
-        if (partialUEFIPageBytes) {
-            freeMemory = UEFI_PAGE_SIZE - partialUEFIPageBytes;
-        }
-        INFO(STRING("Added "));
-        INFO(bytes);
-        INFO(STRING(" to kernel structure.\nWhat should be added to free "
-                    "memory list is "));
-        INFO(freeMemory);
-        INFO(STRING(" bytes.\n"));
     }
 
     kernelStructureLocations.buf[kernelStructureLocations.len] =

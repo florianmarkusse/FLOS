@@ -63,30 +63,10 @@ U64 alignVirtual(U64 virt, U64 physical, U64 bytes) {
 }
 
 U64 mapMemoryWithFlags(U64 virt, U64 physical, U64 bytes, U64 flags) {
-    KFLUSH_AFTER {
-        INFO(STRING("virt: "));
-        INFO((void *)virt);
-        INFO(STRING(" physical: "));
-        INFO((void *)physical);
-        INFO(STRING(" bytes: "));
-        INFO(bytes);
-        INFO(STRING(" flags: "));
-        INFO(flags, NEWLINE);
-    }
-
     for (U64 bytesMapped = 0, mappingSize; bytesMapped < bytes;
          virt += mappingSize, physical += mappingSize,
              bytesMapped += mappingSize) {
         mappingSize = pageSizeLeastLargerThan(physical, bytes - bytesMapped);
-
-        KFLUSH_AFTER {
-            INFO(STRING("I found a mapping size of: "));
-            INFO(mappingSize);
-            INFO(STRING(":mapping  "));
-            INFO((void *)virt);
-            INFO(STRING("to "));
-            INFO((void *)physical, NEWLINE);
-        }
 
         mapPageWithFlags(virt, physical, mappingSize, flags);
     }
@@ -98,40 +78,11 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes) {
                               KERNEL_STANDARD_PAGE_FLAGS);
 }
 
-static bool kernelStructure(U64 address, KernelMemory *location) {
-    for (U64 i = 0; i < kernelStructureLocations.len; i++) {
-        if (kernelStructureLocations.buf[i].start == address) {
-            // TODO: This works too wall????
-
-            //   U64 remainingMemory =
-            //       UEFI_PAGE_SIZE -
-            //       (RING_RANGE_VALUE(kernelStructureLocations.buf[i].bytes,
-            //                         UEFI_PAGE_SIZE));
-            //   if (remainingMemory) {
-            //       RedBlackNode *node = NEW(&location->allocator,
-            //       RedBlackNode); node->memory =
-            //           (Memory){.bytes = remainingMemory,
-            //                    .start = kernelStructureLocations.buf[i].start
-            //                    +
-            //                             kernelStructureLocations.buf[i].bytes};
-            //       insertRedBlackNode(&location->tree, node);
-            //   }
-
-            return true;
-        }
-    }
-    return false;
-}
-
 void convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory *location) {
     RedBlackNode *root = nullptr;
 
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
         if (memoryTypeCanBeUsedByKernel(desc->type)) {
-            if (kernelStructure(desc->physicalStart, location)) {
-                continue;
-            }
-
             if (desc->physicalStart == 0) {
                 if (desc->numberOfPages == 1) {
                     continue;
@@ -141,10 +92,43 @@ void convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory *location) {
                 desc->physicalStart--;
             }
 
-            RedBlackNode *node = NEW(&location->allocator, RedBlackNode);
-            node->memory.bytes = desc->numberOfPages * UEFI_PAGE_SIZE;
-            node->memory.start = desc->physicalStart;
-            insertRedBlackNode(&root, node);
+            Memory availableMemoryBuf[MAX_KERNEL_STRUCTURES];
+            Memory_a availableMemory = {
+                .buf = availableMemoryBuf,
+                .len = 0,
+            };
+
+            U64 curStart = desc->physicalStart;
+            U64 curEnd = curStart + desc->numberOfPages * UEFI_PAGE_SIZE;
+            U64 kernelSize = 0;
+
+            U64 descriptorEnd = curEnd;
+            while (curStart < descriptorEnd) {
+                for (U64 i = 0; i < kernelStructureLocations.len; i++) {
+                    U64 kernelStart = kernelStructureLocations.buf[i].start;
+
+                    if (kernelStart >= curStart && kernelStart < curEnd) {
+                        curEnd = kernelStart;
+                        kernelSize = kernelStructureLocations.buf[i].bytes;
+                    }
+                }
+
+                U64 availableBytes = curEnd - curStart;
+                if (availableBytes) {
+                    availableMemory.buf[availableMemory.len] =
+                        (Memory){.start = curStart, .bytes = availableBytes};
+                    availableMemory.len++;
+                }
+
+                curStart = curEnd + kernelSize;
+                curEnd = descriptorEnd;
+            }
+
+            for (U64 i = 0; i < availableMemory.len; i++) {
+                RedBlackNode *node = NEW(&location->allocator, RedBlackNode);
+                node->memory = availableMemory.buf[i];
+                insertRedBlackNode(&root, node);
+            }
         }
     }
 

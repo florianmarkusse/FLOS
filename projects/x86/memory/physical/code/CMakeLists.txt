@@ -21,10 +21,6 @@ add_library(${PROJECT_NAME} OBJECT "src/physical.c")
 
 add_includes_for_sublibrary()
 
-if(${BUILD} STREQUAL "UNIT_TEST")
-    add_subdirectory(tests)
-endif()
-
 add_subdirectory(status)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-physical-i)

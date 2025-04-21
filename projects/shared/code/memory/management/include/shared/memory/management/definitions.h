@@ -12,6 +12,7 @@ typedef struct {
 } Memory;
 
 typedef MAX_LENGTH_ARRAY(Memory) Memory_max_a;
+typedef ARRAY(Memory) Memory_a;
 
 typedef struct {
     U64 start;
