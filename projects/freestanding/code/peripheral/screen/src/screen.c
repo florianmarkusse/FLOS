@@ -533,9 +533,6 @@ void initScreen(Window window, Arena *perm) {
     U32 *doubleBuffer =
         NEW(perm, U32, CEILING_DIV_VALUE(window.size, (U32)BYTES_PER_PIXEL));
 
-    // U64 memoryForScreen =
-    //     initScreenMemory((U64)dimension.screen, dimension.size);
-
     dim = window;
     dim.backingBuffer = doubleBuffer;
 
