@@ -3,6 +3,6 @@
 
 #include "shared/types/types.h"
 
-U64 getPageForMappingVirtualMemory();
+U64 getPageForMappingVirtualMemory(U64 pageSize);
 
 #endif

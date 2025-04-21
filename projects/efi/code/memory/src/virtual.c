@@ -4,6 +4,6 @@
 #include "efi/memory/physical.h"
 #include "shared/types/types.h"
 
-U64 getPageForMappingVirtualMemory() {
-    return allocateUnalignedMemory(VIRTUAL_MEMORY_MAPPING_SIZE, true);
+U64 getPageForMappingVirtualMemory(U64 pageSize) {
+    return allocateUnalignedMemory(pageSize, true);
 }

@@ -1,3 +1,6 @@
+- get rid of lots of virtual stuff in policy
+  - move some stuff in policy to virtual?
+  - Move policy & physical & (most of) virtual to be arch-independent?
 - fix abstraction/memory/virtual/converter.h stuff. I think just define externals? Or maybe this is right too idk
 - Fix duplicate stuff in memory mappings
 - converter.h retruning Pages struct instead of U64?

@@ -28,9 +28,9 @@ U8 pageSizeToDepth(PageSize pageSize) {
 }
 
 static U64 getZeroBasePage() {
-    U64 address = getPageForMappingVirtualMemory();
+    U64 address = getPageForMappingVirtualMemory(VIRTUAL_MEMORY_MAPPING_SIZE);
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    memset((void *)address, 0, X86_4KIB_PAGE);
+    memset((void *)address, 0, VIRTUAL_MEMORY_MAPPING_SIZE);
     return address;
 }
 
@@ -72,4 +72,42 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
 void mapPage(U64 virt, U64 physical, U64 mappingSize) {
     return mapPageWithFlags(virt, physical, mappingSize,
                             KERNEL_STANDARD_PAGE_FLAGS);
+}
+
+U64 getPhysicalAddressFrame(U64 virtualPage) {
+    return virtualPage & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
+}
+
+static bool isExtendedPageLevel(U8 level) {
+    return level == pageSizeToDepth(X86_2MIB_PAGE) ||
+           level == pageSizeToDepth(X86_1GIB_PAGE);
+}
+
+MappedPage getMappedPage(U64 virt) {
+    MappedPage result;
+    result.pageSize = X86_256TIB_PAGE;
+
+    U64 *address;
+    U64 pageSize = X86_512GIB_PAGE;
+    VirtualPageTable *currentTable = rootPageTable;
+    U8 totalDepth = pageSizeToDepth(availablePageSizes[0]);
+    for (U8 level = 0; level < totalDepth;
+         level++, pageSize /= PageTableFormat.ENTRIES) {
+        address = &(currentTable->pages[RING_RANGE_VALUE(
+            (virt / pageSize), PageTableFormat.ENTRIES)]);
+        result.pageSize /= PageTableFormat.ENTRIES;
+
+        if (isExtendedPageLevel(level) &&
+            ((*address) & VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
+            result.entry = *(VirtualEntry *)address;
+            return result;
+        }
+
+        currentTable =
+            /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+            (VirtualPageTable *)ALIGN_DOWN_VALUE(*address, X86_4KIB_PAGE);
+    }
+
+    result.entry = *(VirtualEntry *)address;
+    return result;
 }

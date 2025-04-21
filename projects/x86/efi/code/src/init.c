@@ -21,7 +21,7 @@
 #include "x86/memory/virtual.h"
 
 void bootstrapProcessorWork(Arena scratch) {
-    U64 newCR3 = getPageForMappingVirtualMemory();
+    U64 newCR3 = getPageForMappingVirtualMemory(VIRTUAL_MEMORY_MAPPING_SIZE);
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
     memset((void *)newCR3, 0, X86_4KIB_PAGE);
 

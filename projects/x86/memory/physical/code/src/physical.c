@@ -59,10 +59,9 @@ void *allocPhysicalMemory(U64 bytes) {
     return result;
 }
 
-// TODO: Make this architecture agnostic?
-U64 getPageForMappingVirtualMemory() {
+U64 getPageForMappingVirtualMemory(U64 pageSize) {
     // TODO: THIS!
-    return (U64)allocPhysicalMemory(X86_4KIB_PAGE);
+    return (U64)allocPhysicalMemory(pageSize);
 }
 
 // NOTE: Coming into this, All the memory is identity mapped. Having to do some
