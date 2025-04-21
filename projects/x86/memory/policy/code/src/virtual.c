@@ -9,11 +9,17 @@
 #include "x86/memory/pat.h"
 #include "x86/memory/virtual.h"
 
-// FIXME: this is now wrong! Need to set start in the init function here too!
-VirtualRegion higherHalfRegion = {.start = HIGHER_HALF_START,
-                                  .end = KERNEL_CODE_START};
 // Start is set in the init function.
-VirtualRegion lowerHalfRegion = {.start = 0, .end = LOWER_HALF_END};
+VirtualRegion higherHalfRegion = {.end = KERNEL_CODE_START};
+VirtualRegion lowerHalfRegion = {.end = LOWER_HALF_END};
+
+void initVirtualMemoryManager(VirtualMemory virt) {
+    lowerHalfRegion.start = virt.availableLowerHalfAddress;
+    higherHalfRegion.start = virt.availableHigherHalfAddress;
+
+    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+    rootPageTable = (VirtualPageTable *)CR3();
+}
 
 U64 getVirtualMemory(U64 size, PageSize alignValue) {
     ASSERT(size <= X86_512GIB_PAGE);
@@ -33,24 +39,6 @@ U64 getVirtualMemory(U64 size, PageSize alignValue) {
 
 U64 getPhysicalAddressFrame(U64 virtualPage) {
     return virtualPage & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
-}
-
-void initVirtualMemoryManager(KernelMemory kernelMemory) {
-    U64 currentHighestAddress = 0;
-    // FIXME THIS!
-    // for (U64 i = 0; i < kernelMemory.memory.len; i++) {
-    //     PagedMemory paged = kernelMemory.memory.buf[i];
-    //     U64 highestAddress = paged.start + paged.numberOfPages *
-    //     X86_4KIB_PAGE;
-    //
-    //     if (highestAddress > currentHighestAddress) {
-    //         currentHighestAddress = highestAddress;
-    //     }
-    // }
-    lowerHalfRegion.start = currentHighestAddress;
-
-    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    rootPageTable = (VirtualPageTable *)CR3();
 }
 
 static bool isExtendedPageLevel(U8 level) {

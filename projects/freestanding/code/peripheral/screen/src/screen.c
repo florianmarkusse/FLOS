@@ -51,7 +51,7 @@ static constexpr auto TAB_SIZE_IN_GLYPHS = (1 << 2);
 
 // NOTE: we write to this variable all the time, care should be taken when we
 // move to multithreading
-static ScreenDimension dim;
+static Window dim;
 
 static U16 glyphsPerLine;
 static U16 glyphsPerColumn;
@@ -527,21 +527,17 @@ bool flushToScreen(U8_max_a buffer) {
     return true;
 }
 
-void initScreen(ScreenDimension dimension, Arena *perm) {
+void initScreen(Window window, Arena *perm) {
     buf = NEW(perm, U8, FILE_BUF_LEN);
     // Need correct alignment
     U32 *doubleBuffer =
-        NEW(perm, U32, CEILING_DIV_VALUE(dimension.size, (U32)BYTES_PER_PIXEL));
+        NEW(perm, U32, CEILING_DIV_VALUE(window.size, (U32)BYTES_PER_PIXEL));
 
-    U64 memoryForScreen =
-        initScreenMemory((U64)dimension.screen, dimension.size);
+    // U64 memoryForScreen =
+    //     initScreenMemory((U64)dimension.screen, dimension.size);
 
-    dim = (ScreenDimension){.screen = (U32 *)memoryForScreen,
-                            .backingBuffer = doubleBuffer,
-                            .size = dimension.size,
-                            .width = dimension.width,
-                            .height = dimension.height,
-                            .scanline = dimension.scanline};
+    dim = window;
+    dim.backingBuffer = doubleBuffer;
 
     glyphsPerLine =
         (U16)(dim.width - HORIZONTAL_PIXEL_MARGIN * 2) / (font->width);

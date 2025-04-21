@@ -29,5 +29,4 @@ void appendPhysicalMemoryManagerStatus() {
     KLOG(STRING("\n================\n"));
     KLOG(STRING("Total memory: "));
     KLOG(totalMemory, NEWLINE);
-    // appendRedBlackTree(tree);
 }

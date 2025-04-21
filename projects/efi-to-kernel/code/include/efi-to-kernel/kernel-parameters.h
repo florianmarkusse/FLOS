@@ -5,22 +5,35 @@
 #include "shared/trees/red-black.h"
 #include "shared/types/types.h"
 
+// This struct implicitly assumes that there are 4 bytes per pixel, hence a
+// U32 buffer
 typedef struct {
-    U64 ptr;
+    U32 *screen;
+    U32 *backingBuffer;
     U64 size;
-    U32 columns;
-    U32 rows;
+    U32 width;
+    U32 height;
     U32 scanline;
-} FrameBuffer;
+} Window;
 
 typedef struct {
     RedBlackNode *tree;
     Arena allocator;
+} PhysicalMemory;
+
+typedef struct {
+    U64 availableLowerHalfAddress;
+    U64 availableHigherHalfAddress;
+} VirtualMemory;
+
+typedef struct {
+    PhysicalMemory physical;
+    VirtualMemory virt;
 } KernelMemory;
 
 typedef struct {
-    FrameBuffer fb;
-    KernelMemory kernelMemory;
+    Window window;
+    KernelMemory memory;
 } KernelParameters;
 
 #endif

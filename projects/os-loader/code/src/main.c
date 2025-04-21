@@ -149,13 +149,13 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)kernelFreeVirtualMemory, NEWLINE);
     }
 
-    U64 highestAddress = findHighestMemoryAddress(
+    U64 highestLowerHalfAddress = findHighestMemoryAddress(
         gop->mode->frameBufferBase + gop->mode->frameBufferSize, arena);
     KFLUSH_AFTER {
         INFO(STRING("Identity mapping all memory, highest address found: "));
-        INFO((void *)highestAddress, NEWLINE);
+        INFO((void *)highestLowerHalfAddress, NEWLINE);
     }
-    mapMemory(0, 0, highestAddress);
+    mapMemory(0, 0, highestLowerHalfAddress);
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
     KernelParameters *kernelParams =
@@ -175,11 +175,17 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(kernelParamsEnd, NEWLINE);
     }
 
-    kernelParams->fb.columns = gop->mode->info->horizontalResolution;
-    kernelParams->fb.rows = gop->mode->info->verticalResolution;
-    kernelParams->fb.scanline = gop->mode->info->pixelsPerScanLine;
-    kernelParams->fb.ptr = gop->mode->frameBufferBase;
-    kernelParams->fb.size = gop->mode->frameBufferSize;
+    kernelParams->memory.virt.availableLowerHalfAddress =
+        highestLowerHalfAddress;
+    kernelParams->memory.virt.availableHigherHalfAddress =
+        kernelFreeVirtualMemory;
+
+    kernelParams->window =
+        (Window){.screen = (U32 *)screenMemoryVirtualStart,
+                 .size = gop->mode->frameBufferSize,
+                 .width = gop->mode->info->horizontalResolution,
+                 .height = gop->mode->info->verticalResolution,
+                 .scanline = gop->mode->info->pixelsPerScanLine};
 
     RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
                               globals.st->configuration_table);
@@ -188,11 +194,11 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     KFLUSH_AFTER {
-        INFO(STRING("Prepared and collected all necessary information to jump"
+        INFO(STRING("Finished set-up. Collecting physical memory and jumping "
                     "to the kernel.\n"));
     }
 
-    allocateSpaceForKernelMemory(arena, &kernelParams->kernelMemory);
+    allocateSpaceForKernelMemory(arena, &kernelParams->memory.physical);
 
     /* NOTE: Keep this call in between the stub and the creation of available */
     /* memory! The stub allocates memory and logs on failure which is not */
@@ -206,7 +212,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                      "call exit boot services twice?\n"));
     }
 
-    convertToKernelMemory(&memoryInfo, &kernelParams->kernelMemory);
+    convertToKernelMemory(&memoryInfo, &kernelParams->memory.physical);
 
     jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE, kernelParams);
 

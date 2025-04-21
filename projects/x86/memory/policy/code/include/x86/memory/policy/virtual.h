@@ -8,7 +8,7 @@
 extern VirtualRegion higherHalfRegion;
 extern VirtualRegion lowerHalfRegion; // Start is set in the init function.
 
-void initVirtualMemoryManager(KernelMemory kernelMemory);
+void initVirtualMemoryManager(VirtualMemory virt);
 
 U64 getPhysicalAddressFrame(U64 virtualPage);
 U64 getVirtualMemory(U64 size, PageSize alignValue);

@@ -9,9 +9,9 @@
 #include "x86/memory/physical.h"
 #include "x86/memory/policy/virtual.h"
 
-void initMemoryManager(KernelMemory kernelMemory) {
-    initPhysicalMemoryManager(kernelMemory);
-    initVirtualMemoryManager(kernelMemory);
+void initMemoryManager(KernelMemory memory) {
+    initPhysicalMemoryManager(memory.physical);
+    initVirtualMemoryManager(memory.virt);
 }
 
 U64 initScreenMemory(U64 physicalScreenAddress, U64 bytes) {

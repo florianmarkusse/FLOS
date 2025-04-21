@@ -67,7 +67,7 @@ U64 getPageForMappingVirtualMemory() {
 
 // NOTE: Coming into this, All the memory is identity mapped. Having to do some
 // boostrapping here.
-void initPhysicalMemoryManager(KernelMemory kernelMemory) {
+void initPhysicalMemoryManager(PhysicalMemory kernelMemory) {
     tree = kernelMemory.tree;
 
     allocatable = kernelMemory.allocator;

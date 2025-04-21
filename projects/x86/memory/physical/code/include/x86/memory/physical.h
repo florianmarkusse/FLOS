@@ -6,7 +6,7 @@
 #include "shared/trees/red-black.h"
 #include "shared/types/types.h"
 
-void initPhysicalMemoryManager(KernelMemory kernelMemory);
+void initPhysicalMemoryManager(PhysicalMemory kernelMemory);
 void freeMemory(Memory memory);
 void *allocPhysicalMemory(U64 bytes);
 

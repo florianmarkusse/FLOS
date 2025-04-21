@@ -22,7 +22,7 @@ kernelmain(KernelParameters *kernelParams) {
     initIDT();
     // TODO: [X86] I need to enable NMIs here also again!
 
-    initMemoryManager(kernelParams->kernelMemory);
+    initMemoryManager(kernelParams->memory);
 
     void *initMemory = (void *)allocAndMap(INIT_MEMORY);
     Arena arena = (Arena){.curFree = initMemory,
@@ -36,12 +36,7 @@ kernelmain(KernelParameters *kernelParams) {
     }
 
     initLogger(&arena);
-    initScreen((ScreenDimension){.scanline = kernelParams->fb.scanline,
-                                 .size = kernelParams->fb.size,
-                                 .width = kernelParams->fb.columns,
-                                 .height = kernelParams->fb.rows,
-                                 .screen = (U32 *)kernelParams->fb.ptr},
-               &arena);
+    initScreen(kernelParams->window, &arena);
 
     freeMapped((Memory){.start = (U64)arena.curFree,
                         .bytes = (U64)(arena.end - arena.curFree)});

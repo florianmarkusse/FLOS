@@ -29,7 +29,7 @@ static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     }
 }
 
-void allocateSpaceForKernelMemory(Arena scratch, KernelMemory *location) {
+void allocateSpaceForKernelMemory(Arena scratch, PhysicalMemory *location) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
     U64 numberOfDescriptors =
         memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
@@ -50,7 +50,7 @@ void allocateSpaceForKernelMemory(Arena scratch, KernelMemory *location) {
                 .end = freeMemoryDescriptorsLocation + bytes};
 
     *location =
-        (KernelMemory){.allocator = physicalMemoryArena, .tree = nullptr};
+        (PhysicalMemory){.allocator = physicalMemoryArena, .tree = nullptr};
 }
 
 U64 alignVirtual(U64 virt, U64 physical, U64 bytes) {
@@ -78,7 +78,7 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes) {
                               KERNEL_STANDARD_PAGE_FLAGS);
 }
 
-void convertToKernelMemory(MemoryInfo *memoryInfo, KernelMemory *location) {
+void convertToKernelMemory(MemoryInfo *memoryInfo, PhysicalMemory *location) {
     RedBlackNode *root = nullptr;
 
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
