@@ -10,8 +10,6 @@ void initPhysicalMemoryManager(PhysicalMemory kernelMemory);
 void freeMemory(Memory memory);
 void *allocPhysicalMemory(U64 bytes);
 
-U64 getPageForMappingVirtualMemory(U64 pageSize);
-
 extern RedBlackNode *tree;
 
 #endif

@@ -1,6 +1,5 @@
-#include "abstraction/memory/physical/allocation.h"
+#include "abstraction/memory/physical.h"
 
-#include "abstraction/memory/virtual/converter.h"
 #include "efi/memory/physical.h"
 #include "shared/types/types.h"
 

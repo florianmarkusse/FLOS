@@ -1,5 +1,6 @@
 #include "freestanding/memory/physical.h"
 #include "abstraction/interrupts.h"
+#include "abstraction/memory/physical.h"
 
 RedBlackNode *tree;
 static Arena allocatable;
