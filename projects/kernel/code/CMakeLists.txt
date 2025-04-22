@@ -19,7 +19,6 @@ add_project("abstraction/jmp")
 add_project("abstraction/log")
 add_project("abstraction/text/converter")
 add_project("abstraction/interrupts")
-add_project("abstraction/memory/management")
 add_project("abstraction/memory/manipulation")
 add_project("abstraction/memory/physical")
 add_project("abstraction/memory/virtual")
@@ -49,11 +48,23 @@ target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-interrupts)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-jmp)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-log)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-text-converter)
-target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-management)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-virtual)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-log-init)
+target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-memory-physical)
+target_link_libraries(
+    ${PROJECT_NAME}
+    PRIVATE freestanding-memory-physical-status
+)
+target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-memory-virtual)
+target_link_libraries(
+    ${PROJECT_NAME}
+    PRIVATE freestanding-memory-virtual-status
+)
+target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-memory-policy)
+target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-memory-policy-status)
 target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-peripheral-screen)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-i)

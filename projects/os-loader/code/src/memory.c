@@ -2,7 +2,7 @@
 
 #include "abstraction/log.h"
 #include "abstraction/memory/manipulation.h"
-#include "abstraction/memory/physical/allocation.h"
+#include "abstraction/memory/physical.h"
 #include "abstraction/memory/virtual/converter.h"
 #include "abstraction/memory/virtual/map.h"
 #include "efi/error.h"

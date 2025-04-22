@@ -2,7 +2,7 @@
 
 #include "abstraction/log.h"
 #include "abstraction/memory/manipulation.h"
-#include "abstraction/memory/physical/allocation.h"
+#include "abstraction/memory/physical.h"
 #include "efi/error.h"
 #include "efi/firmware/base.h"   // for PhysicalAddress
 #include "efi/firmware/system.h" // for PhysicalAddress
