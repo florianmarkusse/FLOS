@@ -10,6 +10,5 @@ void initMemoryManager(KernelMemory memory);
 void *allocAndMap(U64 bytes);
 void *allocContiguousAndMap(U64 bytes);
 void freeMapped(Memory memory);
-U64 getVirtualMemory(U64 size, U64 align);
 
 #endif

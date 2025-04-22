@@ -1,6 +1,5 @@
 #include "freestanding/peripheral/screen.h"
 
-#include "abstraction/memory/management/init.h"
 #include "freestanding/memory/manipulation.h"
 #include "shared/assert.h"      // for ASSERT
 #include "shared/maths/maths.h" // for RING_PLUS, RING_INCREMENT, RING_MINUS

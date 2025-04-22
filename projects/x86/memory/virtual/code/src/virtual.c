@@ -1,8 +1,8 @@
 #include "x86/memory/virtual.h"
 
 #include "abstraction/memory/manipulation.h"
-#include "abstraction/memory/physical/allocation.h"
 #include "abstraction/memory/virtual/map.h"
+#include "freestanding/memory/physical.h"
 #include "shared/assert.h"
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"

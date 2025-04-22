@@ -1,9 +1,7 @@
 #ifndef SHARED_TREES_RED_BLACK_H
 #define SHARED_TREES_RED_BLACK_H
 
-#include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
-#include "shared/types/array-types.h"
 #include "shared/types/types.h"
 
 typedef enum { RB_TREE_BLACK = 0, RB_TREE_RED = 1 } RedBlackColor;

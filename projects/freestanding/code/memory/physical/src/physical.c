@@ -48,7 +48,6 @@ void *allocPhysicalMemory(U64 bytes) {
 }
 
 U64 getPageForMappingVirtualMemory(U64 pageSize) {
-    // TODO: THIS!
     return (U64)allocPhysicalMemory(pageSize);
 }
 

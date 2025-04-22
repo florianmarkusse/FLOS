@@ -1,6 +1,7 @@
 #ifndef EFI_TO_KERNEL_KERNEL_PARAMETERS_H
 #define EFI_TO_KERNEL_KERNEL_PARAMETERS_H
 
+#include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/trees/red-black.h"
 #include "shared/types/types.h"
