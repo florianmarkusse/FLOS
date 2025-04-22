@@ -9,3 +9,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE efi-to-kernel-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-jmp-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-virtual-i)
+
+add_subdirectory(status)

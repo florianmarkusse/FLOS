@@ -12,6 +12,13 @@
 #include "x86/memory/definitions.h"
 #include "x86/memory/flags.h"
 
+// static string patEncodingToString[PAT_ENCODING_COUNT] = {
+//     STRING("Uncachable (UC)"),        STRING("Write Combining (WC)"),
+//     STRING("Reserved 1, don't use!"), STRING("Reserved 2, don't use!"),
+//     STRING("Write Through (WT)"),     STRING("Write Protected (WP)"),
+//     STRING("Write Back (WB)"),        STRING("Uncached (UC-)"),
+// };
+
 VirtualPageTable *rootPageTable;
 
 void setRootPageTable() { rootPageTable = (VirtualPageTable *)CR3(); }

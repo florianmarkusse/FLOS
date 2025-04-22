@@ -19,8 +19,6 @@ add_library(${PROJECT_NAME} OBJECT "src/virtual.c")
 
 add_includes_for_sublibrary()
 
-add_subdirectory(status)
-
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-physical-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-virtual-i)
