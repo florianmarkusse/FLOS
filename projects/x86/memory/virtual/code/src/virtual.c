@@ -8,10 +8,13 @@
 #include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/types/types.h"
+#include "x86/configuration/cpu.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/flags.h"
 
 VirtualPageTable *rootPageTable;
+
+void setRootPageTable() { rootPageTable = (VirtualPageTable *)CR3(); }
 
 U8 pageSizeToDepth(PageSize pageSize) {
     switch (pageSize) {

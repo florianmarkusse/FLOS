@@ -1,4 +1,5 @@
 #include "freestanding/memory/virtual.h"
+#include "abstraction/memory/virtual/map.h"
 #include "efi-to-kernel/memory/definitions.h"
 #include "shared/assert.h"
 #include "shared/maths/maths.h"
@@ -13,9 +14,7 @@ void initVirtualMemoryManager(VirtualMemory virt) {
     higherHalfRegion.start = virt.availableHigherHalfAddress;
     higherHalfRegion.bytes = KERNEL_CODE_START - higherHalfRegion.start;
 
-    // TODO: create function in abstraction to init the mapper in each arch
-    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    rootPageTable = (VirtualPageTable *)CR3();
+    setRootPageTable();
 }
 
 U64 getVirtualMemory(U64 size, U64 align) {
