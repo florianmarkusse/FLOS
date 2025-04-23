@@ -14,12 +14,4 @@ typedef struct {
 typedef MAX_LENGTH_ARRAY(Memory) Memory_max_a;
 typedef ARRAY(Memory) Memory_a;
 
-typedef struct {
-    U64 start;
-    U64 numberOfPages;
-} PagedMemory;
-
-typedef MAX_LENGTH_ARRAY(PagedMemory) PagedMemory_max_a;
-typedef ARRAY(PagedMemory) PagedMemory_a;
-
 #endif
