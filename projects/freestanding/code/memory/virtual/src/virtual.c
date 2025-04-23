@@ -13,8 +13,6 @@ void initVirtualMemoryManager(VirtualMemory virt) {
     lowerHalfRegion.bytes = LOWER_HALF_END - lowerHalfRegion.start;
     higherHalfRegion.start = virt.availableHigherHalfAddress;
     higherHalfRegion.bytes = KERNEL_CODE_START - higherHalfRegion.start;
-
-    setRootPageTable();
 }
 
 U64 getVirtualMemory(U64 size, U64 align) {

@@ -7,7 +7,7 @@
 
 static bool triggeredFaults[CPU_FAULT_COUNT];
 
-static void **interruptJumper;
+static void *interruptJumper;
 
 void initIDT() {}
 
@@ -16,7 +16,7 @@ void triggerFault(Fault fault) {
     longjmp(interruptJumper, 1);
 }
 
-void initIDTTest(void *long_jmp[5]) { interruptJumper = long_jmp; }
+void initIDTTest(JumpBuffer long_jmp) { interruptJumper = long_jmp; }
 
 bool *getTriggeredFaults() { return triggeredFaults; }
 void resetTriggeredFaults() {

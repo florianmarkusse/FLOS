@@ -1,5 +1,6 @@
 #include "abstraction/interrupts.h" // for setupIDT
 #include "abstraction/log.h" // for LOG, LOG_CHOOSER_IMPL_1, rewind, pro...
+#include "abstraction/memory/virtual/map.h"
 #include "efi-to-kernel/kernel-parameters.h"  // for KernelParameters
 #include "efi-to-kernel/memory/definitions.h" // for KERNEL_PARAMS_START
 #include "freestanding/log/init.h"
@@ -18,8 +19,14 @@ static constexpr auto INIT_MEMORY = (16 * MiB);
 
 __attribute__((section("kernel-start"))) int
 kernelmain(KernelParameters *kernelParams) {
+    //----------------------
+    // NOTE: this code should probably be wrapped in a kernel init function that
+    // has arch-dependent implementations
     initIDT();
     // TODO: [X86] I need to enable NMIs here also again!
+
+    setRootPageTable();
+    //----------------------
 
     initMemoryManager(kernelParams->memory);
 

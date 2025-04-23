@@ -1,7 +1,8 @@
 #ifndef X86_IDT_MOCK_H
 #define X86_IDT_MOCK_H
 
-void initIDTTest(void *long_jmp[5]);
+#include "abstraction/jmp.h"
+void initIDTTest(JumpBuffer long_jmp);
 bool *getTriggeredFaults();
 void resetTriggeredFaults();
 

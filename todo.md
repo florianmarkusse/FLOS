@@ -3,7 +3,6 @@
   - Move policy & physical & (most of) virtual to be arch-independent?
 - fix abstraction/memory/virtual/converter.h stuff. I think just define externals? Or maybe this is right too idk
 - Fix duplicate stuff in memory mappings
-- converter.h retruning Pages struct instead of U64?
 - create macro for ctzl clzl stuff, so I dont need to pick the sizes?
 - Figure out a way to do better with masks and bit shifts for virtual values
 - policy is quite architecture-dependant. What's required to completely make it so?
