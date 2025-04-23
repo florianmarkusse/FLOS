@@ -53,18 +53,12 @@ target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-virtual)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-log-init)
-target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-memory-physical)
-target_link_libraries(
-    ${PROJECT_NAME}
-    PRIVATE freestanding-memory-physical-status
-)
-target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-memory-virtual)
-target_link_libraries(
-    ${PROJECT_NAME}
-    PRIVATE freestanding-memory-virtual-status
-)
-target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-memory-policy)
-target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-memory-policy-status)
+target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-physical)
+target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-physical-status)
+target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-virtual)
+target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-virtual-status)
+target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-policy)
+target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-policy-status)
 target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-peripheral-screen)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-i)

@@ -4,11 +4,11 @@
 #include "efi-to-kernel/kernel-parameters.h"  // for KernelParameters
 #include "efi-to-kernel/memory/definitions.h" // for KERNEL_PARAMS_START
 #include "freestanding/log/init.h"
-#include "freestanding/memory/policy.h"
-#include "freestanding/memory/policy/status.h"
 #include "freestanding/peripheral/screen.h"
 #include "shared/log.h"
 #include "shared/memory/allocator/arena.h"
+#include "shared/memory/policy.h"
+#include "shared/memory/policy/status.h"
 #include "shared/memory/sizes.h"
 #include "shared/text/string.h"
 #include "shared/types/types.h" // for U32
