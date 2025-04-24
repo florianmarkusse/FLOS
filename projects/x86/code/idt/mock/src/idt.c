@@ -1,7 +1,7 @@
 #include "x86/idt.h"
 
 #include "abstraction/jmp.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 #include "x86/fault.h"
 #include "x86/idt/mock.h"
 

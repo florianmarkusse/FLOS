@@ -20,7 +20,7 @@
 #include "shared/memory/sizes.h"
 #include "shared/text/parser.h"
 #include "shared/text/string.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 JumpBuffer errorHandler;
 typedef struct {

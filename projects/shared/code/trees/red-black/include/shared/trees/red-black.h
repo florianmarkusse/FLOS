@@ -2,7 +2,7 @@
 #define SHARED_TREES_RED_BLACK_H
 
 #include "shared/memory/management/definitions.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef enum { RB_TREE_BLACK = 0, RB_TREE_RED = 1 } RedBlackColor;
 typedef enum { RB_TREE_LEFT = 0, RB_TREE_RIGHT = 1 } RedBlackDirection;

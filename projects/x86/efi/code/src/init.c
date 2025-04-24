@@ -3,6 +3,7 @@
 #include "abstraction/log.h"
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/physical.h"
+#include "efi-to-kernel/memory/definitions.h"
 #include "efi/error.h"
 #include "efi/firmware/base.h"   // for PhysicalAddress
 #include "efi/firmware/system.h" // for PhysicalAddress
@@ -10,8 +11,9 @@
 #include "efi/memory/physical.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
+#include "shared/memory/virtual.h"
 #include "shared/text/string.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
 #include "x86/configuration/features.h"
 #include "x86/efi/gdt.h"
@@ -20,12 +22,27 @@
 #include "x86/memory/pat.h"
 #include "x86/memory/virtual.h"
 
+static constexpr auto MAX_VIRTUAL_MEMORY_REGIONS = 16;
+static constexpr auto VIRTUAL_MEMORY_REGIONS_BYTES =
+    sizeof(MemoryRange) * MAX_VIRTUAL_MEMORY_REGIONS;
+
 void bootstrapProcessorWork(Arena scratch) {
     U64 newCR3 = getPageForMappingVirtualMemory(VIRTUAL_MEMORY_MAPPING_SIZE);
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
     memset((void *)newCR3, 0, X86_4KIB_PAGE);
 
     rootPageTable = (VirtualPageTable *)newCR3;
+
+    MemoryRange *buffer = (MemoryRange *)allocateKernelStructure(
+        VIRTUAL_MEMORY_REGIONS_BYTES, alignof(MemoryRange), false, scratch);
+    buffer[0] = (MemoryRange){.start = 0, .end = LOWER_HALF_END};
+    buffer[1] =
+        (MemoryRange){.start = HIGHER_HALF_START, .end = KERNEL_CODE_START};
+
+    freeVirtualMemory = (MemoryRange_max_a){
+        .len = 2,
+        .buf = buffer,
+        .cap = VIRTUAL_MEMORY_REGIONS_BYTES / sizeof(Memory)};
 
     KFLUSH_AFTER {
         INFO(STRING("root page table memory location:"));

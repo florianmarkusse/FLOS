@@ -2,7 +2,7 @@
 #define X86_MEMORY_PAT_H
 
 #include "shared/enum.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 #include "x86/memory/definitions.h"
 
 #define PAT_ENCODING_ENUM(VARIANT)                                             \

@@ -3,7 +3,7 @@
 
 #include "common.h"        // for MSI_SET
 #include "shared/macros.h" // for MACRO_VAR
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef MSI_SET(U16) msi_U16;
 

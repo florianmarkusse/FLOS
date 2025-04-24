@@ -15,7 +15,7 @@
 #include "shared/maths/maths.h"
 #include "shared/text/string.h"
 #include "shared/types/array-types.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 // NOTE: This is a minimal FAT32 implementation. The following assumptions are
 // made:

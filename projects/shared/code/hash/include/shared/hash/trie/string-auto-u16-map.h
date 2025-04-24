@@ -2,7 +2,7 @@
 #define SHARED_HASH_TRIE_STRING_AUTO_U16_MAP_H
 
 #include "common-iterator.h" // for TRIE_ITERATOR_HEADER_FILE
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/text/string.h" // for string
 

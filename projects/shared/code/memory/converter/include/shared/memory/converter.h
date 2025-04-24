@@ -1,7 +1,7 @@
 #ifndef SHARED_MEMORY_CONVERTER_H
 #define SHARED_MEMORY_CONVERTER_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 // Check if you are not at the largest page size first!
 U64 increasePageSize(U64 pageSize);

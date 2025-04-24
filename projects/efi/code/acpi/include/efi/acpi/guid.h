@@ -1,7 +1,7 @@
 #ifndef EFI_ACPI_GUID_H
 #define EFI_ACPI_GUID_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 #include "shared/uuid.h"
 
 static constexpr auto EFI_ACPI_20_TABLE_GUID =

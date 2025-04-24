@@ -3,7 +3,7 @@
 
 #include "shared/text/string.h"
 #include "shared/types/array-types.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 string stringWithMinSize(string data, U8 minSize, U8_a tmp);
 string stringWithMinSizeDefault(string data, U8 minSize);

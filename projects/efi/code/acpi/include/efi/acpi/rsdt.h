@@ -1,7 +1,7 @@
 #ifndef EFI_ACPI_RSDT_H
 #define EFI_ACPI_RSDT_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 static constexpr auto ACPI_DESCRIPTION_TABLE_SIGNATURE_LEN = 4;
 

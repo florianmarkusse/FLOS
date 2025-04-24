@@ -24,7 +24,7 @@ def generate_header(input_file, output_header):
 #ifndef EFI_TO_KERNEL_GENERATED_KERNEL_MAGIC_H
 #define EFI_TO_KERNEL_GENERATED_KERNEL_MAGIC_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 static constexpr U8 KERNEL_MAGIC[] = {{ {byte_values} }};
 

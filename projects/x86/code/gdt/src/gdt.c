@@ -1,5 +1,5 @@
 #include "x86/gdt.h"
-#include "shared/types/types.h" // for U64, U32, U16
+#include "shared/types/numeric.h" // for U64, U32, U16
 #include "x86/memory/definitions.h"
 
 typedef struct {

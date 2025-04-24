@@ -1,5 +1,5 @@
 #include "shared/maths/maths.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 U64 ceilingPowerOf2(U64 x) {
     if (x <= 1) {

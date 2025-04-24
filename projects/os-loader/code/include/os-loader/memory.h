@@ -8,7 +8,7 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/memory/sizes.h"
-#include "shared/types/types.h" // for USize, U64, U32
+#include "shared/types/numeric.h" // for USize, U64, U32
 
 static constexpr auto DYNAMIC_MEMORY_CAPACITY = 1 * MiB;
 

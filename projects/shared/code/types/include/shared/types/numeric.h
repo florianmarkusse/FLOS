@@ -1,5 +1,5 @@
-#ifndef SHARED_TYPES_TYPES_H
-#define SHARED_TYPES_TYPES_H
+#ifndef SHARED_TYPES_NUMERIC_H
+#define SHARED_TYPES_NUMERIC_H
 
 #if !defined(__INT8_TYPE__) || !defined(__UINT8_TYPE__) ||                     \
     !defined(__INT16_TYPE__) || !defined(__UINT16_TYPE__) ||                   \

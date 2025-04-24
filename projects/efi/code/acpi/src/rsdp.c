@@ -4,7 +4,7 @@
 #include "efi/acpi/guid.h"
 #include "efi/acpi/rdsp.h" // for RSDP_REVISION_2, CAcpiRSDPV1, CAcpi...
 #include "shared/macros.h"
-#include "shared/types/types.h" // for USize, U8, nullptr, U16, U64
+#include "shared/types/numeric.h" // for USize, U8, nullptr, U16, U64
 #include "shared/uuid.h"        // for Guid, ACPI_TABLE_GUID, EFI_ACPI_20_...
 
 bool ACPIChecksum(void *ptr, U64 size) {

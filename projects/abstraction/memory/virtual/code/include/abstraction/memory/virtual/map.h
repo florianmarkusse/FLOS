@@ -1,7 +1,7 @@
 #ifndef ABSTRACTION_MEMORY_VIRTUAL_MAP_H
 #define ABSTRACTION_MEMORY_VIRTUAL_MAP_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 void setRootPageTable();
 

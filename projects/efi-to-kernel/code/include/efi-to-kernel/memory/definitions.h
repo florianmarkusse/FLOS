@@ -13,10 +13,6 @@
 
 #include "shared/memory/sizes.h"
 
-static constexpr auto LOWER_HALF_END = 0x0000FFFFFFFFFFFF;
-
-static constexpr auto HIGHER_HALF_START = 0xFFFF800000000000;
-
 static constexpr auto KERNEL_STACK_SIZE = 2 * MiB;
 static constexpr auto KERNEL_STACK_ALIGNMENT =
     16; // NOTE: Sys-V ABI requires 16-byte aligned stack.

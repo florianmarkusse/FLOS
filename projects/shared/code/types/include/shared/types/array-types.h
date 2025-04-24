@@ -2,7 +2,7 @@
 #define SHARED_TYPES_ARRAY_TYPES_H
 
 #include "shared/types/array.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef DYNAMIC_ARRAY(U64) U64_d_a;
 typedef DYNAMIC_ARRAY(bool) bool_d_a;

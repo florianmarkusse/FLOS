@@ -1,7 +1,7 @@
 #ifndef EFI_FIRMWARE_BASE_H
 #define EFI_FIRMWARE_BASE_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 /**
  * UEFI Base Environment

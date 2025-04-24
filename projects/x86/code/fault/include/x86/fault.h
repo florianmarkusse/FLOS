@@ -2,7 +2,7 @@
 #define X86_FAULT_H
 
 #include "shared/enum.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 #define CPU_FAULT_ENUM(VARIANT)                                                \
     VARIANT(FAULT_DIVIDE_ERROR, 0)                                             \

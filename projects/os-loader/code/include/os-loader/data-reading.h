@@ -4,7 +4,7 @@
 #include "efi/firmware/base.h" // for Lba
 #include "shared/memory/allocator/arena.h"
 #include "shared/text/string.h"
-#include "shared/types/types.h" // for U32, U64, USize
+#include "shared/types/numeric.h" // for U32, U64, USize
 
 typedef struct {
     U64 bytes;

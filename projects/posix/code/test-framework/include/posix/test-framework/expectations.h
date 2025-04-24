@@ -2,7 +2,7 @@
 #define POSIX_TEST_FRAMEWORK_EXPECTATIONS_H
 
 #include "shared/text/string.h" // for string
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 void appendExpectCodeWithString(U64 expected, string expectedString, U64 actual,
                                 string actualString);

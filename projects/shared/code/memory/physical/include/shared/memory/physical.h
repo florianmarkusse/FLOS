@@ -4,7 +4,7 @@
 #include "efi-to-kernel/kernel-parameters.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/trees/red-black.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 void initPhysicalMemoryManager(PhysicalMemory kernelMemory);
 void freeMemory(Memory memory);

@@ -1,7 +1,7 @@
 #ifndef FREESTANDING_MEMORY_MANIPULATION_H
 #define FREESTANDING_MEMORY_MANIPULATION_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 /* Copy N bytes of SRC to DEST.  */
 __attribute((nothrow, nonnull(1, 2))) void *

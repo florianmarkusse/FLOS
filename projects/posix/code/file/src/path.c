@@ -5,7 +5,7 @@
 #include "posix/memory/manipulation.h"
 #include "shared/memory/allocator/arena.h" // for FLO_NEW, Arena
 #include "shared/text/string.h" // for firstOccurenceOfFrom, string
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 static constexpr auto FULL_ACCESS = 0700;
 

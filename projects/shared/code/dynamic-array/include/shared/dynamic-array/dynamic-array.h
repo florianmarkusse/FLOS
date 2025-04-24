@@ -2,7 +2,7 @@
 #define SHARED_DYNAMIC_ARRAY_DYNAMIC_ARRAY_H
 
 #include "shared/macros.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 #include "shared/memory/allocator/arena.h"
 
 void grow(void *slice, U64 size, U64 align, Arena *a, U8 flags);

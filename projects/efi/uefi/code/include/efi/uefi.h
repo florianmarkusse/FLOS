@@ -1,7 +1,7 @@
 #ifndef EFI_UEFI_H
 #define EFI_UEFI_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 #include "shared/uuid.h"
 // Little-endian here so we swap the traditional 0x55 0xAA here
 static constexpr U16 BOOT_SIGNATURE = 0xAA55;

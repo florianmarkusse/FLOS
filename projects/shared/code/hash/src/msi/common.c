@@ -3,7 +3,7 @@
 #include "abstraction/memory/manipulation.h"
 #include "shared/assert.h" // for ASSERT
 #include "shared/memory/allocator/macros.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 /**
  * Written assuming that arena bumps up! Otherwise the middle case statement

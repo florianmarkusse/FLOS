@@ -3,7 +3,7 @@
 
 #define CRC32_TABLE_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 U32 calculateCRC32(void *data, U64 size);
 

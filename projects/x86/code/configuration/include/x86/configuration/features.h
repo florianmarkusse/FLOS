@@ -1,7 +1,7 @@
 #ifndef X86_CONFIGURATION_FEATURES_H
 #define X86_CONFIGURATION_FEATURES_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef struct {
     union {

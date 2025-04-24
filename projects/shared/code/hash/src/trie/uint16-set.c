@@ -4,7 +4,7 @@
 #include "shared/hash/trie/u16-set.h"
 #include "shared/memory/allocator/macros.h"
 #include "shared/memory/allocator/arena.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 bool trie_insertU16Set(U16 key, trie_U16Set **set, Arena *perm) {
     ASSERT(key != 0);

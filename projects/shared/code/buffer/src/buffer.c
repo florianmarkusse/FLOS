@@ -1,7 +1,7 @@
 #include "shared/buffer/buffer.h"
 
 #include "abstraction/memory/manipulation.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 void appendToSimpleBuffer(string data, U8_d_a *array, Arena *perm) {
     if (array->len + data.len > array->cap) {

@@ -1,5 +1,5 @@
 #include "shared/dynamic-array/dynamic-array.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 #include "shared/memory/allocator/arena.h"
 #include "abstraction/memory/manipulation.h"
 

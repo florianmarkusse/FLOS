@@ -5,17 +5,16 @@
 #include "shared/memory/virtual.h"
 #include "shared/text/string.h"
 
-static void appendVirtualRegionStatus(Memory region) {
+static void appendVirtualRegionStatus(MemoryRange region) {
     KLOG(STRING("Start: "));
     KLOG((void *)region.start, NEWLINE);
-    KLOG(STRING("Bytes: "));
-    KLOG((void *)region.bytes, NEWLINE);
+    KLOG(STRING("end: "));
+    KLOG((void *)region.end, NEWLINE);
 }
 
 void appendVirtualMemoryManagerStatus() {
     KLOG(STRING("Available Virtual Memory\n"));
-    KLOG(STRING("Lower half (0x0000_000000000000):\n"));
-    appendVirtualRegionStatus(lowerHalfRegion);
-    KLOG(STRING("Higher half(0xFFFF_000000000000):\n"));
-    appendVirtualRegionStatus(higherHalfRegion);
+    for (U64 i = 0; i < freeVirtualMemory.len; i++) {
+        appendVirtualRegionStatus(freeVirtualMemory.buf[i]);
+    }
 }

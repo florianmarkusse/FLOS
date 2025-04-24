@@ -2,7 +2,7 @@
 #define EFI_ACPI_RDSP_H
 
 #include "efi/acpi/configuration-table.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef struct __attribute((packed)) {
     I8 signature[8];

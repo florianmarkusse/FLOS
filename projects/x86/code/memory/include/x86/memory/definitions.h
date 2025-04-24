@@ -2,7 +2,11 @@
 #define X86_MEMORY_DEFINITIONS_H
 
 #include "shared/enum.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
+
+static constexpr auto LOWER_HALF_END = 0x0000FFFFFFFFFFFF;
+
+static constexpr auto HIGHER_HALF_START = 0xFFFF800000000000;
 
 static constexpr struct {
     U64 ENTRIES;

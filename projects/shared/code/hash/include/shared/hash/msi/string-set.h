@@ -5,7 +5,7 @@
 #include "shared/hash/hash-comparison-status.h" // for HashComparisonStatus
 #include "shared/macros.h"                      // for MACRO_VAR
 #include "shared/text/string.h"                 // for string
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef MSI_SET(string) msi_string;
 

@@ -1,5 +1,5 @@
 #include "shared/uuid.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 void setUUIDType(UUID *uuid, U8 version, UUIDVariant variant) {
     // The first 4 bits indicate the version.

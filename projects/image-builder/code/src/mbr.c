@@ -2,7 +2,7 @@
 #include "abstraction/memory/manipulation.h"
 #include "efi/uefi.h"
 #include "image-builder/configuration.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef struct {
     U8 bootCode[440];

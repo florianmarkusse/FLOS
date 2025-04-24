@@ -1,5 +1,5 @@
 #include "acpi/signatures.h"  // for ACPITable, ERROR_AND_NUM_TABLES, ACPIT...
-#include "shared/types/types.h"            // for U64
+#include "shared/types/numeric.h"            // for U64
 #include "shared/text/string.h" // for STRING, string, stringEquals
 
 static string signatures[] = {STRING("FACP"), STRING("APIC"), STRING("HPET"),

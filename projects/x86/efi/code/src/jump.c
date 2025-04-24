@@ -1,7 +1,7 @@
 #include "abstraction/efi.h"
 
 #include "efi-to-kernel/memory/definitions.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 #include "x86/efi/gdt.h"
 #include "x86/gdt.h"
 #include "x86/memory/virtual.h"

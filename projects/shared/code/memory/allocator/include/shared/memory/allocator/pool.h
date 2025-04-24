@@ -1,7 +1,7 @@
 #ifndef SHARED_MEMORY_ALLOCATOR_POOL_H
 #define SHARED_MEMORY_ALLOCATOR_POOL_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 struct PoolHead {
     struct PoolHead *next;

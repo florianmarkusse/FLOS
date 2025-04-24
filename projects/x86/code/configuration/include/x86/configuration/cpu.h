@@ -1,7 +1,7 @@
 #ifndef X86_CONFIGURATION_CPU_H
 #define X86_CONFIGURATION_CPU_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 U64 rdmsr(U32 msr);
 void wrmsr(U32 msr, U64 value);

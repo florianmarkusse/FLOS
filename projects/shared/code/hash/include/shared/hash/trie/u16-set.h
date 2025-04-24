@@ -4,7 +4,7 @@
 #include "common-iterator.h" // for TRIE_ITERATOR_HEADER_FILE
 #include "shared/macros.h"   // for MACRO_VAR
 #include "shared/memory/allocator/arena.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef struct trie_U16Set trie_U16Set;
 struct trie_U16Set {

@@ -7,7 +7,7 @@
 #include "posix/log.h"
 #include "shared/assert.h"
 #include "shared/log.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 #include "shared/text/string.h"
 
 bool writeDataPartition(U8 *fileBuffer, int kernelfd, U64 kernelSizeBytes) {

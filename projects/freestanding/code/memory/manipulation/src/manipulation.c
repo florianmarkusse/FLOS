@@ -1,6 +1,6 @@
 #include "freestanding/memory/manipulation.h"
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 #define NO_INLINE __attribute__((noinline))
 

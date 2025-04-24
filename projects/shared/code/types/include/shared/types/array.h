@@ -1,7 +1,7 @@
 #ifndef SHARED_TYPES_ARRAY_H
 #define SHARED_TYPES_ARRAY_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 #define ARRAY(T)                                                               \
     struct {                                                                   \

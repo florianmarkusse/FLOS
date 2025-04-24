@@ -2,7 +2,7 @@
 #define IMAGE_BUILDER_CONFIGURATION_H
 
 #include "shared/memory/sizes.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 // We are setting the number of entries to 128 and the size of each entry to 128
 // too. This, from the spec can change in the future but I don't see how. For

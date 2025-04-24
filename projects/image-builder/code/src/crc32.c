@@ -1,5 +1,5 @@
 #include "image-builder/crc32.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 static U32 crc32Table[256] =
     {/* CRC polynomial 0xedb88320 */

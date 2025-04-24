@@ -4,7 +4,7 @@
 #include "abstraction/memory/manipulation.h"
 #include "shared/assert.h"
 #include "shared/types/array.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef struct {
     U8 *buf;

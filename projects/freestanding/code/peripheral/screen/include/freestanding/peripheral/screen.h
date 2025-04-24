@@ -4,7 +4,7 @@
 #include "efi-to-kernel/kernel-parameters.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/types/array-types.h"
-#include "shared/types/types.h" // for U32, U8, U64, I64, I8, U16
+#include "shared/types/numeric.h" // for U32, U8, U64, I64, I8, U16
 
 void initScreen(Window window, Arena *perm);
 // TODO: needs buffer as argument when memory is set up

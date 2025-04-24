@@ -5,7 +5,7 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/types/array-types.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef struct {
     USize memoryMapSize;

@@ -8,7 +8,7 @@
 #include "shared/memory/allocator/arena.h" // for NEW, Arena
 #include "shared/memory/allocator/macros.h"
 #include "shared/text/string.h" // for STRING, string
-#include "shared/types/types.h" // for NULLPTR_ON_FAIL
+#include "shared/types/numeric.h" // for NULLPTR_ON_FAIL
 #include <linux/fs.h>           // for BLKGETSIZE64
 #include <stdio.h>              // for fclose, perror, nullptr, fopen, fread
 #include <string.h>             // for strerror

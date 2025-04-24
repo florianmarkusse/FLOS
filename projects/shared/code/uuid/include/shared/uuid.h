@@ -1,7 +1,7 @@
 #ifndef SHARED_UUID_H
 #define SHARED_UUID_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 // NOTE: Ready for code generation
 // To create a UUID based on the string representation instead

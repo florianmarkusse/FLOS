@@ -5,7 +5,7 @@
 #include "shared/memory/physical.h"
 #include "shared/text/string.h"
 #include "shared/trees/red-black.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 static void preOrder(RedBlackNode *current, U64 *totalValue) {
     if (!current) {

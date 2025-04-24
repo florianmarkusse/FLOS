@@ -7,7 +7,7 @@
 #include "shared/maths/maths.h"
 #include "shared/text/string.h"
 #include "shared/types/array-types.h" // for U8_a, uint8_max_a, U8_d_a
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 // We are going to flush to:
 // - The in-memory standin file buffer, this will be replaced by a file

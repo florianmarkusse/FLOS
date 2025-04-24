@@ -1,7 +1,7 @@
 #ifndef SHARED_MEMORY_ALLOCATOR_BUDDY_H
 #define SHARED_MEMORY_ALLOCATOR_BUDDY_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef struct {
     U64 size;

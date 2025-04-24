@@ -3,7 +3,7 @@
 
 #include "efi-to-kernel/kernel-parameters.h"
 #include "shared/memory/management/definitions.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 void initMemoryManager(KernelMemory memory);
 

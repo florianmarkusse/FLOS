@@ -3,7 +3,7 @@
 
 #include "shared/macros.h" // for MACRO_VAR
 #include "shared/memory/allocator/arena.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 /**
  * Common definitions for MSI string hash.

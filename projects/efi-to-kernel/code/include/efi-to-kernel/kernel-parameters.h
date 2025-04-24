@@ -4,7 +4,7 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/trees/red-black.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 // This struct implicitly assumes that there are 4 bytes per pixel, hence a
 // U32 buffer
@@ -23,8 +23,7 @@ typedef struct {
 } PhysicalMemory;
 
 typedef struct {
-    U64 availableLowerHalfAddress;
-    U64 availableHigherHalfAddress;
+    MemoryRange_max_a freeVirtualMemory;
 } VirtualMemory;
 
 typedef struct {

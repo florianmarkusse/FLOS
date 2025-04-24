@@ -1,5 +1,5 @@
 #include "x86/configuration/features.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
 #include "x86/memory/pat.h"
 

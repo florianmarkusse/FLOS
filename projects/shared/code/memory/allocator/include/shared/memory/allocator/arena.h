@@ -2,7 +2,7 @@
 #define SHARED_MEMORY_ALLOCATOR_ARENA_H
 
 #include "abstraction/jmp.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef struct {
     U8 *curFree;

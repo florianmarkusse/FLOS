@@ -3,7 +3,7 @@
 #include "abstraction/log.h"
 #include "abstraction/text/converter/converter.h"
 #include "shared/text/string.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 #include "x86/cpu/status/core.h"
 #include "x86/fault.h"
 

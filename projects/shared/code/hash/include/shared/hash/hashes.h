@@ -1,7 +1,7 @@
 #ifndef SHARED_HASH_HASHES_H
 #define SHARED_HASH_HASHES_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 #include "shared/text/string.h"
 

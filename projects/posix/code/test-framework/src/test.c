@@ -4,7 +4,7 @@
 #include "posix/log.h"
 #include "shared/assert.h"      // for ASSERT
 #include "shared/text/string.h" // for STRING, string
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef struct {
     U64 successes;

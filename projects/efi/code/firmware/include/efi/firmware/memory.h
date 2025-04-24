@@ -1,7 +1,7 @@
 #ifndef EFI_FIRMWARE_MEMORY_H
 #define EFI_FIRMWARE_MEMORY_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 typedef enum MemoryType : U32 {
     RESERVED_MEMORY_TYPE,
     LOADER_CODE,

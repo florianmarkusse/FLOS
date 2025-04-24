@@ -2,7 +2,7 @@
 #define EFI_ACPI_MADT_H
 
 #include "efi/acpi/c-acpi-rsdt.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 typedef struct __attribute((packed)) {
     CAcpiSDT header;

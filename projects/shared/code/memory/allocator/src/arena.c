@@ -3,7 +3,7 @@
 #include "abstraction/memory/manipulation.h"
 #include "shared/assert.h" // for ASSERT
 #include "shared/memory/allocator/macros.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 __attribute((malloc, alloc_align(3))) void *alloc(Arena *a, U64 size, U64 align,
                                                   U64 count, U8 flags) {

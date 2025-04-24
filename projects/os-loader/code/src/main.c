@@ -22,8 +22,9 @@
 #include "shared/maths/maths.h" // for CEILING_DIV_V...
 #include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
+#include "shared/memory/virtual.h"
 #include "shared/text/string.h" // for CEILING_DIV_V...
-#include "shared/types/types.h" // for U64, U32, USize
+#include "shared/types/numeric.h" // for U64, U32, USize
 
 static U64 kernelFreeVirtualMemory = HIGHER_HALF_START;
 
@@ -88,6 +89,47 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)(KERNEL_CODE_START + kernelContent.len), NEWLINE);
     }
 
+    GraphicsOutputProtocol *gop = nullptr;
+    Status status = globals.st->boot_services->locate_protocol(
+        &GRAPHICS_OUTPUT_PROTOCOL_GUID, nullptr, (void **)&gop);
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+        ERROR(STRING("Could not locate locate GOP\n"));
+    }
+
+    U64 highestLowerHalfAddress = findHighestMemoryAddress(
+        gop->mode->frameBufferBase + gop->mode->frameBufferSize, arena);
+    KFLUSH_AFTER {
+        INFO(STRING("Identity mapping all memory, highest address found: "));
+        INFO((void *)highestLowerHalfAddress, NEWLINE);
+    }
+    mapMemory(0, 0, highestLowerHalfAddress);
+
+    KFLUSH_AFTER { INFO(STRING("Mapping screen memory into location\n")); }
+    kernelFreeVirtualMemory =
+        alignVirtual(kernelFreeVirtualMemory, gop->mode->frameBufferBase,
+                     gop->mode->frameBufferSize);
+    U64 screenMemoryVirtualStart = kernelFreeVirtualMemory;
+    kernelFreeVirtualMemory = mapMemoryWithFlags(
+        kernelFreeVirtualMemory, gop->mode->frameBufferBase,
+        gop->mode->frameBufferSize,
+        KERNEL_STANDARD_PAGE_FLAGS | KERNEL_SCREEN_MEMORY_PAGE_FLAGS);
+
+    KFLUSH_AFTER {
+        INFO(STRING("The graphics buffer physical location:\nstart: "));
+        INFO((void *)gop->mode->frameBufferBase, NEWLINE);
+        INFO(STRING("stop:  "));
+        INFO((void *)(gop->mode->frameBufferBase + gop->mode->frameBufferSize),
+             NEWLINE);
+
+        INFO(STRING("The graphics buffer virtual location:\nstart: "));
+        INFO((void *)screenMemoryVirtualStart, NEWLINE);
+        INFO(STRING("stop:  "));
+        INFO((void *)(screenMemoryVirtualStart + gop->mode->frameBufferSize),
+             NEWLINE);
+        INFO(STRING("virt free memory is now at:     "));
+        INFO((void *)kernelFreeVirtualMemory, NEWLINE);
+    }
+
     KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }
     U64 stackAddress =
         allocateKernelStructure(KERNEL_STACK_SIZE, 0, true, arena);
@@ -116,47 +158,6 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)kernelFreeVirtualMemory, NEWLINE);
     }
 
-    GraphicsOutputProtocol *gop = nullptr;
-    Status status = globals.st->boot_services->locate_protocol(
-        &GRAPHICS_OUTPUT_PROTOCOL_GUID, nullptr, (void **)&gop);
-    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
-        ERROR(STRING("Could not locate locate GOP\n"));
-    }
-
-    KFLUSH_AFTER { INFO(STRING("Mapping screen memory into location\n")); }
-    kernelFreeVirtualMemory =
-        alignVirtual(kernelFreeVirtualMemory, gop->mode->frameBufferBase,
-                     gop->mode->frameBufferSize);
-    U64 screenMemoryVirtualStart = kernelFreeVirtualMemory;
-    kernelFreeVirtualMemory = mapMemoryWithFlags(
-        kernelFreeVirtualMemory, gop->mode->frameBufferBase,
-        gop->mode->frameBufferSize,
-        KERNEL_STANDARD_PAGE_FLAGS | KERNEL_SCREEN_MEMORY_PAGE_FLAGS);
-
-    KFLUSH_AFTER {
-        INFO(STRING("The graphics buffer physical location:\nstart: "));
-        INFO((void *)gop->mode->frameBufferBase, NEWLINE);
-        INFO(STRING("stop:  "));
-        INFO((void *)(gop->mode->frameBufferBase + gop->mode->frameBufferSize),
-             NEWLINE);
-
-        INFO(STRING("The graphics buffer virtual location:\nstart: "));
-        INFO((void *)screenMemoryVirtualStart, NEWLINE);
-        INFO(STRING("stop:  "));
-        INFO((void *)(screenMemoryVirtualStart + gop->mode->frameBufferSize),
-             NEWLINE);
-        INFO(STRING("virt free memory is now at:     "));
-        INFO((void *)kernelFreeVirtualMemory, NEWLINE);
-    }
-
-    U64 highestLowerHalfAddress = findHighestMemoryAddress(
-        gop->mode->frameBufferBase + gop->mode->frameBufferSize, arena);
-    KFLUSH_AFTER {
-        INFO(STRING("Identity mapping all memory, highest address found: "));
-        INFO((void *)highestLowerHalfAddress, NEWLINE);
-    }
-    mapMemory(0, 0, highestLowerHalfAddress);
-
     KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
     KernelParameters *kernelParams =
         (KernelParameters *)allocateKernelStructure(
@@ -175,10 +176,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(kernelParamsEnd, NEWLINE);
     }
 
-    kernelParams->memory.virt.availableLowerHalfAddress =
-        highestLowerHalfAddress;
-    kernelParams->memory.virt.availableHigherHalfAddress =
-        kernelFreeVirtualMemory;
+    kernelParams->memory.virt.freeVirtualMemory = freeVirtualMemory;
 
     kernelParams->window =
         (Window){.screen = (U32 *)screenMemoryVirtualStart,

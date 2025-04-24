@@ -11,7 +11,7 @@
 #include "shared/memory/policy/status.h"
 #include "shared/memory/sizes.h"
 #include "shared/text/string.h"
-#include "shared/types/types.h" // for U32
+#include "shared/types/numeric.h" // for U32
 
 // void appendDescriptionHeaders(RSDPResult rsdp);
 

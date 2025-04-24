@@ -3,7 +3,7 @@
 
 #include "shared/text/string.h"
 #include "shared/types/array-types.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 string F64ToString(F64 data, U8_a tmp);
 string F64ToStringDefault(F64 data);

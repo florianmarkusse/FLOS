@@ -3,7 +3,7 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/sizes.h"
 #include "shared/types/array-types.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 static constexpr auto FLUSH_BUFFER_SIZE = (2 * MiB);
 

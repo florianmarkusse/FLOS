@@ -1,7 +1,7 @@
 #ifndef SHARED_MATHS_MATHS_H
 #define SHARED_MATHS_MATHS_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 #define MIN2(a, b) ((a) < (b) ? (a) : (b))
 #define MAX2(a, b) ((a) > (b) ? (a) : (b))

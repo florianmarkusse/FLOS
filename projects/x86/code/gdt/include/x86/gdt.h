@@ -1,7 +1,7 @@
 #ifndef X86_GDT_H
 #define X86_GDT_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 #include "x86/memory/definitions.h"
 typedef struct {
     U16 limit;

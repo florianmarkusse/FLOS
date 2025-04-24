@@ -5,7 +5,7 @@
 #include "abstraction/text/converter/converter.h"
 #include "shared/text/string.h"
 #include "shared/types/array-types.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 // NOTE: This is the basic logging implementation that all environments should
 // implement if they want to do any sort of logging. Additionally, each

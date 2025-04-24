@@ -3,7 +3,7 @@
 
 #include "efi-to-kernel/kernel-parameters.h"
 #include "shared/memory/allocator/arena.h"
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 void initArchitecture(Arena scratch);
 void jumpIntoKernel(U64 newStackPointer, KernelParameters *kernelParameters);

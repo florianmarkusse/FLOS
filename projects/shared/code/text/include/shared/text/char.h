@@ -1,7 +1,7 @@
 #ifndef SHARED_TEXT_CHAR_H
 #define SHARED_TEXT_CHAR_H
 
-#include "shared/types/types.h"
+#include "shared/types/numeric.h"
 
 static inline U8 isAlphabetical(U8 ch) {
     return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
