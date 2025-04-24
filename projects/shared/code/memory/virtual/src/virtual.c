@@ -6,7 +6,7 @@
 #include "shared/maths/maths.h"
 #include "x86/memory/definitions.h"
 
-MemoryRange_max_a freeVirtualMemory;
+Range_max_a freeVirtualMemory;
 
 void initVirtualMemoryManager(VirtualMemory virt) {
     freeVirtualMemory = virt.freeVirtualMemory;

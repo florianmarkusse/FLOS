@@ -14,12 +14,4 @@ typedef struct {
 typedef MAX_LENGTH_ARRAY(Memory) Memory_max_a;
 typedef ARRAY(Memory) Memory_a;
 
-typedef struct {
-    U64 start;
-    U64 end; // exclusive, naturally.
-} MemoryRange;
-
-typedef MAX_LENGTH_ARRAY(MemoryRange) MemoryRange_max_a;
-typedef ARRAY(MemoryRange) MemoryRange_a;
-
 #endif

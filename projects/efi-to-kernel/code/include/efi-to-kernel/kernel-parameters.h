@@ -4,6 +4,7 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/trees/red-black.h"
+#include "shared/types/common.h"
 #include "shared/types/numeric.h"
 
 // This struct implicitly assumes that there are 4 bytes per pixel, hence a
@@ -23,7 +24,7 @@ typedef struct {
 } PhysicalMemory;
 
 typedef struct {
-    MemoryRange_max_a freeVirtualMemory;
+    Range_max_a freeVirtualMemory;
 } VirtualMemory;
 
 typedef struct {

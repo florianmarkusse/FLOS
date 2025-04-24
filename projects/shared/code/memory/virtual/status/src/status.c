@@ -5,7 +5,7 @@
 #include "shared/memory/virtual.h"
 #include "shared/text/string.h"
 
-static void appendVirtualRegionStatus(MemoryRange region) {
+static void appendVirtualRegionStatus(Range region) {
     KLOG(STRING("Start: "));
     KLOG((void *)region.start, NEWLINE);
     KLOG(STRING("end: "));

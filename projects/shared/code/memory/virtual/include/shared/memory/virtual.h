@@ -5,7 +5,7 @@
 #include "shared/types/numeric.h"
 
 // NOTE: The free virtual memory regions in sorted order!
-extern MemoryRange_max_a freeVirtualMemory;
+extern Range_max_a freeVirtualMemory;
 
 void initVirtualMemoryManager(VirtualMemory virt);
 U64 getVirtualMemory(U64 size, U64 align);
