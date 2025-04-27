@@ -5,7 +5,7 @@
 #include "shared/trees/red-black.h"
 #include "shared/types/array-types.h"
 
-bool assertRedBlackTreeValid(RedBlackNode *tree, U64_max_a expectedValues,
+void assertRedBlackTreeValid(RedBlackNode *tree, U64_max_a expectedValues,
                              Arena scratch);
 
 void appendRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode);

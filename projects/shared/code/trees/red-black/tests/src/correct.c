@@ -76,7 +76,6 @@ static U64 nodeCount(RedBlackNode *tree) {
                             "Tree has too many nodes to assert correctness!"));
                         appendRedBlackTreeWithBadNode(tree, tree);
                     }
-                    return 0;
                 }
                 buffer[len] = node->children[i];
                 len++;
@@ -102,8 +101,9 @@ static void appendExpectedValuesAndTreeValues(U64_max_a expectedValues,
     INFO(STRING("\n"));
 }
 
-static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
-                                   U64_max_a expectedValues, Arena scratch) {
+static void assertIsBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
+                                         U64_max_a expectedValues,
+                                         Arena scratch) {
     RedBlackNode **_buffer = NEW(&scratch, RedBlackNode *, nodes);
     RedBlackNodePtr_a inOrderValues = {.buf = _buffer, .len = 0};
 
@@ -116,7 +116,6 @@ static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
             appendExpectedValuesAndTreeValues(expectedValues, inOrderValues);
             appendRedBlackTreeWithBadNode(node, nullptr);
         }
-        return false;
     }
 
     for (U64 i = 0; i < expectedValues.len; i++) {
@@ -136,7 +135,6 @@ static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
                                                   inOrderValues);
                 appendRedBlackTreeWithBadNode(node, nullptr);
             }
-            return false;
         }
     }
 
@@ -147,12 +145,9 @@ static bool isBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
                 INFO(STRING("Not a Binary Search Tree!\n"));
                 appendRedBlackTreeWithBadNode(node, inOrderValues.buf[i]);
             }
-            return false;
         }
         previous = inOrderValues.buf[i]->memory.bytes;
     }
-
-    return true;
 }
 
 static bool redParentHasRedChild(RedBlackNode *node,
@@ -165,8 +160,8 @@ static bool redParentHasRedChild(RedBlackNode *node,
     return false;
 }
 
-static bool anyRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
-                                  Arena scratch) {
+static void assertNoRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
+                                       Arena scratch) {
     RedBlackNode **buffer = NEW(&scratch, RedBlackNode *, nodes);
     U64 len = 0;
 
@@ -183,7 +178,6 @@ static bool anyRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
                     INFO(STRING("Red node has a red child!\n"));
                     appendRedBlackTreeWithBadNode(tree, node);
                 }
-                return true;
             }
         }
 
@@ -194,8 +188,6 @@ static bool anyRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
             }
         }
     }
-
-    return false;
 }
 
 static void collectBlackHeightsForEachPath(RedBlackNode *node,
@@ -215,8 +207,8 @@ static void collectBlackHeightsForEachPath(RedBlackNode *node,
     }
 }
 
-static bool pathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
-                                             Arena scratch) {
+static void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree,
+                                                   U64 nodes, Arena scratch) {
     RedBlackNode **buffer = NEW(&scratch, RedBlackNode *, nodes);
     U64 len = 0;
 
@@ -246,8 +238,6 @@ static bool pathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
                     }
                     INFO(STRING("\n"));
                 }
-
-                return false;
             }
         }
 
@@ -258,40 +248,17 @@ static bool pathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
             }
         }
     }
-
-    return true;
 }
 
-bool assertRedBlackTreeValid(RedBlackNode *tree, U64_max_a expectedValues,
+void assertRedBlackTreeValid(RedBlackNode *tree, U64_max_a expectedValues,
                              Arena scratch) {
     if (!tree) {
-        return true;
+        return;
     }
 
     U64 nodes = nodeCount(tree);
-    if (!nodes) {
-        return false;
-    }
 
-    if (!isBSTWitExpectedValues(tree, nodes, expectedValues, scratch)) {
-        return false;
-    }
-
-    //    if (tree->color == RED) {
-    //        TEST_FAILURE {
-    //            INFO(STRING("Root is not black!\n"));
-    //            printRedBlackTreeWithBadNode(tree, tree);
-    //        }
-    //        return false;
-    //    }
-
-    if (anyRedNodeHasRedChild(tree, nodes, scratch)) {
-        return false;
-    }
-
-    if (!pathsFromNodeHaveSameBlackHeight(tree, nodes, scratch)) {
-        return false;
-    }
-
-    return true;
+    assertIsBSTWitExpectedValues(tree, nodes, expectedValues, scratch);
+    assertNoRedNodeHasRedChild(tree, nodes, scratch);
+    assertPathsFromNodeHaveSameBlackHeight(tree, nodes, scratch);
 }

@@ -1,3 +1,7 @@
+- replace U64_MAX with i-- construct
+- PMM & VMM use same idea
+  - Red black tree with free list
+  - able to grow very large with dynamic array
 - get rid of lots of virtual stuff in policy
   - move some stuff in policy to virtual?
   - Move policy & physical & (most of) virtual to be arch-independent?

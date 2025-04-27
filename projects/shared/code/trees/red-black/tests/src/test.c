@@ -271,7 +271,6 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                     INFO(MAX_NODES_IN_TREE, NEWLINE);
                     appendRedBlackTreeWithBadNode(tree, nullptr);
                 }
-                return;
             }
             expectedValues.buf[expectedValues.len] = operations.buf[i].value;
             expectedValues.len++;
@@ -289,7 +288,6 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                     INFO(STRING("Actual deleted value: "));
                     INFO(deleted->memory.bytes, NEWLINE);
                 }
-                return;
             }
 
             U64 indexToRemove = 0;
@@ -319,7 +317,6 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                                 ", should have deleted node with value: "));
                             INFO(operations.buf[i].value, NEWLINE);
                         }
-                        return;
                     }
                 }
                 break;
@@ -332,7 +329,6 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                     INFO(STRING("Actual deleted value: "));
                     INFO(deleted->memory.bytes, NEWLINE);
                 }
-                return;
             } else {
                 U64 indexToRemove = 0;
                 U64 valueToRemove = U64_MAX;
@@ -353,19 +349,20 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         }
         }
 
-        if (!assertRedBlackTreeValid(tree, expectedValues, scratch)) {
-            return;
-        }
+        assertRedBlackTreeValid(tree, expectedValues, scratch);
     }
 
     testSuccess();
-    appendRedBlackTreeWithBadNode(tree, nullptr);
 }
 
 void testRedBlackTrees(Arena scratch) {
     TEST_TOPIC(STRING("Operations")) {
+        JumpBuffer failureHandler;
         for (U64 i = 0; i < TEST_CASES_LEN; i++) {
-            TEST(testCases[i].name) {
+            if (setjmp(failureHandler)) {
+                continue;
+            }
+            TEST(testCases[i].name, failureHandler) {
                 testTree(testCases[i].operations, scratch);
             }
         }

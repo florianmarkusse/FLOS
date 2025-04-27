@@ -1,5 +1,6 @@
 #include "posix/test-framework/test.h"
 
+#include "abstraction/jmp.h"
 #include "abstraction/text/converter/base.h"
 #include "posix/log.h"
 #include "shared/assert.h"      // for ASSERT
@@ -17,19 +18,21 @@ static constexpr auto MAX_TEST_TOPICS = 1 << 6;
 static TestTopic testTopics[MAX_TEST_TOPICS];
 static U64 nextTestTopic = 0;
 
-void addTopic(string topic) {
+static void *failureHandler;
+
+static void addTopic(string topic) {
     ASSERT(nextTestTopic < MAX_TEST_TOPICS);
     testTopics[nextTestTopic++] =
         (TestTopic){.failures = 0, .successes = 0, .topic = topic};
 }
 
-void appendSpaces() {
+static void appendSpaces() {
     for (U64 i = 0; i < nextTestTopic - 1; i++) {
         PLOG((STRING("  ")));
     }
 }
 
-void printTestScore(U64 successes, U64 failures) {
+static void printTestScore(U64 successes, U64 failures) {
     PFLUSH_AFTER(STDOUT) {
         appendSpaces();
 
@@ -95,7 +98,8 @@ void testTopicFinish() {
     nextTestTopic--;
 }
 
-void unitTestStart(string testName) {
+void unitTestStart(string testName, JumpBuffer buffer) {
+    failureHandler = buffer;
     PFLUSH_AFTER(STDOUT) {
         appendSpaces();
         PLOG((STRING("- ")));
@@ -128,6 +132,8 @@ void testFailure() {
         PLOG((STRING("\n")));
     }
 }
+
+void toCleanupHandler() { longjmp(failureHandler, 1); }
 
 void appendTestFailureStart() {
     PLOG((STRING("----------------------------------------------------"

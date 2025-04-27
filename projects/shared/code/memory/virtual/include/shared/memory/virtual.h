@@ -10,4 +10,6 @@ extern Range_max_a freeVirtualMemory;
 void initVirtualMemoryManager(VirtualMemory virt);
 U64 getVirtualMemory(U64 size, U64 align);
 
+U64 getVirtualMemoryWithPhysical(U64 size, U64 physical);
+
 #endif

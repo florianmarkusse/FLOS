@@ -29,12 +29,10 @@ U64 decreasePageSize(U64 pageSize) {
 
 U64 pageSizeEncompassing(U64 bytes) {
     U64 result = pageAligned(bytes);
-
-    while (!isPageSizeValid(result)) {
-        result *= 2;
+    if (isPageSizeValid(result)) {
+        return result;
     }
-
-    return result;
+    return increasePageSize(result);
 }
 
 static U64 largestAlignedPage(U64 address) {
@@ -46,11 +44,11 @@ static U64 largestAlignedPage(U64 address) {
 
     U64 result = (1ULL << __builtin_ctzll(address));
 
-    while (!isPageSizeValid(result)) {
-        result /= 2;
+    if (isPageSizeValid(result)) {
+        return result;
     }
 
-    return result;
+    return decreasePageSize(result);
 }
 
 // NOTE: ready for code generation
@@ -63,11 +61,10 @@ U64 pageSizeLeastLargerThan(U64 address, U64 bytes) {
         return maxPageSize;
     }
 
-    while (!isPageSizeValid(alignedBytes)) {
-        alignedBytes *= 2;
+    if (isPageSizeValid(alignedBytes)) {
+        return alignedBytes;
     }
-
-    return alignedBytes;
+    return increasePageSize(alignedBytes);
 }
 
 // NOTE: ready for code generation
@@ -79,9 +76,8 @@ U64 pageSizeFitting(U64 address, U64 bytes) {
         return maxPageSize;
     }
 
-    while (!isPageSizeValid(alignedBytes)) {
-        alignedBytes /= 2;
+    if (isPageSizeValid(alignedBytes)) {
+        return alignedBytes;
     }
-
-    return alignedBytes;
+    return decreasePageSize(alignedBytes);
 }

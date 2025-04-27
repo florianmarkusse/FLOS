@@ -8,7 +8,7 @@
 static void appendVirtualRegionStatus(Range region) {
     KLOG(STRING("Start: "));
     KLOG((void *)region.start, NEWLINE);
-    KLOG(STRING("end: "));
+    KLOG(STRING("end:   "));
     KLOG((void *)region.end, NEWLINE);
 }
 

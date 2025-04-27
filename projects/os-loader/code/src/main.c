@@ -23,7 +23,7 @@
 #include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/memory/virtual.h"
-#include "shared/text/string.h" // for CEILING_DIV_V...
+#include "shared/text/string.h"   // for CEILING_DIV_V...
 #include "shared/types/numeric.h" // for U64, U32, USize
 
 static U64 kernelFreeVirtualMemory = HIGHER_HALF_START;
@@ -103,6 +103,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)highestLowerHalfAddress, NEWLINE);
     }
     mapMemory(0, 0, highestLowerHalfAddress);
+
+    initVirtualMemory(highestLowerHalfAddress, KERNEL_CODE_START, arena);
 
     KFLUSH_AFTER { INFO(STRING("Mapping screen memory into location\n")); }
     kernelFreeVirtualMemory =

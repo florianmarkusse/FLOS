@@ -4,6 +4,7 @@
 void initIDT();
 
 __attribute__((noreturn)) void interruptNoMorePhysicalMemory();
+__attribute__((noreturn)) void interruptNoMoreVirtualMemory();
 __attribute__((noreturn)) void interruptTooLargeAllocation();
 
 #endif

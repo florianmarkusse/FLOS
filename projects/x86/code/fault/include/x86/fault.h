@@ -41,6 +41,7 @@
     VARIANT(FAULT_USER, 32)                                                    \
     VARIANT(FAULT_SYSCALL, 33)                                                 \
     VARIANT(FAULT_NO_MORE_PHYSICAL_MEMORY, 34)                                 \
+    VARIANT(FAULT_NO_MORE_VIRTUAL_MEMORY, 36)                                  \
     VARIANT(FAULT_TOO_LARGE_ALLOCATION, 35)
 
 typedef enum : U64 { CPU_FAULT_ENUM(ENUM_VALUES_VARIANT) } Fault;
