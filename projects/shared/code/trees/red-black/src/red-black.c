@@ -1,4 +1,5 @@
 #include "shared/trees/red-black.h"
+#include "shared/maths/maths.h"
 #include "shared/memory/allocator/macros.h"
 #include "shared/types/array.h"
 
@@ -17,6 +18,20 @@ static RedBlackDirection calculateDirection(U64 value,
     return RB_TREE_LEFT;
 }
 
+static void recalculateMostBytesValue(RedBlackNode *node) {
+    node->mostBytesInSubtree = node->memory.bytes;
+    if (node->children[RB_TREE_LEFT]) {
+        node->mostBytesInSubtree =
+            MAX(node->mostBytesInSubtree,
+                node->children[RB_TREE_LEFT]->mostBytesInSubtree);
+    }
+    if (node->children[!RB_TREE_RIGHT]) {
+        node->mostBytesInSubtree =
+            MAX(node->mostBytesInSubtree,
+                node->children[!RB_TREE_RIGHT]->mostBytesInSubtree);
+    }
+}
+
 static U64 rebalanceInsert(RedBlackDirection direction,
                            VisitedNode visitedNodes[MAX_HEIGHT], U64 len) {
     RedBlackNode *grandParent = visitedNodes[len - 3].node;
@@ -32,23 +47,26 @@ static U64 rebalanceInsert(RedBlackDirection direction,
         return len - 2;
     }
 
-    //      x
-    //     /
-    //    y
-    //     \
-    //      z
+    //      x             x
+    //     /             /
+    //    y       ==>   z
+    //     \           /
+    //      z         y
     if (visitedNodes[len - 2].direction == !direction) {
         parent->children[!direction] = node->children[direction];
         node->children[direction] = parent;
         grandParent->children[direction] = node;
 
+        node->mostBytesInSubtree = parent->mostBytesInSubtree;
+        recalculateMostBytesValue(parent);
+
         node = node->children[direction];
         parent = grandParent->children[direction];
     }
 
-    //      x
-    //     /
-    //    y
+    //      x           y
+    //     /           / \
+    //    y      ==>  z   x
     //   /
     //  z
     grandParent->children[direction] = parent->children[!direction];
@@ -57,8 +75,11 @@ static U64 rebalanceInsert(RedBlackDirection direction,
         parent; // NOTE: Can also be that we are setting the new
                 // root pointer here!
 
-    grandParent->color = RB_TREE_RED;
     parent->color = RB_TREE_BLACK;
+    parent->mostBytesInSubtree = grandParent->mostBytesInSubtree;
+
+    grandParent->color = RB_TREE_RED;
+    recalculateMostBytesValue(grandParent);
 
     return 0;
 }
@@ -66,6 +87,7 @@ static U64 rebalanceInsert(RedBlackDirection direction,
 void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
     createdNode->children[RB_TREE_LEFT] = nullptr;
     createdNode->children[RB_TREE_RIGHT] = nullptr;
+    createdNode->mostBytesInSubtree = createdNode->memory.bytes;
 
     if (!(*tree)) {
         createdNode->color = RB_TREE_BLACK;
@@ -85,6 +107,8 @@ void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
         visitedNodes[len].node = current;
         visitedNodes[len].direction =
             calculateDirection(createdNode->memory.bytes, current);
+        current->mostBytesInSubtree =
+            MAX(current->mostBytesInSubtree, createdNode->memory.bytes);
         len++;
 
         RedBlackNode *next = current->children[visitedNodes[len - 1].direction];

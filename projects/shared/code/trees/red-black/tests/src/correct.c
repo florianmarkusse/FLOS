@@ -3,6 +3,7 @@
 #include "abstraction/log.h"
 #include "posix/test-framework/test.h"
 #include "shared/log.h"
+#include "shared/maths/maths.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/text/string.h"
 #include "shared/trees/red-black.h"
@@ -21,10 +22,12 @@ static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
         INFO(STRING("    "));
     }
     INFO(prefix);
-    INFO(STRING("Value: "));
-    INFO(node->memory.bytes);
     INFO(STRING(", Color: "));
     INFO(node->color == RB_TREE_RED ? STRING("RED") : STRING("BLACK"));
+    INFO(STRING(" Bytes: "));
+    INFO(node->memory.bytes);
+    INFO(STRING(" Most bytes in subtree: "));
+    INFO(node->mostBytesInSubtree);
 
     if (node == badNode) {
         appendColor(COLOR_RED, STDOUT);
@@ -43,15 +46,16 @@ void appendRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode) {
     printTreeIndented(root, 0, STRING("Root---"), badNode);
 }
 
-static void inOrderTraversal(RedBlackNode *node, RedBlackNodePtr_a *values) {
+static void inOrderTraversalFillValues(RedBlackNode *node,
+                                       RedBlackNodePtr_a *values) {
     if (!node) {
         return;
     }
 
-    inOrderTraversal(node->children[RB_TREE_LEFT], values);
+    inOrderTraversalFillValues(node->children[RB_TREE_LEFT], values);
     values->buf[values->len] = node;
     values->len++;
-    inOrderTraversal(node->children[RB_TREE_RIGHT], values);
+    inOrderTraversalFillValues(node->children[RB_TREE_RIGHT], values);
 }
 
 static constexpr auto MAX_TREE_HEIGHT = 256;
@@ -107,7 +111,7 @@ static void assertIsBSTWitExpectedValues(RedBlackNode *node, U64 nodes,
     RedBlackNode **_buffer = NEW(&scratch, RedBlackNode *, nodes);
     RedBlackNodePtr_a inOrderValues = {.buf = _buffer, .len = 0};
 
-    inOrderTraversal(node, &inOrderValues);
+    inOrderTraversalFillValues(node, &inOrderValues);
 
     if (inOrderValues.len != expectedValues.len) {
         TEST_FAILURE {
@@ -250,6 +254,36 @@ static void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree,
     }
 }
 
+static U64 mostBytes(RedBlackNode *node) {
+    if (!node) {
+        return 0;
+    }
+
+    return MAX(node->memory.bytes, mostBytes(node->children[RB_TREE_LEFT]),
+               mostBytes(node->children[RB_TREE_RIGHT]));
+}
+
+static void assertCorrectMostBytesInSubtreeValue(RedBlackNode *tree,
+                                                 RedBlackNode *node) {
+    if (!node) {
+        return;
+    }
+
+    if (node->mostBytesInSubtree != mostBytes(node)) {
+        TEST_FAILURE {
+            INFO(STRING("Found wrong most bytes value!\n"));
+            appendRedBlackTreeWithBadNode(tree, node);
+        }
+    }
+
+    assertCorrectMostBytesInSubtreeValue(tree, node->children[RB_TREE_LEFT]);
+    assertCorrectMostBytesInSubtreeValue(tree, node->children[RB_TREE_RIGHT]);
+}
+
+static void assertCorrectMostBytesTree(RedBlackNode *tree) {
+    assertCorrectMostBytesInSubtreeValue(tree, tree);
+}
+
 void assertRedBlackTreeValid(RedBlackNode *tree, U64_max_a expectedValues,
                              Arena scratch) {
     if (!tree) {
@@ -261,4 +295,5 @@ void assertRedBlackTreeValid(RedBlackNode *tree, U64_max_a expectedValues,
     assertIsBSTWitExpectedValues(tree, nodes, expectedValues, scratch);
     assertNoRedNodeHasRedChild(tree, nodes, scratch);
     assertPathsFromNodeHaveSameBlackHeight(tree, nodes, scratch);
+    assertCorrectMostBytesTree(tree);
 }

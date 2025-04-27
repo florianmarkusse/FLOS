@@ -18,6 +18,7 @@ struct RedBlackNode {
                                        // the same location for doing inserts.
     RedBlackColor color;
     Memory memory;
+    U64 mostBytesInSubtree;
 };
 
 typedef ARRAY(RedBlackNode *) RedBlackNodePtr_a;
