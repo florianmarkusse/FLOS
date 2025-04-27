@@ -18,7 +18,7 @@ static RedBlackDirection calculateDirection(U64 value,
     return RB_TREE_LEFT;
 }
 
-static void recalculateMostBytesValue(RedBlackNode *node) {
+static void shallowRecalculateMostBytesValueFromChildren(RedBlackNode *node) {
     node->mostBytesInSubtree = node->memory.bytes;
     if (node->children[RB_TREE_LEFT]) {
         node->mostBytesInSubtree =
@@ -58,7 +58,7 @@ static U64 rebalanceInsert(RedBlackDirection direction,
         grandParent->children[direction] = node;
 
         node->mostBytesInSubtree = parent->mostBytesInSubtree;
-        recalculateMostBytesValue(parent);
+        shallowRecalculateMostBytesValueFromChildren(parent);
 
         node = node->children[direction];
         parent = grandParent->children[direction];
@@ -79,7 +79,7 @@ static U64 rebalanceInsert(RedBlackDirection direction,
     parent->mostBytesInSubtree = grandParent->mostBytesInSubtree;
 
     grandParent->color = RB_TREE_RED;
-    recalculateMostBytesValue(grandParent);
+    shallowRecalculateMostBytesValueFromChildren(grandParent);
 
     return 0;
 }
