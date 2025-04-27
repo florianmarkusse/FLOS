@@ -28,7 +28,7 @@ string ptrToString(void *data, U8_a tmp) {
 
     U64 counter = 2;
     U64 u = (U64)data;
-    for (U64 i = 2 * sizeof(u) - 1; i < U64_MAX; i--) {
+    for (U64 i = 2 * sizeof(u); i-- > 0;) {
         tmp.buf[counter] = hexString[(u >> (4 * i)) & 15];
         counter++;
     }
