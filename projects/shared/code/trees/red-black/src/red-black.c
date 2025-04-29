@@ -18,17 +18,12 @@ static RedBlackDirection calculateDirection(U64 value,
     return RB_TREE_LEFT;
 }
 
-static void shallowRecalculateMostBytesValueFromChildren(RedBlackNode *node) {
+static void recalculateMostBytes(RedBlackNode *node) {
     node->mostBytesInSubtree = node->memory.bytes;
-    if (node->children[RB_TREE_LEFT]) {
+    if (node->children[RB_TREE_RIGHT]) {
         node->mostBytesInSubtree =
             MAX(node->mostBytesInSubtree,
-                node->children[RB_TREE_LEFT]->mostBytesInSubtree);
-    }
-    if (node->children[!RB_TREE_RIGHT]) {
-        node->mostBytesInSubtree =
-            MAX(node->mostBytesInSubtree,
-                node->children[!RB_TREE_RIGHT]->mostBytesInSubtree);
+                node->children[RB_TREE_RIGHT]->mostBytesInSubtree);
     }
 }
 
@@ -58,7 +53,7 @@ static U64 rebalanceInsert(RedBlackDirection direction,
         grandParent->children[direction] = node;
 
         node->mostBytesInSubtree = parent->mostBytesInSubtree;
-        shallowRecalculateMostBytesValueFromChildren(parent);
+        recalculateMostBytes(parent);
 
         node = node->children[direction];
         parent = grandParent->children[direction];
@@ -79,7 +74,7 @@ static U64 rebalanceInsert(RedBlackDirection direction,
     parent->mostBytesInSubtree = grandParent->mostBytesInSubtree;
 
     grandParent->color = RB_TREE_RED;
-    shallowRecalculateMostBytesValueFromChildren(grandParent);
+    recalculateMostBytes(grandParent);
 
     return 0;
 }
@@ -140,7 +135,7 @@ void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
 // 1 less black height than the other subtree. The potential tree above these
 // subtrees is now also missing a black node. Fixing the deficiency by removing
 // a black node from the other direction subtree means that we stil need to
-// address that proble. On the other hand, coloring a node black in the
+// address that problem. On the other hand, coloring a node black in the
 // direction subtree immediately solves the deficiency in the whole tree.
 static U64 rebalanceDelete(RedBlackDirection direction,
                            VisitedNode visitedNodes[MAX_HEIGHT], U64 len) {
@@ -148,6 +143,11 @@ static U64 rebalanceDelete(RedBlackDirection direction,
     RedBlackNode *childOtherDirection = node->children[!direction];
     // Ensure the other child is colored black, we "push" the problem a level
     // down in the process.
+    //      x(B)              y(B)
+    //       \               / \
+    //        y(R)   ==>   x(R)a(B)
+    //       / \            \
+    //     z(B)a(B)        a(B)
     if (childOtherDirection->color == RB_TREE_RED) {
         childOtherDirection->color = RB_TREE_BLACK;
         node->color = RB_TREE_RED;
@@ -156,6 +156,9 @@ static U64 rebalanceDelete(RedBlackDirection direction,
         childOtherDirection->children[direction] = node;
         visitedNodes[len - 2].node->children[visitedNodes[len - 2].direction] =
             childOtherDirection;
+
+        childOtherDirection->mostBytesInSubtree = node->mostBytesInSubtree;
+        recalculateMostBytes(node);
 
         visitedNodes[len - 1].node = childOtherDirection;
         visitedNodes[len].node = node;
@@ -179,11 +182,11 @@ static U64 rebalanceDelete(RedBlackDirection direction,
         return len - 1;
     }
 
-    //      x
-    //       \
-    //        y
-    //      /  \
-    //   (RED) (NOT RED)
+    //      x                     x
+    //       \                     \
+    //        y(B)          ===>   z(B)
+    //       /                       \
+    //     z(R)                      y(R)
     if ((!outerChildOtherDirection) ||
         outerChildOtherDirection->color == RB_TREE_BLACK) {
         childOtherDirection->color = RB_TREE_RED;
@@ -199,17 +202,21 @@ static U64 rebalanceDelete(RedBlackDirection direction,
         outerChildOtherDirection = temp;
     }
 
-    //      x
-    //       \
-    //        y
-    //         \
-    //        (RED)
+    //      x                          y
+    //     / \                        / \
+    //   a(B)y(B)        ===>       x(B)z(B)
+    //         \                    /
+    //        z(R)                a(B)
     childOtherDirection->color = node->color;
     node->color = RB_TREE_BLACK;
     outerChildOtherDirection->color = RB_TREE_BLACK;
 
     node->children[!direction] = childOtherDirection->children[direction];
     childOtherDirection->children[direction] = node;
+
+    childOtherDirection->mostBytesInSubtree = node->mostBytesInSubtree;
+    recalculateMostBytes(node);
+
     visitedNodes[len - 2].node->children[visitedNodes[len - 2].direction] =
         childOtherDirection;
 
@@ -223,6 +230,7 @@ static RedBlackNode *deleteNodeInPath(VisitedNode visitedNodes[MAX_HEIGHT],
     if (!(toDelete->children[RB_TREE_RIGHT])) {
         visitedNodes[len - 1].node->children[visitedNodes[len - 1].direction] =
             toDelete->children[RB_TREE_LEFT];
+        recalculateMostBytes(visitedNodes[len - 1].node);
     }
     // Find the sucessor node in the subtree of toDelete's left chld. Done by
     // repeetedly going to the left child.
@@ -248,14 +256,13 @@ static RedBlackNode *deleteNodeInPath(VisitedNode visitedNodes[MAX_HEIGHT],
 
         // Swap the values around. Naturally, the node pointers can be swapped
         // too.
-        U64 foundNodeBytes = visitedNodes[foundNodeIndex].node->memory.bytes;
-        U64 foundNodeStart = visitedNodes[foundNodeIndex].node->memory.start;
-        visitedNodes[foundNodeIndex].node->memory.bytes =
-            toDelete->memory.bytes;
-        visitedNodes[foundNodeIndex].node->memory.start =
-            toDelete->memory.start;
-        toDelete->memory.bytes = foundNodeBytes;
-        toDelete->memory.start = foundNodeStart;
+        Memory foundMemory = visitedNodes[foundNodeIndex].node->memory;
+
+        visitedNodes[foundNodeIndex].node->memory = toDelete->memory;
+        // NOTE: Keep most bytes in subtree. The "higher" node we are swapping
+        // has a right subtree so no changes to most bytes in subtree.
+
+        toDelete->memory = foundMemory;
 
         visitedNodes[len - 1].node->children[visitedNodes[len - 1].direction] =
             toDelete->children[RB_TREE_RIGHT];
