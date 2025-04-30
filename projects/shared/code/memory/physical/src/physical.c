@@ -2,25 +2,25 @@
 #include "abstraction/interrupts.h"
 #include "abstraction/memory/physical.h"
 
-RedBlackNode *tree;
+RedBlackNodeMM *tree;
 static Arena allocatable;
-static RedBlackNodePtr_a freeList;
+static RedBlackNodeMMPtr_a freeList;
 
 // The remaining bytes are put back into the red black tree or we have a perfect
 // match and the node's memory location can be now put in the free list
-static void handleFreeMemory(RedBlackNode *availableMemory, U64 bytes) {
+static void handleFreeMemory(RedBlackNodeMM *availableMemory, U64 bytes) {
     availableMemory->memory.bytes -= bytes;
     if (availableMemory->memory.bytes) {
         availableMemory->memory.start += bytes;
-        insertRedBlackNode(&tree, availableMemory);
+        insertRedBlackNodeMM(&tree, availableMemory);
     } else {
         freeList.buf[freeList.len] = availableMemory;
         freeList.len++;
     }
 }
 
-static RedBlackNode *getMemoryNode(U64 bytes) {
-    RedBlackNode *availableMemory = deleteAtLeastRedBlackNode(&tree, bytes);
+static RedBlackNodeMM *getMemoryNode(U64 bytes) {
+    RedBlackNodeMM *availableMemory = deleteAtLeastRedBlackNodeMM(&tree, bytes);
     if (!availableMemory) {
         interruptTooLargeAllocation();
     }
@@ -28,20 +28,20 @@ static RedBlackNode *getMemoryNode(U64 bytes) {
 }
 
 void freeMemory(Memory memory) {
-    RedBlackNode *newNode;
+    RedBlackNodeMM *newNode;
     if (freeList.len > 0) {
         newNode = freeList.buf[freeList.len - 1];
         freeList.len--;
     } else {
-        newNode = NEW(&allocatable, RedBlackNode);
+        newNode = NEW(&allocatable, RedBlackNodeMM);
     }
 
     newNode->memory = memory;
-    insertRedBlackNode(&tree, newNode);
+    insertRedBlackNodeMM(&tree, newNode);
 }
 
 void *allocPhysicalMemory(U64 bytes) {
-    RedBlackNode *availableMemory = getMemoryNode(bytes);
+    RedBlackNodeMM *availableMemory = getMemoryNode(bytes);
     void *result = (void *)availableMemory->memory.start;
     handleFreeMemory(availableMemory, bytes);
 
@@ -62,13 +62,14 @@ void initPhysicalMemoryManager(PhysicalMemory kernelMemory) {
         interruptNoMorePhysicalMemory();
     }
 
-    U64 redBlackNodesPossibleInAllocator =
+    U64 redBlackNodeMMsPossibleInAllocator =
         (kernelMemory.allocator.end - kernelMemory.allocator.beg) /
         sizeof(*tree);
-    U64 freeListRequiredSize = redBlackNodesPossibleInAllocator * sizeof(tree);
+    U64 freeListRequiredSize =
+        redBlackNodeMMsPossibleInAllocator * sizeof(tree);
 
-    RedBlackNode *availableMemory = getMemoryNode(freeListRequiredSize);
-    freeList = (RedBlackNodePtr_a){
-        .len = 0, .buf = (RedBlackNode **)availableMemory->memory.start};
+    RedBlackNodeMM *availableMemory = getMemoryNode(freeListRequiredSize);
+    freeList = (RedBlackNodeMMPtr_a){
+        .len = 0, .buf = (RedBlackNodeMM **)availableMemory->memory.start};
     handleFreeMemory(availableMemory, freeListRequiredSize);
 }

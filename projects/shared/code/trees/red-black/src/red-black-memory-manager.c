@@ -1,39 +1,43 @@
-#include "shared/trees/red-black.h"
+#include "shared/trees/red-black-memory-manager.h"
 #include "shared/maths/maths.h"
 #include "shared/memory/allocator/macros.h"
 #include "shared/types/array.h"
 
-static constexpr auto MAX_HEIGHT = 128;
-
 typedef struct {
-    RedBlackNode *node;
+    RedBlackNodeMM *node;
     RedBlackDirection direction;
 } VisitedNode;
 
 static RedBlackDirection calculateDirection(U64 value,
-                                            RedBlackNode *toCompare) {
-    if (value >= toCompare->memory.bytes) {
+                                            RedBlackNodeMM *toCompare) {
+    if (value >= toCompare->memory.start) {
         return RB_TREE_RIGHT;
     }
     return RB_TREE_LEFT;
 }
 
-static void recalculateMostBytes(RedBlackNode *node) {
+static void recalculateMostBytes(RedBlackNodeMM *node) {
     node->mostBytesInSubtree = node->memory.bytes;
     if (node->children[RB_TREE_RIGHT]) {
         node->mostBytesInSubtree =
             MAX(node->mostBytesInSubtree,
                 node->children[RB_TREE_RIGHT]->mostBytesInSubtree);
     }
+    if (node->children[RB_TREE_LEFT]) {
+        node->mostBytesInSubtree =
+            MAX(node->mostBytesInSubtree,
+                node->children[RB_TREE_LEFT]->mostBytesInSubtree);
+    }
 }
 
 static U64 rebalanceInsert(RedBlackDirection direction,
-                           VisitedNode visitedNodes[MAX_HEIGHT], U64 len) {
-    RedBlackNode *grandParent = visitedNodes[len - 3].node;
-    RedBlackNode *parent = visitedNodes[len - 2].node;
-    RedBlackNode *node = visitedNodes[len - 1].node;
+                           VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                           U64 len) {
+    RedBlackNodeMM *grandParent = visitedNodes[len - 3].node;
+    RedBlackNodeMM *parent = visitedNodes[len - 2].node;
+    RedBlackNodeMM *node = visitedNodes[len - 1].node;
 
-    RedBlackNode *uncle = grandParent->children[!direction];
+    RedBlackNodeMM *uncle = grandParent->children[!direction];
     if (uncle && uncle->color == RB_TREE_RED) {
         uncle->color = RB_TREE_BLACK;
         parent->color = RB_TREE_BLACK;
@@ -79,7 +83,7 @@ static U64 rebalanceInsert(RedBlackDirection direction,
     return 0;
 }
 
-void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
+void insertRedBlackNodeMM(RedBlackNodeMM **tree, RedBlackNodeMM *createdNode) {
     createdNode->children[RB_TREE_LEFT] = nullptr;
     createdNode->children[RB_TREE_RIGHT] = nullptr;
     createdNode->mostBytesInSubtree = createdNode->memory.bytes;
@@ -91,13 +95,13 @@ void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
     }
 
     // Search
-    VisitedNode visitedNodes[MAX_HEIGHT];
+    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
 
-    visitedNodes[0].node = (RedBlackNode *)tree;
+    visitedNodes[0].node = (RedBlackNodeMM *)tree;
     visitedNodes[0].direction = RB_TREE_LEFT;
     U64 len = 1;
 
-    RedBlackNode *current = *tree;
+    RedBlackNodeMM *current = *tree;
     while (1) {
         visitedNodes[len].node = current;
         visitedNodes[len].direction =
@@ -106,7 +110,8 @@ void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
             MAX(current->mostBytesInSubtree, createdNode->memory.bytes);
         len++;
 
-        RedBlackNode *next = current->children[visitedNodes[len - 1].direction];
+        RedBlackNodeMM *next =
+            current->children[visitedNodes[len - 1].direction];
         if (!next) {
             break;
         }
@@ -138,9 +143,10 @@ void insertRedBlackNode(RedBlackNode **tree, RedBlackNode *createdNode) {
 // address that problem. On the other hand, coloring a node black in the
 // direction subtree immediately solves the deficiency in the whole tree.
 static U64 rebalanceDelete(RedBlackDirection direction,
-                           VisitedNode visitedNodes[MAX_HEIGHT], U64 len) {
-    RedBlackNode *node = visitedNodes[len - 1].node;
-    RedBlackNode *childOtherDirection = node->children[!direction];
+                           VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                           U64 len) {
+    RedBlackNodeMM *node = visitedNodes[len - 1].node;
+    RedBlackNodeMM *childOtherDirection = node->children[!direction];
     // Ensure the other child is colored black, we "push" the problem a level
     // down in the process.
     //      x(B)              y(B)
@@ -168,9 +174,9 @@ static U64 rebalanceDelete(RedBlackDirection direction,
         childOtherDirection = node->children[!direction];
     }
 
-    RedBlackNode *innerChildOtherDirection =
+    RedBlackNodeMM *innerChildOtherDirection =
         childOtherDirection->children[direction];
-    RedBlackNode *outerChildOtherDirection =
+    RedBlackNodeMM *outerChildOtherDirection =
         childOtherDirection->children[!direction];
     // Bubble up the problem by 1 level.
     if (((!innerChildOtherDirection) ||
@@ -197,7 +203,7 @@ static U64 rebalanceDelete(RedBlackDirection direction,
         innerChildOtherDirection->children[!direction] = childOtherDirection;
         node->children[!direction] = innerChildOtherDirection;
 
-        RedBlackNode *temp = childOtherDirection;
+        RedBlackNodeMM *temp = childOtherDirection;
         childOtherDirection = innerChildOtherDirection;
         outerChildOtherDirection = temp;
     }
@@ -223,8 +229,9 @@ static U64 rebalanceDelete(RedBlackDirection direction,
     return 0;
 }
 
-static RedBlackNode *deleteNodeInPath(VisitedNode visitedNodes[MAX_HEIGHT],
-                                      U64 len, RedBlackNode *toDelete) {
+static RedBlackNodeMM *
+deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len,
+                 RedBlackNodeMM *toDelete) {
     // If there is no right child, we can delete by having the parent of
     // toDelete now point to toDelete's left child instead of toDelete.
     if (!(toDelete->children[RB_TREE_RIGHT])) {
@@ -242,7 +249,7 @@ static RedBlackNode *deleteNodeInPath(VisitedNode visitedNodes[MAX_HEIGHT],
         len++;
 
         while (true) {
-            RedBlackNode *next = toDelete->children[RB_TREE_LEFT];
+            RedBlackNodeMM *next = toDelete->children[RB_TREE_LEFT];
             if (!next) {
                 break;
             }
@@ -273,7 +280,7 @@ static RedBlackNode *deleteNodeInPath(VisitedNode visitedNodes[MAX_HEIGHT],
     // be deleted.
     if (toDelete->color == RB_TREE_BLACK) {
         while (len >= 2) {
-            RedBlackNode *childDeficitBlackDirection =
+            RedBlackNodeMM *childDeficitBlackDirection =
                 visitedNodes[len - 1]
                     .node->children[visitedNodes[len - 1].direction];
             if (childDeficitBlackDirection &&
@@ -290,25 +297,25 @@ static RedBlackNode *deleteNodeInPath(VisitedNode visitedNodes[MAX_HEIGHT],
     return toDelete;
 }
 
-RedBlackNode *deleteAtLeastRedBlackNode(RedBlackNode **tree, U64 value) {
-    VisitedNode visitedNodes[MAX_HEIGHT];
+RedBlackNodeMM *deleteAtLeastRedBlackNodeMM(RedBlackNodeMM **tree, U64 bytes) {
+    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
 
-    visitedNodes[0].node = (RedBlackNode *)tree;
+    visitedNodes[0].node = (RedBlackNodeMM *)tree;
     visitedNodes[0].direction = RB_TREE_LEFT;
     U64 len = 1;
 
     U64 bestWithVisitedNodesLen = 0;
 
-    for (RedBlackNode *potential = *tree; potential;) {
-        if (potential->memory.bytes == value) {
+    for (RedBlackNodeMM *potential = *tree; potential;) {
+        if (potential->memory.bytes == bytes) {
             return deleteNodeInPath(visitedNodes, len, potential);
         }
 
-        if (potential->memory.bytes > value) {
+        if (potential->memory.bytes > bytes) {
             bestWithVisitedNodesLen = len;
         }
 
-        RedBlackDirection dir = calculateDirection(value, potential);
+        RedBlackDirection dir = calculateDirection(bytes, potential);
         visitedNodes[len].node = potential;
         visitedNodes[len].direction = dir;
         len++;
@@ -322,25 +329,4 @@ RedBlackNode *deleteAtLeastRedBlackNode(RedBlackNode **tree, U64 value) {
 
     return deleteNodeInPath(visitedNodes, bestWithVisitedNodesLen,
                             visitedNodes[bestWithVisitedNodesLen].node);
-}
-
-// Assumes the value is inside the tree
-RedBlackNode *deleteRedBlackNode(RedBlackNode **tree, U64 value) {
-    // Search
-    VisitedNode visitedNodes[MAX_HEIGHT];
-
-    visitedNodes[0].node = (RedBlackNode *)tree;
-    visitedNodes[0].direction = RB_TREE_LEFT;
-    U64 len = 1;
-
-    RedBlackNode *current = *tree;
-    while (current->memory.bytes != value) {
-        visitedNodes[len].node = current;
-        visitedNodes[len].direction = calculateDirection(value, current);
-        current = current->children[visitedNodes[len].direction];
-
-        len++;
-    }
-
-    return deleteNodeInPath(visitedNodes, len, current);
 }

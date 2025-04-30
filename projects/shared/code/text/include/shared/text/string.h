@@ -23,10 +23,11 @@ static constexpr string EMPTY_STRING = ((string){0, 0});
     ({                                                                         \
         U8 *MACRO_VAR(appendingBuf) =                                          \
             NEW(perm, U8, (string1).len + (string2).len);                      \
-        memcpy(appendingBuf, (string1).buf, (string1).len);                    \
-        memcpy(appendingBuf + (string1).len, (string2).buf, (string2).len);    \
-        string MACRO_VAR(appendedString) =                                     \
-            STRING_LEN(appendingBuf, (string1).len + (string2).len);           \
+        memcpy(MACRO_VAR(appendingBuf), (string1).buf, (string1).len);         \
+        memcpy(MACRO_VAR(appendingBuf) + (string1).len, (string2).buf,         \
+               (string2).len);                                                 \
+        string MACRO_VAR(appendedString) = STRING_LEN(                         \
+            MACRO_VAR(appendingBuf), (string1).len + (string2).len);           \
         MACRO_VAR(appendedString);                                             \
     })
 

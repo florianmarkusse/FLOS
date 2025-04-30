@@ -1,12 +1,14 @@
-#include "shared/trees/red-black/tests/test.h"
+#include "shared/trees/red-black/tests/red-black-basic.h"
 
 #include "abstraction/log.h"
 #include "posix/test-framework/test.h"
 #include "shared/log.h"
 #include "shared/macros.h"
 #include "shared/memory/allocator/macros.h"
-#include "shared/trees/red-black.h"
-#include "shared/trees/red-black/tests/correct.h"
+#include "shared/text/string.h"
+#include "shared/trees/red-black-basic.h"
+#include "shared/trees/red-black/tests/assert-basic.h"
+#include "shared/trees/red-black/tests/assert.h"
 
 typedef enum { INSERT, DELETE, DELETE_AT_LEAST } OperationType;
 
@@ -16,15 +18,10 @@ typedef struct {
 } TreeOperation;
 
 typedef ARRAY(TreeOperation) TreeOperation_a;
+typedef ARRAY(TreeOperation_a) TestCases;
 
-typedef struct {
-    string name;
-    TreeOperation_a operations;
-} TestCase;
-
-static TreeOperation noOperations[] = {
-    // Empty test case
-};
+static TreeOperation_a noOperations = {.buf = 0, .len = 0};
+static TestCases noOperationsTestCase = {.buf = &noOperations, .len = 1};
 
 static TreeOperation insert1[] = {{37, INSERT}, {14, INSERT}, {25, INSERT},
                                   {1, INSERT},  {18, INSERT}, {50, INSERT},
@@ -38,6 +35,14 @@ static TreeOperation insert3[] = {
     {1999, INSERT}, {2021, INSERT}, {100, INSERT}, {300, INSERT},
     {150, INSERT},  {1200, INSERT}, {50, INSERT},  {987, INSERT},
     {6000, INSERT}, {5678, INSERT}};
+static TreeOperation_a inserts[] = {
+    {.buf = insert1, .len = COUNTOF(insert1)},
+    {.buf = insert2, .len = COUNTOF(insert2)},
+    {.buf = insert3, .len = COUNTOF(insert3)},
+};
+static constexpr auto INSERTS_TEST_CASES_LEN = COUNTOF(inserts);
+static TestCases insertsOnlyTestCases = {.buf = inserts,
+                                         .len = INSERTS_TEST_CASES_LEN};
 
 static TreeOperation insertDelete1[] = {
     {873, INSERT}, {582, INSERT}, {312, INSERT}, {54, INSERT},
@@ -51,6 +56,15 @@ static TreeOperation insertDelete3[] = {
     {215, INSERT}, {778, INSERT}, {144, INSERT}, {310, INSERT}, {188, INSERT},
     {50, INSERT},  {25, INSERT},  {563, INSERT}, {137, INSERT}, {980, INSERT},
     {249, INSERT}, {500, INSERT}, {215, DELETE}, {144, DELETE}, {980, DELETE}};
+static TreeOperation_a insertsAndDeletes[] = {
+    {.buf = insertDelete1, .len = COUNTOF(insertDelete1)},
+    {.buf = insertDelete2, .len = COUNTOF(insertDelete2)},
+    {.buf = insertDelete3, .len = COUNTOF(insertDelete3)},
+};
+static constexpr auto INSERTS_AND_DELETES_TEST_CASES_LEN =
+    COUNTOF(insertsAndDeletes);
+static TestCases insertsDeletionsTestCases = {
+    .buf = insertsAndDeletes, .len = INSERTS_AND_DELETES_TEST_CASES_LEN};
 
 static TreeOperation insertDeleteAtLeast1[] = {
     {45, INSERT},          {16, INSERT},          {78, INSERT},
@@ -71,6 +85,16 @@ static TreeOperation insertDeleteAtLeast3[] = {
     {56, INSERT},          {13, INSERT},          {78, INSERT},
     {99, INSERT},          {111, INSERT},         {35, DELETE_AT_LEAST},
     {45, DELETE_AT_LEAST}, {70, DELETE_AT_LEAST}, {111, DELETE_AT_LEAST}};
+static TreeOperation_a insertsAndDeleteAtLeasts[] = {
+    {.buf = insertDeleteAtLeast1, .len = COUNTOF(insertDeleteAtLeast1)},
+    {.buf = insertDeleteAtLeast2, .len = COUNTOF(insertDeleteAtLeast2)},
+    {.buf = insertDeleteAtLeast3, .len = COUNTOF(insertDeleteAtLeast3)},
+};
+static constexpr auto INSERTS_AND_DELETE_AT_LEASTS_TEST_CASES_LEN =
+    COUNTOF(insertsAndDeleteAtLeasts);
+static TestCases insertsDeletionAtLeastsTestCases = {
+    .buf = insertsAndDeleteAtLeasts,
+    .len = INSERTS_AND_DELETE_AT_LEASTS_TEST_CASES_LEN};
 
 static TreeOperation mixed1[] = {
     {11111, INSERT},          {22222, INSERT},         {33333, INSERT},
@@ -210,48 +234,16 @@ static TreeOperation mixed3[] = {
     {10516992, INSERT},
     {8, INSERT},
 };
-
-static TestCase testCases[] = {
-    {.name = STRING("No operations"),
-     .operations = {.buf = noOperations, .len = COUNTOF(noOperations)}},
-
-    {.name = STRING("Insert only 1"),
-     .operations = {.buf = insert1, .len = COUNTOF(insert1)}},
-    {.name = STRING("Insert only 2"),
-     .operations = {.buf = insert2, .len = COUNTOF(insert2)}},
-    {.name = STRING("Insert only 3"),
-     .operations = {.buf = insert3, .len = COUNTOF(insert3)}},
-
-    {.name = STRING("Insert + Delete 1"),
-     .operations = {.buf = insertDelete1, .len = COUNTOF(insertDelete1)}},
-    {.name = STRING("Insert + Delete 2"),
-     .operations = {.buf = insertDelete2, .len = COUNTOF(insertDelete2)}},
-    {.name = STRING("Insert + Delete 3"),
-     .operations = {.buf = insertDelete3, .len = COUNTOF(insertDelete3)}},
-
-    {.name = STRING("Insert + Delete At Least 1"),
-     .operations = {.buf = insertDeleteAtLeast1,
-                    .len = COUNTOF(insertDeleteAtLeast1)}},
-    {.name = STRING("Insert + Delete At Least 2"),
-     .operations = {.buf = insertDeleteAtLeast2,
-                    .len = COUNTOF(insertDeleteAtLeast2)}},
-    {.name = STRING("Insert + Delete At Least 3"),
-     .operations = {.buf = insertDeleteAtLeast3,
-                    .len = COUNTOF(insertDeleteAtLeast3)}},
-
-    {.name = STRING("Mixed operations 1"),
-     .operations = {.buf = mixed1, .len = COUNTOF(mixed1)}},
-    {.name = STRING("Mixed operations 2"),
-     .operations = {.buf = mixed2, .len = COUNTOF(mixed2)}},
-    {.name = STRING("Mixed operations 3"),
-     .operations = {.buf = mixed3, .len = COUNTOF(mixed3)}},
+static TreeOperation_a mixed[] = {
+    {.buf = mixed1, .len = COUNTOF(mixed1)},
+    {.buf = mixed2, .len = COUNTOF(mixed2)},
+    {.buf = mixed3, .len = COUNTOF(mixed3)},
 };
-static constexpr auto TEST_CASES_LEN = COUNTOF(testCases);
-
-static constexpr auto MAX_NODES_IN_TREE = 1024;
+static constexpr auto MIXED_TEST_CASES_LEN = COUNTOF(mixed);
+static TestCases mixedTestCases = {.buf = mixed, .len = MIXED_TEST_CASES_LEN};
 
 static void testTree(TreeOperation_a operations, Arena scratch) {
-    RedBlackNode *tree = nullptr;
+    RedBlackNodeBasic *tree = nullptr;
     U64_max_a expectedValues =
         (U64_max_a){.buf = NEW(&scratch, U64, MAX_NODES_IN_TREE),
                     .len = 0,
@@ -259,9 +251,9 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
     for (U64 i = 0; i < operations.len; i++) {
         switch (operations.buf[i].type) {
         case INSERT: {
-            RedBlackNode *createdNode = NEW(&scratch, RedBlackNode);
-            createdNode->memory.bytes = operations.buf[i].value;
-            insertRedBlackNode(&tree, createdNode);
+            RedBlackNodeBasic *createdNode = NEW(&scratch, RedBlackNodeBasic);
+            createdNode->value = operations.buf[i].value;
+            insertRedBlackNodeBasic(&tree, createdNode);
 
             if (expectedValues.len >= MAX_NODES_IN_TREE) {
                 TEST_FAILURE {
@@ -269,7 +261,8 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                                 "Increase max size or decrease expected nodes "
                                 "in Red-Black tree. Current maximum size: "));
                     INFO(MAX_NODES_IN_TREE, NEWLINE);
-                    appendRedBlackTreeWithBadNode(tree, nullptr);
+                    appendRedBlackTreeWithBadNode((RedBlackNode *)tree, nullptr,
+                                                  RED_BLACK_BASIC);
                 }
             }
             expectedValues.buf[expectedValues.len] = operations.buf[i].value;
@@ -277,16 +270,16 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
             break;
         }
         case DELETE: {
-            RedBlackNode *deleted =
-                deleteRedBlackNode(&tree, operations.buf[i].value);
-            if (deleted->memory.bytes != operations.buf[i].value) {
+            RedBlackNodeBasic *deleted =
+                deleteRedBlackNodeBasic(&tree, operations.buf[i].value);
+            if (deleted->value != operations.buf[i].value) {
                 TEST_FAILURE {
                     INFO(STRING("Deleted value does not equal the value that "
                                 "should have been deleted!\nExpected to be "
                                 "deleted value: "));
                     INFO(operations.buf[i].value, NEWLINE);
                     INFO(STRING("Actual deleted value: "));
-                    INFO(deleted->memory.bytes, NEWLINE);
+                    INFO(deleted->value, NEWLINE);
                 }
             }
 
@@ -304,8 +297,8 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
             break;
         }
         case DELETE_AT_LEAST: {
-            RedBlackNode *deleted =
-                deleteAtLeastRedBlackNode(&tree, operations.buf[i].value);
+            RedBlackNodeBasic *deleted =
+                deleteAtLeastRedBlackNodeBasic(&tree, operations.buf[i].value);
             if (!deleted) {
                 for (U64 j = 0; j < expectedValues.len; j++) {
                     if (expectedValues.buf[j] >= operations.buf[i].value) {
@@ -320,14 +313,14 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                     }
                 }
                 break;
-            } else if (deleted->memory.bytes < operations.buf[i].value) {
+            } else if (deleted->value < operations.buf[i].value) {
                 TEST_FAILURE {
                     INFO(STRING("Deleted value not equal the value that "
                                 "should have been deleted!\nExpected to be "
                                 "deleted value: "));
                     INFO(operations.buf[i].value, NEWLINE);
                     INFO(STRING("Actual deleted value: "));
-                    INFO(deleted->memory.bytes, NEWLINE);
+                    INFO(deleted->value, NEWLINE);
                 }
             } else {
                 U64 indexToRemove = 0;
@@ -349,22 +342,34 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         }
         }
 
-        assertRedBlackTreeValid(tree, expectedValues, scratch);
+        assertBasicRedBlackTreeValid(tree, expectedValues, scratch);
     }
 
     testSuccess();
 }
 
-void testRedBlackTrees(Arena scratch) {
-    TEST_TOPIC(STRING("Operations")) {
+static void testSubTopic(string subTopic, TestCases testCases, Arena scratch) {
+    TEST_TOPIC(subTopic) {
         JumpBuffer failureHandler;
-        for (U64 i = 0; i < TEST_CASES_LEN; i++) {
+        for (U64 i = 0; i < testCases.len; i++) {
             if (setjmp(failureHandler)) {
                 continue;
             }
-            TEST(testCases[i].name, failureHandler) {
-                testTree(testCases[i].operations, scratch);
+            TEST(U64ToStringDefault(i), failureHandler) {
+                testTree(testCases.buf[i], scratch);
             }
         }
+    }
+}
+
+void testBasicRedBlackTrees(Arena scratch) {
+    TEST_TOPIC(STRING("Basic red-black trees")) {
+        testSubTopic(STRING("No Operations"), noOperationsTestCase, scratch);
+        testSubTopic(STRING("Inserts Only"), insertsOnlyTestCases, scratch);
+        testSubTopic(STRING("Inserts + Deletions"), insertsDeletionsTestCases,
+                     scratch);
+        testSubTopic(STRING("Inserts + At Least Deletions"),
+                     insertsDeletionAtLeastsTestCases, scratch);
+        testSubTopic(STRING("Mixed"), mixedTestCases, scratch);
     }
 }

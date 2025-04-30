@@ -79,6 +79,7 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes) {
 }
 
 void convertToKernelMemory(MemoryInfo *memoryInfo, PhysicalMemory *location) {
+    // TODO: FIX THIS!!!
     RedBlackNode *root = nullptr;
 
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
