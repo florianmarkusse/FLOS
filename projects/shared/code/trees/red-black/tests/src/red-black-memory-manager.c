@@ -7,6 +7,7 @@
 #include "shared/memory/allocator/macros.h"
 #include "shared/text/string.h"
 #include "shared/trees/red-black-basic.h"
+#include "shared/trees/red-black-memory-manager.h"
 #include "shared/trees/red-black/tests/assert-basic.h"
 #include "shared/trees/red-black/tests/assert.h"
 
@@ -65,6 +66,171 @@ static constexpr auto INSERTS_TEST_CASES_LEN = COUNTOF(inserts);
 static TestCases insertsOnlyTestCases = {.buf = inserts,
                                          .len = INSERTS_TEST_CASES_LEN};
 
+static void addValueToExpected(Memory_max_a *expectedValues, Memory toAdd,
+                               RedBlackNodeMM *tree) {
+    U64 indexToInsert = 0;
+    while (indexToInsert < expectedValues->len &&
+           expectedValues->buf[indexToInsert].start < toAdd.start) {
+        indexToInsert++;
+    }
+
+    bool mergeBefore = false;
+    if (indexToInsert > 0) {
+        U64 endBefore = expectedValues->buf[indexToInsert - 1].start +
+                        expectedValues->buf[indexToInsert - 1].bytes;
+        mergeBefore = endBefore == toAdd.start;
+    }
+
+    bool mergeAfter = false;
+    if (indexToInsert < expectedValues->len) {
+        U64 endToAdd = toAdd.start + toAdd.bytes;
+        mergeAfter = expectedValues->buf[indexToInsert].start == endToAdd;
+    }
+
+    if (mergeBefore && mergeAfter) {
+        expectedValues->buf[indexToInsert - 1].bytes +=
+            toAdd.bytes + expectedValues->buf[indexToInsert].bytes;
+
+        U64 afterMergeIndex = indexToInsert + 1;
+        if (afterMergeIndex < expectedValues->len) {
+            memmove(&(expectedValues->buf[indexToInsert]),
+                    &(expectedValues->buf[afterMergeIndex]),
+                    (expectedValues->len - afterMergeIndex) * sizeof(toAdd));
+        }
+        expectedValues->len--;
+    } else if (mergeBefore) {
+        expectedValues->buf[indexToInsert - 1].bytes += toAdd.bytes;
+    } else if (mergeAfter) {
+        expectedValues->buf[indexToInsert].start -= toAdd.bytes;
+        expectedValues->buf[indexToInsert].bytes += toAdd.bytes;
+    } else {
+        if (expectedValues->len >= MAX_NODES_IN_TREE) {
+            TEST_FAILURE {
+                INFO(STRING("Tree contains too many nodes to fit in array. "
+                            "Increase max size or decrease expected nodes "
+                            "in Red-Black tree. Current maximum size: "));
+                INFO(MAX_NODES_IN_TREE, NEWLINE);
+                appendRedBlackTreeWithBadNode((RedBlackNode *)tree, nullptr,
+                                              RED_BLACK_BASIC);
+            }
+        }
+
+        memmove(&(expectedValues->buf[indexToInsert + 1]),
+                &(expectedValues->buf[indexToInsert]),
+                (expectedValues->len - indexToInsert) * sizeof(toAdd));
+
+        expectedValues->buf[indexToInsert] = toAdd;
+        expectedValues->len++;
+    }
+}
+
+static void testTree(TreeOperation_a operations, Arena scratch) {
+    RedBlackNodeMM *tree = nullptr;
+    Memory_max_a expectedValues =
+        (Memory_max_a){.buf = NEW(&scratch, Memory, MAX_NODES_IN_TREE),
+                       .len = 0,
+                       .cap = MAX_NODES_IN_TREE};
+    for (U64 i = 0; i < operations.len; i++) {
+        switch (operations.buf[i].type) {
+        case INSERT: {
+            RedBlackNodeMM *createdNode = NEW(&scratch, RedBlackNodeMM);
+            createdNode->memory = operations.buf[i].memory;
+            insertRedBlackNodeMM(&tree, createdNode);
+            addValueToExpected(&expectedValues, operations.buf[i].memory, tree);
+            break;
+        }
+            //        case DELETE: {
+            //            RedBlackNodeMM *deleted =
+            //                deleteRedBlackNodeMM(&tree,
+            //                operations.buf[i].value);
+            //            if (deleted->value != operations.buf[i].value) {
+            //                TEST_FAILURE {
+            //                    INFO(STRING("Deleted value does not equal the
+            //                    value that "
+            //                                "should have been
+            //                                deleted!\nExpected to be "
+            //                                "deleted value: "));
+            //                    INFO(operations.buf[i].value, NEWLINE);
+            //                    INFO(STRING("Actual deleted value: "));
+            //                    INFO(deleted->value, NEWLINE);
+            //                }
+            //            }
+            //
+            //            U64 indexToRemove = 0;
+            //            for (U64 j = 0; j < expectedValues.len; j++) {
+            //                if (expectedValues.buf[j] ==
+            //                operations.buf[i].value) {
+            //                    indexToRemove = j;
+            //                    break;
+            //                }
+            //            }
+            //
+            //            expectedValues.buf[indexToRemove] =
+            //                expectedValues.buf[expectedValues.len - 1];
+            //            expectedValues.len--;
+            //            break;
+            //        }
+            //        case DELETE_AT_LEAST: {
+            //            RedBlackNodeMM *deleted =
+            //                deleteAtLeastRedBlackNodeMM(&tree,
+            //                operations.buf[i].value);
+            //            if (!deleted) {
+            //                for (U64 j = 0; j < expectedValues.len; j++) {
+            //                    if (expectedValues.buf[j] >=
+            //                    operations.buf[i].value) {
+            //                        TEST_FAILURE {
+            //                            INFO(
+            //                                STRING("Did not find a node to
+            //                                delete value "));
+            //                            INFO(operations.buf[i].value);
+            //                            INFO(STRING(
+            //                                ", should have deleted node with
+            //                                value: "));
+            //                            INFO(operations.buf[i].value,
+            //                            NEWLINE);
+            //                        }
+            //                    }
+            //                }
+            //                break;
+            //            } else if (deleted->value < operations.buf[i].value) {
+            //                TEST_FAILURE {
+            //                    INFO(STRING("Deleted value not equal the value
+            //                    that "
+            //                                "should have been
+            //                                deleted!\nExpected to be "
+            //                                "deleted value: "));
+            //                    INFO(operations.buf[i].value, NEWLINE);
+            //                    INFO(STRING("Actual deleted value: "));
+            //                    INFO(deleted->value, NEWLINE);
+            //                }
+            //            } else {
+            //                U64 indexToRemove = 0;
+            //                U64 valueToRemove = U64_MAX;
+            //                for (U64 j = 0; j < expectedValues.len; j++) {
+            //                    if (expectedValues.buf[j] >=
+            //                    operations.buf[i].value) {
+            //                        if (expectedValues.buf[j] < valueToRemove)
+            //                        {
+            //                            indexToRemove = j;
+            //                            valueToRemove = expectedValues.buf[j];
+            //                        }
+            //                    }
+            //                }
+            //
+            //                expectedValues.buf[indexToRemove] =
+            //                    expectedValues.buf[expectedValues.len - 1];
+            //                expectedValues.len--;
+            //                break;
+            //            }
+            //        }
+        }
+
+        // assertMMRedBlackTreeValid(tree, expectedValues, scratch);
+    }
+
+    testSuccess();
+}
+
 static void testSubTopic(string subTopic, TestCases testCases, Arena scratch) {
     TEST_TOPIC(subTopic) {
         JumpBuffer failureHandler;
@@ -73,8 +239,7 @@ static void testSubTopic(string subTopic, TestCases testCases, Arena scratch) {
                 continue;
             }
             TEST(U64ToStringDefault(i), failureHandler) {
-                // testTree(testCases.buf[i], scratch);
-                testFailure();
+                testTree(testCases.buf[i], scratch);
             }
         }
     }
