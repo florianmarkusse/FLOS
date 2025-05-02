@@ -9,6 +9,16 @@ static constexpr auto MAX_NODES_IN_TREE = 1024;
 
 typedef enum { RED_BLACK_BASIC, RED_BLACK_MEMORY_MANAGER } RedBlackTreeType;
 
+typedef struct RedBlackNode RedBlackNode;
+struct RedBlackNode {
+    RedBlackNode *
+        children[RB_TREE_CHILD_COUNT]; // NOTE: Keep this as the first elements.
+                                       // This is used in the insert so that
+                                       // children->[0] and a RedBlackNode* are
+                                       // the same location for doing inserts.
+    RedBlackColor color;
+};
+
 void appendRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode,
                                    RedBlackTreeType treeType);
 

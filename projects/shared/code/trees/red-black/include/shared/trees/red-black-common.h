@@ -9,24 +9,4 @@ typedef enum { RB_TREE_LEFT = 0, RB_TREE_RIGHT = 1 } RedBlackDirection;
 static constexpr auto RB_TREE_CHILD_COUNT = 2;
 static constexpr auto RB_TREE_MAX_HEIGHT = 128;
 
-typedef struct RedBlackNode RedBlackNode;
-struct RedBlackNode {
-    RedBlackNode *
-        children[RB_TREE_CHILD_COUNT]; // NOTE: Keep this as the first elements.
-                                       // This is used in the insert so that
-                                       // children->[0] and a RedBlackNode* are
-                                       // the same location for doing inserts.
-    RedBlackColor color;
-};
-
-typedef struct {
-    RedBlackNode *node;
-    RedBlackDirection direction;
-} VisitedRedBlackNode;
-
-typedef ARRAY(VisitedRedBlackNode) VisitedRedBlackNode_a;
-
-VisitedRedBlackNode_a successor(RedBlackNode *node,
-                                VisitedRedBlackNode_a visited);
-
 #endif

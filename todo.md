@@ -1,3 +1,4 @@
+- use `-fshort-enums`
 - PMM & VMM use same idea
   - Red black tree with free list
   - able to grow very large with dynamic array

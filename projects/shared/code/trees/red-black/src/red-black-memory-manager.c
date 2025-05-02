@@ -8,6 +8,36 @@ typedef struct {
     RedBlackDirection direction;
 } VisitedNode;
 
+static U64 findAdjacentInSteps(RedBlackNodeMM *node,
+                               VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                               RedBlackDirection direction) {
+    if (!node->children[direction]) {
+        return 0;
+    }
+
+    U64 traversals = 0;
+
+    visitedNodes[traversals].node = node;
+    visitedNodes[traversals].direction = direction;
+    node = node->children[direction];
+    traversals++;
+
+    while (true) {
+        RedBlackNodeMM *next = node->children[!direction];
+        if (!next) {
+            break;
+        }
+
+        visitedNodes[traversals].node = node;
+        visitedNodes[traversals].direction = !direction;
+        traversals++;
+
+        node = next;
+    }
+
+    return traversals;
+}
+
 static RedBlackDirection calculateDirection(U64 value,
                                             RedBlackNodeMM *toCompare) {
     if (value >= toCompare->memory.start) {

@@ -11,4 +11,6 @@
 
 #define COUNTOF(a) (sizeof(a) / sizeof(*(a)))
 
+#define OFFSETOF(t, d) __builtin_offsetof(t, d)
+
 #endif
