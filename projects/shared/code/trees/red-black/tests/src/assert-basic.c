@@ -89,37 +89,6 @@ static void assertIsBSTWitExpectedValues(RedBlackNodeBasic *node, U64 nodes,
     }
 }
 
-// static U64 mostBytes(RedBlackNodeBasic *node) {
-//     if (!node) {
-//         return 0;
-//     }
-//
-//     return MAX(node->memory.bytes, mostBytes(node->children[RB_TREE_LEFT]),
-//                mostBytes(node->children[RB_TREE_RIGHT]));
-// }
-//
-// static void assertCorrectMostBytesInSubtreeValue(RedBlackNodeBasic *tree,
-//                                                  RedBlackNodeBasic *node) {
-//     if (!node) {
-//         return;
-//     }
-//
-//     if (node->mostBytesInSubtree != mostBytes(node)) {
-//         TEST_FAILURE {
-//             INFO(STRING("Found wrong most bytes value!\n"));
-//             appendRedBlackTreeWithBadNode(tree, node);
-//         }
-//     }
-//
-//     assertCorrectMostBytesInSubtreeValue(tree, node->children[RB_TREE_LEFT]);
-//     assertCorrectMostBytesInSubtreeValue(tree,
-//     node->children[RB_TREE_RIGHT]);
-// }
-//
-// static void assertCorrectMostBytesTree(RedBlackNodeBasic *tree) {
-//     assertCorrectMostBytesInSubtreeValue(tree, tree);
-// }
-
 void assertBasicRedBlackTreeValid(RedBlackNodeBasic *tree,
                                   U64_max_a expectedValues, Arena scratch) {
     if (!tree) {
@@ -133,5 +102,4 @@ void assertBasicRedBlackTreeValid(RedBlackNodeBasic *tree,
                                scratch);
     assertPathsFromNodeHaveSameBlackHeight((RedBlackNode *)tree, nodes,
                                            RED_BLACK_BASIC, scratch);
-    //    assertCorrectMostBytesTree(tree);
 }

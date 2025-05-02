@@ -9,6 +9,7 @@
 #include "shared/trees/red-black-basic.h"
 #include "shared/trees/red-black-memory-manager.h"
 #include "shared/trees/red-black/tests/assert-basic.h"
+#include "shared/trees/red-black/tests/assert-memory-manager.h"
 #include "shared/trees/red-black/tests/assert.h"
 
 typedef enum { INSERT, DELETE_AT_LEAST } OperationType;
@@ -133,10 +134,11 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
     for (U64 i = 0; i < operations.len; i++) {
         switch (operations.buf[i].type) {
         case INSERT: {
+            addValueToExpected(&expectedValues, operations.buf[i].memory, tree);
+
             RedBlackNodeMM *createdNode = NEW(&scratch, RedBlackNodeMM);
             createdNode->memory = operations.buf[i].memory;
             insertRedBlackNodeMM(&tree, createdNode);
-            addValueToExpected(&expectedValues, operations.buf[i].memory, tree);
             break;
         }
             //        case DELETE: {
@@ -225,7 +227,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
             //        }
         }
 
-        // assertMMRedBlackTreeValid(tree, expectedValues, scratch);
+        assertMMRedBlackTreeValid(tree, expectedValues, scratch);
     }
 
     testSuccess();

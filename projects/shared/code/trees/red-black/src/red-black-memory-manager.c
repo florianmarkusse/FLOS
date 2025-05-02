@@ -105,7 +105,7 @@ void insertRedBlackNodeMM(RedBlackNodeMM **tree, RedBlackNodeMM *createdNode) {
     while (1) {
         visitedNodes[len].node = current;
         visitedNodes[len].direction =
-            calculateDirection(createdNode->memory.bytes, current);
+            calculateDirection(createdNode->memory.start, current);
         current->mostBytesInSubtree =
             MAX(current->mostBytesInSubtree, createdNode->memory.bytes);
         len++;

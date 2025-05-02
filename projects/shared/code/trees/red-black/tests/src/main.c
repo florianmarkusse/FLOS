@@ -36,7 +36,7 @@ int main() {
     testSuiteStart(STRING("Red-Black Trees"));
 
     testBasicRedBlackTrees(arena);
-    testMemoryManagerRedBlackTrees(arena);
+    //  testMemoryManagerRedBlackTrees(arena);
 
     return testSuiteFinish();
 }

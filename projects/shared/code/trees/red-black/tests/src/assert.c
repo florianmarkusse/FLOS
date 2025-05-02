@@ -31,11 +31,11 @@ static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
     case RED_BLACK_MEMORY_MANAGER: {
         RedBlackNodeMM *memoryManagerNode = (RedBlackNodeMM *)node;
         INFO(STRING(" Start: "));
-        INFO((void *)memoryManagerNode->memory.start);
+        INFO(memoryManagerNode->memory.start);
         INFO(STRING(" Bytes: "));
-        INFO((void *)memoryManagerNode->memory.bytes);
+        INFO(memoryManagerNode->memory.bytes);
         INFO(STRING(" Most bytes in subtree: "));
-        INFO((void *)memoryManagerNode->mostBytesInSubtree);
+        INFO(memoryManagerNode->mostBytesInSubtree);
         break;
     }
     }

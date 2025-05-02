@@ -6,6 +6,7 @@ add_executable(
     "src/red-black-memory-manager.c"
     "src/assert.c"
     "src/assert-basic.c"
+    "src/assert-memory-manager.c"
 )
 
 target_include_directories(
