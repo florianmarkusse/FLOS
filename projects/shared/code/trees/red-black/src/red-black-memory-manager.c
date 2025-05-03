@@ -298,21 +298,22 @@ propogateInsertIfRequired(RedBlackNodeMM *current,
     }
 }
 
-static void bridgeMerge(RedBlackNodeMM *current, U64 adjacentBytes,
-                        U64 adjacentSteps,
-                        VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len) {
+static RedBlackNodeMM *bridgeMerge(RedBlackNodeMM *current, U64 adjacentBytes,
+                                   U64 adjacentSteps,
+                                   VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                                   U64 len) {
     current->memory.bytes += adjacentBytes;
     propogateInsertIfRequired(current, visitedNodes, len);
     U64 newLen = len + adjacentSteps;
-    deleteNodeInPath(visitedNodes, newLen,
-                     visitedNodes[newLen - 1]
-                         .node->children[visitedNodes[newLen - 1].direction]);
+    return deleteNodeInPath(
+        visitedNodes, newLen,
+        visitedNodes[newLen - 1]
+            .node->children[visitedNodes[newLen - 1].direction]);
 }
 
-static void beforeRegionMerge(RedBlackNodeMM *current,
-                              RedBlackNodeMM *createdNode,
-                              VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                              U64 len) {
+static RedBlackNodeMM *
+beforeRegionMerge(RedBlackNodeMM *current, RedBlackNodeMM *createdNode,
+                  VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len) {
     current->memory.bytes += createdNode->memory.bytes;
 
     U64 predecessorSteps =
@@ -326,20 +327,20 @@ static void beforeRegionMerge(RedBlackNodeMM *current,
         if (predecessor->memory.start + predecessor->memory.bytes ==
             createdNode->memory.start) {
             current->memory.start = predecessor->memory.start;
-            bridgeMerge(current, predecessor->memory.bytes, predecessorSteps,
-                        visitedNodes, len);
-            return;
+            return bridgeMerge(current, predecessor->memory.bytes,
+                               predecessorSteps, visitedNodes, len);
         }
     }
 
     current->memory.start = createdNode->memory.start;
     propogateInsertIfRequired(current, visitedNodes, len);
+    return nullptr;
 }
 
-static void afterRegionMerge(RedBlackNodeMM *current,
-                             RedBlackNodeMM *createdNode, U64 createdEnd,
-                             VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                             U64 len) {
+static RedBlackNodeMM *
+afterRegionMerge(RedBlackNodeMM *current, RedBlackNodeMM *createdNode,
+                 U64 createdEnd, VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                 U64 len) {
     current->memory.bytes += createdNode->memory.bytes;
 
     U64 successorSteps =
@@ -351,16 +352,19 @@ static void afterRegionMerge(RedBlackNodeMM *current,
                 ->children[visitedNodes[len + successorSteps - 1].direction];
         // | current | created | successor |
         if (createdEnd == successor->memory.start) {
-            bridgeMerge(current, successor->memory.bytes, successorSteps,
-                        visitedNodes, len);
+            return bridgeMerge(current, successor->memory.bytes, successorSteps,
+                               visitedNodes, len);
         }
     }
 
     propogateInsertIfRequired(current, visitedNodes, len);
-    return;
+    return nullptr;
 }
 
-void insertRedBlackNodeMM(RedBlackNodeMM **tree, RedBlackNodeMM *createdNode) {
+InsertResult insertRedBlackNodeMM(RedBlackNodeMM **tree,
+                                  RedBlackNodeMM *createdNode) {
+    InsertResult result = {0};
+
     createdNode->children[RB_TREE_LEFT] = nullptr;
     createdNode->children[RB_TREE_RIGHT] = nullptr;
 
@@ -368,7 +372,7 @@ void insertRedBlackNodeMM(RedBlackNodeMM **tree, RedBlackNodeMM *createdNode) {
         createdNode->color = RB_TREE_BLACK;
         createdNode->mostBytesInSubtree = createdNode->memory.bytes;
         *tree = createdNode;
-        return;
+        return result;
     }
 
     // Search
@@ -384,14 +388,17 @@ void insertRedBlackNodeMM(RedBlackNodeMM **tree, RedBlackNodeMM *createdNode) {
         U64 currentEnd = current->memory.start + current->memory.bytes;
         // | created | current |
         if (createdEnd == current->memory.start) {
-            beforeRegionMerge(current, createdNode, visitedNodes, len);
-            return;
+            result.freed[0] = createdNode;
+            result.freed[1] =
+                beforeRegionMerge(current, createdNode, visitedNodes, len);
+            return result;
         }
         // | current | created |
         else if (currentEnd == createdNode->memory.start) {
-            afterRegionMerge(current, createdNode, createdEnd, visitedNodes,
-                             len);
-            return;
+            result.freed[0] = createdNode;
+            result.freed[1] = afterRegionMerge(current, createdNode, createdEnd,
+                                               visitedNodes, len);
+            return result;
         }
 
         visitedNodes[len].node = current;
@@ -424,6 +431,8 @@ void insertRedBlackNodeMM(RedBlackNodeMM **tree, RedBlackNodeMM *createdNode) {
     }
 
     (*tree)->color = RB_TREE_BLACK;
+
+    return result;
 }
 
 RedBlackNodeMM *deleteAtLeastRedBlackNodeMM(RedBlackNodeMM **tree, U64 bytes) {
