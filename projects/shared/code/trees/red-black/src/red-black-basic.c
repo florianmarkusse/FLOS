@@ -36,9 +36,8 @@ static U64 findAdjacentInSteps(RedBlackNodeBasic *node,
     return traversals;
 }
 
-static RedBlackDirection calculateDirection(U64 value,
-                                            RedBlackNodeBasic *toCompare) {
-    if (value >= toCompare->value) {
+static RedBlackDirection calculateDirection(U64 value, U64 toCompare) {
+    if (value >= toCompare) {
         return RB_TREE_RIGHT;
     }
     return RB_TREE_LEFT;
@@ -113,7 +112,7 @@ void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
     while (1) {
         visitedNodes[len].node = current;
         visitedNodes[len].direction =
-            calculateDirection(createdNode->value, current);
+            calculateDirection(createdNode->value, current->value);
         len++;
 
         RedBlackNodeBasic *next =
@@ -301,7 +300,7 @@ RedBlackNodeBasic *deleteAtLeastRedBlackNodeBasic(RedBlackNodeBasic **tree,
             bestWithVisitedNodesLen = len;
         }
 
-        RedBlackDirection dir = calculateDirection(value, potential);
+        RedBlackDirection dir = calculateDirection(value, potential->value);
         visitedNodes[len].node = potential;
         visitedNodes[len].direction = dir;
         len++;
@@ -330,7 +329,7 @@ RedBlackNodeBasic *deleteRedBlackNodeBasic(RedBlackNodeBasic **tree,
     RedBlackNodeBasic *current = *tree;
     while (current->value != value) {
         visitedNodes[len].node = current;
-        visitedNodes[len].direction = calculateDirection(value, current);
+        visitedNodes[len].direction = calculateDirection(value, current->value);
         current = current->children[visitedNodes[len].direction];
 
         len++;

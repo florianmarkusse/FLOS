@@ -231,9 +231,6 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         }
 
         assertMMRedBlackTreeValid(tree, expectedValues, scratch);
-
-        appendRedBlackTreeWithBadNode((RedBlackNode *)tree, nullptr,
-                                      RED_BLACK_MEMORY_MANAGER);
     }
 
     testSuccess();
