@@ -7,7 +7,7 @@ typedef struct {
 } VisitedNode;
 
 static U64 findAdjacentInSteps(RedBlackNodeBasic *node,
-                               VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                               VisitedNode *visitedNodes,
                                RedBlackDirection direction) {
     if (!node->children[direction]) {
         return 0;
@@ -240,8 +240,9 @@ deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len,
         visitedNodes[len - 1].node->children[visitedNodes[len - 1].direction] =
             toDelete->children[RB_TREE_LEFT];
     }
-    // Find the sucessor node in the subtree of toDelete's right child. Done by
-    // repeetedly going to the left child.
+    // Swap the values of the node to delete with the values of the successor
+    // node and delete the successor node instead (now containing the values of
+    // the to delete node).
     else {
         U64 foundNodeIndex = len;
         len += stepsToSuccessor;

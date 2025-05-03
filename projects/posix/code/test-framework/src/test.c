@@ -60,11 +60,11 @@ int testSuiteFinish() {
 
     printTestScore(globalSuccesses, globalFailures);
     if (globalFailures > 0) {
-        PFLUSH_AFTER(STDERR) {
+        PFLUSH_AFTER(STDOUT) {
             PLOG((STRING("\nTest suite ")));
-            appendColor(COLOR_RED, STDERR);
+            appendColor(COLOR_RED, STDOUT);
             PLOG((STRING("failed")));
-            appendColorReset(STDERR);
+            appendColorReset(STDOUT);
             PLOG((STRING(".\n")));
         }
     } else {

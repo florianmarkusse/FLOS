@@ -25,17 +25,20 @@ typedef ARRAY(TreeOperation_a) TestCases;
 static TreeOperation_a noOperations = {.len = 0, .buf = 0};
 static TestCases noOperationsTestCase = {.buf = &noOperations, .len = 1};
 
-static TreeOperation insert1[] = {{{.start = 1000, .bytes = 100}, INSERT},
-                                  {{.start = 1100, .bytes = 100}, INSERT},
-                                  {{.start = 1500, .bytes = 200}, INSERT},
-                                  {{.start = 2000, .bytes = 100}, INSERT},
-                                  {{.start = 2500, .bytes = 100}, INSERT},
-                                  {{.start = 1700, .bytes = 300}, INSERT},
-                                  {{.start = 3000, .bytes = 100}, INSERT},
-                                  {{.start = 3300, .bytes = 100}, INSERT},
-                                  {{.start = 2900, .bytes = 100}, INSERT},
-                                  {{.start = 3150, .bytes = 100}, INSERT},
-                                  {{.start = 500, .bytes = 499}, INSERT}};
+static TreeOperation insert1[] = {
+    {{.start = 1000, .bytes = 100}, INSERT},
+    {{.start = 1100, .bytes = 100}, INSERT},
+    {{.start = 1500, .bytes = 200}, INSERT},
+    {{.start = 2000, .bytes = 300}, INSERT},
+    {{.start = 2500, .bytes = 100}, INSERT},
+    {{.start = 3000, .bytes = 100}, INSERT},
+    {{.start = 3300, .bytes = 100}, INSERT},
+    {{.start = 2900, .bytes = 100}, INSERT},
+    {{.start = 3150, .bytes = 100}, INSERT},
+    {{.start = 500, .bytes = 499}, INSERT},
+    {{.start = 2400, .bytes = 50}, INSERT},
+    {{.start = 1700, .bytes = 300}, INSERT},
+};
 
 static TreeOperation insert2[] = {
     {{.start = 5000, .bytes = 128}, INSERT},
@@ -112,7 +115,7 @@ static void addValueToExpected(Memory_max_a *expectedValues, Memory toAdd,
                             "in Red-Black tree. Current maximum size: "));
                 INFO(MAX_NODES_IN_TREE, NEWLINE);
                 appendRedBlackTreeWithBadNode((RedBlackNode *)tree, nullptr,
-                                              RED_BLACK_BASIC);
+                                              RED_BLACK_MEMORY_MANAGER);
             }
         }
 
@@ -228,6 +231,9 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         }
 
         assertMMRedBlackTreeValid(tree, expectedValues, scratch);
+
+        appendRedBlackTreeWithBadNode((RedBlackNode *)tree, nullptr,
+                                      RED_BLACK_MEMORY_MANAGER);
     }
 
     testSuccess();
