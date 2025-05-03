@@ -427,6 +427,8 @@ InsertResult insertRedBlackNodeMM(RedBlackNodeMM **tree,
     return result;
 }
 
+RedBlackDirection bestSubtreeForDeletion(RedBlackNodeMM *parent) {}
+
 RedBlackNodeMM *deleteAtLeastRedBlackNodeMM(RedBlackNodeMM **tree, U64 bytes) {
     VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
 
@@ -445,8 +447,30 @@ RedBlackNodeMM *deleteAtLeastRedBlackNodeMM(RedBlackNodeMM **tree, U64 bytes) {
             bestWithVisitedNodesLen = len;
         }
 
-        RedBlackDirection dir =
-            calculateDirection(bytes, potential->mostBytesInSubtree);
+        RedBlackDirection dir;
+        U64 subtreeMostBytes = 0;
+
+        RedBlackNodeMM *leftChild = potential->children[RB_TREE_LEFT];
+        if (leftChild) {
+            if (leftChild->mostBytesInSubtree >= bytes) {
+                dir = RB_TREE_LEFT;
+                subtreeMostBytes = leftChild->mostBytesInSubtree;
+            }
+        }
+
+        RedBlackNodeMM *rightChild = potential->children[RB_TREE_RIGHT];
+        if (rightChild) {
+            if (rightChild->mostBytesInSubtree < subtreeMostBytes &&
+                rightChild->mostBytesInSubtree >= bytes) {
+                dir = RB_TREE_RIGHT;
+                subtreeMostBytes = rightChild->mostBytesInSubtree;
+            }
+        }
+
+        if (!subtreeMostBytes) {
+            break;
+        }
+
         visitedNodes[len].node = potential;
         visitedNodes[len].direction = dir;
         len++;

@@ -308,7 +308,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                             INFO(operations.buf[i].value);
                             INFO(STRING(
                                 ", should have deleted node with value: "));
-                            INFO(operations.buf[i].value, NEWLINE);
+                            INFO(expectedValues.buf[i], NEWLINE);
                         }
                     }
                 }

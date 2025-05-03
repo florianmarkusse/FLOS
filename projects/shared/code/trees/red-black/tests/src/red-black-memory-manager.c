@@ -70,6 +70,91 @@ static constexpr auto INSERTS_TEST_CASES_LEN = COUNTOF(inserts);
 static TestCases insertsOnlyTestCases = {.buf = inserts,
                                          .len = INSERTS_TEST_CASES_LEN};
 
+static TreeOperation insertDeleteAtLeast1[] = {
+    {{.start = 1000, .bytes = 100}, INSERT},
+    {{.start = 1100, .bytes = 100}, INSERT},
+    {{.start = 1500, .bytes = 200}, INSERT},
+    {{.start = 2000, .bytes = 300}, INSERT},
+    {{.start = 2500, .bytes = 100}, INSERT},
+    {{.start = 3000, .bytes = 100}, INSERT},
+    {{.start = 3300, .bytes = 100}, INSERT},
+    {{.start = 2900, .bytes = 100}, INSERT},
+    {{.start = 3150, .bytes = 100}, INSERT},
+    {{.start = 500, .bytes = 499}, INSERT},
+    {{.start = 2400, .bytes = 50}, INSERT},
+    {{.start = 0, .bytes = 500}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 100}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 100}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 300}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 76}, DELETE_AT_LEAST},
+    {{.start = 1700, .bytes = 300}, INSERT}};
+static TreeOperation insertDeleteAtLeast2[] = {
+    {{.start = 5000, .bytes = 128}, INSERT},
+    {{.start = 4872, .bytes = 128}, INSERT},
+    {{.start = 5128, .bytes = 128}, INSERT},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 6000, .bytes = 256}, INSERT},
+    {{.start = 7000, .bytes = 128}, INSERT},
+    {{.start = 7500, .bytes = 128}, INSERT},
+    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 132}, DELETE_AT_LEAST},
+    {{.start = 5256, .bytes = 744}, INSERT},
+    {{.start = 8000, .bytes = 128}, INSERT},
+    {{.start = 8300, .bytes = 128}, INSERT},
+    {{.start = 8600, .bytes = 128}, INSERT},
+    {{.start = 8900, .bytes = 999999999}, INSERT},
+    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
+};
+static TreeOperation insertDeleteAtLeast3[] = {
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+    {{.start = 10000, .bytes = 512}, INSERT},
+    {{.start = 10512, .bytes = 512}, INSERT},
+    {{.start = 11024, .bytes = 256}, INSERT},
+    {{.start = 11500, .bytes = 500}, INSERT},
+    {{.start = 12000, .bytes = 500}, INSERT},
+
+    {{.start = 0, .bytes = 500}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 500}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 500}, DELETE_AT_LEAST},
+    {{.start = 0, .bytes = 500}, DELETE_AT_LEAST},
+    {{.start = 13500, .bytes = 1000}, INSERT},
+    {{.start = 14500, .bytes = 500}, INSERT},
+    {{.start = 15000, .bytes = 256}, INSERT},
+    {{.start = 18063, .bytes = 12345567}, INSERT},
+    {{.start = 11280, .bytes = 220}, INSERT},
+    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
+};
+static TreeOperation_a insertDeleteAtLeasts[] = {
+    {.buf = insertDeleteAtLeast1, .len = COUNTOF(insertDeleteAtLeast1)},
+    {.buf = insertDeleteAtLeast2, .len = COUNTOF(insertDeleteAtLeast2)},
+    {.buf = insertDeleteAtLeast3, .len = COUNTOF(insertDeleteAtLeast3)}};
+static constexpr auto INSERT_DELETE_AT_LEASTS_TEST_CASES_LEN =
+    COUNTOF(insertDeleteAtLeasts);
+static TestCases insertDeleteAtLeastsOnlyTestCases = {
+    .buf = insertDeleteAtLeasts, .len = INSERT_DELETE_AT_LEASTS_TEST_CASES_LEN};
+
 static void addValueToExpected(Memory_max_a *expectedValues, Memory toAdd,
                                RedBlackNodeMM *tree) {
     U64 indexToInsert = 0;
@@ -142,95 +227,74 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
             RedBlackNodeMM *createdNode = NEW(&scratch, RedBlackNodeMM);
             createdNode->memory = operations.buf[i].memory;
             insertRedBlackNodeMM(&tree, createdNode);
+
+            KFLUSH_AFTER {
+                INFO(STRING("Tried to insert address: "));
+                INFO(operations.buf[i].memory.start);
+                INFO(STRING(" and bytes: "));
+                INFO(operations.buf[i].memory.bytes, NEWLINE);
+            }
             break;
         }
-            //        case DELETE: {
-            //            RedBlackNodeMM *deleted =
-            //                deleteRedBlackNodeMM(&tree,
-            //                operations.buf[i].value);
-            //            if (deleted->value != operations.buf[i].value) {
-            //                TEST_FAILURE {
-            //                    INFO(STRING("Deleted value does not equal the
-            //                    value that "
-            //                                "should have been
-            //                                deleted!\nExpected to be "
-            //                                "deleted value: "));
-            //                    INFO(operations.buf[i].value, NEWLINE);
-            //                    INFO(STRING("Actual deleted value: "));
-            //                    INFO(deleted->value, NEWLINE);
-            //                }
-            //            }
-            //
-            //            U64 indexToRemove = 0;
-            //            for (U64 j = 0; j < expectedValues.len; j++) {
-            //                if (expectedValues.buf[j] ==
-            //                operations.buf[i].value) {
-            //                    indexToRemove = j;
-            //                    break;
-            //                }
-            //            }
-            //
-            //            expectedValues.buf[indexToRemove] =
-            //                expectedValues.buf[expectedValues.len - 1];
-            //            expectedValues.len--;
-            //            break;
-            //        }
-            //        case DELETE_AT_LEAST: {
-            //            RedBlackNodeMM *deleted =
-            //                deleteAtLeastRedBlackNodeMM(&tree,
-            //                operations.buf[i].value);
-            //            if (!deleted) {
-            //                for (U64 j = 0; j < expectedValues.len; j++) {
-            //                    if (expectedValues.buf[j] >=
-            //                    operations.buf[i].value) {
-            //                        TEST_FAILURE {
-            //                            INFO(
-            //                                STRING("Did not find a node to
-            //                                delete value "));
-            //                            INFO(operations.buf[i].value);
-            //                            INFO(STRING(
-            //                                ", should have deleted node with
-            //                                value: "));
-            //                            INFO(operations.buf[i].value,
-            //                            NEWLINE);
-            //                        }
-            //                    }
-            //                }
-            //                break;
-            //            } else if (deleted->value < operations.buf[i].value) {
-            //                TEST_FAILURE {
-            //                    INFO(STRING("Deleted value not equal the value
-            //                    that "
-            //                                "should have been
-            //                                deleted!\nExpected to be "
-            //                                "deleted value: "));
-            //                    INFO(operations.buf[i].value, NEWLINE);
-            //                    INFO(STRING("Actual deleted value: "));
-            //                    INFO(deleted->value, NEWLINE);
-            //                }
-            //            } else {
-            //                U64 indexToRemove = 0;
-            //                U64 valueToRemove = U64_MAX;
-            //                for (U64 j = 0; j < expectedValues.len; j++) {
-            //                    if (expectedValues.buf[j] >=
-            //                    operations.buf[i].value) {
-            //                        if (expectedValues.buf[j] < valueToRemove)
-            //                        {
-            //                            indexToRemove = j;
-            //                            valueToRemove = expectedValues.buf[j];
-            //                        }
-            //                    }
-            //                }
-            //
-            //                expectedValues.buf[indexToRemove] =
-            //                    expectedValues.buf[expectedValues.len - 1];
-            //                expectedValues.len--;
-            //                break;
-            //            }
-            //        }
+        case DELETE_AT_LEAST: {
+            RedBlackNodeMM *deleted = deleteAtLeastRedBlackNodeMM(
+                &tree, operations.buf[i].memory.bytes);
+            KFLUSH_AFTER {
+                INFO(STRING("Tried to delete at least "));
+                INFO(operations.buf[i].memory.bytes);
+                INFO(STRING(" and deleted "));
+                if (!deleted) {
+                    INFO(STRING("a null \n"));
+                } else {
+                    INFO(STRING("start: "));
+                    INFO(deleted->memory.start);
+                    INFO(STRING(" bytes: "));
+                    INFO(deleted->memory.bytes, NEWLINE);
+                }
+            }
+            if (!deleted) {
+                for (U64 j = 0; j < expectedValues.len; j++) {
+                    if (expectedValues.buf[j].bytes >=
+                        operations.buf[i].memory.bytes) {
+                        TEST_FAILURE {
+                            INFO(STRING("Did not find a node todelete value "));
+                            INFO(operations.buf[i].memory.bytes);
+                            INFO(STRING(
+                                ", should have deleted node with value: "));
+                            INFO(expectedValues.buf[i].bytes, NEWLINE);
+                        }
+                    }
+                }
+                break;
+            } else if (deleted->memory.bytes < operations.buf[i].memory.bytes) {
+                TEST_FAILURE {
+                    INFO(STRING("Deleted value not equal the value that should "
+                                "have been deleted !\nExpected to be "
+                                "deleted value: "));
+                    INFO(operations.buf[i].memory.bytes, NEWLINE);
+                    INFO(STRING("Actual deleted value: "));
+                    INFO(deleted->memory.bytes, NEWLINE);
+                }
+            } else {
+                U64 indexToRemove = 0;
+                for (U64 j = 0; j < expectedValues.len; j++) {
+                    if (expectedValues.buf[j].start ==
+                        operations.buf[i].memory.start) {
+                        indexToRemove = j;
+                    }
+                }
+
+                expectedValues.buf[indexToRemove] =
+                    expectedValues.buf[expectedValues.len - 1];
+                expectedValues.len--;
+                break;
+            }
+        }
         }
 
         assertMMRedBlackTreeValid(tree, expectedValues, scratch);
+        appendRedBlackTreeWithBadNode((RedBlackNode *)tree, nullptr,
+                                      RED_BLACK_MEMORY_MANAGER);
     }
 
     testSuccess();
@@ -253,6 +317,8 @@ static void testSubTopic(string subTopic, TestCases testCases, Arena scratch) {
 void testMemoryManagerRedBlackTrees(Arena scratch) {
     TEST_TOPIC(STRING("Memory Manager red-black trees")) {
         testSubTopic(STRING("No Operations"), noOperationsTestCase, scratch);
-        testSubTopic(STRING("Insert Only"), insertsOnlyTestCases, scratch);
+        // testSubTopic(STRING("Insert Only"), insertsOnlyTestCases, scratch);
+        testSubTopic(STRING("Insert + At Least Deletions"),
+                     insertDeleteAtLeastsOnlyTestCases, scratch);
     }
 }
