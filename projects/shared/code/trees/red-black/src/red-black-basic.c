@@ -36,13 +36,6 @@ static U64 findAdjacentInSteps(RedBlackNodeBasic *node,
     return traversals;
 }
 
-static RedBlackDirection calculateDirection(U64 value, U64 toCompare) {
-    if (value >= toCompare) {
-        return RB_TREE_RIGHT;
-    }
-    return RB_TREE_LEFT;
-}
-
 static U64 rebalanceInsert(RedBlackDirection direction,
                            VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
                            U64 len) {

@@ -2,6 +2,7 @@ project(shared-trees-red-black LANGUAGES C ASM)
 add_library(
     ${PROJECT_NAME}
     OBJECT
+    "src/red-black-common.c"
     "src/red-black-basic.c"
     "src/red-black-memory-manager.c"
 )

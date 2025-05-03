@@ -37,14 +37,6 @@ static U64 findAdjacentInSteps(RedBlackNodeMM *node, VisitedNode *visitedNodes,
     return traversals;
 }
 
-static RedBlackDirection calculateDirection(U64 value,
-                                            RedBlackNodeMM *toCompare) {
-    if (value >= toCompare->memory.start) {
-        return RB_TREE_RIGHT;
-    }
-    return RB_TREE_LEFT;
-}
-
 static void recalculateMostBytes(RedBlackNodeMM *node) {
     node->mostBytesInSubtree = node->memory.bytes;
     if (node->children[RB_TREE_RIGHT]) {
@@ -402,8 +394,8 @@ InsertResult insertRedBlackNodeMM(RedBlackNodeMM **tree,
         }
 
         visitedNodes[len].node = current;
-        visitedNodes[len].direction =
-            calculateDirection(createdNode->memory.start, current);
+        visitedNodes[len].direction = calculateDirection(
+            createdNode->memory.start, current->memory.start);
         len++;
 
         RedBlackNodeMM *next =
@@ -453,7 +445,8 @@ RedBlackNodeMM *deleteAtLeastRedBlackNodeMM(RedBlackNodeMM **tree, U64 bytes) {
             bestWithVisitedNodesLen = len;
         }
 
-        RedBlackDirection dir = calculateDirection(bytes, potential);
+        RedBlackDirection dir =
+            calculateDirection(bytes, potential->mostBytesInSubtree);
         visitedNodes[len].node = potential;
         visitedNodes[len].direction = dir;
         len++;

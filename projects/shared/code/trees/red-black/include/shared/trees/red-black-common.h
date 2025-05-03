@@ -9,4 +9,6 @@ typedef enum { RB_TREE_LEFT = 0, RB_TREE_RIGHT = 1 } RedBlackDirection;
 static constexpr auto RB_TREE_CHILD_COUNT = 2;
 static constexpr auto RB_TREE_MAX_HEIGHT = 128;
 
+RedBlackDirection calculateDirection(U64 value, U64 toCompare);
+
 #endif
