@@ -427,59 +427,50 @@ InsertResult insertRedBlackNodeMM(RedBlackNodeMM **tree,
     return result;
 }
 
-RedBlackDirection bestSubtreeForDeletion(RedBlackNodeMM *parent) {}
-
 RedBlackNodeMM *deleteAtLeastRedBlackNodeMM(RedBlackNodeMM **tree, U64 bytes) {
+    if (!(*tree) || (*tree)->mostBytesInSubtree < bytes) {
+        return nullptr;
+    }
+
     VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
 
     visitedNodes[0].node = (RedBlackNodeMM *)tree;
     visitedNodes[0].direction = RB_TREE_LEFT;
     U64 len = 1;
 
+    U64 bestSoFar = (*tree)->mostBytesInSubtree;
     U64 bestWithVisitedNodesLen = 0;
 
     for (RedBlackNodeMM *potential = *tree; potential;) {
-        if (potential->memory.bytes == bytes) {
-            return deleteNodeInPath(visitedNodes, len, potential);
-        }
-
-        if (potential->memory.bytes > bytes) {
+        if (potential->memory.bytes >= bytes &&
+            potential->memory.bytes <= bestSoFar) {
+            bestSoFar = potential->memory.bytes;
             bestWithVisitedNodesLen = len;
         }
 
-        RedBlackDirection dir;
-        U64 subtreeMostBytes = 0;
+        visitedNodes[len].node = potential;
 
         RedBlackNodeMM *leftChild = potential->children[RB_TREE_LEFT];
-        if (leftChild) {
-            if (leftChild->mostBytesInSubtree >= bytes) {
-                dir = RB_TREE_LEFT;
-                subtreeMostBytes = leftChild->mostBytesInSubtree;
-            }
-        }
-
         RedBlackNodeMM *rightChild = potential->children[RB_TREE_RIGHT];
-        if (rightChild) {
-            if (rightChild->mostBytesInSubtree < subtreeMostBytes &&
-                rightChild->mostBytesInSubtree >= bytes) {
-                dir = RB_TREE_RIGHT;
-                subtreeMostBytes = rightChild->mostBytesInSubtree;
+
+        if (leftChild && leftChild->mostBytesInSubtree >= bytes) {
+            if (rightChild && rightChild->mostBytesInSubtree >= bytes &&
+                rightChild->mostBytesInSubtree <
+                    leftChild->mostBytesInSubtree) {
+                visitedNodes[len].direction = RB_TREE_RIGHT;
+            } else {
+                visitedNodes[len].direction = RB_TREE_LEFT;
+            }
+        } else {
+            if (rightChild && rightChild->mostBytesInSubtree >= bytes) {
+                visitedNodes[len].direction = RB_TREE_RIGHT;
+            } else {
+                break;
             }
         }
 
-        if (!subtreeMostBytes) {
-            break;
-        }
-
-        visitedNodes[len].node = potential;
-        visitedNodes[len].direction = dir;
+        potential = potential->children[visitedNodes[len].direction];
         len++;
-
-        potential = potential->children[dir];
-    }
-
-    if (bestWithVisitedNodesLen == 0) {
-        return nullptr;
     }
 
     return deleteNodeInPath(visitedNodes, bestWithVisitedNodesLen,

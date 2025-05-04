@@ -13,7 +13,7 @@
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
 #include "shared/text/string.h"
-#include "shared/trees/red-black.h"
+#include "shared/trees/red-black-memory-manager.h"
 
 static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     switch (type) {
@@ -34,7 +34,7 @@ void allocateSpaceForKernelMemory(Arena scratch, PhysicalMemory *location) {
     U64 numberOfDescriptors =
         memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
     U64 totalNumberOfDescriptors = ((numberOfDescriptors * 3) / 2);
-    U64 bytes = sizeof(RedBlackNode) * totalNumberOfDescriptors;
+    U64 bytes = sizeof(RedBlackNodeMM) * totalNumberOfDescriptors;
 
     U8 *freeMemoryDescriptorsLocation =
         (U8 *)allocateKernelStructure(bytes, 0, false, scratch);
@@ -79,8 +79,7 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes) {
 }
 
 void convertToKernelMemory(MemoryInfo *memoryInfo, PhysicalMemory *location) {
-    // TODO: FIX THIS!!!
-    RedBlackNode *root = nullptr;
+    RedBlackNodeMM *root = nullptr;
 
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
         if (memoryTypeCanBeUsedByKernel(desc->type)) {
@@ -126,9 +125,10 @@ void convertToKernelMemory(MemoryInfo *memoryInfo, PhysicalMemory *location) {
             }
 
             for (U64 i = 0; i < availableMemory.len; i++) {
-                RedBlackNode *node = NEW(&location->allocator, RedBlackNode);
+                RedBlackNodeMM *node =
+                    NEW(&location->allocator, RedBlackNodeMM);
                 node->memory = availableMemory.buf[i];
-                insertRedBlackNode(&root, node);
+                insertRedBlackNodeMM(&root, node);
             }
         }
     }

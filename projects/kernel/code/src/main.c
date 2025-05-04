@@ -57,6 +57,27 @@ kernelmain(KernelParameters *kernelParams) {
         appendMemoryManagementStatus();
     }
 
+    Memory mems[100];
+    for (U64 i = 0; i < 100; i++) {
+        void *initMemory = (void *)allocAndMap(2 * MiB);
+        mems[i].start = (U64)initMemory;
+        mems[i].bytes = 2 * MiB;
+    }
+
+    KFLUSH_AFTER {
+        //
+        appendMemoryManagementStatus();
+    }
+
+    for (U64 i = 0; i < 100; i++) {
+        freeMapped(mems[i]);
+    }
+
+    KFLUSH_AFTER {
+        //
+        appendMemoryManagementStatus();
+    }
+
     while (1) {
         ;
     }

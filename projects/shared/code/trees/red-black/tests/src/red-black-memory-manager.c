@@ -134,7 +134,6 @@ static TreeOperation insertDeleteAtLeast3[] = {
     {{.start = 11024, .bytes = 256}, INSERT},
     {{.start = 11500, .bytes = 500}, INSERT},
     {{.start = 12000, .bytes = 500}, INSERT},
-
     {{.start = 0, .bytes = 500}, DELETE_AT_LEAST},
     {{.start = 0, .bytes = 500}, DELETE_AT_LEAST},
     {{.start = 0, .bytes = 500}, DELETE_AT_LEAST},
@@ -227,31 +226,11 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
             RedBlackNodeMM *createdNode = NEW(&scratch, RedBlackNodeMM);
             createdNode->memory = operations.buf[i].memory;
             insertRedBlackNodeMM(&tree, createdNode);
-
-            KFLUSH_AFTER {
-                INFO(STRING("Tried to insert address: "));
-                INFO(operations.buf[i].memory.start);
-                INFO(STRING(" and bytes: "));
-                INFO(operations.buf[i].memory.bytes, NEWLINE);
-            }
             break;
         }
         case DELETE_AT_LEAST: {
             RedBlackNodeMM *deleted = deleteAtLeastRedBlackNodeMM(
                 &tree, operations.buf[i].memory.bytes);
-            KFLUSH_AFTER {
-                INFO(STRING("Tried to delete at least "));
-                INFO(operations.buf[i].memory.bytes);
-                INFO(STRING(" and deleted "));
-                if (!deleted) {
-                    INFO(STRING("a null \n"));
-                } else {
-                    INFO(STRING("start: "));
-                    INFO(deleted->memory.start);
-                    INFO(STRING(" bytes: "));
-                    INFO(deleted->memory.bytes, NEWLINE);
-                }
-            }
             if (!deleted) {
                 for (U64 j = 0; j < expectedValues.len; j++) {
                     if (expectedValues.buf[j].bytes >=
@@ -278,8 +257,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
             } else {
                 U64 indexToRemove = 0;
                 for (U64 j = 0; j < expectedValues.len; j++) {
-                    if (expectedValues.buf[j].start ==
-                        operations.buf[i].memory.start) {
+                    if (expectedValues.buf[j].start == deleted->memory.start) {
                         indexToRemove = j;
                     }
                 }
@@ -293,8 +271,6 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         }
 
         assertMMRedBlackTreeValid(tree, expectedValues, scratch);
-        appendRedBlackTreeWithBadNode((RedBlackNode *)tree, nullptr,
-                                      RED_BLACK_MEMORY_MANAGER);
     }
 
     testSuccess();
@@ -317,7 +293,7 @@ static void testSubTopic(string subTopic, TestCases testCases, Arena scratch) {
 void testMemoryManagerRedBlackTrees(Arena scratch) {
     TEST_TOPIC(STRING("Memory Manager red-black trees")) {
         testSubTopic(STRING("No Operations"), noOperationsTestCase, scratch);
-        // testSubTopic(STRING("Insert Only"), insertsOnlyTestCases, scratch);
+        testSubTopic(STRING("Insert Only"), insertsOnlyTestCases, scratch);
         testSubTopic(STRING("Insert + At Least Deletions"),
                      insertDeleteAtLeastsOnlyTestCases, scratch);
     }

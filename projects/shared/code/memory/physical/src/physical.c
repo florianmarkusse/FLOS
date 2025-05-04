@@ -2,6 +2,8 @@
 #include "abstraction/interrupts.h"
 #include "abstraction/memory/physical.h"
 
+// NOTE: Not multi threaded safe!
+
 RedBlackNodeMM *tree;
 static Arena allocatable;
 static RedBlackNodeMMPtr_a freeList;
@@ -35,16 +37,21 @@ void freeMemory(Memory memory) {
     } else {
         newNode = NEW(&allocatable, RedBlackNodeMM);
     }
-
     newNode->memory = memory;
-    insertRedBlackNodeMM(&tree, newNode);
+
+    InsertResult insertResult = insertRedBlackNodeMM(&tree, newNode);
+    for (U64 i = 0; (i < RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT) &&
+                    insertResult.freed[i];
+         i++) {
+        freeList.buf[freeList.len] = insertResult.freed[i];
+        freeList.len++;
+    }
 }
 
 void *allocPhysicalMemory(U64 bytes) {
     RedBlackNodeMM *availableMemory = getMemoryNode(bytes);
     void *result = (void *)availableMemory->memory.start;
     handleFreeMemory(availableMemory, bytes);
-
     return result;
 }
 
