@@ -76,6 +76,11 @@ kernelmain(KernelParameters *kernelParams) {
     KFLUSH_AFTER {
         //
         appendMemoryManagementStatus();
+
+        INFO(STRING("sizeof: "));
+        INFO(sizeof(KernelParameters), NEWLINE);
+        INFO(STRING("alignof:  "));
+        INFO(alignof(KernelParameters), NEWLINE);
     }
 
     while (1) {

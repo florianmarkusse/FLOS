@@ -7,12 +7,29 @@
 #include "shared/assert.h"
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
+#include "shared/memory/policy.h"
 #include "x86/memory/definitions.h"
 
-Range_max_a freeVirtualMemory;
+RedBlackNodeMM *virtualTree;
+static Arena allocatable;
+static RedBlackNodeMMPtr_a freeList;
 
-void initVirtualMemoryManager(VirtualMemory virt) {
-    freeVirtualMemory = virt.freeVirtualMemory;
+void initVirtualMemoryManager(MemoryTree virtualMemoryTree) {
+    virtualTree = virtualMemoryTree.tree;
+
+    allocatable = virtualMemoryTree.allocator;
+    if (setjmp(allocatable.jmp_buf)) {
+        interruptNoMoreVirtualMemory();
+    }
+
+    U64 redBlackNodeMMsPossibleInAllocator =
+        (virtualMemoryTree.allocator.end - virtualMemoryTree.allocator.beg) /
+        sizeof(*virtualTree);
+    U64 freeListRequiredSize =
+        redBlackNodeMMsPossibleInAllocator * sizeof(virtualTree);
+
+    freeList = (RedBlackNodeMMPtr_a){.len = 0,
+                                     .buf = allocAndMap(freeListRequiredSize)};
 }
 
 U64 getVirtual(U64 size, U64 align) {
@@ -39,26 +56,26 @@ static U64 alignVirtual(U64 virt, U64 physical, U64 bytes) {
     return virt;
 }
 
-U64 getVirtualForPhysical(U64 physical, U64 bytes) {
-    U64 requiredVirtual = pageSizeEncompassing(bytes);
-    if (bytes > requiredVirtual) {
-        requiredVirtual =
-            RING_RANGE_VALUE(bytes + requiredVirtual, requiredVirtual);
-    }
-
-    U64 virt;
-    for (U64 i = freeVirtualMemory.len; i-- > 0; freeVirtualMemory.len--) {
-        virt = freeVirtualMemory.buf[i].start;
-        virt = alignVirtual(virt, physical, bytes);
-
-        if (virt + requiredVirtual <= freeVirtualMemory.buf[i].end) {
-            freeVirtualMemory.buf[i].start = virt + requiredVirtual;
-            return virt;
-        }
-    }
-
-    interruptNoMoreVirtualMemory();
-}
+// U64 getVirtualForPhysical(U64 physical, U64 bytes) {
+//     U64 requiredVirtual = pageSizeEncompassing(bytes);
+//     if (bytes > requiredVirtual) {
+//         requiredVirtual =
+//             RING_RANGE_VALUE(bytes + requiredVirtual, requiredVirtual);
+//     }
+//
+//     U64 virt;
+//     for (U64 i = freeVirtualMemory.len; i-- > 0; freeVirtualMemory.len--) {
+//         virt = freeVirtualMemory.buf[i].start;
+//         virt = alignVirtual(virt, physical, bytes);
+//
+//         if (virt + requiredVirtual <= freeVirtualMemory.buf[i].end) {
+//             freeVirtualMemory.buf[i].start = virt + requiredVirtual;
+//             return virt;
+//         }
+//     }
+//
+//     interruptNoMoreVirtualMemory();
+// }
 
 //    for (U64 bytesMapped = 0, mappingSize; bytesMapped < bytes;
 //         virt += mappingSize, physical += mappingSize,

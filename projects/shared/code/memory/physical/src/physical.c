@@ -4,7 +4,7 @@
 
 // NOTE: Not multi threaded safe!
 
-RedBlackNodeMM *tree;
+RedBlackNodeMM *physicalTree;
 static Arena allocatable;
 static RedBlackNodeMMPtr_a freeList;
 
@@ -14,7 +14,7 @@ static void handleFreeMemory(RedBlackNodeMM *availableMemory, U64 bytes) {
     availableMemory->memory.bytes -= bytes;
     if (availableMemory->memory.bytes) {
         availableMemory->memory.start += bytes;
-        insertRedBlackNodeMM(&tree, availableMemory);
+        insertRedBlackNodeMM(&physicalTree, availableMemory);
     } else {
         freeList.buf[freeList.len] = availableMemory;
         freeList.len++;
@@ -22,7 +22,8 @@ static void handleFreeMemory(RedBlackNodeMM *availableMemory, U64 bytes) {
 }
 
 static RedBlackNodeMM *getMemoryNode(U64 bytes) {
-    RedBlackNodeMM *availableMemory = deleteAtLeastRedBlackNodeMM(&tree, bytes);
+    RedBlackNodeMM *availableMemory =
+        deleteAtLeastRedBlackNodeMM(&physicalTree, bytes);
     if (!availableMemory) {
         interruptTooLargeAllocation();
     }
@@ -39,7 +40,7 @@ void freeMemory(Memory memory) {
     }
     newNode->memory = memory;
 
-    InsertResult insertResult = insertRedBlackNodeMM(&tree, newNode);
+    InsertResult insertResult = insertRedBlackNodeMM(&physicalTree, newNode);
     for (U64 i = 0; (i < RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT) &&
                     insertResult.freed[i];
          i++) {
@@ -61,19 +62,19 @@ U64 getPageForMappingVirtualMemory(U64 pageSize) {
 
 // NOTE: Coming into this, All the memory is identity mapped. Having to do some
 // boostrapping here.
-void initPhysicalMemoryManager(PhysicalMemory kernelMemory) {
-    tree = kernelMemory.tree;
+void initPhysicalMemoryManager(MemoryTree physicalMemoryTree) {
+    physicalTree = physicalMemoryTree.tree;
 
-    allocatable = kernelMemory.allocator;
+    allocatable = physicalMemoryTree.allocator;
     if (setjmp(allocatable.jmp_buf)) {
         interruptNoMorePhysicalMemory();
     }
 
     U64 redBlackNodeMMsPossibleInAllocator =
-        (kernelMemory.allocator.end - kernelMemory.allocator.beg) /
-        sizeof(*tree);
+        (physicalMemoryTree.allocator.end - physicalMemoryTree.allocator.beg) /
+        sizeof(*physicalTree);
     U64 freeListRequiredSize =
-        redBlackNodeMMsPossibleInAllocator * sizeof(tree);
+        redBlackNodeMMsPossibleInAllocator * sizeof(physicalTree);
 
     RedBlackNodeMM *availableMemory = getMemoryNode(freeListRequiredSize);
     freeList = (RedBlackNodeMMPtr_a){

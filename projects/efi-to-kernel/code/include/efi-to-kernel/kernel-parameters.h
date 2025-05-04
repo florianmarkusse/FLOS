@@ -4,8 +4,9 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/trees/red-black/memory-manager.h"
-#include "shared/types/common.h"
 #include "shared/types/numeric.h"
+
+#pragma pack(push, 1)
 
 // This struct implicitly assumes that there are 4 bytes per pixel, hence a
 // U32 buffer
@@ -21,20 +22,19 @@ typedef struct {
 typedef struct {
     RedBlackNodeMM *tree;
     Arena allocator;
-} PhysicalMemory;
+} MemoryTree;
 
 typedef struct {
-    Range_max_a freeVirtualMemory;
-} VirtualMemory;
-
-typedef struct {
-    PhysicalMemory physical;
-    VirtualMemory virt;
+    MemoryTree physical;
+    MemoryTree virt;
 } KernelMemory;
 
 typedef struct {
     Window window;
     KernelMemory memory;
-} KernelParameters;
+} __attribute__((packed))
+KernelParameters; // NOTE: Crossing ABI boundaries here, so ensuring that both
+                  // targets agree on the size of the struct!
 
+#pragma pack(pop)
 #endif

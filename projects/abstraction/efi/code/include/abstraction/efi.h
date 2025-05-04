@@ -5,7 +5,8 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/types/numeric.h"
 
-void initVirtualMemory(U64 startingAddress, U64 endingAddress, Arena scratch);
+void initVirtualMemory(U64 startingAddress, U64 endingAddress,
+                       MemoryTree *virtualMemoryTree, Arena scratch);
 void initArchitecture(Arena scratch);
 void jumpIntoKernel(U64 newStackPointer, KernelParameters *kernelParameters);
 U64 initScreenMemory(U64 physicalScreenAddress, U64 bytes);

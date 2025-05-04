@@ -10,6 +10,7 @@
 #include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/memory/sizes.h"
+#include "shared/trees/red-black/memory-manager.h"
 
 static MemoryInfo prepareMemoryInfo() {
     MemoryInfo memoryInfo = {0};
@@ -211,4 +212,20 @@ U64 allocateUnalignedMemory(U64 bytes, bool isKernelStructure) {
         addAddressToKernelStructure(address, bytes);
     }
     return address;
+}
+
+Arena createAllocatorForMemoryTree(U64 requiredNumberOfNodes, Arena scratch) {
+    U64 bytes = sizeof(RedBlackNodeMM) * requiredNumberOfNodes;
+
+    U8 *freeMemoryDescriptorsLocation = (U8 *)allocateKernelStructure(
+        bytes, alignof(RedBlackNodeMM), false, scratch);
+    if (!freeMemoryDescriptorsLocation) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("Received the 0 memory address to use for the memory "
+                         "tree allocator!\n"));
+        }
+    }
+    return (Arena){.curFree = freeMemoryDescriptorsLocation,
+                   .beg = freeMemoryDescriptorsLocation,
+                   .end = freeMemoryDescriptorsLocation + bytes};
 }

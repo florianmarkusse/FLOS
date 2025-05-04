@@ -25,7 +25,7 @@ void appendPhysicalMemoryManagerStatus() {
     KLOG(STRING("Physical Memory status\n"));
     KLOG(STRING("================\n"));
     U64 totalMemory = 0;
-    preOrder(tree, &totalMemory);
+    preOrder(physicalTree, &totalMemory);
     KLOG(STRING("\n================\n"));
     KLOG(STRING("Total memory: "));
     KLOG(totalMemory, NEWLINE);

@@ -104,8 +104,6 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
     mapMemory(0, 0, highestLowerHalfAddress);
 
-    initVirtualMemory(highestLowerHalfAddress, KERNEL_CODE_START, arena);
-
     KFLUSH_AFTER { INFO(STRING("Mapping screen memory into location\n")); }
     kernelFreeVirtualMemory =
         alignVirtual(kernelFreeVirtualMemory, gop->mode->frameBufferBase,
@@ -176,9 +174,12 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)kernelParams, NEWLINE);
         INFO(STRING("stop:  "));
         INFO(kernelParamsEnd, NEWLINE);
-    }
 
-    kernelParams->memory.virt.freeVirtualMemory = freeVirtualMemory;
+        INFO(STRING("sizeof: "));
+        INFO(sizeof(KernelParameters), NEWLINE);
+        INFO(STRING("alignof:  "));
+        INFO(alignof(KernelParameters), NEWLINE);
+    }
 
     kernelParams->window =
         (Window){.screen = (U32 *)screenMemoryVirtualStart,
@@ -191,6 +192,23 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                               globals.st->configuration_table);
     if (!rsdp.rsdp) {
         EXIT_WITH_MESSAGE { ERROR(STRING("Could not find an RSDP!\n")); }
+    }
+
+    initVirtualMemory(highestLowerHalfAddress, KERNEL_CODE_START,
+                      &kernelParams->memory.virt, arena);
+
+    KFLUSH_AFTER {
+        INFO(STRING("The virt root address "));
+        INFO((void *)&kernelParams->memory.virt.tree, NEWLINE);
+        INFO(STRING("The virt root is now at "));
+        INFO((void *)kernelParams->memory.virt.tree, NEWLINE);
+        INFO(STRING("The allocator is:\n"));
+        INFO(STRING("curfree: "));
+        INFO((void *)kernelParams->memory.virt.allocator.curFree, NEWLINE);
+        INFO(STRING("beg: "));
+        INFO((void *)kernelParams->memory.virt.allocator.beg, NEWLINE);
+        INFO(STRING("end: "));
+        INFO((void *)kernelParams->memory.virt.allocator.end, NEWLINE);
     }
 
     KFLUSH_AFTER {

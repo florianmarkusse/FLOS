@@ -6,10 +6,10 @@
 #include "shared/trees/red-black/memory-manager.h"
 #include "shared/types/numeric.h"
 
-void initPhysicalMemoryManager(PhysicalMemory kernelMemory);
+void initPhysicalMemoryManager(MemoryTree physicalMemoryTree);
 void freeMemory(Memory memory);
 void *allocPhysicalMemory(U64 bytes);
 
-extern RedBlackNodeMM *tree;
+extern RedBlackNodeMM *physicalTree;
 
 #endif

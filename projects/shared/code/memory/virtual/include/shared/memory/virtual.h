@@ -4,10 +4,9 @@
 #include "efi-to-kernel/kernel-parameters.h"
 #include "shared/types/numeric.h"
 
-// NOTE: The free virtual memory regions in sorted order!
-extern Range_max_a freeVirtualMemory;
+extern RedBlackNodeMM *virtualTree;
 
-void initVirtualMemoryManager(VirtualMemory virt);
+void initVirtualMemoryManager(MemoryTree virtualMemoryTree);
 U64 getVirtualMemory(U64 size, U64 align);
 
 U64 getVirtualMemoryWithPhysical(U64 size, U64 physical);

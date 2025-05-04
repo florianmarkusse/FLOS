@@ -29,28 +29,17 @@ static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     }
 }
 
-void allocateSpaceForKernelMemory(Arena scratch, PhysicalMemory *location) {
+void allocateSpaceForKernelMemory(Arena scratch,
+                                  MemoryTree *physicalMemoryTree) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
     U64 numberOfDescriptors =
         memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
     U64 totalNumberOfDescriptors = ((numberOfDescriptors * 3) / 2);
-    U64 bytes = sizeof(RedBlackNodeMM) * totalNumberOfDescriptors;
 
-    U8 *freeMemoryDescriptorsLocation =
-        (U8 *)allocateKernelStructure(bytes, 0, false, scratch);
-    if (!freeMemoryDescriptorsLocation) {
-        EXIT_WITH_MESSAGE {
-            ERROR(STRING("Received the 0 memory address to use for the memory "
-                         "descriptors allocator!\n"));
-        }
-    }
-    Arena physicalMemoryArena =
-        (Arena){.curFree = freeMemoryDescriptorsLocation,
-                .beg = freeMemoryDescriptorsLocation,
-                .end = freeMemoryDescriptorsLocation + bytes};
-
-    *location =
-        (PhysicalMemory){.allocator = physicalMemoryArena, .tree = nullptr};
+    *physicalMemoryTree =
+        (MemoryTree){.allocator = createAllocatorForMemoryTree(
+                         totalNumberOfDescriptors, scratch),
+                     .tree = nullptr};
 }
 
 U64 alignVirtual(U64 virt, U64 physical, U64 bytes) {
@@ -78,7 +67,8 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes) {
                               KERNEL_STANDARD_PAGE_FLAGS);
 }
 
-void convertToKernelMemory(MemoryInfo *memoryInfo, PhysicalMemory *location) {
+void convertToKernelMemory(MemoryInfo *memoryInfo,
+                           MemoryTree *physicalMemoryTree) {
     RedBlackNodeMM *root = nullptr;
 
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
@@ -126,12 +116,13 @@ void convertToKernelMemory(MemoryInfo *memoryInfo, PhysicalMemory *location) {
 
             for (U64 i = 0; i < availableMemory.len; i++) {
                 RedBlackNodeMM *node =
-                    NEW(&location->allocator, RedBlackNodeMM);
+                    NEW(&physicalMemoryTree->allocator, RedBlackNodeMM);
                 node->memory = availableMemory.buf[i];
+                // TODO: CAN FREE THE STUFF HERE I THINK!!!
                 insertRedBlackNodeMM(&root, node);
             }
         }
     }
 
-    location->tree = root;
+    physicalMemoryTree->tree = root;
 }

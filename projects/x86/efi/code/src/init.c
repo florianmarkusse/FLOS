@@ -162,18 +162,22 @@ void initArchitecture(Arena scratch) {
     bootstrapProcessorWork(scratch);
 }
 
-static constexpr auto MAX_VIRTUAL_MEMORY_REGIONS = 16;
-static constexpr auto VIRTUAL_MEMORY_REGIONS_BYTES =
-    sizeof(Range) * MAX_VIRTUAL_MEMORY_REGIONS;
+void initVirtualMemory(U64 startingAddress, U64 endingAddress,
+                       MemoryTree *virtualMemoryTree, Arena scratch) {
+    Arena treeAllocator =
+        createAllocatorForMemoryTree(X86_MAX_VIRTUAL_MEMORY_REGIONS, scratch);
 
-void initVirtualMemory(U64 startingAddress, U64 endingAddress, Arena scratch) {
-    Range *buffer = (Range *)allocateKernelStructure(
-        VIRTUAL_MEMORY_REGIONS_BYTES, alignof(Range), false, scratch);
-    buffer[0] = (Range){.start = startingAddress, .end = LOWER_HALF_END};
-    buffer[1] = (Range){.start = HIGHER_HALF_START, .end = endingAddress};
+    RedBlackNodeMM *root = nullptr;
 
-    freeVirtualMemory =
-        (Range_max_a){.len = 2,
-                      .buf = buffer,
-                      .cap = VIRTUAL_MEMORY_REGIONS_BYTES / sizeof(Memory)};
+    RedBlackNodeMM *node = NEW(&treeAllocator, RedBlackNodeMM);
+    node->memory = (Memory){.start = startingAddress,
+                            .bytes = LOWER_HALF_END - startingAddress};
+    insertRedBlackNodeMM(&root, node);
+
+    node = NEW(&treeAllocator, RedBlackNodeMM);
+    node->memory = (Memory){.start = HIGHER_HALF_START,
+                            .bytes = endingAddress - HIGHER_HALF_START};
+    insertRedBlackNodeMM(&root, node);
+
+    *virtualMemoryTree = (MemoryTree){.allocator = treeAllocator, .tree = root};
 }
