@@ -13,7 +13,7 @@
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
 #include "shared/text/string.h"
-#include "shared/trees/red-black-memory-manager.h"
+#include "shared/trees/red-black/memory-manager.h"
 
 static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     switch (type) {

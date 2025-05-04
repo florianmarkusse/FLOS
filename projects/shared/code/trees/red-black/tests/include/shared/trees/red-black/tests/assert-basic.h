@@ -2,7 +2,7 @@
 #define SHARED_TREES_RED_BLACK_TESTS_ASSERT_BASIC_H
 
 #include "shared/memory/allocator/arena.h"
-#include "shared/trees/red-black-basic.h"
+#include "shared/trees/red-black/basic.h"
 #include "shared/types/array-types.h"
 
 void assertBasicRedBlackTreeValid(RedBlackNodeBasic *tree,

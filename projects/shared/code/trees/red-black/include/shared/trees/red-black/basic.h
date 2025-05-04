@@ -2,7 +2,7 @@
 #define SHARED_TREES_RED_BLACK_BASIC_H
 
 #include "shared/memory/management/definitions.h"
-#include "shared/trees/red-black-common.h"
+#include "shared/trees/red-black/common.h"
 
 typedef struct RedBlackNodeBasic RedBlackNodeBasic;
 struct RedBlackNodeBasic {

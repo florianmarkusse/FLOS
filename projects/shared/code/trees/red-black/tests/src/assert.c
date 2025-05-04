@@ -2,7 +2,7 @@
 #include "abstraction/log.h"
 #include "posix/test-framework/test.h"
 #include "shared/log.h"
-#include "shared/trees/red-black-memory-manager.h"
+#include "shared/trees/red-black/memory-manager.h"
 
 static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
                               RedBlackNode *badNode,

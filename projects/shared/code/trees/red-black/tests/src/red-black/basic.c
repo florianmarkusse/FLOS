@@ -1,4 +1,4 @@
-#include "shared/trees/red-black/tests/red-black-basic.h"
+#include "shared/trees/red-black/tests/red-black/basic.h"
 
 #include "abstraction/log.h"
 #include "posix/test-framework/test.h"
@@ -6,7 +6,7 @@
 #include "shared/macros.h"
 #include "shared/memory/allocator/macros.h"
 #include "shared/text/string.h"
-#include "shared/trees/red-black-basic.h"
+#include "shared/trees/red-black/basic.h"
 #include "shared/trees/red-black/tests/assert-basic.h"
 #include "shared/trees/red-black/tests/assert.h"
 

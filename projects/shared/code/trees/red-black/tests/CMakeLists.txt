@@ -2,8 +2,8 @@ project(shared-trees-red-black-tests LANGUAGES C)
 add_executable(
     ${PROJECT_NAME}
     "src/main.c"
-    "src/red-black-basic.c"
-    "src/red-black-memory-manager.c"
+    "src/red-black/basic.c"
+    "src/red-black/memory-manager.c"
     "src/assert.c"
     "src/assert-basic.c"
     "src/assert-memory-manager.c"

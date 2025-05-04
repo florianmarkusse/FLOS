@@ -4,7 +4,7 @@
 #include "shared/log.h"
 #include "shared/memory/physical.h"
 #include "shared/text/string.h"
-#include "shared/trees/red-black-memory-manager.h"
+#include "shared/trees/red-black/memory-manager.h"
 #include "shared/types/numeric.h"
 
 static void preOrder(RedBlackNodeMM *current, U64 *totalValue) {

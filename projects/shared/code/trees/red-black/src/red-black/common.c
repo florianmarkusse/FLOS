@@ -1,4 +1,4 @@
-#include "shared/trees/red-black-common.h"
+#include "shared/trees/red-black/common.h"
 
 RedBlackDirection calculateDirection(U64 value, U64 toCompare) {
     if (value >= toCompare) {

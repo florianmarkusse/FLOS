@@ -2,7 +2,7 @@
 #define SHARED_TREES_RED_BLACK_MEMORY_MANAGER_H
 
 #include "shared/memory/management/definitions.h"
-#include "shared/trees/red-black-common.h"
+#include "shared/trees/red-black/common.h"
 #include "shared/types/numeric.h"
 
 typedef struct RedBlackNodeMM RedBlackNodeMM;
