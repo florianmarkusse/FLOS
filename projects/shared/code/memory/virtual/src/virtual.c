@@ -14,10 +14,12 @@ RedBlackNodeMM *virtualTree;
 static Arena allocatable;
 static RedBlackNodeMMPtr_a freeList;
 
-void initVirtualMemoryManager(MemoryTree virtualMemoryTree) {
+void initVirtualMemoryManager(PackedMemoryTree virtualMemoryTree) {
     virtualTree = virtualMemoryTree.tree;
 
-    allocatable = virtualMemoryTree.allocator;
+    allocatable.beg = virtualMemoryTree.allocator.beg;
+    allocatable.curFree = virtualMemoryTree.allocator.curFree;
+    allocatable.end = virtualMemoryTree.allocator.end;
     if (setjmp(allocatable.jmp_buf)) {
         interruptNoMoreVirtualMemory();
     }

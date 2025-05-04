@@ -6,7 +6,7 @@
 #include "shared/trees/red-black/memory-manager.h"
 #include "shared/types/numeric.h"
 
-void initPhysicalMemoryManager(MemoryTree physicalMemoryTree);
+void initPhysicalMemoryManager(PackedMemoryTree physicalMemoryTree);
 void freeMemory(Memory memory);
 void *allocPhysicalMemory(U64 bytes);
 

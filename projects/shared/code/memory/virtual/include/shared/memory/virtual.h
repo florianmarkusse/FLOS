@@ -6,7 +6,7 @@
 
 extern RedBlackNodeMM *virtualTree;
 
-void initVirtualMemoryManager(MemoryTree virtualMemoryTree);
+void initVirtualMemoryManager(PackedMemoryTree virtualMemoryTree);
 U64 getVirtualMemory(U64 size, U64 align);
 
 U64 getVirtualMemoryWithPhysical(U64 size, U64 physical);

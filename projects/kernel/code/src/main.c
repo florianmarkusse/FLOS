@@ -18,7 +18,7 @@
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
 __attribute__((section("kernel-start"))) int
-kernelmain(KernelParameters *kernelParams) {
+kernelmain(PackedKernelParameters *kernelParams) {
     //----------------------
     // NOTE: this code should probably be wrapped in a kernel init function that
     // has arch-dependent implementations
@@ -76,11 +76,6 @@ kernelmain(KernelParameters *kernelParams) {
     KFLUSH_AFTER {
         //
         appendMemoryManagementStatus();
-
-        INFO(STRING("sizeof: "));
-        INFO(sizeof(KernelParameters), NEWLINE);
-        INFO(STRING("alignof:  "));
-        INFO(alignof(KernelParameters), NEWLINE);
     }
 
     while (1) {

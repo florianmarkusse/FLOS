@@ -159,10 +159,12 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
-    KernelParameters *kernelParams =
-        (KernelParameters *)allocateKernelStructure(
-            sizeof(KernelParameters), alignof(KernelParameters), false, arena);
-    void *kernelParamsEnd = ((U8 *)kernelParams) + sizeof(KernelParameters);
+    PackedKernelParameters *kernelParams =
+        (PackedKernelParameters *)allocateKernelStructure(
+            sizeof(PackedKernelParameters), alignof(PackedKernelParameters),
+            false, arena);
+    void *kernelParamsEnd =
+        ((U8 *)kernelParams) + sizeof(PackedKernelParameters);
 
     KFLUSH_AFTER {
         INFO(STRING("The phyiscal kernel params:\nstart: "));
@@ -174,19 +176,14 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)kernelParams, NEWLINE);
         INFO(STRING("stop:  "));
         INFO(kernelParamsEnd, NEWLINE);
-
-        INFO(STRING("sizeof: "));
-        INFO(sizeof(KernelParameters), NEWLINE);
-        INFO(STRING("alignof:  "));
-        INFO(alignof(KernelParameters), NEWLINE);
     }
 
     kernelParams->window =
-        (Window){.screen = (U32 *)screenMemoryVirtualStart,
-                 .size = gop->mode->frameBufferSize,
-                 .width = gop->mode->info->horizontalResolution,
-                 .height = gop->mode->info->verticalResolution,
-                 .scanline = gop->mode->info->pixelsPerScanLine};
+        (PackedWindow){.screen = (U32 *)screenMemoryVirtualStart,
+                       .size = gop->mode->frameBufferSize,
+                       .width = gop->mode->info->horizontalResolution,
+                       .height = gop->mode->info->verticalResolution,
+                       .scanline = gop->mode->info->pixelsPerScanLine};
 
     RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
                               globals.st->configuration_table);
@@ -216,7 +213,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                     "to the kernel.\n"));
     }
 
-    allocateSpaceForKernelMemory(arena, &kernelParams->memory.physical);
+    Arena physicalTreeArena = allocateSpaceForKernelMemory(arena);
 
     /* NOTE: Keep this call in between the stub and the creation of available */
     /* memory! The stub allocates memory and logs on failure which is not */
@@ -230,7 +227,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                      "call exit boot services twice?\n"));
     }
 
-    convertToKernelMemory(&memoryInfo, &kernelParams->memory.physical);
+    convertToKernelMemory(&memoryInfo, &kernelParams->memory.physical,
+                          physicalTreeArena);
 
     jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE, kernelParams);
 

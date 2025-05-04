@@ -6,35 +6,40 @@
 #include "shared/trees/red-black/memory-manager.h"
 #include "shared/types/numeric.h"
 
-#pragma pack(push, 1)
+// NOTE: Crossing ABI boundaries here, so ensuring that both
+// targets agree on the size of the struct!
+// So, only use this struct for transfering data. Convert this data into native
+// structs for processing. Otherwise, performance will suffer.
 
 // This struct implicitly assumes that there are 4 bytes per pixel, hence a
 // U32 buffer
 typedef struct {
     U32 *screen;
-    U32 *backingBuffer;
     U64 size;
     U32 width;
     U32 height;
     U32 scanline;
-} Window;
+} __attribute__((packed)) PackedWindow;
+
+typedef struct {
+    U8 *curFree;
+    U8 *beg;
+    U8 *end;
+} __attribute__((packed)) PackedArena;
 
 typedef struct {
     RedBlackNodeMM *tree;
-    Arena allocator;
-} MemoryTree;
+    PackedArena allocator;
+} __attribute__((packed)) PackedMemoryTree;
 
 typedef struct {
-    MemoryTree physical;
-    MemoryTree virt;
-} KernelMemory;
+    PackedMemoryTree physical;
+    PackedMemoryTree virt;
+} __attribute__((packed)) PackedKernelMemory;
 
 typedef struct {
-    Window window;
-    KernelMemory memory;
-} __attribute__((packed))
-KernelParameters; // NOTE: Crossing ABI boundaries here, so ensuring that both
-                  // targets agree on the size of the struct!
+    PackedWindow window;
+    PackedKernelMemory memory;
+} __attribute__((packed)) PackedKernelParameters;
 
-#pragma pack(pop)
 #endif

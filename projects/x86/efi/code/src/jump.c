@@ -10,7 +10,7 @@ void enableNewMemoryMapping() {
     asm volatile("mov %%rax, %%cr3" : : "a"(rootPageTable) : "memory");
 }
 
-void toKernel(U64 newStackPointer, KernelParameters *kernelParams) {
+void toKernel(U64 newStackPointer, PackedKernelParameters *kernelParams) {
     asm volatile("movq %0, %%rsp;"
                  "movq %%rsp, %%rbp;"
                  "movq %1, %%rdi;"
@@ -23,7 +23,7 @@ void toKernel(U64 newStackPointer, KernelParameters *kernelParams) {
                  : "memory");
 }
 
-void jumpIntoKernel(U64 newStackPointer, KernelParameters *kernelParams) {
+void jumpIntoKernel(U64 newStackPointer, PackedKernelParameters *kernelParams) {
     enableNewGDT(gdtDescriptor);
     enableNewMemoryMapping();
     toKernel(newStackPointer, kernelParams);

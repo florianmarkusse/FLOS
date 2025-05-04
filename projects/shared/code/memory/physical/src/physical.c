@@ -62,10 +62,12 @@ U64 getPageForMappingVirtualMemory(U64 pageSize) {
 
 // NOTE: Coming into this, All the memory is identity mapped. Having to do some
 // boostrapping here.
-void initPhysicalMemoryManager(MemoryTree physicalMemoryTree) {
+void initPhysicalMemoryManager(PackedMemoryTree physicalMemoryTree) {
     physicalTree = physicalMemoryTree.tree;
 
-    allocatable = physicalMemoryTree.allocator;
+    allocatable.beg = physicalMemoryTree.allocator.beg;
+    allocatable.curFree = physicalMemoryTree.allocator.curFree;
+    allocatable.end = physicalMemoryTree.allocator.end;
     if (setjmp(allocatable.jmp_buf)) {
         interruptNoMorePhysicalMemory();
     }

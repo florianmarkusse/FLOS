@@ -6,9 +6,10 @@
 #include "shared/types/numeric.h"
 
 void initVirtualMemory(U64 startingAddress, U64 endingAddress,
-                       MemoryTree *virtualMemoryTree, Arena scratch);
+                       PackedMemoryTree *virtualMemoryTree, Arena scratch);
 void initArchitecture(Arena scratch);
-void jumpIntoKernel(U64 newStackPointer, KernelParameters *kernelParameters);
+void jumpIntoKernel(U64 newStackPointer,
+                    PackedKernelParameters *kernelParameters);
 U64 initScreenMemory(U64 physicalScreenAddress, U64 bytes);
 
 #endif

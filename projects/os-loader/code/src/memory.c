@@ -29,17 +29,13 @@ static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     }
 }
 
-void allocateSpaceForKernelMemory(Arena scratch,
-                                  MemoryTree *physicalMemoryTree) {
+Arena allocateSpaceForKernelMemory(Arena scratch) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
     U64 numberOfDescriptors =
         memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
     U64 totalNumberOfDescriptors = ((numberOfDescriptors * 3) / 2);
 
-    *physicalMemoryTree =
-        (MemoryTree){.allocator = createAllocatorForMemoryTree(
-                         totalNumberOfDescriptors, scratch),
-                     .tree = nullptr};
+    return createAllocatorForMemoryTree(totalNumberOfDescriptors, scratch);
 }
 
 U64 alignVirtual(U64 virt, U64 physical, U64 bytes) {
@@ -68,7 +64,8 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes) {
 }
 
 void convertToKernelMemory(MemoryInfo *memoryInfo,
-                           MemoryTree *physicalMemoryTree) {
+                           PackedMemoryTree *physicalMemoryTree,
+                           Arena treeAllocator) {
     RedBlackNodeMM *root = nullptr;
 
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
@@ -115,8 +112,7 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
             }
 
             for (U64 i = 0; i < availableMemory.len; i++) {
-                RedBlackNodeMM *node =
-                    NEW(&physicalMemoryTree->allocator, RedBlackNodeMM);
+                RedBlackNodeMM *node = NEW(&treeAllocator, RedBlackNodeMM);
                 node->memory = availableMemory.buf[i];
                 // TODO: CAN FREE THE STUFF HERE I THINK!!!
                 insertRedBlackNodeMM(&root, node);
@@ -124,5 +120,9 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
         }
     }
 
-    physicalMemoryTree->tree = root;
+    *physicalMemoryTree = (PackedMemoryTree){
+        .allocator = (PackedArena){.beg = treeAllocator.beg,
+                                   .curFree = treeAllocator.curFree,
+                                   .end = treeAllocator.end},
+        .tree = root};
 }

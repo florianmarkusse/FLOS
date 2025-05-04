@@ -163,7 +163,7 @@ void initArchitecture(Arena scratch) {
 }
 
 void initVirtualMemory(U64 startingAddress, U64 endingAddress,
-                       MemoryTree *virtualMemoryTree, Arena scratch) {
+                       PackedMemoryTree *virtualMemoryTree, Arena scratch) {
     Arena treeAllocator =
         createAllocatorForMemoryTree(X86_MAX_VIRTUAL_MEMORY_REGIONS, scratch);
 
@@ -179,5 +179,9 @@ void initVirtualMemory(U64 startingAddress, U64 endingAddress,
                             .bytes = endingAddress - HIGHER_HALF_START};
     insertRedBlackNodeMM(&root, node);
 
-    *virtualMemoryTree = (MemoryTree){.allocator = treeAllocator, .tree = root};
+    *virtualMemoryTree = (PackedMemoryTree){
+        .allocator = (PackedArena){.beg = treeAllocator.beg,
+                                   .curFree = treeAllocator.curFree,
+                                   .end = treeAllocator.end},
+        .tree = root};
 }

@@ -5,7 +5,7 @@
 #include "shared/memory/management/definitions.h"
 #include "shared/types/numeric.h"
 
-void initMemoryManager(KernelMemory memory);
+void initMemoryManager(PackedKernelMemory memory);
 
 void *allocAndMap(U64 bytes);
 void *allocContiguousAndMap(U64 bytes);

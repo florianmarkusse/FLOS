@@ -6,6 +6,17 @@
 #include "shared/memory/allocator/macros.h"
 #include "shared/types/array-types.h" // for U8_a, uint8_max_a, U8_d_a
 
+// This struct implicitly assumes that there are 4 bytes per pixel, hence a
+// U32 buffer
+typedef struct {
+    U32 *screen;
+    U64 size;
+    U32 width;
+    U32 height;
+    U32 scanline;
+    U32 *backingBuffer;
+} Window;
+
 // The header contains all the data for each glyph. After that comes numGlyph *
 // bytesPerGlyph bytes.
 //            padding
@@ -526,13 +537,17 @@ bool flushToScreen(U8_max_a buffer) {
     return true;
 }
 
-void initScreen(Window window, Arena *perm) {
+void initScreen(PackedWindow window, Arena *perm) {
     buf = NEW(perm, U8, FILE_BUF_LEN);
     // Need correct alignment
     U32 *doubleBuffer =
         NEW(perm, U32, CEILING_DIV_VALUE(window.size, (U32)BYTES_PER_PIXEL));
 
-    dim = window;
+    dim.screen = window.screen;
+    dim.size = window.size;
+    dim.width = window.width;
+    dim.height = window.height;
+    dim.scanline = window.scanline;
     dim.backingBuffer = doubleBuffer;
 
     glyphsPerLine =

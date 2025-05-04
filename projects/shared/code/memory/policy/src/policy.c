@@ -2,7 +2,7 @@
 #include "shared/memory/physical.h"
 #include "shared/memory/virtual.h"
 
-void initMemoryManager(KernelMemory memory) {
+void initMemoryManager(PackedKernelMemory memory) {
     initPhysicalMemoryManager(memory.physical);
     initVirtualMemoryManager(memory.virt);
 }
