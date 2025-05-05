@@ -47,7 +47,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
     initKernelStructureLocations(&arena);
 
-    initArchitecture(arena);
+    ArchitectureInit archInit = initArchitecture(arena);
 
     KFLUSH_AFTER { INFO(STRING("Going to fetch kernel bytes\n")); }
     U64 kernelBytes = getKernelBytes(arena);
@@ -184,6 +184,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                        .width = gop->mode->info->horizontalResolution,
                        .height = gop->mode->info->verticalResolution,
                        .scanline = gop->mode->info->pixelsPerScanLine};
+    kernelParams->cyclesPerMicroSecond = archInit.cyclesPerMicroSecond;
 
     RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
                               globals.st->configuration_table);

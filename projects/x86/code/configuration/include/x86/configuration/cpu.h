@@ -9,9 +9,6 @@ void wrmsr(U32 msr, U64 value);
 void flushTLB();
 void flushCPUCaches();
 
-extern U64 cyclesPerMicroSecond;
-void wait(U64 microSeconds);
-
 typedef struct {
     U32 eax;
     U32 ebx;
@@ -19,6 +16,7 @@ typedef struct {
     U32 edx;
 } CPUIDResult;
 CPUIDResult CPUID(U32 leaf);
+
 CPUIDResult CPUIDWithSubleaf(U32 leaf, U32 subleaf);
 void disablePIC();
 U64 CR3();

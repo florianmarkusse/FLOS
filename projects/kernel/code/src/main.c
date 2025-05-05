@@ -19,6 +19,7 @@ static constexpr auto INIT_MEMORY = (16 * MiB);
 
 __attribute__((section("kernel-start"))) int
 kernelmain(PackedKernelParameters *kernelParams) {
+    // TODO: Do this and then we can also use the cyclesPerMicrosecond stuff!
     //----------------------
     // NOTE: this code should probably be wrapped in a kernel init function that
     // has arch-dependent implementations
@@ -76,6 +77,8 @@ kernelmain(PackedKernelParameters *kernelParams) {
     KFLUSH_AFTER {
         //
         appendMemoryManagementStatus();
+        INFO(STRING("Cycles per microsecond: "));
+        INFO(kernelParams->cyclesPerMicroSecond, NEWLINE);
     }
 
     while (1) {

@@ -40,6 +40,7 @@ typedef struct {
 typedef struct {
     PackedWindow window;
     PackedKernelMemory memory;
+    U64 cyclesPerMicroSecond; // This can be different per core?
 } __attribute__((packed)) PackedKernelParameters;
 
 #endif

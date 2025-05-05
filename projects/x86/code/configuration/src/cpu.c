@@ -33,20 +33,6 @@ CPUIDResult CPUIDWithSubleaf(U32 leaf, U32 subleaf) {
 
 CPUIDResult CPUID(U32 leaf) { return CPUIDWithSubleaf(leaf, 0); }
 
-U64 cyclesPerMicroSecond = 1;
-// 1 millionth of a second
-void wait(U64 microSeconds) {
-    U32 edx;
-    U32 eax;
-    asm volatile("rdtscp" : "=a"(eax), "=d"(edx));
-    U64 currentCycles = ((U64)edx << 32) | eax;
-    U64 endInCycles = currentCycles + microSeconds * cyclesPerMicroSecond;
-    do {
-        asm volatile("rdtscp" : "=a"(eax), "=d"(edx));
-        currentCycles = ((U64)edx << 32) | eax;
-    } while (currentCycles < endInCycles);
-}
-
 void disablePIC() {
     asm volatile("movb $0xFF, %%al;" // Set AL to 0xFF
                  "outb %%al, $0x21;" // Disable master PIC

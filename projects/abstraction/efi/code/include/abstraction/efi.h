@@ -7,7 +7,12 @@
 
 void initVirtualMemory(U64 startingAddress, U64 endingAddress,
                        PackedMemoryTree *virtualMemoryTree, Arena scratch);
-void initArchitecture(Arena scratch);
+
+typedef struct {
+    U64 cyclesPerMicroSecond;
+} ArchitectureInit;
+
+ArchitectureInit initArchitecture(Arena scratch);
 void jumpIntoKernel(U64 newStackPointer,
                     PackedKernelParameters *kernelParameters);
 U64 initScreenMemory(U64 physicalScreenAddress, U64 bytes);

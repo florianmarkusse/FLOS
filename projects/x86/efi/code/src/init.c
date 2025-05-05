@@ -3,6 +3,7 @@
 #include "abstraction/log.h"
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/physical.h"
+#include "abstraction/time.h"
 #include "efi-to-kernel/memory/definitions.h"
 #include "efi/error.h"
 #include "efi/firmware/base.h"   // for PhysicalAddress
@@ -42,23 +43,20 @@ void bootstrapProcessorWork(Arena scratch) {
                                 alignof(PhysicalBasePage), false, scratch);
     gdtDescriptor = prepNewGDT((PhysicalBasePage *)gdtData);
 
-    // NOTE: WHY????
-    globals.st->boot_services->stall(100000);
+    // Maybe when there is other CPUs in here??
+    //    // NOTE: WHY????
+    //    globals.st->boot_services->stall(100000);
 
     asm volatile("pause" : : : "memory"); // memory barrier
 }
 
 // NOTE: this should be done per core probably?
 static constexpr auto CALIBRATION_MICROSECONDS = 100;
-static void calibrateWait() {
-    U32 edx;
-    U32 eax;
-    asm volatile("rdtscp" : "=a"(eax), "=d"(edx));
-    U64 currentCycles = ((U64)edx << 32) | eax;
+static U64 calibrateWait() {
+    U64 currentCycles = currentCycleCounter();
     globals.st->boot_services->stall(CALIBRATION_MICROSECONDS);
-    asm volatile("rdtscp" : "=a"(eax), "=d"(edx));
-    U64 endCycles = ((U64)edx << 32) | eax;
-    cyclesPerMicroSecond = endCycles - currentCycles / CALIBRATION_MICROSECONDS;
+    U64 endCycles = currentCycleCounter();
+    return (endCycles - currentCycles) / CALIBRATION_MICROSECONDS;
 }
 
 // Basic CPUID leafs
@@ -75,8 +73,10 @@ static constexpr auto EXTENDED_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER =
 static constexpr auto EXTENDED_MAX_REQUIRED_PARAMETER =
     EXTENDED_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER;
 
-void initArchitecture(Arena scratch) {
+ArchitectureInit initArchitecture(Arena scratch) {
     asm volatile("cli");
+
+    ArchitectureInit result;
 
     U32 maxBasicCPUID = CPUID(0).eax;
     if (maxBasicCPUID < BASIC_MAX_REQUIRED_PARAMETER) {
@@ -101,7 +101,7 @@ void initArchitecture(Arena scratch) {
         }
     }
     KFLUSH_AFTER { INFO(STRING("Calibrating timer\n")); }
-    calibrateWait();
+    result.cyclesPerMicroSecond = calibrateWait();
 
     if (!features.PGE) {
         EXIT_WITH_MESSAGE {
@@ -160,6 +160,8 @@ void initArchitecture(Arena scratch) {
 
     KFLUSH_AFTER { INFO(STRING("Bootstrap processor work\n")); }
     bootstrapProcessorWork(scratch);
+
+    return result;
 }
 
 void initVirtualMemory(U64 startingAddress, U64 endingAddress,
