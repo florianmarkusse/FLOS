@@ -8,4 +8,3 @@ void interruptNoMorePhysicalMemory() {
 void interruptNoMoreVirtualMemory() {
     triggerFault(FAULT_NO_MORE_PHYSICAL_MEMORY);
 }
-void interruptTooLargeAllocation() { triggerFault(FAULT_TOO_LARGE_ALLOCATION); }

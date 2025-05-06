@@ -7,6 +7,7 @@
 #include "shared/assert.h"
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
+#include "shared/memory/physical.h"
 #include "shared/memory/policy.h"
 #include "x86/memory/definitions.h"
 
@@ -30,12 +31,22 @@ void initVirtualMemoryManager(PackedMemoryTree virtualMemoryTree) {
     U64 freeListRequiredSize =
         redBlackNodeMMsPossibleInAllocator * sizeof(virtualTree);
 
-    freeList = (RedBlackNodeMMPtr_a){.len = 0,
-                                     .buf = allocAndMap(freeListRequiredSize)};
+    freeList = (RedBlackNodeMMPtr_a){
+        .len = 0, .buf = allocPhysicalMemory(freeListRequiredSize)};
+}
+
+static RedBlackNodeMM *getMemoryNode(U64 bytes) {
+    RedBlackNodeMM *availableMemory =
+        deleteAtLeastRedBlackNodeMM(&physicalTree, bytes);
+    if (!availableMemory) {
+        interruptNoMorePhysicalMemory();
+    }
+    return availableMemory;
 }
 
 U64 getVirtual(U64 size, U64 align) {
-    //    U64 alignedUpValue = ALIGN_UP_VALUE(higherHalfRegion.start, align);
+    U64 sizeToFetch = size + align;
+    U64 alignedUpValue = ALIGN_UP_VALUE(higherHalfRegion.start, align);
     //
     //    ASSERT(higherHalfRegion.start <= alignedUpValue);
     //    ASSERT(alignedUpValue <= higherHalfRegion.end);

@@ -54,25 +54,6 @@ kernelmain(PackedKernelParameters *kernelParams) {
         INFO(kernelParams->archInit.tscFrequencyPerMicroSecond, NEWLINE);
     }
 
-    U64 seconds = 2;
-
-    KFLUSH_AFTER {
-        INFO(STRING("I will be waiting "));
-        INFO(seconds);
-        INFO(STRING(" seconds\n"));
-    }
-
-    blockingWait(seconds * 1000000);
-
-    KFLUSH_AFTER {
-        INFO(STRING("DONE\n"));
-        INFO(STRING("DONE\n"));
-        INFO(STRING("DONE\n"));
-        INFO(STRING("DONE\n"));
-        INFO(STRING("DONE\n"));
-        INFO(STRING("DONE\n"));
-    }
-
     while (1) {
         ;
     }

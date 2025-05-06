@@ -25,7 +25,7 @@ static RedBlackNodeMM *getMemoryNode(U64 bytes) {
     RedBlackNodeMM *availableMemory =
         deleteAtLeastRedBlackNodeMM(&physicalTree, bytes);
     if (!availableMemory) {
-        interruptTooLargeAllocation();
+        interruptNoMorePhysicalMemory();
     }
     return availableMemory;
 }
