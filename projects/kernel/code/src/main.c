@@ -1,6 +1,8 @@
 #include "abstraction/interrupts.h" // for setupIDT
+#include "abstraction/kernel.h"
 #include "abstraction/log.h" // for LOG, LOG_CHOOSER_IMPL_1, rewind, pro...
 #include "abstraction/memory/virtual/map.h"
+#include "abstraction/time.h"
 #include "efi-to-kernel/kernel-parameters.h"  // for KernelParameters
 #include "efi-to-kernel/memory/definitions.h" // for KERNEL_PARAMS_START
 #include "freestanding/log/init.h"
@@ -19,15 +21,7 @@ static constexpr auto INIT_MEMORY = (16 * MiB);
 
 __attribute__((section("kernel-start"))) int
 kernelmain(PackedKernelParameters *kernelParams) {
-    // TODO: Do this and then we can also use the cyclesPerMicrosecond stuff!
-    //----------------------
-    // NOTE: this code should probably be wrapped in a kernel init function that
-    // has arch-dependent implementations
-    initIDT();
-    // TODO: [X86] I need to enable NMIs here also again!
-
-    setRootPageTable();
-    //----------------------
+    archInit(kernelParams->archInit);
 
     initMemoryManager(kernelParams->memory);
 
@@ -56,29 +50,27 @@ kernelmain(PackedKernelParameters *kernelParams) {
     KFLUSH_AFTER {
         //
         appendMemoryManagementStatus();
-    }
-
-    Memory mems[100];
-    for (U64 i = 0; i < 100; i++) {
-        void *initMemory = (void *)allocAndMap(2 * MiB);
-        mems[i].start = (U64)initMemory;
-        mems[i].bytes = 2 * MiB;
-    }
-
-    KFLUSH_AFTER {
-        //
-        appendMemoryManagementStatus();
-    }
-
-    for (U64 i = 0; i < 100; i++) {
-        freeMapped(mems[i]);
-    }
-
-    KFLUSH_AFTER {
-        //
-        appendMemoryManagementStatus();
         INFO(STRING("Cycles per microsecond: "));
-        INFO(kernelParams->cyclesPerMicroSecond, NEWLINE);
+        INFO(kernelParams->archInit.tscFrequencyPerMicroSecond, NEWLINE);
+    }
+
+    U64 seconds = 2;
+
+    KFLUSH_AFTER {
+        INFO(STRING("I will be waiting "));
+        INFO(seconds);
+        INFO(STRING(" seconds\n"));
+    }
+
+    blockingWait(seconds * 1000000);
+
+    KFLUSH_AFTER {
+        INFO(STRING("DONE\n"));
+        INFO(STRING("DONE\n"));
+        INFO(STRING("DONE\n"));
+        INFO(STRING("DONE\n"));
+        INFO(STRING("DONE\n"));
+        INFO(STRING("DONE\n"));
     }
 
     while (1) {

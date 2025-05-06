@@ -31,7 +31,7 @@ CPUIDResult CPUIDWithSubleaf(U32 leaf, U32 subleaf) {
     return result;
 }
 
-CPUIDResult CPUID(U32 leaf) { return CPUIDWithSubleaf(leaf, 0); }
+CPUIDResult CPUID(U32 leaf) { return CPUIDWithSubleaf(leaf, 0x0); }
 
 void disablePIC() {
     asm volatile("movb $0xFF, %%al;" // Set AL to 0xFF

@@ -9,7 +9,7 @@ void initVirtualMemory(U64 startingAddress, U64 endingAddress,
                        PackedMemoryTree *virtualMemoryTree, Arena scratch);
 
 typedef struct {
-    U64 cyclesPerMicroSecond;
+    U64 tscFrequencyPerMicroSecond;
 } ArchitectureInit;
 
 ArchitectureInit initArchitecture(Arena scratch);

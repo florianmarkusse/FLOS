@@ -40,3 +40,10 @@ dependencies/include-what-you-use/fix_includes.py --reorder --nocomments < proje
 
 1. Use `PartitionInformationProtocol`
 2. Use custom Memory Type to mark free kernel memory
+
+### CPU improvements once upgraded to new firmware !!
+
+1. Update calibrating timer code:
+   - Use leaf 0x15 on Intel for timer
+   - Use AMD extended info for timer
+   - Instead of the waiting stuff it's doing now

@@ -14,6 +14,7 @@ add_subdirectory("log/code")
 
 add_subdirectory("jmp/code")
 add_subdirectory("time/code")
+add_subdirectory("kernel/code")
 
 add_subdirectory("memory/manipulation/code")
 add_subdirectory("memory/virtual/code")

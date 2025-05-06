@@ -50,15 +50,6 @@ void bootstrapProcessorWork(Arena scratch) {
     asm volatile("pause" : : : "memory"); // memory barrier
 }
 
-// NOTE: this should be done per core probably?
-static constexpr auto CALIBRATION_MICROSECONDS = 100;
-static U64 calibrateWait() {
-    U64 currentCycles = currentCycleCounter();
-    globals.st->boot_services->stall(CALIBRATION_MICROSECONDS);
-    U64 endCycles = currentCycleCounter();
-    return (endCycles - currentCycles) / CALIBRATION_MICROSECONDS;
-}
-
 // Basic CPUID leafs
 static constexpr auto BASIC_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER = 1;
 
@@ -73,12 +64,30 @@ static constexpr auto EXTENDED_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER =
 static constexpr auto EXTENDED_MAX_REQUIRED_PARAMETER =
     EXTENDED_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER;
 
+static constexpr auto CALIBRATION_MICROSECONDS = 10000;
+static U64 calibrateWait() {
+    CPUIDResult leaf15 = CPUID(0x15);
+    if (leaf15.ebx && leaf15.ecx > 10'000) {
+        return (leaf15.ecx * (leaf15.ebx / leaf15.eax)) / 1'000'000;
+    } else {
+        CPUIDResult leaf16 = CPUID(0x16);
+        if (leaf16.eax > 1'000) {
+            return leaf16.eax;
+        }
+    }
+
+    U64 currentCycles = currentCycleCounter();
+    globals.st->boot_services->stall(CALIBRATION_MICROSECONDS);
+    U64 endCycles = currentCycleCounter();
+    return (endCycles - currentCycles) / CALIBRATION_MICROSECONDS;
+}
+
 ArchitectureInit initArchitecture(Arena scratch) {
     asm volatile("cli");
 
     ArchitectureInit result;
 
-    U32 maxBasicCPUID = CPUID(0).eax;
+    U32 maxBasicCPUID = CPUID(0x0).eax;
     if (maxBasicCPUID < BASIC_MAX_REQUIRED_PARAMETER) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING("CPU does not support required CPUID of "));
@@ -86,7 +95,7 @@ ArchitectureInit initArchitecture(Arena scratch) {
         }
     }
 
-    CPUIDResult processorInfoAndFeatureBits = CPUID(1);
+    CPUIDResult processorInfoAndFeatureBits = CPUID(0x1);
     features.ecx = processorInfoAndFeatureBits.ecx;
     features.edx = processorInfoAndFeatureBits.edx;
     if (!features.APIC) {
@@ -100,8 +109,9 @@ ArchitectureInit initArchitecture(Arena scratch) {
             ERROR(STRING("CPU does not support Time Stamp Counter"));
         }
     }
+
     KFLUSH_AFTER { INFO(STRING("Calibrating timer\n")); }
-    result.cyclesPerMicroSecond = calibrateWait();
+    result.tscFrequencyPerMicroSecond = calibrateWait();
 
     if (!features.PGE) {
         EXIT_WITH_MESSAGE {

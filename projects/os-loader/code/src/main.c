@@ -176,6 +176,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)kernelParams, NEWLINE);
         INFO(STRING("stop:  "));
         INFO(kernelParamsEnd, NEWLINE);
+
+        INFO(STRING("cycles:  "));
+        INFO(archInit.tscFrequencyPerMicroSecond, NEWLINE);
     }
 
     kernelParams->window =
@@ -184,7 +187,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                        .width = gop->mode->info->horizontalResolution,
                        .height = gop->mode->info->verticalResolution,
                        .scanline = gop->mode->info->pixelsPerScanLine};
-    kernelParams->cyclesPerMicroSecond = archInit.cyclesPerMicroSecond;
+    kernelParams->archInit.tscFrequencyPerMicroSecond =
+        archInit.tscFrequencyPerMicroSecond;
 
     RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
                               globals.st->configuration_table);
