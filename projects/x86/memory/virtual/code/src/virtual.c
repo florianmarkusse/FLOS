@@ -22,8 +22,6 @@
 
 VirtualPageTable *rootPageTable;
 
-void setRootPageTable() { rootPageTable = (VirtualPageTable *)CR3(); }
-
 U8 pageSizeToDepth(PageSize pageSize) {
     switch (pageSize) {
     case X86_4KIB_PAGE: {
