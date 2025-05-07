@@ -1,8 +1,8 @@
-#include "shared/memory/virtual/status.h"
+#include "shared/memory/management/status.h"
 
 #include "abstraction/log.h"
 #include "shared/log.h"
-#include "shared/memory/virtual.h"
+#include "shared/memory/management/management.h"
 #include "shared/text/string.h"
 
 static void preOrder(RedBlackNodeMM *current, U64 *totalValue) {
@@ -19,12 +19,21 @@ static void preOrder(RedBlackNodeMM *current, U64 *totalValue) {
     preOrder(current->children[RB_TREE_RIGHT], totalValue);
 }
 
-void appendVirtualMemoryManagerStatus() {
-    KLOG(STRING("Virtual Memory status\n"));
+static void appendMemoryManagerStatus(RedBlackNodeMM *tree, string name) {
+    KLOG(name);
+    KLOG(STRING(" status\n"));
     KLOG(STRING("================\n"));
     U64 totalMemory = 0;
-    preOrder(virtualTree, &totalMemory);
+    preOrder(tree, &totalMemory);
     KLOG(STRING("\n================\n"));
     KLOG(STRING("Total memory: "));
     KLOG(totalMemory, NEWLINE);
+}
+
+void appendPhysicalMemoryManagerStatus() {
+    appendMemoryManagerStatus(physical.tree, STRING("Physical Memory"));
+}
+
+void appendVirtualMemoryManagerStatus() {
+    appendMemoryManagerStatus(virt.tree, STRING("Virtual Memory"));
 }

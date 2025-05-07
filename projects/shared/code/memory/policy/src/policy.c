@@ -1,6 +1,6 @@
 #include "shared/memory/policy.h"
-#include "shared/memory/physical.h"
-#include "shared/memory/virtual.h"
+
+#include "shared/memory/management/management.h"
 
 void initMemoryManager(PackedKernelMemory memory) {
     initPhysicalMemoryManager(memory.physical);
@@ -19,5 +19,5 @@ void *allocContiguousAndMap(U64 bytes) {
 
 void freeMapped(Memory memory) {
     //
-    freeMemory(memory);
+    freePhysicalMemory(memory);
 }

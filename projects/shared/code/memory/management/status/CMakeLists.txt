@@ -1,4 +1,4 @@
-project(shared-memory-virtual-status LANGUAGES C ASM)
+project(shared-memory-management-status LANGUAGES C ASM)
 add_library(${PROJECT_NAME} OBJECT "src/status.c")
 
 add_includes_for_sublibrary()
