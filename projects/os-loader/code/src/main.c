@@ -101,7 +101,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(STRING("Identity mapping all memory, highest address found: "));
         INFO((void *)highestLowerHalfAddress, NEWLINE);
     }
-    mapMemory(0, 0, highestLowerHalfAddress);
+    U64 firstFreeVirtual = mapMemory(0, 0, highestLowerHalfAddress);
 
     KFLUSH_AFTER { INFO(STRING("Mapping screen memory into location\n")); }
     kernelFreeVirtualMemory =
@@ -195,7 +195,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         EXIT_WITH_MESSAGE { ERROR(STRING("Could not find an RSDP!\n")); }
     }
 
-    initVirtualMemory(highestLowerHalfAddress, KERNEL_CODE_START,
+    initVirtualMemory(firstFreeVirtual, KERNEL_CODE_START,
                       &kernelParams->memory.virt, arena);
 
     KFLUSH_AFTER {

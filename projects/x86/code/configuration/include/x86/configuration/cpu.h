@@ -20,5 +20,6 @@ CPUIDResult CPUID(U32 leaf);
 CPUIDResult CPUIDWithSubleaf(U32 leaf, U32 subleaf);
 void disablePIC();
 U64 CR3();
+U64 CR2();
 
 #endif

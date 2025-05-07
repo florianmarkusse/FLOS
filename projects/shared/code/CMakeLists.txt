@@ -13,6 +13,7 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     add_project("abstraction/jmp")
     add_project("abstraction/interrupts")
     add_project("abstraction/text/converter")
+    add_project("abstraction/log")
     add_project("efi-to-kernel")
 endif()
 

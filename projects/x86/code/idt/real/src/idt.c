@@ -1,9 +1,14 @@
 #include "abstraction/interrupts.h"
 
+#include "abstraction/log.h"
 #include "shared/enum.h"
+#include "shared/log.h"
 #include "shared/types/numeric.h"
+#include "x86/configuration/cpu.h"
 #include "x86/fault.h"
 #include "x86/idt.h"
+
+string faultToString[CPU_FAULT_COUNT] = {CPU_FAULT_ENUM(ENUM_TO_STRING)};
 
 typedef struct {
     U16 limit;
@@ -715,8 +720,8 @@ typedef struct {
     U64 rcx;
     U64 rax;
 
-    Fault int_no;
-    U64 err_code;
+    Fault interruptNumber;
+    U64 errorCode;
 
     U64 rip;
     U64 cs;
@@ -728,6 +733,21 @@ typedef struct {
 
 void fault_handler([[maybe_unused]] regs *regs) {
     // We are doing stuff here...
+    KFLUSH_AFTER {
+        INFO(STRING("We are in an interrupt!!!\n"));
+        INFO(STRING("regs:\n"));
+        INFO(STRING("interrupt number: "));
+        INFO(regs->interruptNumber, NEWLINE);
+        INFO(STRING("interrupt: "));
+        INFO(faultToString[regs->interruptNumber], NEWLINE);
+        INFO(STRING("error code: "));
+        INFO(regs->errorCode, NEWLINE);
+
+        if (regs->interruptNumber == FAULT_PAGE_FAULT) {
+            INFO(STRING("faulting address: "));
+            INFO((void *)CR2(), NEWLINE);
+        }
+    }
 
     asm volatile("cli;hlt;");
 }

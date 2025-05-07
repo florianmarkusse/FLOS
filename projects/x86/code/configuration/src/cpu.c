@@ -48,3 +48,9 @@ U64 CR3() {
     asm volatile("mov %%cr3, %0" : "=r"(cr3));
     return cr3;
 }
+
+U64 CR2() {
+    U64 cr2;
+    asm volatile("mov %%cr2, %0" : "=r"(cr2));
+    return cr2;
+}

@@ -9,6 +9,7 @@
 #include "freestanding/peripheral/screen.h"
 #include "shared/log.h"
 #include "shared/memory/allocator/arena.h"
+#include "shared/memory/management/management.h"
 #include "shared/memory/policy.h"
 #include "shared/memory/policy/status.h"
 #include "shared/memory/sizes.h"
@@ -18,6 +19,59 @@
 // void appendDescriptionHeaders(RSDPResult rsdp);
 
 static constexpr auto INIT_MEMORY = (16 * MiB);
+
+static constexpr auto TEST_MEMORY = (64 * MiB);
+static void stuff() {
+    void *testMemory = (void *)allocAndMap(TEST_MEMORY);
+    Arena arena = (Arena){.curFree = testMemory,
+                          .beg = testMemory,
+                          .end = testMemory + TEST_MEMORY};
+    if (setjmp(arena.jmp_buf)) {
+        KFLUSH_AFTER { KLOG(STRING("Ran out of test memory capacity\n")); }
+        while (1) {
+            ;
+        }
+    }
+
+    U64 totalElements = (TEST_MEMORY / 2) / sizeof(U64);
+    U64_a array = {.buf = NEW(&arena, U64, totalElements), .len = 0};
+
+    KFLUSH_AFTER {
+        INFO(STRING("Allocated an array of U64 with space for "));
+        INFO(totalElements);
+        INFO(STRING(" elements.\n"));
+        INFO(STRING("Buffer location is: "));
+        INFO(array.buf, NEWLINE);
+    }
+
+    for (U64 i = 0; i < totalElements; i++) {
+        array.buf[i] = i;
+    }
+
+    for (U64 i = 1; i < totalElements; i *= 2) {
+        KFLUSH_AFTER {
+            INFO(STRING("At index "));
+            INFO(i);
+            INFO(STRING(", value: "));
+            INFO(array.buf[i], NEWLINE);
+        }
+    }
+
+    U64 *virtual = allocVirtualMemory(sizeof(U64) * totalElements,
+                                      alignof(U64));
+
+    KFLUSH_AFTER {
+        INFO(STRING("Allocated an array of U64 with virtual space for "));
+        INFO(totalElements);
+        INFO(STRING(" elements.\n"));
+        INFO(STRING("Buffer location is: "));
+        INFO(virtual, NEWLINE);
+    }
+
+    for (U64 i = 0; i < totalElements; i++) {
+        virtual[i] = i;
+    }
+}
 
 __attribute__((section("kernel-start"))) int
 kernelmain(PackedKernelParameters *kernelParams) {
@@ -53,6 +107,10 @@ kernelmain(PackedKernelParameters *kernelParams) {
         INFO(STRING("Cycles per microsecond: "));
         INFO(kernelParams->archInit.tscFrequencyPerMicroSecond, NEWLINE);
     }
+
+    KFLUSH_AFTER { INFO(STRING("\n\n")); }
+
+    stuff();
 
     while (1) {
         ;
