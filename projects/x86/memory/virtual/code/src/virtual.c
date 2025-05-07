@@ -7,7 +7,6 @@
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
-#include "shared/memory/physical.h"
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
 #include "x86/memory/definitions.h"

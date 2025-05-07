@@ -12,7 +12,6 @@
 #include "efi/memory/physical.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
-#include "shared/memory/virtual.h"
 #include "shared/text/string.h"
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"

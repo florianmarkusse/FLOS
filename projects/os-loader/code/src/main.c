@@ -22,7 +22,6 @@
 #include "shared/maths/maths.h" // for CEILING_DIV_V...
 #include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
-#include "shared/memory/virtual.h"
 #include "shared/text/string.h"   // for CEILING_DIV_V...
 #include "shared/types/numeric.h" // for U64, U32, USize
 
