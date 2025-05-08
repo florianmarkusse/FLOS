@@ -2,7 +2,6 @@ create_abstraction_targets(abstraction-memory-virtual)
 
 if(${ARCHITECTURE} STREQUAL "X86")
     add_project("x86")
-    add_project("x86/memory/virtual")
     abstraction_add_sources(x86-memory-virtual)
     abstraction_include_interface_library(x86-configuration)
     abstraction_add_sources(x86-configuration)

@@ -7,7 +7,6 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     include("${REPO_PROJECTS}/setup.cmake")
     add_project("shared")
     add_project("x86")
-    add_project("x86/memory/virtual")
     add_project("freestanding")
     add_project("abstraction/kernel")
     add_project("abstraction/jmp")
@@ -27,7 +26,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-interrupts-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE x86-i)
-target_link_libraries(${PROJECT_NAME} PRIVATE x86-memory-virtual-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE efi-to-kernel-i)
 

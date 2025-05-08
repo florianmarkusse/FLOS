@@ -8,7 +8,6 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     include(${REPO_PROJECTS}/setup.cmake)
     add_project("shared")
     add_project("x86")
-    add_project("x86/memory/virtual")
     add_project("efi")
     add_project("efi-to-kernel")
     add_project("abstraction/log")
@@ -45,8 +44,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE shared-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE efi-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE x86-i)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE x86-memory-virtual-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE efi-to-kernel-i)
 
