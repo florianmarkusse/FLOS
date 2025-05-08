@@ -1,12 +1,15 @@
 #include "abstraction/interrupts.h"
 
 #include "abstraction/log.h"
+#include "abstraction/memory/virtual/map.h"
 #include "shared/enum.h"
 #include "shared/log.h"
+#include "shared/memory/management/management.h"
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
 #include "x86/fault.h"
 #include "x86/idt.h"
+#include "x86/memory/definitions.h"
 
 string faultToString[CPU_FAULT_COUNT] = {CPU_FAULT_ENUM(ENUM_TO_STRING)};
 
@@ -731,23 +734,26 @@ typedef struct {
     //    U64 ss;
 } regs;
 
+static U64 pageFaults = 0;
+U64 getPageFaults() { return pageFaults; }
+
 void fault_handler([[maybe_unused]] regs *regs) {
-    // We are doing stuff here...
-    KFLUSH_AFTER {
-        INFO(STRING("We are in an interrupt!!!\n"));
-        INFO(STRING("regs:\n"));
-        INFO(STRING("interrupt number: "));
-        INFO(regs->interruptNumber, NEWLINE);
-        INFO(STRING("interrupt: "));
-        INFO(faultToString[regs->interruptNumber], NEWLINE);
-        INFO(STRING("error code: "));
-        INFO(regs->errorCode, NEWLINE);
-
-        if (regs->interruptNumber == FAULT_PAGE_FAULT) {
-            INFO(STRING("faulting address: "));
-            INFO((void *)CR2(), NEWLINE);
+    if (regs->interruptNumber == FAULT_PAGE_FAULT) {
+        pageFaults++;
+        void *address = allocPhysicalMemory(X86_4KIB_PAGE, X86_4KIB_PAGE);
+        mapPage(CR2(), (U64)address, X86_4KIB_PAGE);
+    } else {
+        KFLUSH_AFTER {
+            INFO(STRING("We are in an interrupt!!!\n"));
+            INFO(STRING("regs:\n"));
+            INFO(STRING("interrupt number: "));
+            INFO(regs->interruptNumber, NEWLINE);
+            INFO(STRING("interrupt: "));
+            INFO(faultToString[regs->interruptNumber], NEWLINE);
+            INFO(STRING("error code: "));
+            INFO(regs->errorCode, NEWLINE);
         }
-    }
 
-    asm volatile("cli;hlt;");
+        asm volatile("cli;hlt;");
+    }
 }

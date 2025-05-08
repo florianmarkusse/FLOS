@@ -54,6 +54,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-log)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-text-converter)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-virtual)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-physical)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-log-init)

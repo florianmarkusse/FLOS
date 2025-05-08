@@ -9,12 +9,12 @@ void initMemoryManager(PackedKernelMemory memory) {
 
 void *allocAndMap(U64 bytes) {
     //
-    return allocPhysicalMemory(bytes);
+    return allocPhysicalMemory(bytes, 1);
 }
 
 void *allocContiguousAndMap(U64 bytes) {
     //
-    return allocPhysicalMemory(bytes);
+    return allocPhysicalMemory(bytes, 1);
 }
 
 void freeMapped(Memory memory) {

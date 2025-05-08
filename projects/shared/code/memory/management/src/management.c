@@ -55,29 +55,27 @@ void freeVirtualMemory(Memory memory) { insertMemory(memory, &virt); }
 
 void freePhysicalMemory(Memory memory) { insertMemory(memory, &physical); }
 
-void *allocVirtualMemory(U64 bytes, U64 align) {
+static void *allocAlignedMemory(U64 bytes, U64 align,
+                                MemoryAllocator *allocator) {
     bytes = ALIGN_UP_VALUE(bytes, align);
-    RedBlackNodeMM *availableMemory = getMemoryNode(bytes, &virt.tree);
+    RedBlackNodeMM *availableMemory = getMemoryNode(bytes, &allocator->tree);
     U64 result = ALIGN_UP_VALUE(availableMemory->memory.start, align);
 
-    handleFreeMemory(availableMemory, bytes, &virt);
+    handleFreeMemory(availableMemory, bytes, allocator);
     if (result > availableMemory->memory.start) {
         availableMemory->memory.bytes = result - availableMemory->memory.start;
-        freeVirtualMemory(availableMemory->memory);
+        insertMemory(availableMemory->memory, allocator);
     }
 
     return (void *)result;
 }
 
-void *allocPhysicalMemory(U64 bytes) {
-    RedBlackNodeMM *availableMemory = getMemoryNode(bytes, &physical.tree);
-    void *result = (void *)availableMemory->memory.start;
-    handleFreeMemory(availableMemory, bytes, &physical);
-    return result;
+void *allocVirtualMemory(U64 bytes, U64 align) {
+    return allocAlignedMemory(bytes, align, &virt);
 }
 
-U64 getPageForMappingVirtualMemory(U64 pageSize) {
-    return (U64)allocPhysicalMemory(pageSize);
+void *allocPhysicalMemory(U64 bytes, U64 align) {
+    return allocAlignedMemory(bytes, align, &physical);
 }
 
 static void setupArena(PackedArena packed, Arena *arena) {
@@ -103,7 +101,9 @@ void initVirtualMemoryManager(PackedMemoryTree virtualMemoryTree) {
 
     U64 freeListRequiredSize = getRequiredFreeListSize(&virt);
     virt.freeList = (RedBlackNodeMMPtr_a){
-        .len = 0, .buf = allocPhysicalMemory(freeListRequiredSize)};
+        .len = 0,
+        .buf = allocPhysicalMemory(freeListRequiredSize,
+                                   alignof(*virt.freeList.buf))};
 }
 
 // NOTE: Coming into this, All the memory is identity mapped. Having to do some

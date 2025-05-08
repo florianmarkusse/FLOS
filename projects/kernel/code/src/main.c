@@ -8,6 +8,7 @@
 #include "freestanding/log/init.h"
 #include "freestanding/peripheral/screen.h"
 #include "shared/log.h"
+#include "shared/maths/maths.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/management.h"
 #include "shared/memory/policy.h"
@@ -44,18 +45,28 @@ static void stuff() {
         INFO(array.buf, NEWLINE);
     }
 
+    U64 startCycles = currentCycleCounter();
     for (U64 i = 0; i < totalElements; i++) {
         array.buf[i] = i;
     }
+    U64 operationCycles = currentCycleCounter() - startCycles;
 
-    for (U64 i = 1; i < totalElements; i *= 2) {
-        KFLUSH_AFTER {
-            INFO(STRING("At index "));
-            INFO(i);
-            INFO(STRING(", value: "));
-            INFO(array.buf[i], NEWLINE);
-        }
+    KFLUSH_AFTER {
+        INFO(STRING("Total cycles it took: "));
+        INFO(operationCycles, NEWLINE);
+        INFO(STRING("In human time: "));
+        INFO(operationCycles / getCyclesPerMicroSecond());
+        INFO(STRING(" microseconds.\n"));
     }
+
+    //    for (U64 i = 1; i < totalElements; i *= 2) {
+    //        KFLUSH_AFTER {
+    //            INFO(STRING("At index "));
+    //            INFO(i);
+    //            INFO(STRING(", value: "));
+    //            INFO(array.buf[i], NEWLINE);
+    //        }
+    //    }
 
     U64 *virtual = allocVirtualMemory(sizeof(U64) * totalElements,
                                       alignof(U64));
@@ -68,9 +79,46 @@ static void stuff() {
         INFO(virtual, NEWLINE);
     }
 
+    U64 bytesWritten = totalElements * sizeof(U64);
+    U64 expectedFaults = CEILING_DIV_VALUE(bytesWritten, 4096UL);
+
+    KFLUSH_AFTER {
+        INFO(STRING("Current "));
+        INFO(getPageFaults());
+        INFO(STRING(" page faults.\n"));
+        INFO(STRING("Expect additional "));
+        INFO(expectedFaults);
+        INFO(STRING(" faults.\n"));
+    }
+
+    startCycles = currentCycleCounter();
     for (U64 i = 0; i < totalElements; i++) {
         virtual[i] = i;
     }
+    operationCycles = currentCycleCounter() - startCycles;
+
+    KFLUSH_AFTER {
+        INFO(STRING("Total cycles it took: "));
+        INFO(operationCycles, NEWLINE);
+        INFO(STRING("In human time: "));
+        INFO(operationCycles / getCyclesPerMicroSecond());
+        INFO(STRING(" microseconds.\n"));
+    }
+
+    //    for (U64 i = 1; i < writes; i *= 2) {
+    //        KFLUSH_AFTER {
+    //            INFO(STRING("At index "));
+    //            INFO(i);
+    //            INFO(STRING(", value: "));
+    //            INFO(virtual[i], NEWLINE);
+    //        }
+    //    }
+    //
+    //    KFLUSH_AFTER {
+    //        INFO(STRING("Current "));
+    //        INFO(getPageFaults());
+    //        INFO(STRING(" page faults.\n"));
+    //    }
 }
 
 __attribute__((section("kernel-start"))) int

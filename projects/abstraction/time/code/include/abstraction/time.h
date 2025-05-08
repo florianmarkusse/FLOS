@@ -3,6 +3,7 @@
 
 #include "shared/types/numeric.h"
 
+U64 getCyclesPerMicroSecond();
 U64 currentCycleCounter();
 void blockingWait(U64 microSeconds);
 

@@ -14,6 +14,8 @@ U64 currentCycleCounter() {
 // calibrate this!
 U64 cyclesPerMicroSecond = 1000;
 
+U64 getCyclesPerMicroSecond() { return cyclesPerMicroSecond; }
+
 // 1 millionth of a second
 void blockingWait(U64 microSeconds) {
     U64 endInCycles =
