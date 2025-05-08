@@ -34,20 +34,20 @@ static void stuff() {
         }
     }
 
-    U64 totalElements = (TEST_MEMORY / 2) / sizeof(U64);
-    U64_a array = {.buf = NEW(&arena, U64, totalElements), .len = 0};
+    U64 totalElements = (TEST_MEMORY / 2) / sizeof(U8);
+    U8 *array = NEW(&arena, U8, totalElements);
 
     KFLUSH_AFTER {
-        INFO(STRING("Allocated an array of U64 with space for "));
+        INFO(STRING("Allocated an array of U8 with space for "));
         INFO(totalElements);
         INFO(STRING(" elements.\n"));
         INFO(STRING("Buffer location is: "));
-        INFO(array.buf, NEWLINE);
+        INFO(array, NEWLINE);
     }
 
     U64 startCycles = currentCycleCounter();
     for (U64 i = 0; i < totalElements; i++) {
-        array.buf[i] = i;
+        array[i] = i & 255;
     }
     U64 operationCycles = currentCycleCounter() - startCycles;
 
@@ -68,18 +68,17 @@ static void stuff() {
     //        }
     //    }
 
-    U64 *virtual = allocVirtualMemory(sizeof(U64) * totalElements,
-                                      alignof(U64));
+    U8 *virtual = allocVirtualMemory(sizeof(U8) * totalElements, alignof(U8));
 
     KFLUSH_AFTER {
-        INFO(STRING("Allocated an array of U64 with virtual space for "));
+        INFO(STRING("Allocated an array of U8 with virtual space for "));
         INFO(totalElements);
         INFO(STRING(" elements.\n"));
         INFO(STRING("Buffer location is: "));
         INFO(virtual, NEWLINE);
     }
 
-    U64 bytesWritten = totalElements * sizeof(U64);
+    U64 bytesWritten = totalElements * sizeof(U8);
     U64 expectedFaults = CEILING_DIV_VALUE(bytesWritten, 4096UL);
 
     KFLUSH_AFTER {
@@ -93,7 +92,7 @@ static void stuff() {
 
     startCycles = currentCycleCounter();
     for (U64 i = 0; i < totalElements; i++) {
-        virtual[i] = i;
+        virtual[i] = i & 255;
     }
     operationCycles = currentCycleCounter() - startCycles;
 
@@ -114,11 +113,55 @@ static void stuff() {
     //        }
     //    }
     //
-    //    KFLUSH_AFTER {
-    //        INFO(STRING("Current "));
-    //        INFO(getPageFaults());
-    //        INFO(STRING(" page faults.\n"));
-    //    }
+
+    KFLUSH_AFTER {
+        INFO(STRING("Current "));
+        INFO(getPageFaults());
+        INFO(STRING(" page faults.\n"));
+    }
+
+    virtual = allocVirtualMemory(sizeof(U8) * totalElements, alignof(U8));
+
+    KFLUSH_AFTER {
+        INFO(STRING("Allocated an array of U8 with virtual space for "));
+        INFO(totalElements);
+        INFO(STRING(" elements.\n"));
+        INFO(STRING("Buffer location is: "));
+        INFO(virtual, NEWLINE);
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING("Current "));
+        INFO(getPageFaults());
+        INFO(STRING(" page faults.\n"));
+        INFO(STRING("Expect additional "));
+        INFO(expectedFaults);
+        INFO(STRING(" faults.\n"));
+    }
+
+    startCycles = currentCycleCounter();
+    for (U64 i = 0; i < totalElements; i++) {
+        if (!RING_RANGE_VALUE(i, 4096)) {
+            void *address = allocPhysicalMemory(4096, 4096);
+            mapPage((U64) & virtual[i], (U64)address, 4096);
+        }
+        virtual[i] = i & 255;
+    }
+    operationCycles = currentCycleCounter() - startCycles;
+
+    KFLUSH_AFTER {
+        INFO(STRING("Total cycles it took: "));
+        INFO(operationCycles, NEWLINE);
+        INFO(STRING("In human time: "));
+        INFO(operationCycles / getCyclesPerMicroSecond());
+        INFO(STRING(" microseconds.\n"));
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING("Current "));
+        INFO(getPageFaults());
+        INFO(STRING(" page faults.\n"));
+    }
 }
 
 __attribute__((section("kernel-start"))) int

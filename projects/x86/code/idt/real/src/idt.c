@@ -737,7 +737,7 @@ typedef struct {
 static U64 pageFaults = 0;
 U64 getPageFaults() { return pageFaults; }
 
-void fault_handler([[maybe_unused]] regs *regs) {
+void fault_handler(regs *regs) {
     if (regs->interruptNumber == FAULT_PAGE_FAULT) {
         pageFaults++;
         void *address = allocPhysicalMemory(X86_4KIB_PAGE, X86_4KIB_PAGE);
