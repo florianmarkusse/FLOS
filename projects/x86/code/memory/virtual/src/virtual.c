@@ -20,20 +20,6 @@
 
 VirtualPageTable *rootPageTable;
 
-U8 pageSizeToDepth(PageSize pageSize) {
-    switch (pageSize) {
-    case X86_4KIB_PAGE: {
-        return 4;
-    }
-    case X86_2MIB_PAGE: {
-        return 3;
-    }
-    case X86_1GIB_PAGE: {
-        return 2;
-    }
-    }
-}
-
 static U64 getZeroBasePage() {
     U64 address = getPageForMappingVirtualMemory(VIRTUAL_MEMORY_MAPPING_SIZE);
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
@@ -41,13 +27,11 @@ static U64 getZeroBasePage() {
     return address;
 }
 
-// The caller should take care that the virtual address and physical
-// address are correctly aligned. If they are not, not sure what the
-// caller wanted to accomplish.
+// The caller should take care that the physical address is correctly aligned.
+// If it is not, not sure what the caller wanted to accomplish.
 void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
     ASSERT(rootPageTable);
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
-    ASSERT(!(RING_RANGE_VALUE(virt, mappingSize)));
     ASSERT(!(RING_RANGE_VALUE(physical, mappingSize)));
 
     VirtualPageTable *table = rootPageTable;
@@ -74,7 +58,8 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
 
         table =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-            (VirtualPageTable *)ALIGN_DOWN_VALUE(*entryAddress, X86_4KIB_PAGE);
+            (VirtualPageTable *)ALIGN_DOWN_VALUE(*entryAddress,
+                                                 SMALLEST_VIRTUAL_PAGE);
     }
 }
 
@@ -93,12 +78,12 @@ Memory getMappedPage(U64 virt) {
 
     U64 entry;
     VirtualPageTable *table = rootPageTable;
-    for (U64 pageSize = X86_512GIB_PAGE; pageSize >= X86_4KIB_PAGE;
+    for (U64 pageSize = X86_512GIB_PAGE; pageSize >= SMALLEST_VIRTUAL_PAGE;
          pageSize /= PageTableFormat.ENTRIES) {
         entry = (table->pages[RING_RANGE_VALUE((virt / pageSize),
                                                PageTableFormat.ENTRIES)]);
 
-        if (!entry || pageSize == X86_4KIB_PAGE) {
+        if (!entry || pageSize == SMALLEST_VIRTUAL_PAGE) {
             return (Memory){.start = getPhysicalAddressFrame(entry),
                             .bytes = pageSize};
         }
@@ -112,7 +97,7 @@ Memory getMappedPage(U64 virt) {
 
         table =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-            (VirtualPageTable *)ALIGN_DOWN_VALUE(entry, X86_4KIB_PAGE);
+            (VirtualPageTable *)ALIGN_DOWN_VALUE(entry, SMALLEST_VIRTUAL_PAGE);
     }
 
     __builtin_unreachable();

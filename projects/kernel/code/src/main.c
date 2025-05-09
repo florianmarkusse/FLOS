@@ -21,126 +21,48 @@
 
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
-static constexpr auto TEST_MEMORY = (64 * MiB);
 static void stuff() {
-    void *testMemory = (void *)allocAndMap(TEST_MEMORY);
-    Arena arena = (Arena){.curFree = testMemory,
-                          .beg = testMemory,
-                          .end = testMemory + TEST_MEMORY};
-    if (setjmp(arena.jmp_buf)) {
-        KFLUSH_AFTER { KLOG(STRING("Ran out of test memory capacity\n")); }
-        while (1) {
-            ;
-        }
+    U8 *virtual;
+    virtual = allocateMappableMemory(4097, 1);
+    KFLUSH_AFTER {
+        INFO(STRING("Address received is: "));
+        INFO(virtual, NEWLINE);
     }
 
-    U64 totalElements = (TEST_MEMORY / 2) / sizeof(U8);
-    U8 *array = NEW(&arena, U8, totalElements);
+    virtual[0] = 5;
 
-    U64 cycles;
-    BENCHMARK(cycles) {
-        for (U64 i = 0; i < totalElements; i++) {
-            array[i] = i & 255;
-        }
+    virtual = allocateMappableMemory(4096, 1);
+    KFLUSH_AFTER {
+        INFO(STRING("Address received is: "));
+        INFO(virtual, NEWLINE);
     }
 
-    U8 *virtual = allocVirtualMemory(sizeof(U8) * totalElements, alignof(U8));
+    virtual[0] = 5;
 
-    BENCHMARK(cycles) {
-        for (U64 i = 0; i < totalElements; i++) {
-            virtual[i] = i & 255;
-        }
+    virtual = allocateMappableMemory(4097, 1);
+    KFLUSH_AFTER {
+        INFO(STRING("Address received is: "));
+        INFO(virtual, NEWLINE);
     }
 
     KFLUSH_AFTER {
-        for (U64 i = 0; i < 10; i++) {
-            INFO(STRING("val: "));
-            INFO(virtual[i]);
-            INFO(STRING(" "));
-        }
-        INFO(STRING("\n"));
+        //
+        appendMemoryManagementStatus();
     }
 
-    Memory firstMappedPage = getMappedPage((U64) virtual);
-    KFLUSH_AFTER {
-        INFO(STRING("Address of mapped page: "));
-        INFO((void *)firstMappedPage.start, NEWLINE);
-        INFO(STRING("size of mapped page: "));
-        INFO(firstMappedPage.bytes, NEWLINE);
-    }
-
-    for (U64 i = 0; i < 10; i++) {
-        ((U8 *)firstMappedPage.start)[i] = (U8)(5 + i);
-    }
+    virtual[0] = 5;
 
     KFLUSH_AFTER {
-        for (U64 i = 0; i < 10; i++) {
-            INFO(STRING("val: "));
-            INFO(((U8 *)firstMappedPage.start)[i]);
-            INFO(STRING(" "));
-        }
-        INFO(STRING("\n"));
+        //
+        appendMemoryManagementStatus();
     }
 
-    KFLUSH_AFTER {
-        for (U64 i = 0; i < 10; i++) {
-            INFO(STRING("val: "));
-            INFO(virtual[i]);
-            INFO(STRING(" "));
-        }
-        INFO(STRING("\n"));
-    }
+    freeMappableMemory((Memory){.start = (U64) virtual, .bytes = 4097});
 
-    firstMappedPage = getMappedPage((U64)0);
     KFLUSH_AFTER {
-        INFO(STRING("Address of mapped page: "));
-        INFO((void *)firstMappedPage.start, NEWLINE);
-        INFO(STRING("size of mapped page: "));
-        INFO(firstMappedPage.bytes, NEWLINE);
+        //
+        appendMemoryManagementStatus();
     }
-
-    firstMappedPage = getMappedPage((U64)1 * GiB);
-    KFLUSH_AFTER {
-        INFO(STRING("Address of mapped page: "));
-        INFO((void *)firstMappedPage.start, NEWLINE);
-        INFO(STRING("size of mapped page: "));
-        INFO(firstMappedPage.bytes, NEWLINE);
-    }
-
-    firstMappedPage = getMappedPage((U64)6 * GiB);
-    KFLUSH_AFTER {
-        INFO(STRING("Address of mapped page: "));
-        INFO((void *)firstMappedPage.start, NEWLINE);
-        INFO(STRING("size of mapped page: "));
-        INFO(firstMappedPage.bytes, NEWLINE);
-    }
-
-    firstMappedPage = getMappedPage((U64)1024 * GiB);
-    KFLUSH_AFTER {
-        INFO(STRING("Address of mapped page: "));
-        INFO((void *)firstMappedPage.start, NEWLINE);
-        INFO(STRING("size of mapped page: "));
-        INFO(firstMappedPage.bytes, NEWLINE);
-    }
-    firstMappedPage = getMappedPage((U64)2048 * GiB);
-    KFLUSH_AFTER {
-        INFO(STRING("Address of mapped page: "));
-        INFO((void *)firstMappedPage.start, NEWLINE);
-        INFO(STRING("size of mapped page: "));
-        INFO(firstMappedPage.bytes, NEWLINE);
-    }
-
-    //    virtual = allocVirtualMemory(sizeof(U8) * totalElements, alignof(U8));
-    //
-    //    BENCHMARK(cycles) {
-    //        for (U64 i = 0; i < totalElements; i++) {
-    //            if (!RING_RANGE_VALUE(i, 4096)) {
-    //                void *address = allocPhysicalMemory(4096, 4096);
-    //                mapPage((U64) & virtual[i], (U64)address, 4096);
-    //            }
-    //            virtual[i] = i & 255;
-    //        }
-    //    }
 }
 
 __attribute__((section("kernel-start"))) int
@@ -149,7 +71,7 @@ kernelmain(PackedKernelParameters *kernelParams) {
 
     initMemoryManager(kernelParams->memory);
 
-    void *initMemory = (void *)allocAndMap(INIT_MEMORY);
+    void *initMemory = (void *)allocateIdentityMemory(INIT_MEMORY);
     Arena arena = (Arena){.curFree = initMemory,
                           .beg = initMemory,
                           .end = initMemory + INIT_MEMORY};
@@ -163,9 +85,9 @@ kernelmain(PackedKernelParameters *kernelParams) {
     initLogger(&arena);
     initScreen(kernelParams->window, &arena);
 
-    freeMapped((Memory){.start = (U64)arena.curFree,
-                        .bytes = (U64)(arena.end - arena.curFree)});
-    freeMapped(
+    freeIdentityMemory((Memory){.start = (U64)arena.curFree,
+                                .bytes = (U64)(arena.end - arena.curFree)});
+    freeIdentityMemory(
         (Memory){.start = (U64)kernelParams, .bytes = sizeof(*kernelParams)});
 
     // NOTE: from here, everything is initialized

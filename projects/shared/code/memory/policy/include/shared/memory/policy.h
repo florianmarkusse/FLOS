@@ -7,8 +7,10 @@
 
 void initMemoryManager(PackedKernelMemory memory);
 
-void *allocAndMap(U64 bytes);
-void *allocContiguousAndMap(U64 bytes);
-void freeMapped(Memory memory);
+void *allocateIdentityMemory(U64 bytes);
+void freeIdentityMemory(Memory memory);
+
+void *allocateMappableMemory(U64 bytes, U64 align);
+void freeMappableMemory(Memory memory);
 
 #endif

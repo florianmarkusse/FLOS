@@ -6,8 +6,6 @@
 static constexpr auto X86_MAX_VIRTUAL_MEMORY_REGIONS = 512;
 extern VirtualPageTable *rootPageTable;
 
-U8 pageSizeToDepth(PageSize pageSize);
-
 U64 getPhysicalAddressFrame(U64 virtualPage);
 
 #endif
