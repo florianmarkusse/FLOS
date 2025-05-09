@@ -50,29 +50,31 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
     ASSERT(!(RING_RANGE_VALUE(virt, mappingSize)));
     ASSERT(!(RING_RANGE_VALUE(physical, mappingSize)));
 
-    U8 depth = pageSizeToDepth(mappingSize);
-    VirtualPageTable *currentTable = rootPageTable;
-
-    U64 pageSize = X86_512GIB_PAGE;
-    for (U8 i = 0; i < depth; i++, pageSize /= PageTableFormat.ENTRIES) {
-        U64 *address = &(currentTable->pages[RING_RANGE_VALUE(
+    VirtualPageTable *table = rootPageTable;
+    U64 *entryAddress;
+    for (U64 pageSize = X86_512GIB_PAGE; pageSize >= mappingSize;
+         pageSize /= PageTableFormat.ENTRIES) {
+        entryAddress = &(table->pages[RING_RANGE_VALUE(
             (virt / pageSize), PageTableFormat.ENTRIES)]);
 
-        if (i == depth - 1) {
+        if (pageSize == mappingSize) {
             U64 value = physical | flags;
-            if (pageSize == X86_2MIB_PAGE || pageSize == X86_1GIB_PAGE) {
+            if (mappingSize == X86_2MIB_PAGE || mappingSize == X86_1GIB_PAGE) {
                 value |= VirtualPageMasks.PAGE_EXTENDED_SIZE;
             }
-            *address = value;
-        } else if (!*address) {
-            U64 value = KERNEL_STANDARD_PAGE_FLAGS;
-            value |= getZeroBasePage();
-            *address = value;
+            *entryAddress = value;
+            return;
         }
 
-        currentTable =
+        if (!(*entryAddress)) {
+            U64 value = KERNEL_STANDARD_PAGE_FLAGS;
+            value |= getZeroBasePage();
+            *entryAddress = value;
+        }
+
+        table =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-            (VirtualPageTable *)ALIGN_DOWN_VALUE(*address, X86_4KIB_PAGE);
+            (VirtualPageTable *)ALIGN_DOWN_VALUE(*entryAddress, X86_4KIB_PAGE);
     }
 }
 
@@ -95,8 +97,10 @@ Memory getMappedPage(U64 virt) {
          pageSize /= PageTableFormat.ENTRIES) {
         entry = (table->pages[RING_RANGE_VALUE((virt / pageSize),
                                                PageTableFormat.ENTRIES)]);
-        if (!entry) {
-            return (Memory){.start = 0, .bytes = pageSize};
+
+        if (!entry || pageSize == X86_4KIB_PAGE) {
+            return (Memory){.start = getPhysicalAddressFrame(entry),
+                            .bytes = pageSize};
         }
 
         // NOTE: No possibility of conflicting PATs here because we are not
@@ -111,6 +115,5 @@ Memory getMappedPage(U64 virt) {
             (VirtualPageTable *)ALIGN_DOWN_VALUE(entry, X86_4KIB_PAGE);
     }
 
-    return (Memory){.start = getPhysicalAddressFrame(entry),
-                    .bytes = X86_4KIB_PAGE};
+    __builtin_unreachable();
 }
