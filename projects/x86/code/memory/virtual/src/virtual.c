@@ -85,36 +85,32 @@ U64 getPhysicalAddressFrame(U64 virtualPage) {
     return virtualPage & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
 }
 
-static bool isExtendedPageLevel(U8 level) {
-    return level == pageSizeToDepth(X86_2MIB_PAGE) ||
-           level == pageSizeToDepth(X86_1GIB_PAGE);
-}
+Memory getMappedPage(U64 virt) {
+    ASSERT(rootPageTable);
+    ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
 
-MappedPage getMappedPage(U64 virt) {
-    MappedPage result;
-    result.pageSize = X86_256TIB_PAGE;
-
-    U64 *address;
-    U64 pageSize = X86_512GIB_PAGE;
-    VirtualPageTable *currentTable = rootPageTable;
-    U8 totalDepth = pageSizeToDepth(availablePageSizes[0]);
-    for (U8 level = 0; level < totalDepth;
-         level++, pageSize /= PageTableFormat.ENTRIES) {
-        address = &(currentTable->pages[RING_RANGE_VALUE(
-            (virt / pageSize), PageTableFormat.ENTRIES)]);
-        result.pageSize /= PageTableFormat.ENTRIES;
-
-        if (isExtendedPageLevel(level) &&
-            ((*address) & VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
-            result.entry = *(VirtualEntry *)address;
-            return result;
+    U64 entry;
+    VirtualPageTable *table = rootPageTable;
+    for (U64 pageSize = X86_512GIB_PAGE; pageSize >= X86_4KIB_PAGE;
+         pageSize /= PageTableFormat.ENTRIES) {
+        entry = (table->pages[RING_RANGE_VALUE((virt / pageSize),
+                                               PageTableFormat.ENTRIES)]);
+        if (!entry) {
+            return (Memory){.start = 0, .bytes = pageSize};
         }
 
-        currentTable =
+        // NOTE: No possibility of conflicting PATs here because we are not
+        // using them.
+        if ((entry & VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
+            return (Memory){.start = getPhysicalAddressFrame(entry),
+                            .bytes = pageSize};
+        }
+
+        table =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-            (VirtualPageTable *)ALIGN_DOWN_VALUE(*address, X86_4KIB_PAGE);
+            (VirtualPageTable *)ALIGN_DOWN_VALUE(entry, X86_4KIB_PAGE);
     }
 
-    result.entry = *(VirtualEntry *)address;
-    return result;
+    return (Memory){.start = getPhysicalAddressFrame(entry),
+                    .bytes = X86_4KIB_PAGE};
 }

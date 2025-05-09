@@ -37,131 +37,110 @@ static void stuff() {
     U64 totalElements = (TEST_MEMORY / 2) / sizeof(U8);
     U8 *array = NEW(&arena, U8, totalElements);
 
-    KFLUSH_AFTER {
-        INFO(STRING("Allocated an array of U8 with space for "));
-        INFO(totalElements);
-        INFO(STRING(" elements.\n"));
-        INFO(STRING("Buffer location is: "));
-        INFO(array, NEWLINE);
+    U64 cycles;
+    BENCHMARK(cycles) {
+        for (U64 i = 0; i < totalElements; i++) {
+            array[i] = i & 255;
+        }
     }
-
-    U64 startCycles = currentCycleCounter();
-    for (U64 i = 0; i < totalElements; i++) {
-        array[i] = i & 255;
-    }
-    U64 operationCycles = currentCycleCounter() - startCycles;
-
-    KFLUSH_AFTER {
-        INFO(STRING("Total cycles it took: "));
-        INFO(operationCycles, NEWLINE);
-        INFO(STRING("In human time: "));
-        INFO(operationCycles / getCyclesPerMicroSecond());
-        INFO(STRING(" microseconds.\n"));
-    }
-
-    //    for (U64 i = 1; i < totalElements; i *= 2) {
-    //        KFLUSH_AFTER {
-    //            INFO(STRING("At index "));
-    //            INFO(i);
-    //            INFO(STRING(", value: "));
-    //            INFO(array.buf[i], NEWLINE);
-    //        }
-    //    }
 
     U8 *virtual = allocVirtualMemory(sizeof(U8) * totalElements, alignof(U8));
 
-    KFLUSH_AFTER {
-        INFO(STRING("Allocated an array of U8 with virtual space for "));
-        INFO(totalElements);
-        INFO(STRING(" elements.\n"));
-        INFO(STRING("Buffer location is: "));
-        INFO(virtual, NEWLINE);
+    BENCHMARK(cycles) {
+        for (U64 i = 0; i < totalElements; i++) {
+            virtual[i] = i & 255;
+        }
     }
-
-    U64 bytesWritten = totalElements * sizeof(U8);
-    U64 expectedFaults = CEILING_DIV_VALUE(bytesWritten, 4096UL);
 
     KFLUSH_AFTER {
-        INFO(STRING("Current "));
-        INFO(getPageFaults());
-        INFO(STRING(" page faults.\n"));
-        INFO(STRING("Expect additional "));
-        INFO(expectedFaults);
-        INFO(STRING(" faults.\n"));
+        for (U64 i = 0; i < 10; i++) {
+            INFO(STRING("val: "));
+            INFO(virtual[i]);
+            INFO(STRING(" "));
+        }
+        INFO(STRING("\n"));
     }
 
-    startCycles = currentCycleCounter();
-    for (U64 i = 0; i < totalElements; i++) {
-        virtual[i] = i & 255;
+    Memory firstMappedPage = getMappedPage((U64) virtual);
+    KFLUSH_AFTER {
+        INFO(STRING("Address of mapped page: "));
+        INFO((void *)firstMappedPage.start, NEWLINE);
+        INFO(STRING("size of mapped page: "));
+        INFO(firstMappedPage.bytes, NEWLINE);
     }
-    operationCycles = currentCycleCounter() - startCycles;
+
+    for (U64 i = 0; i < 10; i++) {
+        ((U8 *)firstMappedPage.start)[i] = (U8)(5 + i);
+    }
 
     KFLUSH_AFTER {
-        INFO(STRING("Total cycles it took: "));
-        INFO(operationCycles, NEWLINE);
-        INFO(STRING("In human time: "));
-        INFO(operationCycles / getCyclesPerMicroSecond());
-        INFO(STRING(" microseconds.\n"));
+        for (U64 i = 0; i < 10; i++) {
+            INFO(STRING("val: "));
+            INFO(((U8 *)firstMappedPage.start)[i]);
+            INFO(STRING(" "));
+        }
+        INFO(STRING("\n"));
     }
 
-    //    for (U64 i = 1; i < writes; i *= 2) {
-    //        KFLUSH_AFTER {
-    //            INFO(STRING("At index "));
-    //            INFO(i);
-    //            INFO(STRING(", value: "));
-    //            INFO(virtual[i], NEWLINE);
+    KFLUSH_AFTER {
+        for (U64 i = 0; i < 10; i++) {
+            INFO(STRING("val: "));
+            INFO(virtual[i]);
+            INFO(STRING(" "));
+        }
+        INFO(STRING("\n"));
+    }
+
+    firstMappedPage = getMappedPage((U64)0);
+    KFLUSH_AFTER {
+        INFO(STRING("Address of mapped page: "));
+        INFO((void *)firstMappedPage.start, NEWLINE);
+        INFO(STRING("size of mapped page: "));
+        INFO(firstMappedPage.bytes, NEWLINE);
+    }
+
+    firstMappedPage = getMappedPage((U64)1 * GiB);
+    KFLUSH_AFTER {
+        INFO(STRING("Address of mapped page: "));
+        INFO((void *)firstMappedPage.start, NEWLINE);
+        INFO(STRING("size of mapped page: "));
+        INFO(firstMappedPage.bytes, NEWLINE);
+    }
+
+    firstMappedPage = getMappedPage((U64)6 * GiB);
+    KFLUSH_AFTER {
+        INFO(STRING("Address of mapped page: "));
+        INFO((void *)firstMappedPage.start, NEWLINE);
+        INFO(STRING("size of mapped page: "));
+        INFO(firstMappedPage.bytes, NEWLINE);
+    }
+
+    firstMappedPage = getMappedPage((U64)1024 * GiB);
+    KFLUSH_AFTER {
+        INFO(STRING("Address of mapped page: "));
+        INFO((void *)firstMappedPage.start, NEWLINE);
+        INFO(STRING("size of mapped page: "));
+        INFO(firstMappedPage.bytes, NEWLINE);
+    }
+    firstMappedPage = getMappedPage((U64)2048 * GiB);
+    KFLUSH_AFTER {
+        INFO(STRING("Address of mapped page: "));
+        INFO((void *)firstMappedPage.start, NEWLINE);
+        INFO(STRING("size of mapped page: "));
+        INFO(firstMappedPage.bytes, NEWLINE);
+    }
+
+    //    virtual = allocVirtualMemory(sizeof(U8) * totalElements, alignof(U8));
+    //
+    //    BENCHMARK(cycles) {
+    //        for (U64 i = 0; i < totalElements; i++) {
+    //            if (!RING_RANGE_VALUE(i, 4096)) {
+    //                void *address = allocPhysicalMemory(4096, 4096);
+    //                mapPage((U64) & virtual[i], (U64)address, 4096);
+    //            }
+    //            virtual[i] = i & 255;
     //        }
     //    }
-    //
-
-    KFLUSH_AFTER {
-        INFO(STRING("Current "));
-        INFO(getPageFaults());
-        INFO(STRING(" page faults.\n"));
-    }
-
-    virtual = allocVirtualMemory(sizeof(U8) * totalElements, alignof(U8));
-
-    KFLUSH_AFTER {
-        INFO(STRING("Allocated an array of U8 with virtual space for "));
-        INFO(totalElements);
-        INFO(STRING(" elements.\n"));
-        INFO(STRING("Buffer location is: "));
-        INFO(virtual, NEWLINE);
-    }
-
-    KFLUSH_AFTER {
-        INFO(STRING("Current "));
-        INFO(getPageFaults());
-        INFO(STRING(" page faults.\n"));
-        INFO(STRING("Expect additional "));
-        INFO(expectedFaults);
-        INFO(STRING(" faults.\n"));
-    }
-
-    startCycles = currentCycleCounter();
-    for (U64 i = 0; i < totalElements; i++) {
-        if (!RING_RANGE_VALUE(i, 4096)) {
-            void *address = allocPhysicalMemory(4096, 4096);
-            mapPage((U64) & virtual[i], (U64)address, 4096);
-        }
-        virtual[i] = i & 255;
-    }
-    operationCycles = currentCycleCounter() - startCycles;
-
-    KFLUSH_AFTER {
-        INFO(STRING("Total cycles it took: "));
-        INFO(operationCycles, NEWLINE);
-        INFO(STRING("In human time: "));
-        INFO(operationCycles / getCyclesPerMicroSecond());
-        INFO(STRING(" microseconds.\n"));
-    }
-
-    KFLUSH_AFTER {
-        INFO(STRING("Current "));
-        INFO(getPageFaults());
-        INFO(STRING(" page faults.\n"));
-    }
 }
 
 __attribute__((section("kernel-start"))) int

@@ -48,6 +48,8 @@ static constexpr struct {
                          VirtualPageMasks.PAGE_DISABLE_CACHE,
                 // NOTE: The below PATs can NOT be used by extended sizes as the
                 // CPU will think u set a large/huge page and select pat x - 4
+                // If this starts to be used, we need to change the virtual
+                // memory mapping code to take this into account!
                 .MAP_4 = VirtualPageMasks.PAGE_EXTENDED_SIZE,
                 .MAP_5 = VirtualPageMasks.PAGE_EXTENDED_SIZE |
                          VirtualPageMasks.PAGE_WRITE_THROUGH,
