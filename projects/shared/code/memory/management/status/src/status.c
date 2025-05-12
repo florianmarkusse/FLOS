@@ -12,8 +12,11 @@ static void preOrder(RedBlackNodeMM *current, U64 *totalValue) {
 
     preOrder(current->children[RB_TREE_LEFT], totalValue);
 
+    KLOG(STRING("[address="));
+    KLOG((void *)current->memory.start);
+    KLOG(STRING(", bytes="));
     KLOG(current->memory.bytes);
-    KLOG(STRING(" "));
+    KLOG(STRING("] "));
     *totalValue += current->memory.bytes;
 
     preOrder(current->children[RB_TREE_RIGHT], totalValue);

@@ -738,10 +738,22 @@ static U64 pageFaults = 0;
 U64 getPageFaults() { return pageFaults; }
 
 void fault_handler(regs *regs) {
+    KFLUSH_AFTER {
+        INFO(STRING("The pc is: "));
+        INFO(regs->rip, NEWLINE);
+        INFO(STRING("The pc is: "));
+        INFO((void *)regs->rip, NEWLINE);
+    }
+
     // TODO: What if the CR2 is not oorrect aligned????
     if (regs->interruptNumber == FAULT_PAGE_FAULT) {
         pageFaults++;
         void *address = allocPhysicalMemory(X86_4KIB_PAGE, X86_4KIB_PAGE);
+
+        KFLUSH_AFTER {
+            INFO(STRING("Mapping this address: "));
+            INFO(address, NEWLINE);
+        }
         mapPage(CR2(), (U64)address, X86_4KIB_PAGE);
     } else {
         KFLUSH_AFTER {

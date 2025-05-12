@@ -29,21 +29,7 @@ static void insertMemory(Memory memory, MemoryAllocator *allocator) {
     }
 }
 
-// The remaining bytes are put back into the red black tree or we have a perfect
-// match and the node's memory location can be now put in the free list
-static void handleFreeMemory(RedBlackNodeMM *availableMemory, U64 bytes,
-                             MemoryAllocator *allocator) {
-    availableMemory->memory.bytes -= bytes;
-    if (availableMemory->memory.bytes) {
-        availableMemory->memory.start += bytes;
-        insertRedBlackNodeMM(&allocator->tree, availableMemory);
-    } else {
-        allocator->freeList.buf[allocator->freeList.len] = availableMemory;
-        allocator->freeList.len++;
-    }
-}
-
-static RedBlackNodeMM *getMemoryNode(U64 bytes, RedBlackNodeMM **tree) {
+static RedBlackNodeMM *getMemoryAllocation(U64 bytes, RedBlackNodeMM **tree) {
     RedBlackNodeMM *availableMemory = deleteAtLeastRedBlackNodeMM(tree, bytes);
     if (!availableMemory) {
         interruptNoMorePhysicalMemory();
@@ -55,18 +41,41 @@ void freeVirtualMemory(Memory memory) { insertMemory(memory, &virt); }
 
 void freePhysicalMemory(Memory memory) { insertMemory(memory, &physical); }
 
+static U64 alignedToTotal(U64 bytes, U64 align) { return bytes + align - 1; }
+
+static void handleRemovedAllocator(RedBlackNodeMM *availableMemory,
+                                   Memory memory, MemoryAllocator *allocator) {
+    U64 beforeResultBytes = memory.start - availableMemory->memory.start;
+    U64 afterResultBytes =
+        availableMemory->memory.bytes - (beforeResultBytes + memory.bytes);
+
+    if (beforeResultBytes && afterResultBytes) {
+        availableMemory->memory.bytes = beforeResultBytes;
+        insertRedBlackNodeMM(&allocator->tree, availableMemory);
+
+        insertMemory((Memory){.start = memory.start + memory.bytes,
+                              .bytes = afterResultBytes},
+                     allocator);
+    } else if (beforeResultBytes) {
+        availableMemory->memory.bytes = beforeResultBytes;
+        insertRedBlackNodeMM(&allocator->tree, availableMemory);
+    } else if (afterResultBytes) {
+        availableMemory->memory = (Memory){.start = memory.start + memory.bytes,
+                                           .bytes = afterResultBytes};
+        insertRedBlackNodeMM(&allocator->tree, availableMemory);
+    } else {
+        allocator->freeList.buf[allocator->freeList.len] = availableMemory;
+        allocator->freeList.len++;
+    }
+}
+
 static void *allocAlignedMemory(U64 bytes, U64 align,
                                 MemoryAllocator *allocator) {
-    bytes = ALIGN_UP_VALUE(bytes, align);
-    RedBlackNodeMM *availableMemory = getMemoryNode(bytes, &allocator->tree);
+    RedBlackNodeMM *availableMemory =
+        getMemoryAllocation(alignedToTotal(bytes, align), &allocator->tree);
     U64 result = ALIGN_UP_VALUE(availableMemory->memory.start, align);
-
-    handleFreeMemory(availableMemory, bytes, allocator);
-    if (result > availableMemory->memory.start) {
-        availableMemory->memory.bytes = result - availableMemory->memory.start;
-        insertMemory(availableMemory->memory, allocator);
-    }
-
+    handleRemovedAllocator(
+        availableMemory, (Memory){.start = result, .bytes = bytes}, allocator);
     return (void *)result;
 }
 
@@ -118,9 +127,15 @@ void initPhysicalMemoryManager(PackedMemoryTree physicalMemoryTree) {
 
     U64 freeListRequiredSize = getRequiredFreeListSize(&physical);
 
-    RedBlackNodeMM *availableMemory =
-        getMemoryNode(freeListRequiredSize, &physical.tree);
-    physical.freeList = (RedBlackNodeMMPtr_a){
-        .len = 0, .buf = (RedBlackNodeMM **)availableMemory->memory.start};
-    handleFreeMemory(availableMemory, freeListRequiredSize, &physical);
+    RedBlackNodeMM *availableMemory = getMemoryAllocation(
+        alignedToTotal(freeListRequiredSize, alignof(*virt.freeList.buf)),
+        &physical.tree);
+    U64 result = ALIGN_UP_VALUE(availableMemory->memory.start,
+                                alignof(*virt.freeList.buf));
+    physical.freeList =
+        (RedBlackNodeMMPtr_a){.len = 0, .buf = (RedBlackNodeMM **)result};
+
+    handleRemovedAllocator(
+        availableMemory,
+        (Memory){.start = result, .bytes = freeListRequiredSize}, &physical);
 }
