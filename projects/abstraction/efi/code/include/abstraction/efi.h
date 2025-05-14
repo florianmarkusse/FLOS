@@ -10,7 +10,7 @@ void initVirtualMemory(U64 startingAddress, U64 endingAddress,
 
 typedef struct {
     U64 tscFrequencyPerMicroSecond;
-    U64 virtualMetaDataAddress;
+    U64 rootVirtualMetaDataAddress;
 } ArchitectureInit;
 
 ArchitectureInit initArchitecture(Arena scratch);

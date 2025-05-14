@@ -39,7 +39,7 @@ typedef struct {
 
 typedef struct {
     U64 tscFrequencyPerMicroSecond;
-    U64 virtualMetaDataAddress;
+    U64 rootVirtualMetaDataAddress;
 } __attribute__((packed)) PackedArchitectureInit;
 
 typedef struct {

@@ -17,7 +17,7 @@ typedef struct {
 
 MemoryInfo getMemoryInfo(Arena *perm);
 
-static constexpr auto MAX_KERNEL_STRUCTURES = 16;
+static constexpr auto MAX_KERNEL_STRUCTURES = 32;
 extern Memory_max_a kernelStructureLocations;
 
 void initKernelStructureLocations(Arena *perm);

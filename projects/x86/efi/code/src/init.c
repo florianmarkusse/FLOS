@@ -23,17 +23,19 @@
 #include "x86/memory/virtual.h"
 
 void bootstrapProcessorWork(Arena scratch, ArchitectureInit *init) {
-    U64 newCR3 = getPageForMappingVirtualMemory(
-        VIRTUAL_MEMORY_MAPPING_SIZE, VIRTUAL_MEMORY_MAPPER_ALIGNMENT);
+    U64 newCR3 = getBytesForMemoryMapping(VIRTUAL_MEMORY_MAPPING_SIZE,
+                                          VIRTUAL_MEMORY_MAPPER_ALIGNMENT);
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
     memset((void *)newCR3, 0, X86_4KIB_PAGE);
 
     rootPageTable = (VirtualPageTable *)newCR3;
 
-    U64 virtualMetaDataAddress = allocateKernelStructure(
-        sizeof(VirtualMetaData), alignof(VirtualMetaData), false, scratch);
-    virtualMetaData = (VirtualMetaData *)virtualMetaDataAddress;
-    init->virtualMetaDataAddress = virtualMetaDataAddress;
+    VirtualMetaData *rootVirtualMetaDataAddress =
+        (VirtualMetaData *)allocateKernelStructure(
+            sizeof(VirtualMetaData), alignof(VirtualMetaData), false, scratch);
+    *rootVirtualMetaDataAddress = (VirtualMetaData){0};
+    rootVirtualMetaData = rootVirtualMetaDataAddress;
+    init->rootVirtualMetaDataAddress = (U64)rootVirtualMetaDataAddress;
 
     KFLUSH_AFTER {
         INFO(STRING("root page table memory location: "));
@@ -41,7 +43,7 @@ void bootstrapProcessorWork(Arena scratch, ArchitectureInit *init) {
         INFO((void *)rootPageTable, NEWLINE);
         INFO(STRING("virtual meta data location: "));
         /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-        INFO((void *)virtualMetaData, NEWLINE);
+        INFO((void *)rootVirtualMetaData, NEWLINE);
     }
 
     disablePIC();

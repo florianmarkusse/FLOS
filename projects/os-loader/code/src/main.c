@@ -188,6 +188,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                        .scanline = gop->mode->info->pixelsPerScanLine};
     kernelParams->archInit.tscFrequencyPerMicroSecond =
         archInit.tscFrequencyPerMicroSecond;
+    kernelParams->archInit.rootVirtualMetaDataAddress =
+        archInit.rootVirtualMetaDataAddress;
 
     RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
                               globals.st->configuration_table);

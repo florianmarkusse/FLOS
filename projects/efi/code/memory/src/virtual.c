@@ -5,7 +5,7 @@
 #include "efi/memory/physical.h"
 #include "shared/types/numeric.h"
 
-U64 getPageForMappingVirtualMemory(U64 pageSize, U64 align) {
+U64 getBytesForMemoryMapping(U64 pageSize, U64 align) {
     if (align > UEFI_PAGE_SIZE) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING("Requested alignment larger than possible!"));

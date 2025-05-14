@@ -19,14 +19,28 @@
 // };
 
 VirtualPageTable *rootPageTable;
-VirtualMetaData *virtualMetaData;
+VirtualMetaData *rootVirtualMetaData;
 
-static U64 getZeroBasePage() {
-    U64 address = getPageForMappingVirtualMemory(
-        VIRTUAL_MEMORY_MAPPING_SIZE, VIRTUAL_MEMORY_MAPPER_ALIGNMENT);
+static U64 getZeroedMemory(U64 bytes, U64 align) {
+    U64 address = getBytesForMemoryMapping(bytes, align);
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    memset((void *)address, 0, VIRTUAL_MEMORY_MAPPING_SIZE);
+    memset((void *)address, 0, bytes);
     return address;
+}
+
+static U64 getZeroedMetaData() {
+    return getZeroedMemory(sizeof(VirtualMetaData), alignof(VirtualMetaData));
+}
+
+static U64 getZeroedMetaDataTable() {
+    return getZeroedMemory(PageTableFormat.ENTRIES *
+                               sizeof(rootVirtualMetaData),
+                           alignof(typeof(VirtualMetaData)));
+}
+
+static U64 getZeroedPageTable() {
+    return getZeroedMemory(VIRTUAL_MEMORY_MAPPING_SIZE,
+                           VIRTUAL_MEMORY_MAPPER_ALIGNMENT);
 }
 
 static U16 calculateTableIndex(U64 virt, U64 pageSize) {
@@ -40,34 +54,51 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
     ASSERT(!(RING_RANGE_VALUE(physical, mappingSize)));
 
-    VirtualPageTable *tables[MAX_PAGING_LEVELS];
-    tables[0] = rootPageTable;
+    VirtualMetaData *metaData[MAX_PAGING_LEVELS];
+    metaData[0] = rootVirtualMetaData;
+    U64 *metaEntryAddress;
+
+    VirtualPageTable *pageTables[MAX_PAGING_LEVELS];
+    pageTables[0] = rootPageTable;
+    U64 *tableEntryAddress;
+
     U8 len = 1;
-    U64 *entryAddress;
+
     for (U64 pageSize = X86_512GIB_PAGE; pageSize >= mappingSize;
          pageSize /= PageTableFormat.ENTRIES) {
         U16 index = calculateTableIndex(virt, pageSize);
-        entryAddress = &(tables[len - 1]->pages[index]);
+        tableEntryAddress = &(pageTables[len - 1]->pages[index]);
+        metaEntryAddress = (U64 *)&(metaData[len - 1]->pages[index]);
 
         if (pageSize == mappingSize) {
             U64 value = physical | flags;
             if (mappingSize == X86_2MIB_PAGE || mappingSize == X86_1GIB_PAGE) {
                 value |= VirtualPageMasks.PAGE_EXTENDED_SIZE;
             }
-            *entryAddress = value;
+            *tableEntryAddress = value;
+            metaData[len - 1]->count++;
             return;
         }
 
-        if (!(*entryAddress)) {
+        if (!(*tableEntryAddress)) {
             U64 value = KERNEL_STANDARD_PAGE_FLAGS;
-            value |= getZeroBasePage();
-            *entryAddress = value;
+            value |= getZeroedPageTable();
+            *tableEntryAddress = value;
+
+            if (!metaData[len - 1]->pages) {
+                metaData[len - 1]->pages =
+                    (VirtualMetaData *)getZeroedMetaDataTable();
+            }
+            value = getZeroedMetaData();
+            *metaEntryAddress = value;
+            metaData[len - 1]->count++;
         }
 
-        tables[len] =
+        pageTables[len] =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-            (VirtualPageTable *)ALIGN_DOWN_VALUE(*entryAddress,
+            (VirtualPageTable *)ALIGN_DOWN_VALUE(*tableEntryAddress,
                                                  SMALLEST_VIRTUAL_PAGE);
+        metaData[len] = (VirtualMetaData *)*metaEntryAddress;
         len++;
     }
 }
