@@ -21,6 +21,8 @@ static constexpr struct {
 static constexpr auto X86_512GIB_PAGE = (1ULL << (12 + (9 * 3)));
 static constexpr auto X86_256TIB_PAGE = (1ULL << (12 + (9 * 4)));
 
+static constexpr auto MAX_PAGING_LEVELS = 4;
+
 typedef enum : U64 { MEMORY_PAGE_SIZES_ENUM(ENUM_VALUES_VARIANT) } PageSize;
 static constexpr auto MEMORY_PAGE_SIZES_COUNT =
     (0 MEMORY_PAGE_SIZES_ENUM(PLUS_ONE));

@@ -40,12 +40,14 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
     ASSERT(!(RING_RANGE_VALUE(physical, mappingSize)));
 
-    VirtualPageTable *table = rootPageTable;
+    VirtualPageTable *tables[MAX_PAGING_LEVELS];
+    tables[0] = rootPageTable;
+    U8 len = 1;
     U64 *entryAddress;
     for (U64 pageSize = X86_512GIB_PAGE; pageSize >= mappingSize;
          pageSize /= PageTableFormat.ENTRIES) {
         U16 index = calculateTableIndex(virt, pageSize);
-        entryAddress = &(table->pages[index]);
+        entryAddress = &(tables[len - 1]->pages[index]);
 
         if (pageSize == mappingSize) {
             U64 value = physical | flags;
@@ -62,10 +64,11 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
             *entryAddress = value;
         }
 
-        table =
+        tables[len] =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
             (VirtualPageTable *)ALIGN_DOWN_VALUE(*entryAddress,
                                                  SMALLEST_VIRTUAL_PAGE);
+        len++;
     }
 }
 
@@ -83,11 +86,13 @@ Memory unmapPage(U64 virt) {
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
 
     U64 entry;
-    VirtualPageTable *table = rootPageTable;
+    VirtualPageTable *tables[MAX_PAGING_LEVELS];
+    tables[0] = rootPageTable;
+    U8 len = 1;
     for (U64 pageSize = X86_512GIB_PAGE; pageSize >= SMALLEST_VIRTUAL_PAGE;
          pageSize /= PageTableFormat.ENTRIES) {
         U16 index = calculateTableIndex(virt, pageSize);
-        entry = table->pages[index];
+        entry = tables[len - 1]->pages[index];
 
         if (!entry || pageSize == SMALLEST_VIRTUAL_PAGE) {
             return (Memory){.start = getPhysicalAddressFrame(entry),
@@ -101,9 +106,10 @@ Memory unmapPage(U64 virt) {
                             .bytes = pageSize};
         }
 
-        table =
+        tables[len] =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
             (VirtualPageTable *)ALIGN_DOWN_VALUE(entry, SMALLEST_VIRTUAL_PAGE);
+        len++;
     }
 
     __builtin_unreachable();
