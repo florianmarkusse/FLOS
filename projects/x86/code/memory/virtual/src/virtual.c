@@ -6,10 +6,14 @@
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
+#include "shared/memory/management/management.h"
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/flags.h"
+
+// NOTE: Currently, one should only consult the metadata table through a virtual
+// page. I.e., you can only go from page table to meta data.
 
 // static string patEncodingToString[PAT_ENCODING_COUNT] = {
 //     STRING("Uncachable (UC)"),        STRING("Write Combining (WC)"),
@@ -32,10 +36,13 @@ static U64 getZeroedMetaData() {
     return getZeroedMemory(sizeof(VirtualMetaData), alignof(VirtualMetaData));
 }
 
-static U64 getZeroedMetaDataTable() {
-    return getZeroedMemory(PageTableFormat.ENTRIES *
-                               sizeof(rootVirtualMetaData),
-                           alignof(typeof(VirtualMetaData)));
+static constexpr auto META_DATA_TABLE_BYTES =
+    PageTableFormat.ENTRIES * sizeof(rootVirtualMetaData);
+
+static U64 getMetaDataTable() {
+    U64 address = getBytesForMemoryMapping(META_DATA_TABLE_BYTES,
+                                           alignof(typeof(VirtualMetaData)));
+    return address;
 }
 
 static U64 getZeroedPageTable() {
@@ -56,7 +63,6 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
 
     VirtualMetaData *metaData[MAX_PAGING_LEVELS];
     metaData[0] = rootVirtualMetaData;
-    U64 *metaEntryAddress;
 
     VirtualPageTable *pageTables[MAX_PAGING_LEVELS];
     pageTables[0] = rootPageTable;
@@ -64,13 +70,12 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
 
     U8 len = 1;
 
-    for (U64 pageSize = X86_512GIB_PAGE; pageSize >= mappingSize;
-         pageSize /= PageTableFormat.ENTRIES) {
-        U16 index = calculateTableIndex(virt, pageSize);
+    for (U64 entrySize = X86_512GIB_PAGE; entrySize >= mappingSize;
+         entrySize /= PageTableFormat.ENTRIES) {
+        U16 index = calculateTableIndex(virt, entrySize);
         tableEntryAddress = &(pageTables[len - 1]->pages[index]);
-        metaEntryAddress = (U64 *)&(metaData[len - 1]->pages[index]);
 
-        if (pageSize == mappingSize) {
+        if (entrySize == mappingSize) {
             U64 value = physical | flags;
             if (mappingSize == X86_2MIB_PAGE || mappingSize == X86_1GIB_PAGE) {
                 value |= VirtualPageMasks.PAGE_EXTENDED_SIZE;
@@ -87,10 +92,10 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
 
             if (!metaData[len - 1]->pages) {
                 metaData[len - 1]->pages =
-                    (VirtualMetaData *)getZeroedMetaDataTable();
+                    (VirtualMetaData **)getMetaDataTable();
             }
-            value = getZeroedMetaData();
-            *metaEntryAddress = value;
+            metaData[len - 1]->pages[index] =
+                (VirtualMetaData *)getZeroedMetaData();
             metaData[len - 1]->count++;
         }
 
@@ -98,7 +103,7 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
             (VirtualPageTable *)ALIGN_DOWN_VALUE(*tableEntryAddress,
                                                  SMALLEST_VIRTUAL_PAGE);
-        metaData[len] = (VirtualMetaData *)*metaEntryAddress;
+        metaData[len] = metaData[len - 1]->pages[index];
         len++;
     }
 }
@@ -112,34 +117,68 @@ U64 getPhysicalAddressFrame(U64 virtualPage) {
     return virtualPage & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
 }
 
+// TODO: need indices here :)
+static void updateMappingData(VirtualMetaData *metaData[MAX_PAGING_LEVELS],
+                              VirtualPageTable *pageTables[MAX_PAGING_LEVELS],
+                              U8 len) {
+    while (1) {
+        metaData[len - 1]->count--;
+        if (metaData[len - 1]->count) {
+            return;
+        }
+        freePhysicalMemory((Memory){.start = (U64)pageTables[len - 1],
+                                    .bytes = VIRTUAL_MEMORY_MAPPING_SIZE});
+        if (metaData[len - 1]->pages) {
+            freePhysicalMemory(
+                (Memory){.start = (U64)(metaData[len - 1]->pages),
+                         .bytes = META_DATA_TABLE_BYTES});
+        }
+        freePhysicalMemory((Memory){.start = (U64)metaData[len - 1],
+                                    .bytes = sizeof(VirtualMetaData)});
+
+        len--;
+    }
+}
+
 Memory unmapPage(U64 virt) {
     ASSERT(rootPageTable);
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
 
-    U64 entry;
-    VirtualPageTable *tables[MAX_PAGING_LEVELS];
-    tables[0] = rootPageTable;
-    U8 len = 1;
-    for (U64 pageSize = X86_512GIB_PAGE; pageSize >= SMALLEST_VIRTUAL_PAGE;
-         pageSize /= PageTableFormat.ENTRIES) {
-        U16 index = calculateTableIndex(virt, pageSize);
-        entry = tables[len - 1]->pages[index];
+    VirtualMetaData *metaData[MAX_PAGING_LEVELS];
+    metaData[0] = rootVirtualMetaData;
 
-        if (!entry || pageSize == SMALLEST_VIRTUAL_PAGE) {
-            return (Memory){.start = getPhysicalAddressFrame(entry),
-                            .bytes = pageSize};
+    U64 tableEntry;
+    VirtualPageTable *pageTables[MAX_PAGING_LEVELS];
+    pageTables[0] = rootPageTable;
+
+    U8 len = 1;
+    for (U64 entrySize = X86_512GIB_PAGE; entrySize >= SMALLEST_VIRTUAL_PAGE;
+         entrySize /= PageTableFormat.ENTRIES) {
+        U16 index = calculateTableIndex(virt, entrySize);
+        tableEntry = pageTables[len - 1]->pages[index];
+
+        if (!tableEntry || entrySize == SMALLEST_VIRTUAL_PAGE) {
+            if (entrySize == SMALLEST_VIRTUAL_PAGE) {
+                updateMappingData(metaData, pageTables, len);
+            }
+
+            return (Memory){.start = getPhysicalAddressFrame(tableEntry),
+                            .bytes = entrySize};
         }
 
         // NOTE: No possibility of conflicting with bad PATs here because we are
         // not using them.
-        if ((entry & VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
-            return (Memory){.start = getPhysicalAddressFrame(entry),
-                            .bytes = pageSize};
+        if ((tableEntry & VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
+            updateMappingData(metaData, pageTables, len);
+            return (Memory){.start = getPhysicalAddressFrame(tableEntry),
+                            .bytes = entrySize};
         }
 
-        tables[len] =
+        pageTables[len] =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-            (VirtualPageTable *)ALIGN_DOWN_VALUE(entry, SMALLEST_VIRTUAL_PAGE);
+            (VirtualPageTable *)ALIGN_DOWN_VALUE(tableEntry,
+                                                 SMALLEST_VIRTUAL_PAGE);
+        metaData[len] = metaData[len - 1]->pages[index];
         len++;
     }
 

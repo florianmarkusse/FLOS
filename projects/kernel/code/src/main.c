@@ -31,6 +31,8 @@ static void stuff() {
 
     virtual[0] = 5;
 
+    freeMappableMemory((Memory){.start = (U64) virtual, .bytes = 4097});
+
     virtual = allocateMappableMemory(4096, 1);
     KFLUSH_AFTER {
         INFO(STRING("Address received is: "));
