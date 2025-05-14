@@ -19,12 +19,18 @@
 // };
 
 VirtualPageTable *rootPageTable;
+VirtualMetaData *virtualMetaData;
 
 static U64 getZeroBasePage() {
-    U64 address = getPageForMappingVirtualMemory(VIRTUAL_MEMORY_MAPPING_SIZE);
+    U64 address = getPageForMappingVirtualMemory(
+        VIRTUAL_MEMORY_MAPPING_SIZE, VIRTUAL_MEMORY_MAPPER_ALIGNMENT);
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
     memset((void *)address, 0, VIRTUAL_MEMORY_MAPPING_SIZE);
     return address;
+}
+
+static U16 calculateTableIndex(U64 virt, U64 pageSize) {
+    return RING_RANGE_VALUE((virt / pageSize), PageTableFormat.ENTRIES);
 }
 
 // The caller should take care that the physical address is correctly aligned.
@@ -38,8 +44,8 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
     U64 *entryAddress;
     for (U64 pageSize = X86_512GIB_PAGE; pageSize >= mappingSize;
          pageSize /= PageTableFormat.ENTRIES) {
-        entryAddress = &(table->pages[RING_RANGE_VALUE(
-            (virt / pageSize), PageTableFormat.ENTRIES)]);
+        U16 index = calculateTableIndex(virt, pageSize);
+        entryAddress = &(table->pages[index]);
 
         if (pageSize == mappingSize) {
             U64 value = physical | flags;
@@ -72,7 +78,7 @@ U64 getPhysicalAddressFrame(U64 virtualPage) {
     return virtualPage & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
 }
 
-Memory getMappedPage(U64 virt) {
+Memory unmapPage(U64 virt) {
     ASSERT(rootPageTable);
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
 
@@ -80,16 +86,16 @@ Memory getMappedPage(U64 virt) {
     VirtualPageTable *table = rootPageTable;
     for (U64 pageSize = X86_512GIB_PAGE; pageSize >= SMALLEST_VIRTUAL_PAGE;
          pageSize /= PageTableFormat.ENTRIES) {
-        entry = (table->pages[RING_RANGE_VALUE((virt / pageSize),
-                                               PageTableFormat.ENTRIES)]);
+        U16 index = calculateTableIndex(virt, pageSize);
+        entry = table->pages[index];
 
         if (!entry || pageSize == SMALLEST_VIRTUAL_PAGE) {
             return (Memory){.start = getPhysicalAddressFrame(entry),
                             .bytes = pageSize};
         }
 
-        // NOTE: No possibility of conflicting PATs here because we are not
-        // using them.
+        // NOTE: No possibility of conflicting with bad PATs here because we are
+        // not using them.
         if ((entry & VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
             return (Memory){.start = getPhysicalAddressFrame(entry),
                             .bytes = pageSize};

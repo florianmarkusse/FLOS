@@ -199,7 +199,7 @@ U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
     return result;
 }
 
-U64 allocateUnalignedMemory(U64 bytes, bool isKernelStructure) {
+U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure) {
     U64 address = 0;
     Status status = globals.st->boot_services->allocate_pages(
         ALLOCATE_ANY_PAGES, LOADER_DATA,

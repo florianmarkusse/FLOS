@@ -7,6 +7,8 @@
 void mapPage(U64 virt, U64 physical, U64 mappingSize);
 void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 Flags);
 
-Memory getMappedPage(U64 virt);
+// Unmaps the virtual address space and returns the physical memory that can now
+// freely be used.
+Memory unmapPage(U64 virt);
 
 #endif

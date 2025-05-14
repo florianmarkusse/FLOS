@@ -38,27 +38,11 @@ static constexpr U64 LARGEST_VIRTUAL_PAGE =
 
 typedef struct {
     U8 data[X86_4KIB_PAGE];
-} PhysicalBasePage;
+} PhysicalBasePage __attribute__((aligned(X86_4KIB_PAGE)));
 
 static constexpr auto VIRTUAL_MEMORY_MAPPING_SIZE = sizeof(PhysicalBasePage);
 static constexpr auto VIRTUAL_MEMORY_MAPPER_ALIGNMENT =
     alignof(PhysicalBasePage);
-
-typedef struct {
-    union {
-        U8 data[X86_2MIB_PAGE];
-        PhysicalBasePage basePages[PageTableFormat.ENTRIES];
-    };
-} PhysicalLargePage;
-
-typedef struct {
-    union {
-        U8 data[X86_1GIB_PAGE];
-        PhysicalBasePage
-            basePages[PageTableFormat.ENTRIES * PageTableFormat.ENTRIES];
-        PhysicalLargePage largePages[PageTableFormat.ENTRIES];
-    };
-} PhysicalHugePage;
 
 typedef struct {
     union {
@@ -112,15 +96,24 @@ static constexpr struct {
     U64 PAGE_AVAILABLE_9;  // Can be used freely by the OS
     U64 PAGE_AVAILABLE_10; // Can be used freely by the OS
     U64 PAGE_AVAILABLE_11; // Can be used freely by the OS
-    U64 PAGE_AVAILABLE_52; // Can be used freely by the OS
-    U64 PAGE_AVAILABLE_53; // Can be used freely by the OS
-    U64 PAGE_AVAILABLE_54; // Can be used freely by the OS
-    U64 PAGE_AVAILABLE_55; // Can be used freely by the OS
-    U64 PAGE_AVAILABLE_56; // Can be used freely by the OS
-    U64 PAGE_AVAILABLE_57; // Can be used freely by the OS
-    U64 PAGE_AVAILABLE_58; // Can be used freely by the OS
-    U64 PAGE_AVAILABLE_59; // Can be used freely by the OS
-    U64 PAGE_AVAILABLE_60; // Can be used freely by the OS
+    U64 PAGE_AVAILABLE_52; // Can be used freely by the OS (NOT with 5-level
+                           // paging, though!)
+    U64 PAGE_AVAILABLE_53; // Can be used freely by the OS (NOT with 5-level
+                           // paging, though!)
+    U64 PAGE_AVAILABLE_54; // Can be used freely by the OS (NOT with 5-level
+                           // paging, though!)
+    U64 PAGE_AVAILABLE_55; // Can be used freely by the OS (NOT with 5-level
+                           // paging, though!)
+    U64 PAGE_AVAILABLE_56; // Can be used freely by the OS (NOT with 5-level
+                           // paging, though!)
+    U64 PAGE_AVAILABLE_57; // Can be used freely by the OS (NOT with 5-level
+                           // paging, though!)
+    U64 PAGE_AVAILABLE_58; // Can be used freely by the OS (NOT with 5-level
+                           // paging, though!)
+    U64 PAGE_AVAILABLE_59; // Can be used freely by the OS (NOT with 5-level
+                           // paging, though!)
+    U64 PAGE_AVAILABLE_60; // Can be used freely by the OS (NOT with 5-level
+                           // paging, though!)
     U64 PAGE_AVAILABLE_61; // Can be used freely by the OS
     U64 PAGE_AVAILABLE_62; // Can be used freely by the OS
     U64 PAGE_NO_EXECUTE;   // Forbid executing code on this page (the NXE bit in

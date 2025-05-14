@@ -3,6 +3,6 @@
 
 #include "shared/types/numeric.h"
 
-U64 getPageForMappingVirtualMemory(U64 pageSize);
+U64 getPageForMappingVirtualMemory(U64 pageSize, U64 align);
 
 #endif

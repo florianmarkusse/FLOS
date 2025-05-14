@@ -35,7 +35,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                                        BACKGROUND_RED | YELLOW);
 
     void *memoryForArena =
-        (void *)allocateUnalignedMemory(DYNAMIC_MEMORY_CAPACITY, false);
+        (void *)allocateBytesInUefiPages(DYNAMIC_MEMORY_CAPACITY, false);
     Arena arena = (Arena){.curFree = memoryForArena,
                           .beg = memoryForArena,
                           .end = memoryForArena + DYNAMIC_MEMORY_CAPACITY};

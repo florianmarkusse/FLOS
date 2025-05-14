@@ -25,7 +25,7 @@ void initKernelStructureLocations(Arena *perm);
 U64 findHighestMemoryAddress(U64 currentHighestAddress, Arena scratch);
 U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
                             bool tryEncompassingVirtual, Arena scratch);
-U64 allocateUnalignedMemory(U64 bytes, bool isKernelStructure);
+U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure);
 
 Arena createAllocatorForMemoryTree(U64 requiredNumberOfNodes, Arena scratch);
 

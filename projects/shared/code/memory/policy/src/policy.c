@@ -33,9 +33,9 @@ void freeMappableMemory(Memory memory) {
 
     U64 endAddress = memory.start + memory.bytes;
     U64 currentAddress = memory.start;
-    for (Memory mappedAddress = getMappedPage(currentAddress);
+    for (Memory mappedAddress = unmapPage(currentAddress);
          currentAddress < endAddress;
-         mappedAddress = getMappedPage(currentAddress)) {
+         mappedAddress = unmapPage(currentAddress)) {
         KFLUSH_AFTER {
             INFO(STRING("found mappable[start="));
             INFO((void *)mappedAddress.start);
