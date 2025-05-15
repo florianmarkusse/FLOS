@@ -22,10 +22,31 @@
 //     STRING("Write Back (WB)"),        STRING("Uncached (UC-)"),
 // };
 
-VirtualPageTable *rootPageTable;
+#define REF_COUNT_MASK 0b11'1111'1111
+#define PAGE_PTR_MASK (~REF_COUNT_MASK)
 
-U16 rootReferenceCount;
-VirtualReferenceCount *references;
+static inline void setAddress(U64 *entry, U64 address) {
+    *entry = (address | *entry);
+}
+
+static inline U16 getReferenceCount(U64 entry) {
+    return (U16)(entry & REF_COUNT_MASK);
+}
+
+static inline void incrementReferenceCount(U64 *entry) {
+    U16 count = getReferenceCount(*entry);
+    *entry = (*entry & PAGE_PTR_MASK) | (count + 1);
+}
+
+static inline void decrementReferenceCount(U64 *entry) {
+    U16 count = getReferenceCount(*entry);
+    *entry = (*entry & PAGE_PTR_MASK) | (count - 1);
+}
+
+VirtualPageTable *rootPageTable;
+VirtualMetaData *rootVirtualMetaData;
+
+U64 rootReferenceCount = 0;
 
 static U64 getZeroedMemory(U64 bytes, U64 align) {
     U64 address = getBytesForMemoryMapping(bytes, align);
@@ -56,12 +77,17 @@ static U16 calculateTableIndex(U64 virt, U64 pageSize) {
     return RING_RANGE_VALUE((virt / pageSize), PageTableFormat.ENTRIES);
 }
 
+// TODO: Why are we using array here?
 // The caller should take care that the physical address is correctly aligned.
 // If it is not, not sure what the caller wanted to accomplish.
 void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
     ASSERT(rootPageTable);
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
     ASSERT(!(RING_RANGE_VALUE(physical, mappingSize)));
+
+    VirtualReferenceCount *newMeta[MAX_PAGING_LEVELS];
+    newMeta[0] = (VirtualReferenceCount *)&rootReferenceCount;
+    U64 *newMetaEntryAddress;
 
     VirtualMetaData *metaData[MAX_PAGING_LEVELS];
     metaData[0] = rootVirtualMetaData;
@@ -77,20 +103,28 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
         U16 index = calculateTableIndex(virt, entrySize);
         tableEntryAddress = &(pageTables[len - 1]->pages[index]);
 
+        U16 newMetaIndex = len == 1 ? 0 : index;
+        newMetaEntryAddress = &(newMeta[len - 1]->pages[newMetaIndex]);
+
         if (entrySize == mappingSize) {
             U64 value = physical | flags;
             if (mappingSize == X86_2MIB_PAGE || mappingSize == X86_1GIB_PAGE) {
                 value |= VirtualPageMasks.PAGE_EXTENDED_SIZE;
             }
             *tableEntryAddress = value;
+            incrementReferenceCount(newMetaEntryAddress);
             metaData[len - 1]->count++;
             return;
         }
 
         if (!(*tableEntryAddress)) {
-            U64 value = KERNEL_STANDARD_PAGE_FLAGS;
-            value |= getZeroedPageTable();
-            *tableEntryAddress = value;
+            *tableEntryAddress =
+                getZeroedPageTable() | KERNEL_STANDARD_PAGE_FLAGS;
+
+            if (!(*newMetaEntryAddress)) {
+                *newMetaEntryAddress = getZeroedPageTable();
+            }
+            incrementReferenceCount(newMetaEntryAddress);
 
             if (!metaData[len - 1]->pages) {
                 metaData[len - 1]->pages =
@@ -105,6 +139,10 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
             (VirtualPageTable *)ALIGN_DOWN_VALUE(*tableEntryAddress,
                                                  SMALLEST_VIRTUAL_PAGE);
+        newMeta[len] =
+            /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+            (VirtualReferenceCount *)ALIGN_DOWN_VALUE(*newMetaEntryAddress,
+                                                      SMALLEST_VIRTUAL_PAGE);
         metaData[len] = metaData[len - 1]->pages[index];
         len++;
     }

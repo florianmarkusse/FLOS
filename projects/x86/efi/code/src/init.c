@@ -36,6 +36,7 @@ void bootstrapProcessorWork(Arena scratch, ArchitectureInit *init) {
     *rootVirtualMetaDataAddress = (VirtualMetaData){0};
     rootVirtualMetaData = rootVirtualMetaDataAddress;
     init->rootVirtualMetaDataAddress = (U64)rootVirtualMetaDataAddress;
+    init->rootReferenceCount = &rootReferenceCount;
 
     KFLUSH_AFTER {
         INFO(STRING("root page table memory location: "));

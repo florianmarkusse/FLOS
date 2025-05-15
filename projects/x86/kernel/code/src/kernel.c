@@ -14,5 +14,6 @@ void archInit(PackedArchitectureInit archInit) {
     rootPageTable = (VirtualPageTable *)CR3();
     rootVirtualMetaData =
         (VirtualMetaData *)archInit.rootVirtualMetaDataAddress;
+    rootReferenceCount = archInit.rootReferenceCount;
     cyclesPerMicroSecond = archInit.tscFrequencyPerMicroSecond;
 }

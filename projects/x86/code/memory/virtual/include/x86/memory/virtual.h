@@ -16,6 +16,7 @@ typedef struct {
 
 extern VirtualPageTable *rootPageTable;
 extern VirtualMetaData *rootVirtualMetaData;
+extern U64 rootReferenceCount;
 
 U64 getPhysicalAddressFrame(U64 virtualPage);
 

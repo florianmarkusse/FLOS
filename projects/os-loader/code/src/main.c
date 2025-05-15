@@ -190,6 +190,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         archInit.tscFrequencyPerMicroSecond;
     kernelParams->archInit.rootVirtualMetaDataAddress =
         archInit.rootVirtualMetaDataAddress;
+    kernelParams->archInit.rootReferenceCount = *archInit.rootReferenceCount;
 
     RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
                               globals.st->configuration_table);
