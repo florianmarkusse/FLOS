@@ -10,6 +10,10 @@ typedef struct VirtualMetaData {
     struct VirtualMetaData **pages;
 } VirtualMetaData;
 
+typedef struct {
+    U64 pages[PageTableFormat.ENTRIES];
+} VirtualReferenceCount;
+
 extern VirtualPageTable *rootPageTable;
 extern VirtualMetaData *rootVirtualMetaData;
 

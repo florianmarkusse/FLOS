@@ -23,7 +23,9 @@
 // };
 
 VirtualPageTable *rootPageTable;
-VirtualMetaData *rootVirtualMetaData;
+
+U16 rootReferenceCount;
+VirtualReferenceCount *references;
 
 static U64 getZeroedMemory(U64 bytes, U64 align) {
     U64 address = getBytesForMemoryMapping(bytes, align);
@@ -117,17 +119,19 @@ U64 getPhysicalAddressFrame(U64 virtualPage) {
     return virtualPage & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
 }
 
-// TODO: need indices here :)
 static void updateMappingData(VirtualMetaData *metaData[MAX_PAGING_LEVELS],
                               VirtualPageTable *pageTables[MAX_PAGING_LEVELS],
-                              U8 len) {
+                              U16 indices[MAX_PAGING_LEVELS], U8 len) {
     while (1) {
         metaData[len - 1]->count--;
         if (metaData[len - 1]->count) {
             return;
         }
+        pageTables[len - 2]->pages[indices[len - 1]] = 0;
         freePhysicalMemory((Memory){.start = (U64)pageTables[len - 1],
                                     .bytes = VIRTUAL_MEMORY_MAPPING_SIZE});
+
+        metaData[len - 2]->pages[indices[len - 1]] = 0;
         if (metaData[len - 1]->pages) {
             freePhysicalMemory(
                 (Memory){.start = (U64)(metaData[len - 1]->pages),
@@ -144,6 +148,8 @@ Memory unmapPage(U64 virt) {
     ASSERT(rootPageTable);
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
 
+    U16 indices[MAX_PAGING_LEVELS];
+
     VirtualMetaData *metaData[MAX_PAGING_LEVELS];
     metaData[0] = rootVirtualMetaData;
 
@@ -155,11 +161,12 @@ Memory unmapPage(U64 virt) {
     for (U64 entrySize = X86_512GIB_PAGE; entrySize >= SMALLEST_VIRTUAL_PAGE;
          entrySize /= PageTableFormat.ENTRIES) {
         U16 index = calculateTableIndex(virt, entrySize);
+        indices[len] = index;
         tableEntry = pageTables[len - 1]->pages[index];
 
         if (!tableEntry || entrySize == SMALLEST_VIRTUAL_PAGE) {
             if (entrySize == SMALLEST_VIRTUAL_PAGE) {
-                updateMappingData(metaData, pageTables, len);
+                updateMappingData(metaData, pageTables, indices, len);
             }
 
             return (Memory){.start = getPhysicalAddressFrame(tableEntry),
@@ -169,7 +176,7 @@ Memory unmapPage(U64 virt) {
         // NOTE: No possibility of conflicting with bad PATs here because we are
         // not using them.
         if ((tableEntry & VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
-            updateMappingData(metaData, pageTables, len);
+            updateMappingData(metaData, pageTables, indices, len);
             return (Memory){.start = getPhysicalAddressFrame(tableEntry),
                             .bytes = entrySize};
         }
