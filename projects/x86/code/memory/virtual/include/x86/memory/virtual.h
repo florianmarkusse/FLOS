@@ -5,18 +5,18 @@
 
 static constexpr auto X86_MAX_VIRTUAL_MEMORY_REGIONS = 512;
 
-typedef struct VirtualMetaData {
-    U16 count;
-    struct VirtualMetaData **pages;
-} VirtualMetaData;
-
 typedef struct {
-    U64 pages[PageTableFormat.ENTRIES];
-} VirtualReferenceCount;
+    U16 totalMapped;
+    U16 indirectMapped;
+} PageMetaData;
+
+typedef struct PageMetaDataNode {
+    struct PageMetaDataNode *children;
+    PageMetaData metaData;
+} PageMetaDataNode;
 
 extern VirtualPageTable *rootPageTable;
-extern VirtualMetaData *rootVirtualMetaData;
-extern U64 rootReferenceCount;
+extern PageMetaDataNode rootPageMetaData;
 
 U64 getPhysicalAddressFrame(U64 virtualPage);
 

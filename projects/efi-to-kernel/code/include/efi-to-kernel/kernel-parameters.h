@@ -38,15 +38,9 @@ typedef struct {
 } __attribute__((packed)) PackedKernelMemory;
 
 typedef struct {
-    U64 tscFrequencyPerMicroSecond;
-    U64 rootVirtualMetaDataAddress;
-    U64 rootReferenceCount;
-} __attribute__((packed)) PackedArchitectureInit;
-
-typedef struct {
     PackedWindow window;
     PackedKernelMemory memory;
-    PackedArchitectureInit archInit; // This can be different per core?
+    void *archParams;
 } __attribute__((packed)) PackedKernelParameters;
 
 #endif

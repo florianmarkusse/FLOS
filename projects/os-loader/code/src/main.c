@@ -46,7 +46,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
     initKernelStructureLocations(&arena);
 
-    ArchitectureInit archInit = initArchitecture(arena);
+    ArchParamsRequirements archParamsRequirements = initArchitecture(arena);
 
     KFLUSH_AFTER { INFO(STRING("Going to fetch kernel bytes\n")); }
     U64 kernelBytes = getKernelBytes(arena);
@@ -158,39 +158,49 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
+
+    U64 kernelParamsAlignment =
+        MAX(alignof(PackedKernelParameters), archParamsRequirements.align);
+    U64 archKernelParamsOffset =
+        ALIGN_UP_VALUE(sizeof(PackedKernelParameters), kernelParamsAlignment);
+    U64 kernelParamsSize =
+        archKernelParamsOffset + archParamsRequirements.bytes;
+
     PackedKernelParameters *kernelParams =
         (PackedKernelParameters *)allocateKernelStructure(
-            sizeof(PackedKernelParameters), alignof(PackedKernelParameters),
-            false, arena);
-    void *kernelParamsEnd =
-        ((U8 *)kernelParams) + sizeof(PackedKernelParameters);
+            kernelParamsSize, kernelParamsAlignment, false, arena);
+    void *archParams = ((U8 *)kernelParams) + archKernelParamsOffset;
+    void *kernelParamsEnd = ((U8 *)kernelParams) + kernelParamsSize;
 
     KFLUSH_AFTER {
-        INFO(STRING("The phyiscal kernel params:\nstart: "));
+        INFO(STRING("phyiscal kernel params\n"));
+        INFO(STRING("The common phyiscal kernel params:\nstart: "));
         INFO((void *)kernelParams, NEWLINE);
+        INFO(STRING("The arch-specific phyiscal kernel params:\nstart: "));
+        INFO((void *)archParams, NEWLINE);
         INFO(STRING("stop:  "));
         INFO(kernelParamsEnd, NEWLINE);
 
-        INFO(STRING("The virtual kernel params (identity mapped):\nstart: "));
+        INFO(STRING("The virtual kernel params (identity mapped):\n"));
+        INFO(STRING("The common kernel params:\nstart: "));
         INFO((void *)kernelParams, NEWLINE);
+        INFO(STRING("The arch-specific virtual kernel params:\nstart: "));
+        INFO((void *)archParams, NEWLINE);
         INFO(STRING("stop:  "));
         INFO(kernelParamsEnd, NEWLINE);
-
-        INFO(STRING("cycles:  "));
-        INFO(archInit.tscFrequencyPerMicroSecond, NEWLINE);
     }
 
+    kernelParams->archParams =
+        (void **)((U8 *)kernelParams) + archKernelParamsOffset;
     kernelParams->window =
         (PackedWindow){.screen = (U32 *)screenMemoryVirtualStart,
                        .size = gop->mode->frameBufferSize,
                        .width = gop->mode->info->horizontalResolution,
                        .height = gop->mode->info->verticalResolution,
                        .scanline = gop->mode->info->pixelsPerScanLine};
-    kernelParams->archInit.tscFrequencyPerMicroSecond =
-        archInit.tscFrequencyPerMicroSecond;
-    kernelParams->archInit.rootVirtualMetaDataAddress =
-        archInit.rootVirtualMetaDataAddress;
-    kernelParams->archInit.rootReferenceCount = *archInit.rootReferenceCount;
+
+    KFLUSH_AFTER { INFO(STRING("Filling specific arch params\n")); }
+    fillArchParams(kernelParams->archParams);
 
     RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
                               globals.st->configuration_table);

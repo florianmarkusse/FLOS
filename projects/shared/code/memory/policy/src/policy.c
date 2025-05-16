@@ -24,7 +24,7 @@ void *allocateMappableMemory(U64 bytes, U64 align) {
 
 void freeMappableMemory(Memory memory) {
     KFLUSH_AFTER {
-        INFO(STRING("Freein mappable[start="));
+        INFO(STRING("Freeing mappable[start="));
         INFO((void *)memory.start);
         INFO(STRING(", bytes="));
         INFO(memory.bytes);

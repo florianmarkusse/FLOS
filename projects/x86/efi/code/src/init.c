@@ -16,13 +16,14 @@
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
 #include "x86/configuration/features.h"
+#include "x86/efi-to-kernel/params.h"
 #include "x86/efi/gdt.h"
 #include "x86/gdt.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/pat.h"
 #include "x86/memory/virtual.h"
 
-void bootstrapProcessorWork(Arena scratch, ArchitectureInit *init) {
+void bootstrapProcessorWork(Arena scratch) {
     U64 newCR3 = getBytesForMemoryMapping(VIRTUAL_MEMORY_MAPPING_SIZE,
                                           VIRTUAL_MEMORY_MAPPER_ALIGNMENT);
     /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
@@ -30,21 +31,10 @@ void bootstrapProcessorWork(Arena scratch, ArchitectureInit *init) {
 
     rootPageTable = (VirtualPageTable *)newCR3;
 
-    VirtualMetaData *rootVirtualMetaDataAddress =
-        (VirtualMetaData *)allocateKernelStructure(
-            sizeof(VirtualMetaData), alignof(VirtualMetaData), false, scratch);
-    *rootVirtualMetaDataAddress = (VirtualMetaData){0};
-    rootVirtualMetaData = rootVirtualMetaDataAddress;
-    init->rootVirtualMetaDataAddress = (U64)rootVirtualMetaDataAddress;
-    init->rootReferenceCount = &rootReferenceCount;
-
     KFLUSH_AFTER {
         INFO(STRING("root page table memory location: "));
         /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
         INFO((void *)rootPageTable, NEWLINE);
-        INFO(STRING("virtual meta data location: "));
-        /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-        INFO((void *)rootVirtualMetaData, NEWLINE);
     }
 
     disablePIC();
@@ -93,10 +83,8 @@ static U64 calibrateWait() {
     return (endCycles - currentCycles) / CALIBRATION_MICROSECONDS;
 }
 
-ArchitectureInit initArchitecture(Arena scratch) {
+ArchParamsRequirements initArchitecture(Arena scratch) {
     asm volatile("cli");
-
-    ArchitectureInit result;
 
     U32 maxBasicCPUID = CPUID(0x0).eax;
     if (maxBasicCPUID < BASIC_MAX_REQUIRED_PARAMETER) {
@@ -120,9 +108,6 @@ ArchitectureInit initArchitecture(Arena scratch) {
             ERROR(STRING("CPU does not support Time Stamp Counter"));
         }
     }
-
-    KFLUSH_AFTER { INFO(STRING("Calibrating timer\n")); }
-    result.tscFrequencyPerMicroSecond = calibrateWait();
 
     if (!features.PGE) {
         EXIT_WITH_MESSAGE {
@@ -180,9 +165,10 @@ ArchitectureInit initArchitecture(Arena scratch) {
     //   CPUEnableAVX();
 
     KFLUSH_AFTER { INFO(STRING("Bootstrap processor work\n")); }
-    bootstrapProcessorWork(scratch, &result);
+    bootstrapProcessorWork(scratch);
 
-    return result;
+    return (ArchParamsRequirements){.bytes = sizeof(X86ArchParams),
+                                    .align = alignof(X86ArchParams)};
 }
 
 void initVirtualMemory(U64 startingAddress, U64 endingAddress,
@@ -207,4 +193,12 @@ void initVirtualMemory(U64 startingAddress, U64 endingAddress,
                                    .curFree = treeAllocator.curFree,
                                    .end = treeAllocator.end},
         .tree = root};
+}
+
+void fillArchParams(void *archParams) {
+    X86ArchParams *x86ArchParams = (X86ArchParams *)archParams;
+
+    KFLUSH_AFTER { INFO(STRING("Calibrating timer\n")); }
+    x86ArchParams->tscFrequencyPerMicroSecond = calibrateWait();
+    x86ArchParams->rootPageMetaData = &rootPageMetaData;
 }

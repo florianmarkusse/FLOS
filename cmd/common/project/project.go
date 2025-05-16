@@ -92,6 +92,7 @@ const POSIX = "posix"
 const X86 = "x86"
 const X86_EFI = "x86-efi"
 const X86_KERNEL = "x86-kernel"
+const X86_EFI_TO_KERNEL = "x86-efi-to-kernel"
 const EFI_UEFI = "efi-uefi"
 const FREESTANDING = "freestanding"
 const ABSTRACTION = "abstraction"
@@ -107,6 +108,7 @@ var posixFolder = common.REPO_PROJECTS + "/" + POSIX
 var x86Folder = common.REPO_PROJECTS + "/" + X86
 var x86EfiFolder = common.REPO_PROJECTS + "/" + "x86/efi"
 var x86KernelFolder = common.REPO_PROJECTS + "/" + "x86/kernel"
+var x86EfiToKernelFolder = common.REPO_PROJECTS + "/" + "x86/efi-to-kernel"
 var efiUefiFolder = common.REPO_PROJECTS + "/" + "efi/uefi"
 var freestandingFolder = common.REPO_PROJECTS + "/" + FREESTANDING
 var abstractionFolder = common.REPO_PROJECTS + "/" + ABSTRACTION
@@ -200,6 +202,15 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		Folder:               x86EfiFolder,
 		CodeFolder:           x86EfiFolder + "/code",
 		Environment:          string(environment.Efi),
+		FloatOperations:      true,
+		ExcludedIWYUMappings: []iwyu.IWYUMapping{iwyu.ARCHITECTURE},
+	},
+	X86_EFI_TO_KERNEL: {
+		CCompiler:            EFI_SYSTEM.CCompiler,
+		Linker:               EFI_SYSTEM.Linker,
+		Folder:               x86EfiToKernelFolder,
+		CodeFolder:           x86EfiToKernelFolder + "/code",
+		Environment:          string(environment.Freestanding),
 		FloatOperations:      true,
 		ExcludedIWYUMappings: []iwyu.IWYUMapping{iwyu.ARCHITECTURE},
 	},

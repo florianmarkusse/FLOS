@@ -2,6 +2,7 @@
   - Red black tree with free list
   - able to grow very large with dynamic array
 - wfunction-prototype
+- rename abstraction/efi to abstraction/efi-to-kernel
 - make alignup/value into functions?
 - look into alignof calls, and see if I can replace it with the variable
 - get rid of lots of virtual stuff in policy

@@ -69,8 +69,7 @@ static void stuff() {
 
 __attribute__((section("kernel-start"))) int
 kernelmain(PackedKernelParameters *kernelParams) {
-    archInit(kernelParams->archInit);
-
+    archInit(kernelParams->archParams);
     initMemoryManager(kernelParams->memory);
 
     void *initMemory = (void *)allocateIdentityMemory(INIT_MEMORY);
@@ -94,13 +93,6 @@ kernelmain(PackedKernelParameters *kernelParams) {
 
     // NOTE: from here, everything is initialized
     KFLUSH_AFTER { KLOG(STRING("ITS WEDNESDAY MY DUDES\n")); }
-
-    KFLUSH_AFTER {
-        //
-        appendMemoryManagementStatus();
-        INFO(STRING("Cycles per microsecond: "));
-        INFO(kernelParams->archInit.tscFrequencyPerMicroSecond, NEWLINE);
-    }
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 

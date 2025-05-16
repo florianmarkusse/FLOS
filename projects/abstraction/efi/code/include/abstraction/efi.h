@@ -9,14 +9,21 @@ void initVirtualMemory(U64 startingAddress, U64 endingAddress,
                        PackedMemoryTree *virtualMemoryTree, Arena scratch);
 
 typedef struct {
-    U64 tscFrequencyPerMicroSecond;
-    U64 rootVirtualMetaDataAddress;
-    U64 *rootReferenceCount;
-} ArchitectureInit;
+    U64 bytes;
+    U64 align;
+} ArchParamsRequirements;
+ArchParamsRequirements initArchitecture(Arena scratch);
 
-ArchitectureInit initArchitecture(Arena scratch);
+void fillArchParams(void *archParams);
+
 void jumpIntoKernel(U64 newStackPointer,
                     PackedKernelParameters *kernelParameters);
 U64 initScreenMemory(U64 physicalScreenAddress, U64 bytes);
+
+#ifdef X86
+#include "x86/efi-to-kernel/definitions.h"
+#else
+#error ABSTRACTION_EFI_H
+#endif
 
 #endif
