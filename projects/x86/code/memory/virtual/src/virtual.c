@@ -25,20 +25,20 @@
 #define REF_COUNT_MASK 0b11'1111'1111
 #define PAGE_PTR_MASK (~REF_COUNT_MASK)
 
-static inline void setAddress(U64 *entry, U64 address) {
-    *entry = (address | *entry);
-}
+static void setAddress(U64 *entry, U64 address) { *entry = (address | *entry); }
 
-static inline U16 getReferenceCount(U64 entry) {
+static U64 getAddress(U64 entry) { return entry & PAGE_PTR_MASK; }
+
+static U16 getReferenceCount(U64 entry) {
     return (U16)(entry & REF_COUNT_MASK);
 }
 
-static inline void incrementReferenceCount(U64 *entry) {
+static void incrementReferenceCount(U64 *entry) {
     U16 count = getReferenceCount(*entry);
     *entry = (*entry & PAGE_PTR_MASK) | (count + 1);
 }
 
-static inline void decrementReferenceCount(U64 *entry) {
+static void decrementReferenceCount(U64 *entry) {
     U16 count = getReferenceCount(*entry);
     *entry = (*entry & PAGE_PTR_MASK) | (count - 1);
 }
@@ -97,13 +97,14 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
     U64 *tableEntryAddress;
 
     U8 len = 1;
+    U16 index = 0;
 
     for (U64 entrySize = X86_512GIB_PAGE; entrySize >= mappingSize;
          entrySize /= PageTableFormat.ENTRIES) {
-        U16 index = calculateTableIndex(virt, entrySize);
-        tableEntryAddress = &(pageTables[len - 1]->pages[index]);
+        U16 newMetaIndex = index; // Lagging behind index by 1 iteration
+        index = calculateTableIndex(virt, entrySize);
 
-        U16 newMetaIndex = len == 1 ? 0 : index;
+        tableEntryAddress = &(pageTables[len - 1]->pages[index]);
         newMetaEntryAddress = &(newMeta[len - 1]->pages[newMetaIndex]);
 
         if (entrySize == mappingSize) {
@@ -121,10 +122,10 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
             *tableEntryAddress =
                 getZeroedPageTable() | KERNEL_STANDARD_PAGE_FLAGS;
 
-            if (!(*newMetaEntryAddress)) {
-                *newMetaEntryAddress = getZeroedPageTable();
-            }
             incrementReferenceCount(newMetaEntryAddress);
+            if (!(getAddress(*newMetaEntryAddress))) {
+                *newMetaEntryAddress |= getZeroedPageTable();
+            }
 
             if (!metaData[len - 1]->pages) {
                 metaData[len - 1]->pages =
