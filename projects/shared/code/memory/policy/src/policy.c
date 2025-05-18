@@ -22,6 +22,8 @@ void *allocateMappableMemory(U64 bytes, U64 align) {
                               ALIGN_UP_VALUE(align, SMALLEST_VIRTUAL_PAGE));
 }
 
+static constexpr auto MAX_PAGE_FLUSHES = 64;
+
 void freeMappableMemory(Memory memory) {
     KFLUSH_AFTER {
         INFO(STRING("Freeing mappable[start="));
@@ -32,12 +34,14 @@ void freeMappableMemory(Memory memory) {
     }
 
     Memory mappedAddress = unmapPage(memory.start);
+    Memory toFreePhysical = mappedAddress;
 
-    U64 startingVirtualAddress =
-        ALIGN_DOWN_VALUE(memory.start, mappedAddress.bytes);
-    U64 currentAddress = startingVirtualAddress;
-    U64 endAddress = memory.start + memory.bytes;
-    for (; currentAddress < endAddress;
+    U64 virtualAddresses[MAX_PAGE_FLUSHES];
+    U64 virtualAddressesLen = 0;
+
+    U64 currentAddress = ALIGN_DOWN_VALUE(memory.start, mappedAddress.bytes);
+    for (U64 endAddress = memory.start + memory.bytes;
+         currentAddress < endAddress;
          mappedAddress = unmapPage(currentAddress)) {
         KFLUSH_AFTER {
             INFO(STRING("found mappable[start="));
@@ -48,14 +52,34 @@ void freeMappableMemory(Memory memory) {
         }
 
         if (mappedAddress.start) {
-            freePhysicalMemory(mappedAddress);
+            if (mappedAddress.start ==
+                toFreePhysical.start + toFreePhysical.bytes) {
+                toFreePhysical.bytes += mappedAddress.bytes;
+            } else {
+                freePhysicalMemory(toFreePhysical);
+                toFreePhysical = mappedAddress; // Final free happens after loop
+            }
         }
+
+        if (virtualAddressesLen < MAX_PAGE_FLUSHES) {
+            virtualAddresses[virtualAddressesLen] = currentAddress;
+            virtualAddressesLen++;
+        }
+
         currentAddress += mappedAddress.bytes;
     }
+    freePhysicalMemory(toFreePhysical);
 
-    freeVirtualMemory(
-        (Memory){.start = startingVirtualAddress,
-                 .bytes = currentAddress - startingVirtualAddress});
+    if (virtualAddressesLen >= MAX_PAGE_FLUSHES) {
+        for (U64 i = 0; i < virtualAddressesLen; i++) {
+            flushPageCacheEntry(virtualAddresses[i]);
+        }
+    } else {
+        flushPageCache();
+    }
+
+    freeVirtualMemory((Memory){.start = virtualAddresses[0],
+                               .bytes = currentAddress - virtualAddresses[0]});
 
     // NOTE: Not freeing the virtual memory (yet) , because we are not sure yet
     // how to invalidate the tlb with the memory that we freed

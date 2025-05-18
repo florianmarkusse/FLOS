@@ -6,8 +6,6 @@
 U64 rdmsr(U32 msr);
 void wrmsr(U32 msr, U64 value);
 
-void invalidatePage(U64 address);
-void flushTLB();
 void flushCPUCaches();
 
 typedef struct {

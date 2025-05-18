@@ -11,4 +11,7 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 Flags);
 // freely be used.
 Memory unmapPage(U64 virt);
 
+Memory flushPageCacheEntry(U64 virt);
+Memory flushPageCache();
+
 #endif

@@ -13,11 +13,10 @@ void wrmsr(U32 msr, U64 value) {
     asm volatile("wrmsr" : : "a"(eax), "d"(edx), "c"(msr) : "memory");
 }
 
-void invalidatePage(U64 address) {
-    asm volatile("invlpg (%0)" ::"r"(address) : "memory");
+void flushPageCacheEntry(U64 virt) {
+    asm volatile("invlpg (%0)" ::"r"(virt) : "memory");
 }
-
-void flushTLB() {
+void flushPageCache() {
     U64 cr3;
     asm volatile("mov %%cr3, %0" : "=r"(cr3)::"memory");
     asm volatile("mov %0, %%cr3" ::"r"(cr3) : "memory");
