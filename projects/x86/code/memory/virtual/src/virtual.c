@@ -57,23 +57,17 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
     ASSERT(!(RING_RANGE_VALUE(physical, mappingSize)));
 
-    PageMetaDataNode *newMeta[MAX_PAGING_LEVELS];
-    newMeta[0] = &rootPageMetaData;
-    PageMetaDataNode *newMetaEntryAddress;
+    PageMetaDataNode *metaDataTable = &rootPageMetaData;
+    VirtualPageTable *pageTable = rootPageTable;
 
-    VirtualPageTable *pageTables[MAX_PAGING_LEVELS];
-    pageTables[0] = rootPageTable;
-    U64 *tableEntryAddress;
-
-    U8 len = 1;
     U16 index = 0;
     for (U64 entrySize = X86_512GIB_PAGE; entrySize >= mappingSize;
          entrySize /= PageTableFormat.ENTRIES) {
         U16 newMetaIndex = index; // Lagging behind index by 1 iteration
         index = calculateTableIndex(virt, entrySize);
 
-        tableEntryAddress = &(pageTables[len - 1]->pages[index]);
-        newMetaEntryAddress = &(newMeta[len - 1][newMetaIndex]);
+        U64 *tableEntryAddress = &(pageTable->pages[index]);
+        PageMetaDataNode *newMetaEntryAddress = &(metaDataTable[newMetaIndex]);
 
         if (entrySize == mappingSize) {
             U64 value = physical | flags;
@@ -96,12 +90,11 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
             }
         }
 
-        pageTables[len] =
+        pageTable =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
             (VirtualPageTable *)ALIGN_DOWN_VALUE(*tableEntryAddress,
                                                  SMALLEST_VIRTUAL_PAGE);
-        newMeta[len] = newMetaEntryAddress->children;
-        len++;
+        metaDataTable = newMetaEntryAddress->children;
     }
 }
 
@@ -158,7 +151,6 @@ Memory unmapPage(U64 virt) {
     PageMetaDataNode *newMeta[MAX_PAGING_LEVELS];
     newMeta[0] = &rootPageMetaData;
 
-    U64 tableEntry;
     VirtualPageTable *pageTables[MAX_PAGING_LEVELS];
     pageTables[0] = rootPageTable;
 
@@ -170,7 +162,7 @@ Memory unmapPage(U64 virt) {
         index = calculateTableIndex(virt, entrySize);
 
         indices[len] = index;
-        tableEntry = pageTables[len - 1]->pages[index];
+        U64 tableEntry = pageTables[len - 1]->pages[index];
 
         if (!tableEntry || entrySize == SMALLEST_VIRTUAL_PAGE) {
             if (tableEntry) {
