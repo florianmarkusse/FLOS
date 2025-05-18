@@ -740,6 +740,12 @@ U64 getPageFaults() { return pageFaults; }
 void fault_handler(regs *regs) {
     if (regs->interruptNumber == FAULT_PAGE_FAULT) {
         pageFaults++;
+
+        // NOTE: when starting to use SMP, I should first check if this memory
+        // is now mapped before doing this.
+        // In the context of mapping and unmapping. It may be interesting to
+        // mark which cores have accessed which memory so we can limit the
+        // flushPage calls to all cores.
         void *address = allocPhysicalMemory(X86_4KIB_PAGE, X86_4KIB_PAGE);
         mapPage(CR2(), (U64)address, X86_4KIB_PAGE);
     } else {

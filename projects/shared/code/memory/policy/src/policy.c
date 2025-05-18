@@ -31,10 +31,13 @@ void freeMappableMemory(Memory memory) {
         INFO(STRING("]\n"));
     }
 
+    Memory mappedAddress = unmapPage(memory.start);
+
+    U64 startingVirtualAddress =
+        ALIGN_DOWN_VALUE(memory.start, mappedAddress.bytes);
+    U64 currentAddress = startingVirtualAddress;
     U64 endAddress = memory.start + memory.bytes;
-    U64 currentAddress = memory.start;
-    for (Memory mappedAddress = unmapPage(currentAddress);
-         currentAddress < endAddress;
+    for (; currentAddress < endAddress;
          mappedAddress = unmapPage(currentAddress)) {
         KFLUSH_AFTER {
             INFO(STRING("found mappable[start="));
@@ -49,6 +52,10 @@ void freeMappableMemory(Memory memory) {
         }
         currentAddress += mappedAddress.bytes;
     }
+
+    freeVirtualMemory(
+        (Memory){.start = startingVirtualAddress,
+                 .bytes = currentAddress - startingVirtualAddress});
 
     // NOTE: Not freeing the virtual memory (yet) , because we are not sure yet
     // how to invalidate the tlb with the memory that we freed

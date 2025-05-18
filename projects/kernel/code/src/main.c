@@ -37,11 +37,20 @@ static void stuff() {
     virtual[0] = 5;
     virtual[4096] = 6;
 
+    KFLUSH_AFTER {
+        INFO(STRING("Virtual[0] = "));
+        INFO(virtual[0], NEWLINE);
+    }
+
     freeMappableMemory((Memory){.start = (U64) virtual, .bytes = 4097});
 
     KFLUSH_AFTER {
         //
         appendMemoryManagementStatus();
+        INFO(getPageFaults(), NEWLINE);
+        INFO(STRING("Virtual[0] = "));
+        INFO(virtual[0], NEWLINE);
+        INFO(getPageFaults(), NEWLINE);
     }
 }
 
