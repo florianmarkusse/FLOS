@@ -6,8 +6,8 @@
 static constexpr auto X86_MAX_VIRTUAL_MEMORY_REGIONS = 512;
 
 typedef struct {
-    U16 totalMapped;
-    U16 indirectMapped;
+    U16 entriesMapped;
+    U16 entriesMappedWithSmallerGranularity;
 } PageMetaData;
 
 typedef struct PageMetaDataNode {
