@@ -32,8 +32,6 @@ static void stuff() {
     virtual[0] = 5;
     virtual[4096] = 6;
 
-    freeMappableMemory((Memory){.start = (U64)3 * GiB, .bytes = 4096});
-
     freeMappableMemory((Memory){.start = (U64) virtual, .bytes = 4097});
 
     virtual = allocateMappableMemory(4096, 1);
