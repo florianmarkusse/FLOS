@@ -68,8 +68,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     string kernelContent = readKernelFromCurrentLoadedImage(kernelBytes, arena);
 
     KFLUSH_AFTER { INFO(STRING("Mapping kernel into location\n")); }
-    if (mapMemory(KERNEL_CODE_START, (U64)kernelContent.buf,
-                  kernelContent.len) < KERNEL_CODE_START) {
+    if (mapMemory(KERNEL_CODE_START, (U64)kernelContent.buf, kernelContent.len,
+                  STANDARD_PAGE_FLAGS | GLOBAL_PAGE_FLAGS) <
+        KERNEL_CODE_START) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING(
                 "Kernel mapping overflowed out of the address space!\n"));
@@ -101,17 +102,18 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(STRING("Identity mapping all memory, highest address found: "));
         INFO((void *)highestLowerHalfAddress, NEWLINE);
     }
-    U64 firstFreeVirtual = mapMemory(0, 0, highestLowerHalfAddress);
+    U64 firstFreeVirtual = mapMemory(0, 0, highestLowerHalfAddress,
+                                     STANDARD_PAGE_FLAGS | GLOBAL_PAGE_FLAGS);
 
     KFLUSH_AFTER { INFO(STRING("Mapping screen memory into location\n")); }
     kernelFreeVirtualMemory =
         alignVirtual(kernelFreeVirtualMemory, gop->mode->frameBufferBase,
                      gop->mode->frameBufferSize);
     U64 screenMemoryVirtualStart = kernelFreeVirtualMemory;
-    kernelFreeVirtualMemory = mapMemoryWithFlags(
+    kernelFreeVirtualMemory = mapMemory(
         kernelFreeVirtualMemory, gop->mode->frameBufferBase,
         gop->mode->frameBufferSize,
-        KERNEL_STANDARD_PAGE_FLAGS | KERNEL_SCREEN_MEMORY_PAGE_FLAGS);
+        STANDARD_PAGE_FLAGS | SCREEN_MEMORY_PAGE_FLAGS | GLOBAL_PAGE_FLAGS);
 
     KFLUSH_AFTER {
         INFO(STRING("The graphics buffer physical location:\nstart: "));
@@ -141,7 +143,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     U64 stackVirtualStart = kernelFreeVirtualMemory;
     kernelFreeVirtualMemory =
-        mapMemory(kernelFreeVirtualMemory, stackAddress, KERNEL_STACK_SIZE);
+        mapMemory(kernelFreeVirtualMemory, stackAddress, KERNEL_STACK_SIZE,
+                  STANDARD_PAGE_FLAGS | GLOBAL_PAGE_FLAGS);
 
     KFLUSH_AFTER {
         INFO(STRING("The phyiscal stack:\ndown from: "));

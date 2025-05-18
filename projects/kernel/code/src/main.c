@@ -22,6 +22,11 @@
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
 static void stuff() {
+    KFLUSH_AFTER {
+        //
+        appendMemoryManagementStatus();
+    }
+
     U8 *virtual;
     virtual = allocateMappableMemory(4097, 1);
     KFLUSH_AFTER {
@@ -31,34 +36,6 @@ static void stuff() {
 
     virtual[0] = 5;
     virtual[4096] = 6;
-
-    freeMappableMemory((Memory){.start = (U64) virtual, .bytes = 4097});
-
-    virtual = allocateMappableMemory(4096, 1);
-    KFLUSH_AFTER {
-        INFO(STRING("Address received is: "));
-        INFO(virtual, NEWLINE);
-    }
-
-    virtual[0] = 5;
-
-    virtual = allocateMappableMemory(4097, 1);
-    KFLUSH_AFTER {
-        INFO(STRING("Address received is: "));
-        INFO(virtual, NEWLINE);
-    }
-
-    KFLUSH_AFTER {
-        //
-        appendMemoryManagementStatus();
-    }
-
-    virtual[0] = 5;
-
-    KFLUSH_AFTER {
-        //
-        appendMemoryManagementStatus();
-    }
 
     freeMappableMemory((Memory){.start = (U64) virtual, .bytes = 4097});
 

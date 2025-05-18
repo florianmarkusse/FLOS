@@ -49,7 +49,6 @@ static U16 calculateTableIndex(U64 virt, U64 pageSize) {
     return RING_RANGE_VALUE((virt / pageSize), PageTableFormat.ENTRIES);
 }
 
-// TODO: Why are we using array here?
 // The caller should take care that the physical address is correctly aligned.
 // If it is not, not sure what the caller wanted to accomplish.
 void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
@@ -81,7 +80,7 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
 
         if (!(*tableEntryAddress)) {
             *tableEntryAddress =
-                getZeroedPageTable() | KERNEL_STANDARD_PAGE_FLAGS;
+                getZeroedPageTable() | STANDARD_PAGE_FLAGS;
 
             newMetaEntryAddress->metaData.entriesMapped++;
             newMetaEntryAddress->metaData.entriesMappedWithSmallerGranularity++;
@@ -100,7 +99,7 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
 
 void mapPage(U64 virt, U64 physical, U64 mappingSize) {
     return mapPageWithFlags(virt, physical, mappingSize,
-                            KERNEL_STANDARD_PAGE_FLAGS);
+                            STANDARD_PAGE_FLAGS);
 }
 
 U64 getPhysicalAddressFrame(U64 virtualPage) {

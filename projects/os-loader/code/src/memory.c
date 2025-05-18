@@ -47,7 +47,7 @@ U64 alignVirtual(U64 virt, U64 physical, U64 bytes) {
     return virt;
 }
 
-U64 mapMemoryWithFlags(U64 virt, U64 physical, U64 bytes, U64 flags) {
+U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
     for (U64 bytesMapped = 0, mappingSize; bytesMapped < bytes;
          virt += mappingSize, physical += mappingSize,
              bytesMapped += mappingSize) {
@@ -56,11 +56,6 @@ U64 mapMemoryWithFlags(U64 virt, U64 physical, U64 bytes, U64 flags) {
         mapPageWithFlags(virt, physical, mappingSize, flags);
     }
     return virt;
-}
-
-U64 mapMemory(U64 virt, U64 physical, U64 bytes) {
-    return mapMemoryWithFlags(virt, physical, bytes,
-                              KERNEL_STANDARD_PAGE_FLAGS);
 }
 
 void convertToKernelMemory(MemoryInfo *memoryInfo,

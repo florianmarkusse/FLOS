@@ -22,7 +22,6 @@ void findKernelMemory(U64 alignment, U64 numberOfThreads);
 
 U64 alignVirtual(U64 physical, U64 virt, U64 bytes);
 
-U64 mapMemoryWithFlags(U64 virt, U64 physical, U64 bytes, U64 flags);
-U64 mapMemory(U64 virt, U64 physical, U64 bytes);
+U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags);
 
 #endif
