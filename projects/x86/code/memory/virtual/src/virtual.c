@@ -22,27 +22,6 @@
 //     STRING("Write Back (WB)"),        STRING("Uncached (UC-)"),
 // };
 
-#define REF_COUNT_MASK 0b11'1111'1111
-#define PAGE_PTR_MASK (~REF_COUNT_MASK)
-
-static void setAddress(U64 *entry, U64 address) { *entry = (address | *entry); }
-
-static U64 getAddress(U64 entry) { return entry & PAGE_PTR_MASK; }
-
-static U16 getReferenceCount(U64 entry) {
-    return (U16)(entry & REF_COUNT_MASK);
-}
-
-static void incrementReferenceCount(U64 *entry) {
-    U16 count = getReferenceCount(*entry);
-    *entry = (*entry & PAGE_PTR_MASK) | (count + 1);
-}
-
-static void decrementReferenceCount(U64 *entry) {
-    U16 count = getReferenceCount(*entry);
-    *entry = (*entry & PAGE_PTR_MASK) | (count - 1);
-}
-
 VirtualPageTable *rootPageTable;
 PageMetaDataNode rootPageMetaData = {0};
 
