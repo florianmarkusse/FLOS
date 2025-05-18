@@ -8,10 +8,11 @@ void mapPage(U64 virt, U64 physical, U64 mappingSize);
 void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 Flags);
 
 // Unmaps the virtual address space and returns the physical memory that can now
-// freely be used.
+// freely be used. If nothing was mapped to the address, returns address of 0
+// with bytes being the size of that page which is unmapped.
 Memory unmapPage(U64 virt);
 
-Memory flushPageCacheEntry(U64 virt);
-Memory flushPageCache();
+void flushPageCacheEntry(U64 virt);
+void flushPageCache();
 
 #endif

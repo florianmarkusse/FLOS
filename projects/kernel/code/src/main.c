@@ -22,11 +22,6 @@
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
 static void stuff() {
-    KFLUSH_AFTER {
-        //
-        appendMemoryManagementStatus();
-    }
-
     U8 *virtual;
     virtual = allocateMappableMemory(4097, 1);
     KFLUSH_AFTER {
@@ -35,7 +30,20 @@ static void stuff() {
     }
 
     virtual[0] = 5;
+
     virtual[4096] = 6;
+
+    // NOTE: calculate some property or some way to calculate the difference in
+    // physica0 memory!!! I expect how many free physical memory after freeing?
+    // 2 mapped pages
+    // 1 2MiB page table
+    // 1 1GiB page table
+    // 2 meta data tables
+    // Why where they not freed???
+    KFLUSH_AFTER {
+        //
+        appendMemoryManagementStatus();
+    }
 
     KFLUSH_AFTER {
         INFO(STRING("Virtual[0] = "));
@@ -43,6 +51,11 @@ static void stuff() {
     }
 
     freeMappableMemory((Memory){.start = (U64) virtual, .bytes = 4097});
+
+    KFLUSH_AFTER {
+        //
+        appendMemoryManagementStatus();
+    }
 
     KFLUSH_AFTER {
         //

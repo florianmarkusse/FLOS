@@ -25,39 +25,25 @@ void *allocateMappableMemory(U64 bytes, U64 align) {
 static constexpr auto MAX_PAGE_FLUSHES = 64;
 
 void freeMappableMemory(Memory memory) {
-    KFLUSH_AFTER {
-        INFO(STRING("Freeing mappable[start="));
-        INFO((void *)memory.start);
-        INFO(STRING(", bytes="));
-        INFO(memory.bytes);
-        INFO(STRING("]\n"));
-    }
-
-    Memory mappedAddress = unmapPage(memory.start);
-    Memory toFreePhysical = mappedAddress;
+    // First is special
+    Memory mapped = unmapPage(memory.start);
+    Memory toFreePhysical = mapped;
 
     U64 virtualAddresses[MAX_PAGE_FLUSHES];
-    U64 virtualAddressesLen = 0;
+    virtualAddresses[0] = ALIGN_DOWN_VALUE(memory.start, mapped.bytes);
+    U64 virtualAddressesLen = 1;
 
-    U64 currentAddress = ALIGN_DOWN_VALUE(memory.start, mappedAddress.bytes);
-    for (U64 endAddress = memory.start + memory.bytes;
-         currentAddress < endAddress;
-         mappedAddress = unmapPage(currentAddress)) {
-        KFLUSH_AFTER {
-            INFO(STRING("found mappable[start="));
-            INFO((void *)mappedAddress.start);
-            INFO(STRING(", bytes="));
-            INFO(mappedAddress.bytes);
-            INFO(STRING("]\n"));
-        }
+    U64 currentAddress = virtualAddresses[0] + mapped.bytes;
+    U64 endAddress = memory.start + memory.bytes;
 
-        if (mappedAddress.start) {
-            if (mappedAddress.start ==
-                toFreePhysical.start + toFreePhysical.bytes) {
-                toFreePhysical.bytes += mappedAddress.bytes;
+    // Remaining pages
+    for (; currentAddress < endAddress; mapped = unmapPage(currentAddress)) {
+        if (mapped.start) {
+            if (mapped.start == toFreePhysical.start + toFreePhysical.bytes) {
+                toFreePhysical.bytes += mapped.bytes;
             } else {
                 freePhysicalMemory(toFreePhysical);
-                toFreePhysical = mappedAddress; // Final free happens after loop
+                toFreePhysical = mapped; // Final free happens after loop
             }
         }
 
@@ -66,9 +52,13 @@ void freeMappableMemory(Memory memory) {
             virtualAddressesLen++;
         }
 
-        currentAddress += mappedAddress.bytes;
+        currentAddress += mapped.bytes;
     }
-    freePhysicalMemory(toFreePhysical);
+
+    // Cleaup
+    if (toFreePhysical.start) {
+        freePhysicalMemory(toFreePhysical);
+    }
 
     if (virtualAddressesLen >= MAX_PAGE_FLUSHES) {
         for (U64 i = 0; i < virtualAddressesLen; i++) {
@@ -80,7 +70,4 @@ void freeMappableMemory(Memory memory) {
 
     freeVirtualMemory((Memory){.start = virtualAddresses[0],
                                .bytes = currentAddress - virtualAddresses[0]});
-
-    // NOTE: Not freeing the virtual memory (yet) , because we are not sure yet
-    // how to invalidate the tlb with the memory that we freed
 }
