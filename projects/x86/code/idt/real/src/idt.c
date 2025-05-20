@@ -747,6 +747,10 @@ void fault_handler(regs *regs) {
         // mark which cores have accessed which memory so we can limit the
         // flushPage calls to all cores.
         void *address = allocPhysicalMemory(X86_4KIB_PAGE, X86_4KIB_PAGE);
+        KFLUSH_AFTER {
+            INFO(STRING("Allocating physical memory: "));
+            INFO(address, NEWLINE);
+        }
         mapPage(CR2(), (U64)address, X86_4KIB_PAGE);
     } else {
         KFLUSH_AFTER {

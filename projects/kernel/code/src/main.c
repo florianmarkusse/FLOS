@@ -57,6 +57,8 @@ static void stuff() {
         appendMemoryManagementStatus();
     }
 
+    return;
+
     KFLUSH_AFTER {
         //
         appendMemoryManagementStatus();

@@ -27,19 +27,23 @@ static constexpr auto MAX_PAGE_FLUSHES = 64;
 void freeMappableMemory(Memory memory) {
     // First is special
     Memory mapped = unmapPage(memory.start);
-    Memory toFreePhysical = mapped;
 
+    // The virtual memory to free may be unaligned, make sure it is aligned
+    // because we did remove aligned memory from the allocator.
     U64 virtualAddresses[MAX_PAGE_FLUSHES];
-    virtualAddresses[0] = ALIGN_DOWN_VALUE(memory.start, mapped.bytes);
-    U64 virtualAddressesLen = 1;
+    U64 virtualAddressesLen = 0;
 
-    U64 currentAddress = virtualAddresses[0] + mapped.bytes;
-    U64 endAddress = memory.start + memory.bytes;
+    U64 virtualPageStartAddress = ALIGN_DOWN_VALUE(memory.start, mapped.bytes);
+    Memory toFreePhysical = {0};
 
-    // Remaining pages
-    for (; currentAddress < endAddress; mapped = unmapPage(currentAddress)) {
+    for (U64 endVirtualAddress = memory.start + memory.bytes;
+         virtualPageStartAddress < endVirtualAddress;
+         mapped = unmapPage(virtualPageStartAddress)) {
         if (mapped.start) {
-            if (mapped.start == toFreePhysical.start + toFreePhysical.bytes) {
+            if (!toFreePhysical.start) {
+                toFreePhysical = mapped;
+            } else if (mapped.start ==
+                       toFreePhysical.start + toFreePhysical.bytes) {
                 toFreePhysical.bytes += mapped.bytes;
             } else {
                 freePhysicalMemory(toFreePhysical);
@@ -48,11 +52,11 @@ void freeMappableMemory(Memory memory) {
         }
 
         if (virtualAddressesLen < MAX_PAGE_FLUSHES) {
-            virtualAddresses[virtualAddressesLen] = currentAddress;
+            virtualAddresses[virtualAddressesLen] = virtualPageStartAddress;
             virtualAddressesLen++;
         }
 
-        currentAddress += mapped.bytes;
+        virtualPageStartAddress += mapped.bytes;
     }
 
     // Cleaup
@@ -60,7 +64,7 @@ void freeMappableMemory(Memory memory) {
         freePhysicalMemory(toFreePhysical);
     }
 
-    if (virtualAddressesLen >= MAX_PAGE_FLUSHES) {
+    if (virtualAddressesLen < MAX_PAGE_FLUSHES) {
         for (U64 i = 0; i < virtualAddressesLen; i++) {
             flushPageCacheEntry(virtualAddresses[i]);
         }
@@ -68,6 +72,7 @@ void freeMappableMemory(Memory memory) {
         flushPageCache();
     }
 
-    freeVirtualMemory((Memory){.start = virtualAddresses[0],
-                               .bytes = currentAddress - virtualAddresses[0]});
+    freeVirtualMemory(
+        (Memory){.start = virtualAddresses[0],
+                 .bytes = virtualPageStartAddress - virtualAddresses[0]});
 }
