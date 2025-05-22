@@ -82,7 +82,6 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
             *tableEntryAddress = getZeroedPageTable() | STANDARD_PAGE_FLAGS;
 
             newMetaEntryAddress->metaData.entriesMapped++;
-            newMetaEntryAddress->metaData.entriesMappedWithSmallerGranularity++;
             if (!(newMetaEntryAddress->children)) {
                 newMetaEntryAddress->children = getNewMetaDataTable();
             }
@@ -111,24 +110,20 @@ static void updateMappingData(VirtualPageTable *pageTables[MAX_PAGING_LEVELS],
                               U8 len) {
     while (1) {
         pageTables[len - 1]->pages[pageTableIndices[len - 1]] = 0;
-
         metaData[len - 1][metaDataTableIndices[len - 1]]
             .metaData.entriesMapped--;
+
         if (metaData[len - 1][metaDataTableIndices[len - 1]]
                 .metaData.entriesMapped) {
             return;
         }
+
+        metaData[len - 2][metaDataTableIndices[len - 2]].children = 0;
+
+        freePhysicalMemory((Memory){.start = (U64)(metaData[len - 1]),
+                                    .bytes = NEW_META_DATA_TABLE_BYTES});
         freePhysicalMemory((Memory){.start = (U64)pageTables[len - 1],
                                     .bytes = VIRTUAL_MEMORY_MAPPING_SIZE});
-
-        metaData[len - 2][metaDataTableIndices[len - 2]]
-            .metaData.entriesMappedWithSmallerGranularity--;
-        if (!(metaData[len - 2][metaDataTableIndices[len - 2]]
-                  .metaData.entriesMappedWithSmallerGranularity)) {
-            freePhysicalMemory((Memory){.start = (U64)(metaData[len - 1]),
-                                        .bytes = NEW_META_DATA_TABLE_BYTES});
-            metaData[len - 2][metaDataTableIndices[len - 2]].children = 0;
-        }
 
         len--;
     }
