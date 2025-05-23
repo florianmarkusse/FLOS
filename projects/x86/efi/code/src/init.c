@@ -200,5 +200,12 @@ void fillArchParams(void *archParams) {
 
     KFLUSH_AFTER { INFO(STRING("Calibrating timer\n")); }
     x86ArchParams->tscFrequencyPerMicroSecond = calibrateWait();
-    x86ArchParams->rootPageMetaData = &rootPageMetaData;
+
+    x86ArchParams->rootPageMetaData.children =
+        (PackedPageMetaDataNode *)rootPageMetaData.children;
+    x86ArchParams->rootPageMetaData.metaData.entriesMapped =
+        rootPageMetaData.metaData.entriesMapped;
+    x86ArchParams->rootPageMetaData.metaData
+        .entriesMappedWithSmallerGranularity =
+        rootPageMetaData.metaData.entriesMappedWithSmallerGranularity;
 }

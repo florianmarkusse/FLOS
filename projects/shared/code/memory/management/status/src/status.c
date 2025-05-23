@@ -40,3 +40,25 @@ void appendPhysicalMemoryManagerStatus() {
 void appendVirtualMemoryManagerStatus() {
     appendMemoryManagerStatus(virt.tree, STRING("Virtual Memory"));
 }
+
+static void countAvailable(RedBlackNodeMM *current, U64 *available) {
+    if (!current) {
+        return;
+    }
+
+    countAvailable(current->children[RB_TREE_LEFT], available);
+
+    *available += current->memory.bytes;
+
+    countAvailable(current->children[RB_TREE_RIGHT], available);
+}
+
+static U64 getAvailableMemory(RedBlackNodeMM *tree) {
+    U64 availableMemory = 0;
+    countAvailable(tree, &availableMemory);
+
+    return availableMemory;
+}
+
+U64 getAvailablePhysicalMemory() { return getAvailableMemory(physical.tree); }
+U64 getAvailableVirtualMemory() { return getAvailableMemory(virt.tree); }

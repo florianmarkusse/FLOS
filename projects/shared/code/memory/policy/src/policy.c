@@ -36,9 +36,7 @@ void freeMappableMemory(Memory memory) {
     U64 virtualPageStartAddress = ALIGN_DOWN_VALUE(memory.start, mapped.bytes);
     Memory toFreePhysical = {0};
 
-    for (U64 endVirtualAddress = memory.start + memory.bytes;
-         virtualPageStartAddress < endVirtualAddress;
-         mapped = unmapPage(virtualPageStartAddress)) {
+    for (U64 endVirtualAddress = memory.start + memory.bytes;;) {
         if (mapped.start) {
             if (!toFreePhysical.start) {
                 toFreePhysical = mapped;
@@ -57,6 +55,10 @@ void freeMappableMemory(Memory memory) {
         }
 
         virtualPageStartAddress += mapped.bytes;
+        if (virtualPageStartAddress >= endVirtualAddress) {
+            break;
+        }
+        mapped = unmapPage(virtualPageStartAddress);
     }
 
     // Cleaup

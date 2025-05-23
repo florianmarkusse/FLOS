@@ -22,50 +22,67 @@
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
 static void stuff() {
-    U8 *virtual;
-    virtual = allocateMappableMemory(4097, 1);
+    U8 *firstVirtual;
+    firstVirtual = allocateMappableMemory(4097, 1);
     KFLUSH_AFTER {
         INFO(STRING("Address received is: "));
-        INFO(virtual, NEWLINE);
+        INFO(firstVirtual, NEWLINE);
     }
 
-    virtual[0] = 5;
-
-    virtual[4096] = 6;
-
-    // NOTE: calculate some property or some way to calculate the difference in
-    // physica0 memory!!! I expect how many free physical memory after freeing?
-    // 2 mapped pages
-    // 1 2MiB page table
-    // 1 1GiB page table
-    // 2 meta data tables
-    // Why where they not freed???
+    U8 *thirdVirtual;
+    thirdVirtual = allocateMappableMemory(1 * GiB, 1);
     KFLUSH_AFTER {
-        //
-        appendMemoryManagementStatus();
+        INFO(STRING("Address received is: "));
+        INFO(thirdVirtual, NEWLINE);
     }
 
+    U64 previousMemory = 0;
+    U64 availableMemory = getAvailablePhysicalMemory();
     KFLUSH_AFTER {
-        INFO(STRING("Virtual[0] = "));
-        INFO(virtual[0], NEWLINE);
+        INFO(STRING("Current available physical memory: "));
+        INFO(availableMemory, NEWLINE);
     }
 
-    freeMappableMemory((Memory){.start = (U64) virtual, .bytes = 4097});
+    thirdVirtual[0] = 5;
+    thirdVirtual[4096] = 5;
+    thirdVirtual[100 * KiB] = 5;
+    thirdVirtual[(1 * GiB) - 1] = 5;
 
+    U8 *secondVirtual;
+    secondVirtual = allocateMappableMemory(4097, 1);
     KFLUSH_AFTER {
-        //
-        appendMemoryManagementStatus();
+        INFO(STRING("Address received is: "));
+        INFO(secondVirtual, NEWLINE);
     }
 
-    return;
+    firstVirtual[0] = 5;
+    firstVirtual[4096] = 6;
+    secondVirtual[0] = 5;
+    secondVirtual[4096] = 6;
 
+    previousMemory = availableMemory;
+    availableMemory = getAvailablePhysicalMemory();
     KFLUSH_AFTER {
-        //
-        appendMemoryManagementStatus();
-        INFO(getPageFaults(), NEWLINE);
-        INFO(STRING("Virtual[0] = "));
-        INFO(virtual[0], NEWLINE);
-        INFO(getPageFaults(), NEWLINE);
+        INFO(STRING("Previous available physical memory: "));
+        INFO(previousMemory, NEWLINE);
+        INFO(STRING("Current available physical memory: "));
+        INFO(availableMemory, NEWLINE);
+        INFO(STRING("Delta physical memory: "));
+        INFO((I64)availableMemory - (I64)previousMemory, NEWLINE);
+    }
+
+    freeMappableMemory((Memory){.start = (U64)firstVirtual, .bytes = 4097});
+    freeMappableMemory((Memory){.start = (U64)secondVirtual, .bytes = 4097});
+
+    previousMemory = availableMemory;
+    availableMemory = getAvailablePhysicalMemory();
+    KFLUSH_AFTER {
+        INFO(STRING("Previous available physical memory: "));
+        INFO(previousMemory, NEWLINE);
+        INFO(STRING("Current available physical memory: "));
+        INFO(availableMemory, NEWLINE);
+        INFO(STRING("Delta physical memory: "));
+        INFO((I64)availableMemory - (I64)previousMemory, NEWLINE);
     }
 }
 

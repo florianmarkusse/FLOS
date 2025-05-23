@@ -15,7 +15,15 @@ void archInit(void *archParams) {
     //    // TODO: [X86] I need to enable NMIs here also again!
     //
 
-    rootPageTable = (VirtualPageTable *)CR3();
-    rootPageMetaData = *x86ArchParams->rootPageMetaData;
     cyclesPerMicroSecond = x86ArchParams->tscFrequencyPerMicroSecond;
+
+    rootPageTable = (VirtualPageTable *)CR3();
+
+    rootPageMetaData.children =
+        (PageMetaDataNode *)x86ArchParams->rootPageMetaData.children;
+    rootPageMetaData.metaData.entriesMapped =
+        x86ArchParams->rootPageMetaData.metaData.entriesMapped;
+    rootPageMetaData.metaData.entriesMappedWithSmallerGranularity =
+        x86ArchParams->rootPageMetaData.metaData
+            .entriesMappedWithSmallerGranularity;
 }
