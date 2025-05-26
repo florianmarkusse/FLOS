@@ -5,6 +5,7 @@ import (
 	"cmd/common/exit"
 	"cmd/common/flags"
 	"cmd/common/flags/buildmode"
+	"cmd/common/flags/qemuoutput"
 	"cmd/common/flags/serial"
 	"cmd/common/uefiimage"
 	"cmd/compile/builder"
@@ -27,6 +28,7 @@ func usage() {
 
 	buildmode.DisplayBuildMode()
 	serial.DisplaySerial()
+	qemuoutput.DisplayQemuOutput()
 
 	fmt.Printf("\n")
 	exit.DisplayExitCodes()
@@ -44,6 +46,7 @@ func usage() {
 func main() {
 	buildmode.AddBuildModeAsFlag(&buildArgs.BuildMode)
 	serial.AddSerialAsFlag(&buildArgs.Serial)
+	qemuoutput.AddQemuOutputAsFlag(&qemuArgs.OutputToFile)
 
 	flag.Usage = usage
 	flag.Parse()
@@ -69,6 +72,7 @@ func main() {
 	configuration.DisplayConfiguration()
 	buildmode.DisplayBuildModeConfiguration(buildArgs.BuildMode)
 	serial.DisplaySerialConfiguration(buildArgs.Serial)
+	qemuoutput.DisplayQemuOutputConfiguration(qemuArgs.OutputToFile)
 	fmt.Printf("\n")
 
 	var result = builder.Build(&buildArgs)

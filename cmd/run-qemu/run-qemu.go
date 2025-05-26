@@ -6,6 +6,7 @@ import (
 	"cmd/common/exit"
 	"cmd/common/flags"
 	"cmd/common/flags/help"
+	"cmd/common/flags/qemuoutput"
 	"cmd/run-qemu/qemu"
 	"flag"
 	"fmt"
@@ -36,6 +37,7 @@ func usage() {
 	flags.DisplayOptionalFlags()
 	flags.DisplayArgumentInput(OS_LOCATION_SHORT_FLAG, OS_LOCATION_LONG_FLAG, "Set the OS (.hdd) location", qemuArgs.OsLocation)
 	flags.DisplayArgumentInput(EFI_LOCATION_SHORT_FLAG, EFI_LOCATION_LONG_FLAG, "set the UEFI (.bin) location to emulate UEFI environment", qemuArgs.UefiLocation)
+	qemuoutput.DisplayQemuOutput()
 	flags.DisplayArgumentInput(VERBOSE_SHORT_FLAG, VERBOSE_LONG_FLAG, "Enable verbose QEMU", fmt.Sprint(qemuArgs.Verbose))
 	flags.DisplayArgumentInput(DEBUG_SHORT_FLAG, DEBUG_LONG_FLAG, "Wait for gdb to connect to port 1234 before running", fmt.Sprint(qemuArgs.Debug))
 	help.DisplayHelp()
@@ -52,6 +54,8 @@ func usage() {
 }
 
 func main() {
+	qemuoutput.AddQemuOutputAsFlag(&qemuArgs.OutputToFile)
+
 	flag.StringVar(&qemuArgs.OsLocation, OS_LOCATION_LONG_FLAG, qemuArgs.OsLocation, "")
 	flag.StringVar(&qemuArgs.OsLocation, OS_LOCATION_SHORT_FLAG, qemuArgs.OsLocation, "")
 
@@ -87,6 +91,7 @@ func main() {
 	configuration.DisplayConfiguration()
 	configuration.DisplayStringArgument(OS_LOCATION_LONG_FLAG, qemuArgs.OsLocation)
 	configuration.DisplayStringArgument(EFI_LOCATION_LONG_FLAG, qemuArgs.UefiLocation)
+	qemuoutput.DisplayQemuOutputConfiguration(qemuArgs.OutputToFile)
 	configuration.DisplayBoolArgument(VERBOSE_LONG_FLAG, qemuArgs.Verbose)
 	configuration.DisplayBoolArgument(DEBUG_LONG_FLAG, qemuArgs.Debug)
 	fmt.Printf("\n")

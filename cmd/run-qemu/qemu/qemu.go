@@ -8,10 +8,12 @@ import (
 )
 
 const QEMU_EXECUTABLE = "qemu-system-x86_64"
+const FILE_OUTPUT = "qemu-output.log"
 
 type QemuArgs struct {
 	OsLocation   string
 	UefiLocation string
+	OutputToFile bool
 	Verbose      bool
 	Debug        bool
 }
@@ -19,6 +21,7 @@ type QemuArgs struct {
 var DefaultQemuArgs = QemuArgs{
 	OsLocation:   common.REPO_ROOT + "/" + common.FLOS_UEFI_IMAGE_FILE,
 	UefiLocation: common.REPO_ROOT + "/" + common.BIOS_FILE,
+	OutputToFile: false,
 	Verbose:      false,
 	Debug:        false,
 }
@@ -30,7 +33,11 @@ func Run(args *QemuArgs) {
 	argument.AddArgument(&qemuOptions, "-no-reboot")
 	argument.AddArgument(&qemuOptions, fmt.Sprintf("-drive \"format=raw,file=%s\"", args.OsLocation))
 	argument.AddArgument(&qemuOptions, fmt.Sprintf("-bios %s", args.UefiLocation))
-	argument.AddArgument(&qemuOptions, "-serial stdio")
+	if args.OutputToFile {
+		argument.AddArgument(&qemuOptions, fmt.Sprintf("-serial file:%s", FILE_OUTPUT))
+	} else {
+		argument.AddArgument(&qemuOptions, "-serial stdio")
+	}
 	argument.AddArgument(&qemuOptions, "-smp 1")
 	argument.AddArgument(&qemuOptions, "-usb")
 	argument.AddArgument(&qemuOptions, "-vga std")
@@ -50,5 +57,6 @@ func Run(args *QemuArgs) {
 		argument.AddArgument(&qemuOptions, "-enable-kvm")
 	}
 
+	fmt.Printf("%sYour output is redirected to file %s%s%s\n\n", common.BOLD, common.YELLOW, FILE_OUTPUT, common.RESET)
 	argument.ExecCommand(fmt.Sprintf("%s %s", QEMU_EXECUTABLE, qemuOptions.String()))
 }
