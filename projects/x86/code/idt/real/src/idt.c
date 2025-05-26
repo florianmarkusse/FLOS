@@ -4,6 +4,7 @@
 #include "abstraction/memory/virtual/map.h"
 #include "shared/enum.h"
 #include "shared/log.h"
+#include "shared/memory/converter.h"
 #include "shared/memory/management/management.h"
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
@@ -734,6 +735,8 @@ typedef struct {
     //    U64 ss;
 } regs;
 
+U64 pageSizeToMap = X86_4KIB_PAGE;
+
 static U64 pageFaults = 0;
 U64 getPageFaults() { return pageFaults; }
 
@@ -741,17 +744,32 @@ void fault_handler(regs *regs) {
     if (regs->interruptNumber == FAULT_PAGE_FAULT) {
         pageFaults++;
 
+        U64 mapped = 0;
+        U64 startingMap = CR2();
+        U64 pageSizeToUse = pageSizeFitting(startingMap, pageSizeToMap);
+
+        if (startingMap == 0x0000000101600000) {
+            KFLUSH_AFTER { INFO(STRING("error case!\n")); }
+        }
+
+        while (mapped < pageSizeToMap) {
+            void *address = allocPhysicalMemory(pageSizeToUse, pageSizeToUse);
+
+            mapPage(startingMap + mapped, (U64)address, pageSizeToUse);
+            mapped += pageSizeToUse;
+        }
+
         // NOTE: when starting to use SMP, I should first check if this memory
         // is now mapped before doing this.
         // In the context of mapping and unmapping. It may be interesting to
         // mark which cores have accessed which memory so we can limit the
         // flushPage calls to all cores.
-        void *address = allocPhysicalMemory(X86_4KIB_PAGE, X86_4KIB_PAGE);
-        KFLUSH_AFTER {
-            INFO(STRING("Allocating physical memory: "));
-            INFO(address, NEWLINE);
-        }
-        mapPage(CR2(), (U64)address, X86_4KIB_PAGE);
+        // void *address = allocPhysicalMemory(X86_4KIB_PAGE, X86_4KIB_PAGE);
+        //        KFLUSH_AFTER {
+        //            INFO(STRING("Allocating physical memory: "));
+        //            INFO(address, NEWLINE);
+        //        }
+        // mapPage(CR2(), (U64)address, X86_4KIB_PAGE);
     } else {
         KFLUSH_AFTER {
             INFO(STRING("We are in an interrupt!!!\n"));
@@ -762,6 +780,19 @@ void fault_handler(regs *regs) {
             INFO(faultToString[regs->interruptNumber], NEWLINE);
             INFO(STRING("error code: "));
             INFO(regs->errorCode, NEWLINE);
+            INFO(STRING("rip: "));
+            INFO((void *)regs->rip, NEWLINE);
+            INFO(STRING("rax: "));
+            INFO(regs->rax, NEWLINE);
+            INFO(STRING("rbx: "));
+            INFO(regs->rbx, NEWLINE);
+            INFO(STRING("rcx: "));
+            INFO(regs->rcx, NEWLINE);
+            INFO(STRING("rdx: "));
+            INFO(regs->rdx, NEWLINE);
+
+            INFO(STRING("r14: "));
+            INFO(regs->r14, NEWLINE);
         }
 
         asm volatile("cli;hlt;");

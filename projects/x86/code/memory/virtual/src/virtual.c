@@ -34,10 +34,9 @@ static U64 getZeroedMemory(U64 bytes, U64 align) {
 
 static constexpr auto NEW_META_DATA_TABLE_BYTES =
     PageTableFormat.ENTRIES * sizeof(PageMetaDataNode);
-static PageMetaDataNode *getNewMetaDataTable() {
-    U64 address = getBytesForMemoryMapping(NEW_META_DATA_TABLE_BYTES,
-                                           alignof(PageMetaDataNode));
-    return (PageMetaDataNode *)address;
+static PageMetaDataNode *getZeroedMetaDataTable() {
+    return (PageMetaDataNode *)getZeroedMemory(NEW_META_DATA_TABLE_BYTES,
+                                               alignof(PageMetaDataNode));
 }
 
 static U64 getZeroedPageTable() {
@@ -84,7 +83,7 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
             newMetaEntryAddress->metaData.entriesMapped++;
             newMetaEntryAddress->metaData.entriesMappedWithSmallerGranularity++;
             if (!(newMetaEntryAddress->children)) {
-                newMetaEntryAddress->children = getNewMetaDataTable();
+                newMetaEntryAddress->children = getZeroedMetaDataTable();
             }
         }
 

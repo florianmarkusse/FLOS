@@ -255,7 +255,7 @@ func getConfiguredProjects() []string {
 
 var ConfiguredProjects = getConfiguredProjects()
 
-func BuildOutputPath(architecture string, cCompiler string, linker string, environment string, buildMode string, floatOperations string) string {
+func BuildOutputPath(architecture string, cCompiler string, linker string, environment string, buildMode string, floatOperations string, serial string) string {
 	configurationPath := strings.Builder{}
 
 	configurationPath.WriteString("build/")
@@ -264,12 +264,13 @@ func BuildOutputPath(architecture string, cCompiler string, linker string, envir
 	configurationPath.WriteString(fmt.Sprintf("%s/", linker))
 	configurationPath.WriteString(fmt.Sprintf("%s/", environment))
 	configurationPath.WriteString(fmt.Sprintf("%s/", floatOperations))
+	configurationPath.WriteString(fmt.Sprintf("%s/", serial))
 	configurationPath.WriteString(buildMode)
 
 	return configurationPath.String()
 }
 
-func BuildDirectoryRoot(project *ProjectStructure, buildMode string, architecture string) string {
+func BuildDirectoryRoot(project *ProjectStructure, buildMode string, architecture string, serial bool) string {
 	buildDirectory := strings.Builder{}
 	buildDirectory.WriteString(fmt.Sprintf("%s/", project.CodeFolder))
 
@@ -277,7 +278,12 @@ func BuildDirectoryRoot(project *ProjectStructure, buildMode string, architectur
 	if !project.FloatOperations {
 		floatOperations = "no-floats"
 	}
-	buildDirectory.WriteString(BuildOutputPath(architecture, project.CCompiler, project.Linker, string(project.Environment), buildMode, floatOperations))
+
+	var serialWriting = "serial"
+	if !serial {
+		serialWriting = "no-serial"
+	}
+	buildDirectory.WriteString(BuildOutputPath(architecture, project.CCompiler, project.Linker, string(project.Environment), buildMode, floatOperations, serialWriting))
 
 	return buildDirectory.String()
 }

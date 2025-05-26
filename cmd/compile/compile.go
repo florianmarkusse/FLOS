@@ -9,6 +9,7 @@ import (
 	"cmd/common/flags/buildmode"
 	"cmd/common/flags/environment"
 	"cmd/common/flags/help"
+	"cmd/common/flags/serial"
 	"cmd/common/project"
 	"cmd/compile/builder"
 	"flag"
@@ -34,6 +35,8 @@ const RUN_TESTS_SHORT_FLAG = "r"
 const VERBOSE_LONG_FLAG = "verbose"
 const VERBOSE_SHORT_FLAG = "v"
 
+const SERIAL_LONG_FLAG = "serial"
+
 const THREADS_LONG_FLAG = "threads"
 
 var buildArgs = builder.DefaultBuildArgs
@@ -49,6 +52,7 @@ func main() {
 	environment.AddEnvironmentAsFlag(&buildArgs.Environment)
 	project.AddProjectAsFlag(&projectsToBuild)
 	help.AddHelpAsFlag(&isHelp)
+	serial.AddSerialAsFlag(&buildArgs.Serial)
 
 	flag.StringVar(&targetsToBuild, SELECT_TARGETS_LONG_FLAG, "", "")
 	flag.StringVar(&targetsToBuild, SELECT_TARGETS_SHORT_FLAG, "", "")
@@ -109,6 +113,7 @@ func main() {
 	architecture.DisplayArchitectureConfiguration(buildArgs.Architecture)
 	environment.DisplayEnvironmentConfiguration(buildArgs.Environment)
 	project.DisplayProjectConfiguration(buildArgs.SelectedProjects)
+	serial.DisplaySerialConfiguration(buildArgs.Serial)
 
 	var targetsConfiguration string
 	if len(buildArgs.SelectedTargets) > 0 {
@@ -149,6 +154,7 @@ func usage() {
 	environment.DisplayEnvironment()
 	architecture.DisplayArchitecture()
 	project.DisplayProject()
+	serial.DisplaySerial()
 
 	flags.DisplayArgumentInput(ERRORS_TO_FILE_SHORT_FLAG, ERRORS_TO_FILE_LONG_FLAG, "Save errors to file", fmt.Sprint(buildArgs.ErrorsToFile))
 

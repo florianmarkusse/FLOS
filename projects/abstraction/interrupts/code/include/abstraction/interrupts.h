@@ -11,4 +11,6 @@ __attribute__((noreturn)) void interruptNoMoreVirtualMemory();
 // TODO: remove?
 U64 getPageFaults();
 
+extern U64 pageSizeToMap;
+
 #endif

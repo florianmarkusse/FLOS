@@ -7,6 +7,7 @@ import (
 	"cmd/common/flags"
 	"flag"
 	"fmt"
+	"slices"
 )
 
 const ARCHITECTURE_LONG_FLAG = "architecture"
@@ -23,12 +24,7 @@ var PossibleArchitectures = []string{
 }
 
 func IsValidArchitecture(architecture string) bool {
-	for _, validArchitecture := range PossibleArchitectures {
-		if architecture == validArchitecture {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(PossibleArchitectures, architecture)
 }
 
 func DefaultArchitecture() string {

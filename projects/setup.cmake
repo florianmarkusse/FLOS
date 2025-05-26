@@ -14,6 +14,13 @@ else()
     add_compile_definitions(NO_FLOAT_OPERATIONS)
 endif()
 
+option(SERIAL "Turn on/off serial logging" OFF)
+if(${SERIAL})
+    add_compile_definitions(SERIAL)
+else()
+    add_compile_definitions(NO_SERIAL)
+endif()
+
 set(VALID_BUILDS "UNIT_TEST" "PROJECT")
 list(FIND VALID_BUILDS ${BUILD} BUILD_INDEX)
 if(BUILD_INDEX EQUAL -1)

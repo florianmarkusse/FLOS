@@ -7,6 +7,7 @@ import (
 	"cmd/common/flags"
 	"flag"
 	"fmt"
+	"slices"
 )
 
 const BUILD_MODE_LONG_FLAG = "build-mode"
@@ -25,12 +26,7 @@ var PossibleBuildModes = []string{
 }
 
 func IsValidBuildMode(mode string) bool {
-	for _, validMode := range PossibleBuildModes {
-		if mode == validMode {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(PossibleBuildModes, mode)
 }
 
 func DefaultBuildMode() string {

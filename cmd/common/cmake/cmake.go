@@ -17,7 +17,7 @@ func includeWhatYouUseFlag(flag string) string {
 	return fmt.Sprintf("-Xiwyu;%s;", flag)
 }
 
-func AddDefaultConfigureOptions(options *strings.Builder, proj *project.ProjectStructure, buildDirectory string, buildMode string, buildTests bool, projectTargetsFile string, architecture string) {
+func AddDefaultConfigureOptions(options *strings.Builder, proj *project.ProjectStructure, buildDirectory string, buildMode string, buildTests bool, projectTargetsFile string, architecture string, serial bool) {
 	argument.AddArgument(options, fmt.Sprintf("-S %s", proj.CodeFolder))
 	argument.AddArgument(options, fmt.Sprintf("-B %s", buildDirectory))
 
@@ -36,6 +36,7 @@ func AddDefaultConfigureOptions(options *strings.Builder, proj *project.ProjectS
 	argument.AddArgument(options, fmt.Sprintf("-D REPO_PROJECTS=%s", common.REPO_PROJECTS))
 	argument.AddArgument(options, fmt.Sprintf("-D PROJECT_TARGETS_FILE=%s", projectTargetsFile))
 	argument.AddArgument(options, fmt.Sprintf("-D FLOAT_OPERATIONS=%t", proj.FloatOperations))
+	argument.AddArgument(options, fmt.Sprintf("-D SERIAL=%t", serial))
 
 	var build string
 	if buildTests {

@@ -12,7 +12,7 @@
 - Fix duplicate stuff in memory mappings
 - create macro for ctzl clzl stuff, so I dont need to pick the sizes?
 - Figure out a way to do better with masks and bit shifts for virtual values
-- policy is quite architecture-dependant. What's required to completely make it so?
+- policy is quite architecture-dependent. What's required to completely make it so?
 - Reploe X_VALUE with X_EXP when it is not compile-time known value? I.e. pageSizes array should be bitshifts I think, check GODBOLT!!
 - Remove NOLINTNEXTLINE?
 - Fix posix tests in physical memory
@@ -23,4 +23,4 @@ CPU features to implement/turn on in x86
 - sse
 - avx
 
-0xc03e8000
+2883584

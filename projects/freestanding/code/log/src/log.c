@@ -1,5 +1,6 @@
 #include "abstraction/log.h"
 
+#include "abstraction/serial.h"
 #include "freestanding/log/init.h"
 #include "freestanding/memory/manipulation.h"
 #include "freestanding/peripheral/screen.h"
@@ -14,6 +15,10 @@
 // buffer in the future.
 bool flushBuffer(U8_max_a *buffer) {
     flushToScreen(*buffer);
+
+#ifdef SERIAL
+    flushToSerial(*buffer);
+#endif
 
     // TODO: Flush to file system here?
 

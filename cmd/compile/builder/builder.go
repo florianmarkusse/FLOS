@@ -15,8 +15,8 @@ import (
 	"strings"
 )
 
-func findAndRunTests(selectedTargets []string, proj *project.ProjectStructure, buildMode string, architecture string) BuildResult {
-	var buildDirectory = project.BuildDirectoryRoot(proj, buildMode, architecture)
+func findAndRunTests(selectedTargets []string, proj *project.ProjectStructure, buildMode string, architecture string, serial bool) BuildResult {
+	var buildDirectory = project.BuildDirectoryRoot(proj, buildMode, architecture, serial)
 	if len(selectedTargets) > 0 {
 		for _, target := range selectedTargets {
 			var findCommand = fmt.Sprintf("find %s -executable -type f -name \"%s\" -exec {} \\;", buildDirectory, target)
@@ -67,9 +67,9 @@ func buildProject(args *BuildArgs, proj *project.ProjectStructure) {
 
 	configureOptions := strings.Builder{}
 
-	var buildDirectory = project.BuildDirectoryRoot(proj, args.BuildMode, args.Architecture)
+	var buildDirectory = project.BuildDirectoryRoot(proj, args.BuildMode, args.Architecture, args.Serial)
 	var projectTargetsFile = project.BuildProjectTargetsFile(proj.CodeFolder)
-	cmake.AddDefaultConfigureOptions(&configureOptions, proj, buildDirectory, args.BuildMode, args.BuildTests, projectTargetsFile, args.Architecture)
+	cmake.AddDefaultConfigureOptions(&configureOptions, proj, buildDirectory, args.BuildMode, args.BuildTests, projectTargetsFile, args.Architecture, args.Serial)
 	argument.ExecCommandWriteOutput(fmt.Sprintf("%s %s", cmake.EXECUTABLE, configureOptions.String()), errorWriters...)
 
 	buildOptions := strings.Builder{}
@@ -84,6 +84,7 @@ type BuildArgs struct {
 	Environment      string
 	ErrorsToFile     bool
 	Threads          int
+	Serial           bool
 	SelectedTargets  []string
 	SelectedProjects []string
 	BuildTests       bool
@@ -104,6 +105,7 @@ var RunBuildArgs = BuildArgs{
 	Environment:      "",
 	ErrorsToFile:     false,
 	Threads:          runtime.NumCPU(),
+	Serial:           false,
 	SelectedTargets:  []string{},
 	SelectedProjects: []string{project.KERNEL, project.IMAGE_BUILDER, project.OS_LOADER},
 	BuildTests:       false,
@@ -117,6 +119,7 @@ var DefaultBuildArgs = BuildArgs{
 	Environment:      "",
 	ErrorsToFile:     false,
 	Threads:          runtime.NumCPU(),
+	Serial:           false,
 	SelectedTargets:  []string{},
 	SelectedProjects: []string{},
 	BuildTests:       false,
@@ -140,7 +143,7 @@ func Build(args *BuildArgs) BuildResult {
 		}
 		for name, project := range projectsToBuild {
 			fmt.Printf("Testing %s%s%s\n", common.CYAN, name, common.RESET)
-			findAndRunTests(args.SelectedTargets, project, args.BuildMode, args.Architecture)
+			findAndRunTests(args.SelectedTargets, project, args.BuildMode, args.Architecture, args.Serial)
 		}
 	}
 

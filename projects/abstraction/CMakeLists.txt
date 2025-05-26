@@ -12,6 +12,8 @@ add_subdirectory("interrupts/code")
 
 add_subdirectory("log/code")
 
+add_subdirectory("serial/code")
+
 add_subdirectory("jmp/code")
 add_subdirectory("time/code")
 add_subdirectory("kernel/code")

@@ -77,9 +77,9 @@ static U64 calibrateWait() {
         }
     }
 
-    U64 currentCycles = currentCycleCounter();
+    U64 currentCycles = currentCycleCounter(false, false);
     globals.st->boot_services->stall(CALIBRATION_MICROSECONDS);
-    U64 endCycles = currentCycleCounter();
+    U64 endCycles = currentCycleCounter(false, false);
     return (endCycles - currentCycles) / CALIBRATION_MICROSECONDS;
 }
 

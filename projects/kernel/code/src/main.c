@@ -21,69 +21,120 @@
 
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
+static constexpr auto TEST_MEMORY_AMOUNT = 32 * MiB;
+static constexpr auto TEST_ENTRIES = TEST_MEMORY_AMOUNT / (sizeof(U64));
+
+static bool test(U64 alignment) {
+    U64 iterations = 1;
+    U64 sum = 0;
+
+    KFLUSH_AFTER {
+        INFO(STRING("Running test with alignment of "));
+        INFO(alignment, NEWLINE);
+    }
+
+    U64 *address = nullptr;
+
+    for (U64 iteration = 0; iteration < iterations; iteration++) {
+        U64 startPhysicalMemory = getAvailablePhysicalMemory();
+
+        U64 *virtual = allocateMappableMemory(TEST_MEMORY_AMOUNT, alignment);
+        KFLUSH_AFTER {
+            INFO(STRING("address="));
+            INFO(virtual, NEWLINE);
+        }
+        if (address && virtual != address) {
+            KFLUSH_AFTER {
+                INFO(STRING("Got new address, old="));
+                INFO((void *)address);
+                INFO(STRING(", new="));
+                INFO(virtual, NEWLINE);
+            }
+        }
+        address = virtual;
+
+        U64 beforePageFaults = getPageFaults();
+
+        U64 startCycleCount = currentCycleCounter(true, false);
+
+        for (U64 i = 0; i < TEST_ENTRIES; i++) {
+            virtual[i] = i;
+
+            if (i == TEST_ENTRIES - 2) {
+                KFLUSH_AFTER {
+                    INFO(STRING("virtual[0] ="));
+                    INFO(virtual[0], NEWLINE);
+                }
+            }
+        }
+
+        U64 endCycleCount = currentCycleCounter(false, true);
+
+        for (U64 i = 0; i < TEST_ENTRIES; i++) {
+            if (virtual[i] != i) {
+                KFLUSH_AFTER {
+                    INFO(STRING("arithmetic error at i="));
+                    INFO(i);
+                    INFO(STRING(", expected="));
+                    INFO(i);
+                    INFO(STRING(", actual="));
+                    INFO(virtual[i], NEWLINE);
+                }
+                return false;
+            }
+        }
+
+        U64 pageFaults = getPageFaults();
+
+        freeMappableMemory(
+            (Memory){.start = (U64) virtual, .bytes = TEST_MEMORY_AMOUNT});
+
+        U64 endPhysicalMemory = getAvailablePhysicalMemory();
+        if (endPhysicalMemory != startPhysicalMemory) {
+            KFLUSH_AFTER {
+                INFO(STRING(
+                    "Difference in physical memory detected! Started with "));
+                INFO(startPhysicalMemory);
+                INFO(STRING(" and the delta is "));
+                INFO((I64)endPhysicalMemory - (I64)startPhysicalMemory,
+                     NEWLINE);
+            }
+            return false;
+        }
+
+        if ((beforePageFaults + (TEST_MEMORY_AMOUNT / alignment)) !=
+            pageFaults) {
+            KFLUSH_AFTER { INFO(STRING("Incorrect number of page faults.\n")); }
+            return false;
+        }
+
+        U64 nowPageFaults = getPageFaults();
+        if (pageFaults != nowPageFaults) {
+            KFLUSH_AFTER { INFO(STRING("Somehow had more page faults\n")); }
+            return false;
+        }
+
+        sum += (endCycleCount - startCycleCount);
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING("Total iterations: "));
+        INFO(iterations, NEWLINE);
+        INFO(STRING("Average clockcycles: "));
+        INFO(sum / iterations, NEWLINE);
+    }
+
+    return true;
+}
+
 static void stuff() {
-    U8 *firstVirtual;
-    firstVirtual = allocateMappableMemory(4097, 1);
-    KFLUSH_AFTER {
-        INFO(STRING("Address received is: "));
-        INFO(firstVirtual, NEWLINE);
-    }
-
-    U8 *thirdVirtual;
-    thirdVirtual = allocateMappableMemory(1 * GiB, 1);
-    KFLUSH_AFTER {
-        INFO(STRING("Address received is: "));
-        INFO(thirdVirtual, NEWLINE);
-    }
-
-    U64 previousMemory = 0;
-    U64 availableMemory = getAvailablePhysicalMemory();
-    KFLUSH_AFTER {
-        INFO(STRING("Current available physical memory: "));
-        INFO(availableMemory, NEWLINE);
-    }
-
-    thirdVirtual[0] = 5;
-    thirdVirtual[4096] = 5;
-    thirdVirtual[100 * KiB] = 5;
-    thirdVirtual[(1 * GiB) - 1] = 5;
-
-    U8 *secondVirtual;
-    secondVirtual = allocateMappableMemory(4097, 1);
-    KFLUSH_AFTER {
-        INFO(STRING("Address received is: "));
-        INFO(secondVirtual, NEWLINE);
-    }
-
-    firstVirtual[0] = 5;
-    firstVirtual[4096] = 6;
-    secondVirtual[0] = 5;
-    secondVirtual[4096] = 6;
-
-    previousMemory = availableMemory;
-    availableMemory = getAvailablePhysicalMemory();
-    KFLUSH_AFTER {
-        INFO(STRING("Previous available physical memory: "));
-        INFO(previousMemory, NEWLINE);
-        INFO(STRING("Current available physical memory: "));
-        INFO(availableMemory, NEWLINE);
-        INFO(STRING("Delta physical memory: "));
-        INFO((I64)availableMemory - (I64)previousMemory, NEWLINE);
-    }
-
-    freeMappableMemory((Memory){.start = (U64)firstVirtual, .bytes = 4097});
-    freeMappableMemory((Memory){.start = (U64)secondVirtual, .bytes = 4097});
-
-    previousMemory = availableMemory;
-    availableMemory = getAvailablePhysicalMemory();
-    KFLUSH_AFTER {
-        INFO(STRING("Previous available physical memory: "));
-        INFO(previousMemory, NEWLINE);
-        INFO(STRING("Current available physical memory: "));
-        INFO(availableMemory, NEWLINE);
-        INFO(STRING("Delta physical memory: "));
-        INFO((I64)availableMemory - (I64)previousMemory, NEWLINE);
-    }
+    // test
+    pageSizeToMap = 4 * KiB;
+    test(4 * KiB);
+    pageSizeToMap = 64 * KiB;
+    test(64 * KiB);
+    pageSizeToMap = 2 * MiB;
+    test(2 * MiB);
 }
 
 __attribute__((section("kernel-start"))) int
