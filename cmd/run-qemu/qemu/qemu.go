@@ -57,6 +57,8 @@ func Run(args *QemuArgs) {
 		argument.AddArgument(&qemuOptions, "-enable-kvm")
 	}
 
-	fmt.Printf("%sYour output is redirected to file %s%s%s\n\n", common.BOLD, common.YELLOW, FILE_OUTPUT, common.RESET)
+	if args.OutputToFile {
+		fmt.Printf("%sYour output is redirected to file %s%s%s\n\n", common.BOLD, common.YELLOW, FILE_OUTPUT, common.RESET)
+	}
 	argument.ExecCommand(fmt.Sprintf("%s %s", QEMU_EXECUTABLE, qemuOptions.String()))
 }
