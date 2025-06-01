@@ -360,14 +360,25 @@ static Cluster createPath(string FAT32FilePath, Cluster startCluster) {
     return startCluster;
 }
 
-#define CREATE_FAT32_FILE(fileName, parentCluster, bufferVariable,             \
-                          bufferStartVariable)                                 \
-    (bufferVariable) = getDataCluster(CURRENT_FREE_DATA_CLUSTER_INDEX);        \
-    (bufferStartVariable) = (bufferVariable);                                  \
-    for (auto MACRO_VAR(i) = 0; MACRO_VAR(i) < 1; MACRO_VAR(i) = 1,            \
-              createFileEntryAfterWritingData((fileName), parentCluster,       \
-                                              (U32)((bufferVariable) -         \
-                                                    (bufferStartVariable))))
+#define CREATE_FAT32_FILE(fileName, parentCluster, bufferVariable)             \
+    (bufferVariable).buf = getDataCluster(CURRENT_FREE_DATA_CLUSTER_INDEX);    \
+    (bufferVariable).len = 0;                                                  \
+    for (auto MACRO_VAR(i) = 0; MACRO_VAR(i) < 1;                              \
+         MACRO_VAR(i) = 1,                                                     \
+              createFileEntryAfterWritingData(                                 \
+                  (fileName), parentCluster,                                   \
+                  (U32)(((U64) &                                               \
+                         ((bufferVariable).buf[(bufferVariable).len])) -       \
+                        ((U64)((bufferVariable).buf)))))
+
+//#define CREATE_FAT32_FILE(fileName, parentCluster, bufferVariable,             \
+//                          bufferStartVariable)                                 \
+//    (bufferVariable) = getDataCluster(CURRENT_FREE_DATA_CLUSTER_INDEX);        \
+//    (bufferStartVariable) = (bufferVariable);                                  \
+//    for (auto MACRO_VAR(i) = 0; MACRO_VAR(i) < 1; MACRO_VAR(i) = 1,            \
+//              createFileEntryAfterWritingData((fileName), parentCluster,       \
+//                                              (U32)((bufferVariable) -         \
+//                                                    (bufferStartVariable))))
 
 bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U64 efiSizeBytes,
                              U64 kernelSizeBytes) {
@@ -403,15 +414,12 @@ bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U64 efiSizeBytes,
     Cluster efiBootCluster = createPath(STRING("BOOT       "), efiCluster);
     Cluster efiFLOSCluster = createPath(STRING("FLOS       "), efiCluster);
 
-    U8 *FAT32FileBuffer;
-    U8 *dataStartLocation;
+    U8_a buffer;
 
-    CREATE_FAT32_FILE("BOOTX64 EFI", efiBootCluster, FAT32FileBuffer,
-                      dataStartLocation) {
-        for (U8 *exclusiveEnd = FAT32FileBuffer + efiSizeBytes;
-             FAT32FileBuffer < exclusiveEnd;) {
-            I64 partialBytesRead = read(efifd, FAT32FileBuffer,
-                                        (U64)(exclusiveEnd - FAT32FileBuffer));
+    CREATE_FAT32_FILE("BOOTX64 EFI", efiBootCluster, buffer) {
+        while (buffer.len < efiSizeBytes) {
+            I64 partialBytesRead = read(efifd, &buffer.buf[buffer.len],
+                                        (U64)(efiSizeBytes - buffer.len));
             if (partialBytesRead < 0) {
                 ASSERT(false);
                 PFLUSH_AFTER(STDERR) {
@@ -425,33 +433,25 @@ bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U64 efiSizeBytes,
                            NEWLINE);
                 }
                 return false;
-            } else {
-                FAT32FileBuffer += partialBytesRead;
             }
+            buffer.len += partialBytesRead;
         }
     }
 
-    CREATE_FAT32_FILE("KERNEL  INF", efiFLOSCluster, FAT32FileBuffer,
-                      dataStartLocation) {
-        FAT32FileBuffer +=
-            KLOG_APPEND(FAT32FileBuffer, STRING("KERNEL_SIZE_BYTES="));
-        FAT32FileBuffer += KLOG_APPEND(FAT32FileBuffer, kernelSizeBytes);
-        FAT32FileBuffer += KLOG_APPEND(FAT32FileBuffer, STRING("\n"));
+    CREATE_FAT32_FILE("KERNEL  INF", efiFLOSCluster, buffer) {
+        KLOG_APPEND(&buffer, STRING("KERNEL_SIZE_BYTES="));
+        KLOG_APPEND(&buffer, kernelSizeBytes);
+        KLOG_APPEND(&buffer, STRING("\n"));
     }
 
-    CREATE_FAT32_FILE("DISKDATAINF", efiFLOSCluster, FAT32FileBuffer,
-                      dataStartLocation) {
-        FAT32FileBuffer +=
-            KLOG_APPEND(FAT32FileBuffer, STRING("DISK_SIZE_BYTES="));
-        FAT32FileBuffer +=
-            KLOG_APPEND(FAT32FileBuffer, configuration.totalImageSizeBytes);
-        FAT32FileBuffer += KLOG_APPEND(FAT32FileBuffer, STRING("\n"));
+    CREATE_FAT32_FILE("DISKDATAINF", efiFLOSCluster, buffer) {
+        KLOG_APPEND(&buffer, STRING("DISK_SIZE_BYTES="));
+        KLOG_APPEND(&buffer, configuration.totalImageSizeBytes);
+        KLOG_APPEND(&buffer, STRING("\n"));
 
-        FAT32FileBuffer +=
-            KLOG_APPEND(FAT32FileBuffer, STRING("DISK_SIZE_LBA="));
-        FAT32FileBuffer +=
-            KLOG_APPEND(FAT32FileBuffer, configuration.totalImageSizeLBA);
-        FAT32FileBuffer += KLOG_APPEND(FAT32FileBuffer, STRING("\n"));
+        KLOG_APPEND(&buffer, STRING("DISK_SIZE_LBA="));
+        KLOG_APPEND(&buffer, configuration.totalImageSizeLBA);
+        KLOG_APPEND(&buffer, STRING("\n"));
     }
 
     U32 *mirrorLocation = PRIMARY_FAT + FAT_SIZE_BYTES;

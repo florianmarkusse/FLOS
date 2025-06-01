@@ -3,6 +3,7 @@
 
 #include "shared/memory/management/definitions.h"
 #include "shared/trees/red-black/common.h"
+#include "shared/types/array-types.h"
 #include "shared/types/numeric.h"
 
 typedef struct RedBlackNodeMM RedBlackNodeMM;

@@ -748,28 +748,17 @@ void fault_handler(regs *regs) {
         U64 startingMap = CR2();
         U64 pageSizeToUse = pageSizeFitting(startingMap, pageSizeToMap);
 
-        if (startingMap == 0x0000000101600000) {
-            KFLUSH_AFTER { INFO(STRING("error case!\n")); }
-        }
-
+        // NOTE: when starting to use SMP, I should first check if this memory
+        // is now mapped before doing this.
+        // In the context of mapping and unmapping. It may be interesting to
+        // mark which cores have accessed which memory so we can limit the
+        // flushPage calls to all cores.
         while (mapped < pageSizeToMap) {
             void *address = allocPhysicalMemory(pageSizeToUse, pageSizeToUse);
 
             mapPage(startingMap + mapped, (U64)address, pageSizeToUse);
             mapped += pageSizeToUse;
         }
-
-        // NOTE: when starting to use SMP, I should first check if this memory
-        // is now mapped before doing this.
-        // In the context of mapping and unmapping. It may be interesting to
-        // mark which cores have accessed which memory so we can limit the
-        // flushPage calls to all cores.
-        // void *address = allocPhysicalMemory(X86_4KIB_PAGE, X86_4KIB_PAGE);
-        //        KFLUSH_AFTER {
-        //            INFO(STRING("Allocating physical memory: "));
-        //            INFO(address, NEWLINE);
-        //        }
-        // mapPage(CR2(), (U64)address, X86_4KIB_PAGE);
     } else {
         KFLUSH_AFTER {
             INFO(STRING("We are in an interrupt!!!\n"));

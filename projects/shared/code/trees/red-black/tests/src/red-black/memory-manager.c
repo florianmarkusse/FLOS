@@ -11,148 +11,7 @@
 #include "shared/trees/red-black/tests/assert-basic.h"
 #include "shared/trees/red-black/tests/assert-memory-manager.h"
 #include "shared/trees/red-black/tests/assert.h"
-
-typedef enum { INSERT, DELETE_AT_LEAST } OperationType;
-
-typedef struct {
-    Memory memory;
-    OperationType type;
-} TreeOperation;
-
-typedef ARRAY(TreeOperation) TreeOperation_a;
-typedef ARRAY(TreeOperation_a) TestCases;
-
-static TreeOperation_a noOperations = {.len = 0, .buf = 0};
-static TestCases noOperationsTestCase = {.buf = &noOperations, .len = 1};
-
-static TreeOperation insert1[] = {
-    {{.start = 1000, .bytes = 100}, INSERT},
-    {{.start = 1100, .bytes = 100}, INSERT},
-    {{.start = 1500, .bytes = 200}, INSERT},
-    {{.start = 2000, .bytes = 300}, INSERT},
-    {{.start = 2500, .bytes = 100}, INSERT},
-    {{.start = 3000, .bytes = 100}, INSERT},
-    {{.start = 3300, .bytes = 100}, INSERT},
-    {{.start = 2900, .bytes = 100}, INSERT},
-    {{.start = 3150, .bytes = 100}, INSERT},
-    {{.start = 500, .bytes = 499}, INSERT},
-    {{.start = 2400, .bytes = 50}, INSERT},
-    {{.start = 1700, .bytes = 300}, INSERT},
-};
-
-static TreeOperation insert2[] = {
-    {{.start = 5000, .bytes = 128}, INSERT},
-    {{.start = 4872, .bytes = 128}, INSERT},
-    {{.start = 5128, .bytes = 128}, INSERT},
-    {{.start = 6000, .bytes = 256}, INSERT},
-    {{.start = 7000, .bytes = 128}, INSERT},
-    {{.start = 7500, .bytes = 128}, INSERT},
-    {{.start = 5256, .bytes = 744}, INSERT},
-    {{.start = 8000, .bytes = 128}, INSERT},
-    {{.start = 8300, .bytes = 128}, INSERT},
-    {{.start = 8600, .bytes = 128}, INSERT},
-    {{.start = 8900, .bytes = 999999999}, INSERT}};
-
-static TreeOperation insert3[] = {{{.start = 10000, .bytes = 512}, INSERT},
-                                  {{.start = 10512, .bytes = 512}, INSERT},
-                                  {{.start = 11024, .bytes = 256}, INSERT},
-                                  {{.start = 11500, .bytes = 500}, INSERT},
-                                  {{.start = 12000, .bytes = 500}, INSERT},
-                                  {{.start = 13500, .bytes = 1000}, INSERT},
-                                  {{.start = 14500, .bytes = 500}, INSERT},
-                                  {{.start = 15000, .bytes = 256}, INSERT},
-                                  {{.start = 18063, .bytes = 12345567}, INSERT},
-                                  {{.start = 11280, .bytes = 220}, INSERT}};
-static TreeOperation_a inserts[] = {{.buf = insert1, .len = COUNTOF(insert1)},
-                                    {.buf = insert2, .len = COUNTOF(insert2)},
-                                    {.buf = insert3, .len = COUNTOF(insert3)}};
-static constexpr auto INSERTS_TEST_CASES_LEN = COUNTOF(inserts);
-static TestCases insertsOnlyTestCases = {.buf = inserts,
-                                         .len = INSERTS_TEST_CASES_LEN};
-
-static TreeOperation insertDeleteAtLeast1[] = {
-    {{.start = 1000, .bytes = 100}, INSERT},
-    {{.start = 1100, .bytes = 100}, INSERT},
-    {{.start = 1500, .bytes = 200}, INSERT},
-    {{.start = 2000, .bytes = 300}, INSERT},
-    {{.start = 2500, .bytes = 100}, INSERT},
-    {{.start = 3000, .bytes = 100}, INSERT},
-    {{.start = 3300, .bytes = 100}, INSERT},
-    {{.start = 2900, .bytes = 100}, INSERT},
-    {{.start = 3150, .bytes = 100}, INSERT},
-    {{.start = 500, .bytes = 499}, INSERT},
-    {{.start = 2400, .bytes = 50}, INSERT},
-    {{.start = 0, .bytes = 500}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 100}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 100}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 300}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 76}, DELETE_AT_LEAST},
-    {{.start = 1700, .bytes = 300}, INSERT}};
-static TreeOperation insertDeleteAtLeast2[] = {
-    {{.start = 5000, .bytes = 128}, INSERT},
-    {{.start = 4872, .bytes = 128}, INSERT},
-    {{.start = 5128, .bytes = 128}, INSERT},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 6000, .bytes = 256}, INSERT},
-    {{.start = 7000, .bytes = 128}, INSERT},
-    {{.start = 7500, .bytes = 128}, INSERT},
-    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 132}, DELETE_AT_LEAST},
-    {{.start = 5256, .bytes = 744}, INSERT},
-    {{.start = 8000, .bytes = 128}, INSERT},
-    {{.start = 8300, .bytes = 128}, INSERT},
-    {{.start = 8600, .bytes = 128}, INSERT},
-    {{.start = 8900, .bytes = 999999999}, INSERT},
-    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 356786}, DELETE_AT_LEAST},
-};
-static TreeOperation insertDeleteAtLeast3[] = {
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-    {{.start = 10000, .bytes = 512}, INSERT},
-    {{.start = 10512, .bytes = 512}, INSERT},
-    {{.start = 11024, .bytes = 256}, INSERT},
-    {{.start = 11500, .bytes = 500}, INSERT},
-    {{.start = 12000, .bytes = 500}, INSERT},
-    {{.start = 0, .bytes = 500}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 500}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 500}, DELETE_AT_LEAST},
-    {{.start = 0, .bytes = 500}, DELETE_AT_LEAST},
-    {{.start = 13500, .bytes = 1000}, INSERT},
-    {{.start = 14500, .bytes = 500}, INSERT},
-    {{.start = 15000, .bytes = 256}, INSERT},
-    {{.start = 18063, .bytes = 12345567}, INSERT},
-    {{.start = 11280, .bytes = 220}, INSERT},
-    {{.start = 0, .bytes = 10}, DELETE_AT_LEAST},
-};
-static TreeOperation_a insertDeleteAtLeasts[] = {
-    {.buf = insertDeleteAtLeast1, .len = COUNTOF(insertDeleteAtLeast1)},
-    {.buf = insertDeleteAtLeast2, .len = COUNTOF(insertDeleteAtLeast2)},
-    {.buf = insertDeleteAtLeast3, .len = COUNTOF(insertDeleteAtLeast3)}};
-static constexpr auto INSERT_DELETE_AT_LEASTS_TEST_CASES_LEN =
-    COUNTOF(insertDeleteAtLeasts);
-static TestCases insertDeleteAtLeastsOnlyTestCases = {
-    .buf = insertDeleteAtLeasts, .len = INSERT_DELETE_AT_LEASTS_TEST_CASES_LEN};
+#include "shared/trees/red-black/tests/cases/memory-manager.h"
 
 static void addValueToExpected(Memory_max_a *expectedValues, Memory toAdd,
                                RedBlackNodeMM *tree) {
@@ -261,10 +120,12 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                         indexToRemove = j;
                     }
                 }
-
-                expectedValues.buf[indexToRemove] =
-                    expectedValues.buf[expectedValues.len - 1];
+                memmove(&(expectedValues.buf[indexToRemove]),
+                        &(expectedValues.buf[indexToRemove + 1]),
+                        (expectedValues.len - indexToRemove) *
+                            sizeof(expectedValues.buf[0]));
                 expectedValues.len--;
+
                 break;
             }
         }

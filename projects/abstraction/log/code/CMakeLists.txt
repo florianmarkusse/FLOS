@@ -1,6 +1,7 @@
 create_abstraction_targets(abstraction-log)
 
 add_project("shared")
+abstraction_add_sources(shared-log)
 
 if(${ENVIRONMENT} STREQUAL "FREESTANDING")
     add_project("freestanding")

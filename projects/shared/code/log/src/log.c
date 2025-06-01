@@ -2,7 +2,7 @@
 
 #include "abstraction/memory/manipulation.h"
 
-U64 appendToBuffer(U8 *buffer, string data) {
-    memcpy(buffer, data.buf, data.len);
-    return data.len;
+void appendToBuffer(U8_a *buffer, string data) {
+    memcpy(&buffer->buf[buffer->len], data.buf, data.len);
+    buffer->len += data.len;
 }

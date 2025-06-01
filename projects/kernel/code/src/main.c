@@ -162,7 +162,11 @@ kernelmain(PackedKernelParameters *kernelParams) {
         (Memory){.start = (U64)kernelParams, .bytes = sizeof(*kernelParams)});
 
     // NOTE: from here, everything is initialized
-    KFLUSH_AFTER { KLOG(STRING("ITS WEDNESDAY MY DUDES\n")); }
+    KFLUSH_AFTER {
+        KLOG(STRING("ITS WEDNESDAY MY DUDES\n"));
+        KLOG(STRING("Available phys memory: "));
+        KLOG(getAvailablePhysicalMemory(), NEWLINE);
+    }
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 

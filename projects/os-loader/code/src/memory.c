@@ -109,7 +109,6 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
             for (U64 i = 0; i < availableMemory.len; i++) {
                 RedBlackNodeMM *node = NEW(&treeAllocator, RedBlackNodeMM);
                 node->memory = availableMemory.buf[i];
-                // TODO: CAN FREE THE STUFF HERE I THINK!!!
                 insertRedBlackNodeMM(&root, node);
             }
         }

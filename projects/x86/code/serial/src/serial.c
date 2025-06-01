@@ -1,16 +1,16 @@
 #include "abstraction/serial.h"
+#include "x86/serial.h"
 
-static U8 inb(U16 port) {
+U8 inb(U16 port) {
     U8 ret;
     asm volatile("inb %1, %0" : "=a"(ret) : "Nd"(port));
     return ret;
 }
 
-static void outb(U16 port, U8 value) {
+void outb(U16 port, U8 value) {
     asm volatile("outb %0, %1" : : "a"(value), "Nd"(port));
 }
 
-static constexpr auto COM1 = 0x3F8;
 static constexpr auto LINE_STATUS_REGISTER_OFFSET = 5;
 static constexpr auto TRANSMITTER_HOLDING_REGISTER_EMPTY = 0b10'0000;
 

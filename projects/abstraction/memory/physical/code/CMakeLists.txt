@@ -7,7 +7,7 @@ elseif(${ENVIRONMENT} STREQUAL "FREESTANDING")
     add_project("freestanding")
     abstraction_add_sources(freestanding-memory-management)
 elseif(${ENVIRONMENT} STREQUAL "POSIX")
-    message(FATAL_ERROR "Could not find matching lib for posix ${PROJECT_NAME}")
+    # Should not need an implementation
 else()
     message(FATAL_ERROR "Could not find matching lib for ${PROJECT_NAME}")
 endif()

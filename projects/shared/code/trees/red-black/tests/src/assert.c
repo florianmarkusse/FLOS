@@ -60,12 +60,11 @@ void appendRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode,
 
 U64 nodeCount(RedBlackNode *tree, RedBlackTreeType treeType) {
     RedBlackNode *buffer[RB_TREE_MAX_HEIGHT];
-    U64 len = 0;
 
     U64 result = 0;
 
-    buffer[len] = tree;
-    len++;
+    buffer[0] = tree;
+    U64 len = 1;
     while (len > 0) {
         RedBlackNode *node = buffer[len - 1];
         len--;

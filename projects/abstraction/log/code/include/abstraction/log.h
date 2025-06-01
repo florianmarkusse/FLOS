@@ -1,8 +1,8 @@
 #ifndef ABSTRACTION_LOG_H
 #define ABSTRACTION_LOG_H
 
-#include "shared/macros.h"
 #include "abstraction/text/converter/converter.h"
+#include "shared/macros.h"
 #include "shared/text/string.h"
 #include "shared/types/array-types.h"
 #include "shared/types/numeric.h"
@@ -11,7 +11,7 @@
 // implement if they want to do any sort of logging. Additionally, each
 // environment is free to enhance their logging in any way they see fit.
 
-U64 appendToBuffer(U8 *buffer, string data);
+void appendToBuffer(U8_a *buffer, string data);
 void appendToFlushBuffer(string data, U8 flags);
 void appendZeroToFlushBuffer(U64 bytes, U8 flags);
 bool flushStandardBuffer();

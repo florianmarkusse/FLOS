@@ -6,36 +6,6 @@ typedef struct {
     RedBlackDirection direction;
 } VisitedNode;
 
-static U64 findAdjacentInSteps(RedBlackNodeBasic *node,
-                               VisitedNode *visitedNodes,
-                               RedBlackDirection direction) {
-    if (!node->children[direction]) {
-        return 0;
-    }
-
-    U64 traversals = 0;
-
-    visitedNodes[traversals].node = node;
-    visitedNodes[traversals].direction = direction;
-    node = node->children[direction];
-    traversals++;
-
-    while (true) {
-        RedBlackNodeBasic *next = node->children[!direction];
-        if (!next) {
-            break;
-        }
-
-        visitedNodes[traversals].node = node;
-        visitedNodes[traversals].direction = !direction;
-        traversals++;
-
-        node = next;
-    }
-
-    return traversals;
-}
-
 static U64 rebalanceInsert(RedBlackDirection direction,
                            VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
                            U64 len) {
@@ -58,9 +28,8 @@ static U64 rebalanceInsert(RedBlackDirection direction,
     //     \           /
     //      z         y
     if (visitedNodes[len - 2].direction == !direction) {
-        parent->children[!direction] = node->children[direction];
-        node->children[direction] = parent;
-        grandParent->children[direction] = node;
+        rotateAround((RedBlackNode *)grandParent, (RedBlackNode *)parent,
+                     (RedBlackNode *)node, direction, direction);
 
         node = node->children[direction];
         parent = grandParent->children[direction];
@@ -71,14 +40,12 @@ static U64 rebalanceInsert(RedBlackDirection direction,
     //    y      ==>  z   x
     //   /
     //  z
-    grandParent->children[direction] = parent->children[!direction];
-    parent->children[!direction] = grandParent;
-    visitedNodes[len - 4].node->children[visitedNodes[len - 4].direction] =
-        parent; // NOTE: Can also be that we are setting the new
-                // root pointer here!
-
     parent->color = RB_TREE_BLACK;
     grandParent->color = RB_TREE_RED;
+
+    rotateAround((RedBlackNode *)visitedNodes[len - 4].node,
+                 (RedBlackNode *)grandParent, (RedBlackNode *)parent,
+                 !direction, visitedNodes[len - 4].direction);
 
     return 0;
 }
@@ -147,19 +114,24 @@ static U64 rebalanceDelete(RedBlackDirection direction,
     RedBlackNodeBasic *childOtherDirection = node->children[!direction];
     // Ensure the other child is colored black, we "push" the problem a level
     // down in the process.
-    //      x(B)              y(B)
-    //       \               / \
-    //        y(R)   ==>   x(R)a(B)
-    //       / \            \
-    //     z(B)a(B)        a(B)
+    //                       x(B)              y(B)
+    //                        \               / \
+    // LEFT_DIRECTION          y(R)   ==>   x(R)a(B)
+    //                        / \            \
+    //                      z(B)a(B)        z(B)
+    //
+    //                        x(B)            y(B)
+    //                        /               / \
+    // RIGHT_DIRECTION     y(R)       ==>   a(B)x(R)
+    //                     / \                  /
+    //                   a(B)z(B)             z(B)
     if (childOtherDirection->color == RB_TREE_RED) {
         childOtherDirection->color = RB_TREE_BLACK;
         node->color = RB_TREE_RED;
 
-        node->children[!direction] = childOtherDirection->children[direction];
-        childOtherDirection->children[direction] = node;
-        visitedNodes[len - 2].node->children[visitedNodes[len - 2].direction] =
-            childOtherDirection;
+        rotateAround((RedBlackNode *)visitedNodes[len - 2].node,
+                     (RedBlackNode *)node, (RedBlackNode *)childOtherDirection,
+                     direction, visitedNodes[len - 2].direction);
 
         visitedNodes[len - 1].node = childOtherDirection;
         visitedNodes[len].node = node;
@@ -183,40 +155,49 @@ static U64 rebalanceDelete(RedBlackDirection direction,
         return len - 1;
     }
 
-    //      x                     x
-    //       \                     \
-    //        y(B)          ===>   z(B)
-    //       /                       \
-    //     z(R)                      y(R)
+    //                      x                 x
+    //                       \                 \
+    // LEFT_DIRECTION         y(B)   ===>     z(B)
+    //                       /                   \
+    //                     z(R)                  y(R)
+    //
+    //                      x                     x
+    //                     /                     /
+    // RIGHT_DIRECTION   y(B)        ===>      z(B)
+    //                     \                   /
+    //                     z(R)             y(R)
     if ((!outerChildOtherDirection) ||
         outerChildOtherDirection->color == RB_TREE_BLACK) {
         childOtherDirection->color = RB_TREE_RED;
         innerChildOtherDirection->color = RB_TREE_BLACK;
 
-        childOtherDirection->children[direction] =
-            innerChildOtherDirection->children[!direction];
-        innerChildOtherDirection->children[!direction] = childOtherDirection;
-        node->children[!direction] = innerChildOtherDirection;
+        rotateAround((RedBlackNode *)node, (RedBlackNode *)childOtherDirection,
+                     (RedBlackNode *)innerChildOtherDirection, !direction,
+                     !direction);
 
         RedBlackNodeBasic *temp = childOtherDirection;
         childOtherDirection = innerChildOtherDirection;
         outerChildOtherDirection = temp;
     }
 
-    //      x                          y
-    //     / \                        / \
-    //   a(B)y(B)        ===>       x(B)z(B)
-    //         \                    /
-    //        z(R)                a(B)
+    //                         x                          y
+    //                        / \                        / \
+    // LEFT_DIRECTION       a(B)y(B)        ===>       x(B)z(B)
+    //                            \                    /
+    //                           z(R)                a(B)
+    //
+    //                         x                          y
+    //                        / \                        / \
+    // RIGHT_DIRECTION      y(B)a(B)        ===>       z(B)x(B)
+    //                      /                               \
+    //                    z(R)                              a(B)
     childOtherDirection->color = node->color;
     node->color = RB_TREE_BLACK;
     outerChildOtherDirection->color = RB_TREE_BLACK;
 
-    node->children[!direction] = childOtherDirection->children[direction];
-    childOtherDirection->children[direction] = node;
-
-    visitedNodes[len - 2].node->children[visitedNodes[len - 2].direction] =
-        childOtherDirection;
+    rotateAround((RedBlackNode *)visitedNodes[len - 2].node,
+                 (RedBlackNode *)node, (RedBlackNode *)childOtherDirection,
+                 direction, visitedNodes[len - 2].direction);
 
     return 0;
 }
@@ -224,8 +205,9 @@ static U64 rebalanceDelete(RedBlackDirection direction,
 static RedBlackNodeBasic *
 deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len,
                  RedBlackNodeBasic *toDelete) {
-    U64 stepsToSuccessor =
-        findAdjacentInSteps(toDelete, &visitedNodes[len], RB_TREE_RIGHT);
+    U64 stepsToSuccessor = findAdjacentInSteps(
+        (RedBlackNode *)toDelete, (CommonVisitedNode *)&visitedNodes[len],
+        RB_TREE_RIGHT);
     // If there is no right child, we can delete by having the parent of
     // toDelete now point to toDelete's left child instead of toDelete.
     if (!stepsToSuccessor) {
@@ -236,17 +218,17 @@ deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len,
     // node and delete the successor node instead (now containing the values of
     // the to delete node).
     else {
-        U64 foundNodeIndex = len;
+        U64 upperNodeIndex = len + 1;
         len += stepsToSuccessor;
         toDelete = visitedNodes[len - 1]
                        .node->children[visitedNodes[len - 1].direction];
 
         // Swap the values around. Naturally, the node pointers can be swapped
         // too.
-        U64 foundValue = visitedNodes[foundNodeIndex].node->value;
+        U64 valueToKeep = toDelete->value;
 
-        visitedNodes[foundNodeIndex].node->value = toDelete->value;
-        toDelete->value = foundValue;
+        toDelete->value = visitedNodes[upperNodeIndex - 1].node->value;
+        visitedNodes[upperNodeIndex - 1].node->value = valueToKeep;
 
         visitedNodes[len - 1].node->children[visitedNodes[len - 1].direction] =
             toDelete->children[RB_TREE_RIGHT];

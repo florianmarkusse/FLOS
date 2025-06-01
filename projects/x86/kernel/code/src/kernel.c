@@ -7,13 +7,8 @@
 #include "x86/efi-to-kernel/params.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/virtual.h"
+#include "x86/serial.h"
 #include "x86/time.h"
-
-static inline void outb(unsigned short port, unsigned char value) {
-    __asm__ volatile("outb %0, %1" : : "a"(value), "Nd"(port));
-}
-
-#define COM1 0x3F8
 
 void archInit(void *archParams) {
     X86ArchParams *x86ArchParams = (X86ArchParams *)archParams;

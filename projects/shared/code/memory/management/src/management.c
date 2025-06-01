@@ -29,10 +29,16 @@ static void insertMemory(Memory memory, MemoryAllocator *allocator) {
     }
 }
 
-static RedBlackNodeMM *getMemoryAllocation(U64 bytes, RedBlackNodeMM **tree) {
-    RedBlackNodeMM *availableMemory = deleteAtLeastRedBlackNodeMM(tree, bytes);
+static RedBlackNodeMM *getMemoryAllocation(MemoryAllocator *allocator,
+                                           U64 bytes) {
+    RedBlackNodeMM *availableMemory =
+        deleteAtLeastRedBlackNodeMM(&allocator->tree, bytes);
     if (!availableMemory) {
-        interruptNoMorePhysicalMemory();
+        if (allocator == &physical) {
+            interruptNoMorePhysicalMemory();
+        } else {
+            interruptNoMoreVirtualMemory();
+        }
     }
     return availableMemory;
 }
@@ -72,7 +78,7 @@ static void handleRemovedAllocator(RedBlackNodeMM *availableMemory,
 static void *allocAlignedMemory(U64 bytes, U64 align,
                                 MemoryAllocator *allocator) {
     RedBlackNodeMM *availableMemory =
-        getMemoryAllocation(alignedToTotal(bytes, align), &allocator->tree);
+        getMemoryAllocation(allocator, alignedToTotal(bytes, align));
     U64 result = ALIGN_UP_VALUE(availableMemory->memory.start, align);
     handleRemovedAllocator(
         availableMemory, (Memory){.start = result, .bytes = bytes}, allocator);
@@ -128,8 +134,8 @@ void initPhysicalMemoryManager(PackedMemoryTree physicalMemoryTree) {
     U64 freeListRequiredSize = getRequiredFreeListSize(&physical);
 
     RedBlackNodeMM *availableMemory = getMemoryAllocation(
-        alignedToTotal(freeListRequiredSize, alignof(*virt.freeList.buf)),
-        &physical.tree);
+        &physical,
+        alignedToTotal(freeListRequiredSize, alignof(*virt.freeList.buf)));
     U64 result = ALIGN_UP_VALUE(availableMemory->memory.start,
                                 alignof(*virt.freeList.buf));
     physical.freeList =
