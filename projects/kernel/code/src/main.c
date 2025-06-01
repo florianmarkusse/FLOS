@@ -25,7 +25,7 @@ static constexpr auto TEST_MEMORY_AMOUNT = 32 * MiB;
 static constexpr auto TEST_ENTRIES = TEST_MEMORY_AMOUNT / (sizeof(U64));
 
 static bool test(U64 alignment) {
-    U64 iterations = 1;
+    U64 iterations = 32;
     U64 sum = 0;
 
     KFLUSH_AFTER {
@@ -33,41 +33,16 @@ static bool test(U64 alignment) {
         INFO(alignment, NEWLINE);
     }
 
-    U64 *address = nullptr;
-
     for (U64 iteration = 0; iteration < iterations; iteration++) {
         U64 startPhysicalMemory = getAvailablePhysicalMemory();
 
         U64 *virtual = allocateMappableMemory(TEST_MEMORY_AMOUNT, alignment);
-        KFLUSH_AFTER {
-            INFO(STRING("address="));
-            INFO(virtual, NEWLINE);
-        }
-        if (address && virtual != address) {
-            KFLUSH_AFTER {
-                INFO(STRING("Got new address, old="));
-                INFO((void *)address);
-                INFO(STRING(", new="));
-                INFO(virtual, NEWLINE);
-            }
-        }
-        address = virtual;
-
         U64 beforePageFaults = getPageFaults();
 
         U64 startCycleCount = currentCycleCounter(true, false);
-
         for (U64 i = 0; i < TEST_ENTRIES; i++) {
             virtual[i] = i;
-
-            if (i == TEST_ENTRIES - 2) {
-                KFLUSH_AFTER {
-                    INFO(STRING("virtual[0] ="));
-                    INFO(virtual[0], NEWLINE);
-                }
-            }
         }
-
         U64 endCycleCount = currentCycleCounter(false, true);
 
         for (U64 i = 0; i < TEST_ENTRIES; i++) {
@@ -87,7 +62,7 @@ static bool test(U64 alignment) {
         U64 pageFaults = getPageFaults();
 
         freeMappableMemory(
-            (Memory){.start = (U64) virtual, .bytes = TEST_MEMORY_AMOUNT});
+            (Memory){.start = (U64)virtual, .bytes = TEST_MEMORY_AMOUNT});
 
         U64 endPhysicalMemory = getAvailablePhysicalMemory();
         if (endPhysicalMemory != startPhysicalMemory) {
@@ -130,11 +105,17 @@ static bool test(U64 alignment) {
 static void stuff() {
     // test
     pageSizeToMap = 4 * KiB;
-    test(4 * KiB);
+    if (!test(4 * KiB)) {
+        return;
+    }
     pageSizeToMap = 64 * KiB;
-    test(64 * KiB);
+    if (!test(64 * KiB)) {
+        return;
+    }
     pageSizeToMap = 2 * MiB;
-    test(2 * MiB);
+    if (!test(2 * MiB)) {
+        return;
+    }
 }
 
 __attribute__((section("kernel-start"))) int
@@ -171,6 +152,12 @@ kernelmain(PackedKernelParameters *kernelParams) {
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 
     stuff();
+
+    KFLUSH_AFTER {
+        KLOG(STRING("TESTING IS OVER MY DUDES\n"));
+        KLOG(STRING("Available phys memory: "));
+        KLOG(getAvailablePhysicalMemory(), NEWLINE);
+    }
 
     while (1) {
         ;

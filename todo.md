@@ -1,10 +1,11 @@
-- PMM & VMM use same idea
-  - Red black tree with free list
-  - able to grow very large with dynamic array
+- look into sizeof usage and see if we can replace it with typeof
+- look into alignof calls, and see if I can replace it with the variable
+
+  - https://old.reddit.com/r/C_Programming/comments/1i74hii/quick_hash_tables_and_dynamic_arrays_in_c/m8l40fo/
+
 - wfunction-prototype
 - rename abstraction/efi to abstraction/efi-to-kernel
 - make alignup/value into functions?
-- look into alignof calls, and see if I can replace it with the variable
 - get rid of lots of virtual stuff in policy
   - move some stuff in policy to virtual?
   - Move policy & physical & (most of) virtual to be arch-independent?
