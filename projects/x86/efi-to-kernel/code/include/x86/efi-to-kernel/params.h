@@ -12,6 +12,7 @@
 typedef struct {
     U64 tscFrequencyPerMicroSecond;
     PackedPageMetaDataNode rootPageMetaData;
+    U8 *XSAVELocation;
 } __attribute__((packed)) X86ArchParams;
 
 #endif

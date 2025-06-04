@@ -67,10 +67,6 @@ typedef struct {
     union {
         U64 value;
         struct {
-            U32 edx;
-            U32 eax;
-        };
-        struct {
             U64 FPU_MMX : 1;
             U64 SSE : 1;
             U64 AVX : 1;
@@ -128,9 +124,8 @@ void CPUEnableFPU() {
     asm volatile("finit" : : : "st");
 }
 
-void CPUEnableXSAVE() {
+void enableAndConfigureXSAVE(bool supportsAVX512) {
     CR4 cr4;
-    XCR0 xcr0;
 
     // Read CR4 register
     asm volatile("mov %%cr4, %%rax" : "=a"(cr4));
@@ -141,29 +136,24 @@ void CPUEnableXSAVE() {
     // Write the modified CR4 register back
     asm volatile("mov %%rax, %%cr4" : : "a"(cr4));
 
-    // Set the control register
-    asm volatile("xgetbv" : "=a"(xcr0.eax), "=d"(xcr0.edx) : "c"(0));
+    U32 eax;
+    U32 edx;
+    asm volatile("xgetbv" : "=a"(eax), "=d"(edx) : "c"(0));
 
-    // NOTE: This will need to be changed once we support AVX-512
-    // Turn on AVX and SSE state
+    XCR0 xcr0 = {.value = ((U64)edx << 32) | eax};
+    xcr0.FPU_MMX = 1;
     xcr0.AVX = 1;
     xcr0.SSE = 1;
+    if (supportsAVX512) {
+        xcr0.opmask = 1;
+        xcr0.ZMM_Hi256 = 1;
+        xcr0.Hi16_ZMM = 1;
+    }
 
-    // Write the modified XCR0 register
-    asm volatile("xsetbv" : : "c"(0), "a"(xcr0.eax), "d"(xcr0.edx));
-}
-
-void CPUEnableAVX() {
-    CR4 cr4;
-
-    // Read CR4 register
-    asm volatile("mov %%cr4, %%rax" : "=a"(cr4) :);
-
-    // Set Operating System Support for Advanced Vector Extensions
-    cr4.SMXE = 1;
-
-    // Write the modified CR4 register back
-    asm volatile("mov %%rax, %%cr4" : : "a"(cr4));
+    asm volatile("xsetbv"
+                 :
+                 : "c"(0), "a"((U32)(xcr0.value & 0xFFFFFFFF)),
+                   "d"((U32)(xcr0.value >> 32)));
 }
 
 void CPUEnableSSE() {

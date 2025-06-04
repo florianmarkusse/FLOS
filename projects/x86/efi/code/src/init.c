@@ -19,6 +19,7 @@
 #include "x86/efi-to-kernel/params.h"
 #include "x86/efi/gdt.h"
 #include "x86/gdt.h"
+#include "x86/idt.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/pat.h"
 #include "x86/memory/virtual.h"
@@ -53,6 +54,11 @@ void bootstrapProcessorWork(Arena scratch) {
 
 // Basic CPUID leafs
 static constexpr auto BASIC_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER = 1;
+static constexpr auto EXTENDED_FEATURES = 7;
+
+static constexpr auto XSAVE_CPU_SUPPORT = 13;
+
+static constexpr auto XSAVE_ALIGNMENT = 64;
 
 static constexpr auto BASIC_MAX_REQUIRED_PARAMETER =
     BASIC_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER;
@@ -70,17 +76,18 @@ static U64 calibrateWait() {
     CPUIDResult leaf15 = CPUID(0x15);
     if (leaf15.ebx && leaf15.ecx > 10'000) {
         return (leaf15.ecx * (leaf15.ebx / leaf15.eax)) / 1'000'000;
-    } else {
-        CPUIDResult leaf16 = CPUID(0x16);
+}
+else {
+    CPUIDResult leaf16 = CPUID(0x16);
         if (leaf16.eax > 1'000) {
             return leaf16.eax;
-        }
-    }
+}
+}
 
-    U64 currentCycles = currentCycleCounter(false, false);
-    globals.st->boot_services->stall(CALIBRATION_MICROSECONDS);
-    U64 endCycles = currentCycleCounter(false, false);
-    return (endCycles - currentCycles) / CALIBRATION_MICROSECONDS;
+U64 currentCycles = currentCycleCounter(false, false);
+globals.st->boot_services->stall(CALIBRATION_MICROSECONDS);
+U64 endCycles = currentCycleCounter(false, false);
+return (endCycles - currentCycles) / CALIBRATION_MICROSECONDS;
 }
 
 ArchParamsRequirements initArchitecture(Arena scratch) {
@@ -123,20 +130,61 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
     KFLUSH_AFTER { INFO(STRING("Enabling FPU\n")); }
     CPUEnableFPU();
 
-    if (!features.SSE) {
-        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support SSE!")); }
-    }
-    KFLUSH_AFTER {
-        INFO(STRING(
-            "Enabling SSE... even though it doesnt work yet anyway lol\n"));
-    }
-    CPUEnableSSE();
-
     if (!features.PAT) {
         EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support PAT!")); }
     }
     KFLUSH_AFTER { INFO(STRING("Configuring PAT\n")); }
     CPUConfigurePAT();
+
+    if (!features.SSE) {
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support SSE!")); }
+    }
+    CPUEnableSSE();
+
+    if (!features.XSAVE) {
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support XSAVE!")); }
+    }
+    if (!features.AVX) {
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support AVX256!")); }
+    }
+    bool supportsAVX512 = false;
+    CPUIDResult extendedProcessorFeatures = CPUID(EXTENDED_FEATURES);
+    if (extendedProcessorFeatures.ebx & (1 << 16)) {
+        supportsAVX512 = true;
+        KFLUSH_AFTER { INFO(STRING("Support for AVX512 found\n")); }
+    } else {
+        KFLUSH_AFTER { INFO(STRING("No Support for AVX512 found\n")); }
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING("Configuuing XSAVE to enable FPU / SSE / AVX\n"));
+    }
+    enableAndConfigureXSAVE(supportsAVX512);
+
+    CPUIDResult XSAVECPUSupport = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 1);
+    if (XSAVECPUSupport.eax & (1 << 0)) {
+        KFLUSH_AFTER { INFO(STRING("Support for XSAVEOPT found!\n")); }
+    } else {
+        EXIT_WITH_MESSAGE { ERROR(STRING("No Support for XSAVEOPT found!\n")); }
+    }
+    if (XSAVECPUSupport.eax & (1 << 3)) {
+        KFLUSH_AFTER { INFO(STRING("Support for XSAVES found!\n")); }
+    } else {
+        KFLUSH_AFTER { ERROR(STRING("No Support for XSAVES found!\n")); }
+    }
+
+    CPUIDResult XSAVESize = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 2);
+    KFLUSH_AFTER {
+        INFO(STRING("Maximum required size in bytes for XSAVE "
+                    "with current components: "));
+        INFO(XSAVESize.ebx, NEWLINE);
+    }
+    U8 *XSAVEAddress = (U8 *)allocateKernelStructure(
+        XSAVESize.ebx, XSAVE_ALIGNMENT, false, scratch);
+    memset(XSAVEAddress, 0, XSAVESize.ebx);
+    INFO(STRING("XSAVE space location: "));
+    INFO(XSAVEAddress, NEWLINE);
+    XSAVESpace = XSAVEAddress;
 
     U32 maxExtendedCPUID = CPUID(EXTENDED_MAX_VALUE_PARAMETER).eax;
     if (maxExtendedCPUID < EXTENDED_MAX_REQUIRED_PARAMETER) {
@@ -151,18 +199,6 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
     if (!(extendedProcessorInfoAndFeatureBits.edx & (1 << 26))) {
         EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support Huge Pages!")); }
     }
-
-    //   if (!features.XSAVE) {
-    //       messageAndExit(ERROR(STRING("CPU does not support XSAVE!")));
-    //   }
-    //   KFLUSH_AFTER { INFO(STRING("Enabling XSAVE\n")); }
-    //   CPUEnableXSAVE();
-
-    //   if (!features.AVX) {
-    //       messageAndExit(ERROR(STRING("CPU does not support AVX!")));
-    //   }
-    //   KFLUSH_AFTER { INFO(STRING("Enabling AVX\n")); }
-    //   CPUEnableAVX();
 
     KFLUSH_AFTER { INFO(STRING("Bootstrap processor work\n")); }
     bootstrapProcessorWork(scratch);
@@ -200,6 +236,8 @@ void fillArchParams(void *archParams) {
 
     KFLUSH_AFTER { INFO(STRING("Calibrating timer\n")); }
     x86ArchParams->tscFrequencyPerMicroSecond = calibrateWait();
+
+    x86ArchParams->XSAVELocation = XSAVESpace;
 
     x86ArchParams->rootPageMetaData.children =
         (PackedPageMetaDataNode *)rootPageMetaData.children;

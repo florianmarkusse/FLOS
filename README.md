@@ -47,3 +47,5 @@ dependencies/include-what-you-use/fix_includes.py --reorder --nocomments < proje
    - Use leaf 0x15 on Intel for timer
    - Use AMD extended info for timer
    - Instead of the waiting stuff it's doing now
+2. Use XSAVES instead of XSAVEOPT
+   - In idt.c / x86/init.c and run-qemu.go , all need updates

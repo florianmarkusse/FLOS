@@ -3,6 +3,11 @@
 
   - https://old.reddit.com/r/C_Programming/comments/1i74hii/quick_hash_tables_and_dynamic_arrays_in_c/m8l40fo/
 
+- Decide on how to implement pageSize setting when fetching mappable memory
+- Decide on how to deal with simd/non-simd stuff in interrupt handlers
+
+  - do some benchmarking? Per interrupt??
+
 - wfunction-prototype
 - rename abstraction/efi to abstraction/efi-to-kernel
 - make alignup/value into functions?

@@ -11,8 +11,8 @@ void initMemoryManager(PackedKernelMemory memory) {
     initVirtualMemoryManager(memory.virt);
 }
 
-void *allocateIdentityMemory(U64 bytes) {
-    return allocPhysicalMemory(bytes, 1);
+void *allocateIdentityMemory(U64 bytes, U64 align) {
+    return allocPhysicalMemory(bytes, align);
 }
 
 void freeIdentityMemory(Memory memory) { freePhysicalMemory(memory); }

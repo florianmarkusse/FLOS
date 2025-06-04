@@ -14,6 +14,23 @@
 
 string faultToString[CPU_FAULT_COUNT] = {CPU_FAULT_ENUM(ENUM_TO_STRING)};
 
+U8 *XSAVESpace;
+
+// TODO: On upgrade to newer CPU, use xsaves and xrstors respectively
+static void xsaveopt() {
+    asm volatile("xsaveopt %0"
+                 : "=m"(*XSAVESpace)
+                 : "a"(U32_MAX), "d"(U32_MAX)
+                 : "memory");
+}
+
+static void xrstor() {
+    asm volatile("xrstor %0"
+                 :
+                 : "m"(*XSAVESpace), "a"(U32_MAX), "d"(U32_MAX)
+                 : "memory");
+}
+
 typedef struct {
     U16 limit;
     U64 base;
@@ -741,23 +758,26 @@ static U64 pageFaults = 0;
 U64 getPageFaults() { return pageFaults; }
 
 void fault_handler(regs *regs) {
+    xsaveopt();
+
     if (regs->interruptNumber == FAULT_PAGE_FAULT) {
         pageFaults++;
 
-        U64 mapped = 0;
         U64 startingMap = CR2();
         U64 pageSizeToUse = pageSizeFitting(startingMap, pageSizeToMap);
+        U8 *address = allocPhysicalMemory(pageSizeToMap, pageSizeToUse);
 
         // NOTE: when starting to use SMP, I should first check if this memory
         // is now mapped before doing this.
         // In the context of mapping and unmapping. It may be interesting to
         // mark which cores have accessed which memory so we can limit the
         // flushPage calls to all cores.
-        while (mapped < pageSizeToMap) {
-            void *address = allocPhysicalMemory(pageSizeToUse, pageSizeToUse);
 
+        U64 mapped = 0;
+        while (mapped < pageSizeToMap) {
             mapPage(startingMap + mapped, (U64)address, pageSizeToUse);
             mapped += pageSizeToUse;
+            address += pageSizeToUse;
         }
     } else {
         KFLUSH_AFTER {
@@ -772,18 +792,39 @@ void fault_handler(regs *regs) {
             INFO(STRING("rip: "));
             INFO((void *)regs->rip, NEWLINE);
             INFO(STRING("rax: "));
-            INFO(regs->rax, NEWLINE);
+            INFO((void *)regs->rax, NEWLINE);
             INFO(STRING("rbx: "));
-            INFO(regs->rbx, NEWLINE);
+            INFO((void *)regs->rbx, NEWLINE);
             INFO(STRING("rcx: "));
-            INFO(regs->rcx, NEWLINE);
+            INFO((void *)regs->rcx, NEWLINE);
             INFO(STRING("rdx: "));
-            INFO(regs->rdx, NEWLINE);
-
+            INFO((void *)regs->rdx, NEWLINE);
+            INFO(STRING("rbp: "));
+            INFO((void *)regs->rbp, NEWLINE);
+            INFO(STRING("rsi: "));
+            INFO((void *)regs->rsi, NEWLINE);
+            INFO(STRING("rdi: "));
+            INFO((void *)regs->rdi, NEWLINE);
+            INFO(STRING("r8: "));
+            INFO((void *)regs->r8, NEWLINE);
+            INFO(STRING("r9: "));
+            INFO((void *)regs->r9, NEWLINE);
+            INFO(STRING("r10: "));
+            INFO((void *)regs->r10, NEWLINE);
+            INFO(STRING("r11: "));
+            INFO((void *)regs->r11, NEWLINE);
+            INFO(STRING("r12: "));
+            INFO((void *)regs->r12, NEWLINE);
+            INFO(STRING("r13: "));
+            INFO((void *)regs->r13, NEWLINE);
             INFO(STRING("r14: "));
             INFO(regs->r14, NEWLINE);
+            INFO(STRING("r15: "));
+            INFO((void *)regs->r15, NEWLINE);
         }
 
         asm volatile("cli;hlt;");
     }
+
+    xrstor();
 }

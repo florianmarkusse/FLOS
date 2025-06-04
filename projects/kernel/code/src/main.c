@@ -24,8 +24,8 @@ static constexpr auto INIT_MEMORY = (16 * MiB);
 static constexpr auto TEST_MEMORY_AMOUNT = 32 * MiB;
 static constexpr auto TEST_ENTRIES = TEST_MEMORY_AMOUNT / (sizeof(U64));
 
-static bool test(U64 alignment) {
-    U64 iterations = 32;
+static bool mappingTest(U64 alignment) {
+    U64 iterations = 1;
     U64 sum = 0;
 
     KFLUSH_AFTER {
@@ -36,6 +36,7 @@ static bool test(U64 alignment) {
     for (U64 iteration = 0; iteration < iterations; iteration++) {
         U64 startPhysicalMemory = getAvailablePhysicalMemory();
 
+        // U64 *virtual = allocateIdentityMemory(TEST_MEMORY_AMOUNT, alignment);
         U64 *virtual = allocateMappableMemory(TEST_MEMORY_AMOUNT, alignment);
         U64 beforePageFaults = getPageFaults();
 
@@ -61,6 +62,8 @@ static bool test(U64 alignment) {
 
         U64 pageFaults = getPageFaults();
 
+        // freeIdentityMemory(
+        //     (Memory){.start = (U64)virtual, .bytes = TEST_MEMORY_AMOUNT});
         freeMappableMemory(
             (Memory){.start = (U64)virtual, .bytes = TEST_MEMORY_AMOUNT});
 
@@ -102,20 +105,32 @@ static bool test(U64 alignment) {
     return true;
 }
 
-static void stuff() {
+static void mappingTests() {
     // test
     pageSizeToMap = 4 * KiB;
-    if (!test(4 * KiB)) {
+    if (!mappingTest(4 * KiB)) {
         return;
     }
     pageSizeToMap = 64 * KiB;
-    if (!test(64 * KiB)) {
+    if (!mappingTest(64 * KiB)) {
         return;
     }
     pageSizeToMap = 2 * MiB;
-    if (!test(2 * MiB)) {
+    if (!mappingTest(2 * MiB)) {
         return;
     }
+}
+
+void test_xsave() {
+    U8 xsave_area[4096] __attribute__((aligned(64))) = {0};
+
+    // Attempt to execute XSAVE storing to xsave_area
+    asm volatile("xor %%eax, %%eax\n\t" // clear EAX
+                 "xor %%edx, %%edx\n\t" // clear EDX
+                 "xsave (%0)"
+                 :
+                 : "r"(xsave_area)
+                 : "memory", "rax", "rdx");
 }
 
 __attribute__((section("kernel-start"))) int
@@ -123,7 +138,7 @@ kernelmain(PackedKernelParameters *kernelParams) {
     archInit(kernelParams->archParams);
     initMemoryManager(kernelParams->memory);
 
-    void *initMemory = (void *)allocateIdentityMemory(INIT_MEMORY);
+    void *initMemory = (void *)allocateIdentityMemory(INIT_MEMORY, 1);
     Arena arena = (Arena){.curFree = initMemory,
                           .beg = initMemory,
                           .end = initMemory + INIT_MEMORY};
@@ -151,7 +166,19 @@ kernelmain(PackedKernelParameters *kernelParams) {
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 
-    stuff();
+    KFLUSH_AFTER { INFO(STRING("Testing SSE\n")); }
+    asm volatile("movaps %%xmm1, %%xmm0\n" : : : "xmm0", "xmm1");
+    KFLUSH_AFTER { INFO(STRING("SSE complete\n")); }
+
+    KFLUSH_AFTER { INFO(STRING("Testing AVX256\n")); }
+    asm volatile("vmovaps %%ymm1, %%ymm0\n" : : : "ymm0", "ymm1");
+    KFLUSH_AFTER { INFO(STRING("AVX256 complete\n")); }
+
+    KFLUSH_AFTER { INFO(STRING("Testing XSAVE\n")); }
+    test_xsave();
+    KFLUSH_AFTER { INFO(STRING("XSAVEE test complete\n")); }
+
+    mappingTests();
 
     KFLUSH_AFTER {
         KLOG(STRING("TESTING IS OVER MY DUDES\n"));

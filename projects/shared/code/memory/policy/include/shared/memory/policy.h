@@ -7,7 +7,7 @@
 
 void initMemoryManager(PackedKernelMemory memory);
 
-void *allocateIdentityMemory(U64 bytes);
+void *allocateIdentityMemory(U64 bytes, U64 align);
 void freeIdentityMemory(Memory memory);
 
 void *allocateMappableMemory(U64 bytes, U64 align);

@@ -5,4 +5,6 @@
 
 __attribute__((noreturn)) void triggerFault(Fault fault);
 
+extern U8 *XSAVESpace;
+
 #endif

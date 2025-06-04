@@ -47,11 +47,11 @@ typedef struct {
                              // XSETBV/XGETBV instructions to access XCR0 and to
                              // support extended state management using
                              // XSAVE/XRSTOR
-            U32 AVX : 1;  // Supports AVX instructions on 256-but YMM state, and
-                          // three-operand encoding of 256-bit and 128-bit SIMD
-                          // instructions
-            U32 F16C : 1; // Supports 10-bit floating-point conversion
-                          // instructions
+            U32 AVX : 1;     // Supports AVX instructions on 256-but YMM state,
+                         // and three-operand encoding of 256-bit and 128-bit
+                         // SIMD instructions
+            U32 F16C : 1;   // Supports 10-bit floating-point conversion
+                            // instructions
             U32 RDRAND : 1; // Supports RDRAND instruction
             U32 reserved1 : 1;
         };
@@ -187,8 +187,7 @@ extern BASICCPUFeatures features;
 
 void CPUEnablePGE();
 void CPUEnableFPU();
-void CPUEnableXSAVE();
-void CPUEnableAVX();
+void enableAndConfigureXSAVE(bool supportsAVX512);
 void CPUEnableSSE();
 void CPUConfigurePAT();
 

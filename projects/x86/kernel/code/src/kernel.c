@@ -5,6 +5,7 @@
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
 #include "x86/efi-to-kernel/params.h"
+#include "x86/idt.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/virtual.h"
 #include "x86/serial.h"
@@ -13,8 +14,9 @@
 void archInit(void *archParams) {
     X86ArchParams *x86ArchParams = (X86ArchParams *)archParams;
     initIDT();
-    //    // TODO: [X86] I need to enable NMIs here also again!
-    //
+    XSAVESpace = x86ArchParams->XSAVELocation;
+
+    // TODO: [X86] I need to enable NMIs here also again!
 
     cyclesPerMicroSecond = x86ArchParams->tscFrequencyPerMicroSecond;
 

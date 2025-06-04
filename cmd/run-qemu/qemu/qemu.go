@@ -53,7 +53,8 @@ func Run(args *QemuArgs) {
 		argument.AddArgument(&qemuOptions, "-cpu Haswell-v4,pdpe1gb=on,tsc-frequency=2500000000")
 		argument.AddArgument(&qemuOptions, "-accel \"tcg\"")
 	} else {
-		argument.AddArgument(&qemuOptions, "-cpu host")
+		// TODO: When upgraded, add the xsavec , xsaves, xrstors
+		argument.AddArgument(&qemuOptions, "-cpu host,+xsave,+avx,+xsaveopt")
 		argument.AddArgument(&qemuOptions, "-enable-kvm")
 	}
 

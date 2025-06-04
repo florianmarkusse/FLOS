@@ -1,6 +1,15 @@
 project(x86-idt-real LANGUAGES C ASM)
 add_library(${PROJECT_NAME} OBJECT "src/idt.c" "src/idt.S")
 
+set_source_files_properties(
+    src/idt.c
+    PROPERTIES COMPILE_FLAGS "-mno-vzeroupper"
+)
+set_source_files_properties(
+    src/idt.S
+    PROPERTIES COMPILE_FLAGS "-mno-vzeroupper"
+)
+
 add_includes_for_sublibrary()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-interrupts-i)
