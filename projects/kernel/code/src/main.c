@@ -121,18 +121,6 @@ static void mappingTests() {
     }
 }
 
-void test_xsave() {
-    U8 xsave_area[4096] __attribute__((aligned(64))) = {0};
-
-    // Attempt to execute XSAVE storing to xsave_area
-    asm volatile("xor %%eax, %%eax\n\t" // clear EAX
-                 "xor %%edx, %%edx\n\t" // clear EDX
-                 "xsave (%0)"
-                 :
-                 : "r"(xsave_area)
-                 : "memory", "rax", "rdx");
-}
-
 __attribute__((section("kernel-start"))) int
 kernelmain(PackedKernelParameters *kernelParams) {
     archInit(kernelParams->archParams);
@@ -165,18 +153,6 @@ kernelmain(PackedKernelParameters *kernelParams) {
     }
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
-
-    KFLUSH_AFTER { INFO(STRING("Testing SSE\n")); }
-    asm volatile("movaps %%xmm1, %%xmm0\n" : : : "xmm0", "xmm1");
-    KFLUSH_AFTER { INFO(STRING("SSE complete\n")); }
-
-    KFLUSH_AFTER { INFO(STRING("Testing AVX256\n")); }
-    asm volatile("vmovaps %%ymm1, %%ymm0\n" : : : "ymm0", "ymm1");
-    KFLUSH_AFTER { INFO(STRING("AVX256 complete\n")); }
-
-    KFLUSH_AFTER { INFO(STRING("Testing XSAVE\n")); }
-    test_xsave();
-    KFLUSH_AFTER { INFO(STRING("XSAVEE test complete\n")); }
 
     mappingTests();
 

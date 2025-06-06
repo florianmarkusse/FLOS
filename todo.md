@@ -8,6 +8,8 @@
 
   - do some benchmarking? Per interrupt??
 
+- RED-ZONE ???
+
 - wfunction-prototype
 - rename abstraction/efi to abstraction/efi-to-kernel
 - make alignup/value into functions?
@@ -29,4 +31,3 @@ CPU features to implement/turn on in x86
 - sse
 - avx
 
-2883584

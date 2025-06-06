@@ -5,7 +5,7 @@ set(AGGREGATED_INTERFACE "${PROJECT_NAME}-i")
 add_library(${AGGREGATED_INTERFACE} INTERFACE)
 
 set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -fno-pic -fno-pie -mcmodel=kernel -m64 -fno-stack-protector"
+    "${CMAKE_C_FLAGS} -fno-pic -fno-pie -mcmodel=kernel -m64 -fno-stack-protector -mno-red-zone"
 )
 set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS}")
 

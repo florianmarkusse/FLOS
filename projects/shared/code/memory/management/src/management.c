@@ -50,24 +50,26 @@ void freePhysicalMemory(Memory memory) { insertMemory(memory, &physical); }
 static U64 alignedToTotal(U64 bytes, U64 align) { return bytes + align - 1; }
 
 static void handleRemovedAllocator(RedBlackNodeMM *availableMemory,
-                                   Memory memory, MemoryAllocator *allocator) {
-    U64 beforeResultBytes = memory.start - availableMemory->memory.start;
+                                   Memory memoryUsed,
+                                   MemoryAllocator *allocator) {
+    U64 beforeResultBytes = memoryUsed.start - availableMemory->memory.start;
     U64 afterResultBytes =
-        availableMemory->memory.bytes - (beforeResultBytes + memory.bytes);
+        availableMemory->memory.bytes - (beforeResultBytes + memoryUsed.bytes);
 
     if (beforeResultBytes && afterResultBytes) {
         availableMemory->memory.bytes = beforeResultBytes;
         insertRedBlackNodeMM(&allocator->tree, availableMemory);
 
-        insertMemory((Memory){.start = memory.start + memory.bytes,
+        insertMemory((Memory){.start = memoryUsed.start + memoryUsed.bytes,
                               .bytes = afterResultBytes},
                      allocator);
     } else if (beforeResultBytes) {
         availableMemory->memory.bytes = beforeResultBytes;
         insertRedBlackNodeMM(&allocator->tree, availableMemory);
     } else if (afterResultBytes) {
-        availableMemory->memory = (Memory){.start = memory.start + memory.bytes,
-                                           .bytes = afterResultBytes};
+        availableMemory->memory =
+            (Memory){.start = memoryUsed.start + memoryUsed.bytes,
+                     .bytes = afterResultBytes};
         insertRedBlackNodeMM(&allocator->tree, availableMemory);
     } else {
         allocator->freeList.buf[allocator->freeList.len] = availableMemory;

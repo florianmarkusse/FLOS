@@ -1,9 +1,15 @@
+/*
+ * This translation unit is compiled with  "-mno-vzeroupper" as we are handling
+ * the SIMD state manually in the fault_handler
+ */
+
 #include "abstraction/interrupts.h"
 
 #include "abstraction/log.h"
 #include "abstraction/memory/virtual/map.h"
 #include "shared/enum.h"
 #include "shared/log.h"
+#include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
 #include "shared/memory/management/management.h"
 #include "shared/types/numeric.h"
@@ -773,11 +779,10 @@ void fault_handler(regs *regs) {
         // mark which cores have accessed which memory so we can limit the
         // flushPage calls to all cores.
 
-        U64 mapped = 0;
-        while (mapped < pageSizeToMap) {
-            mapPage(startingMap + mapped, (U64)address, pageSizeToUse);
-            mapped += pageSizeToUse;
-            address += pageSizeToUse;
+        U64 mapsToDo = divideByPowerOf2(pageSizeToMap, pageSizeToUse);
+        for (U64 i = 0; i < mapsToDo; i++) {
+            mapPage(startingMap + (i * pageSizeToUse),
+                    (U64)address + (i * pageSizeToUse), pageSizeToUse);
         }
     } else {
         KFLUSH_AFTER {

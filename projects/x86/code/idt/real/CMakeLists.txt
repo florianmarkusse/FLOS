@@ -5,10 +5,6 @@ set_source_files_properties(
     src/idt.c
     PROPERTIES COMPILE_FLAGS "-mno-vzeroupper"
 )
-set_source_files_properties(
-    src/idt.S
-    PROPERTIES COMPILE_FLAGS "-mno-vzeroupper"
-)
 
 add_includes_for_sublibrary()
 

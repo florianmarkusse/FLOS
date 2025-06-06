@@ -55,4 +55,6 @@ U64 ceilingPowerOf2(U64 x);
 
 U64 power(U64 base, U64 exponent);
 
+U64 divideByPowerOf2(U64 value, U64 divisor);
+
 #endif

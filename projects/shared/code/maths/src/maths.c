@@ -30,3 +30,8 @@ U64 power(U64 base, U64 exponent) {
 
     return result;
 }
+
+U64 divideByPowerOf2(U64 value, U64 divisor) {
+    U64 shift = __builtin_ctzll(divisor);
+    return value >> shift;
+}

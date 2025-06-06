@@ -167,21 +167,25 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
     } else {
         EXIT_WITH_MESSAGE { ERROR(STRING("No Support for XSAVEOPT found!\n")); }
     }
+
+    U32 XSAVESize;
     if (XSAVECPUSupport.eax & (1 << 3)) {
+        XSAVESize = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 2).ebx;
         KFLUSH_AFTER { INFO(STRING("Support for XSAVES found!\n")); }
     } else {
-        KFLUSH_AFTER { ERROR(STRING("No Support for XSAVES found!\n")); }
+        XSAVESize = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 0).ebx;
+        KFLUSH_AFTER { INFO(STRING("No Support for XSAVES found!\n")); }
+    }
+    KFLUSH_AFTER {
+        INFO(STRING(
+            "Maximum required size in bytes for storing state components "
+            "with current components: "));
+        INFO(XSAVESize, NEWLINE);
     }
 
-    CPUIDResult XSAVESize = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 2);
-    KFLUSH_AFTER {
-        INFO(STRING("Maximum required size in bytes for XSAVE "
-                    "with current components: "));
-        INFO(XSAVESize.ebx, NEWLINE);
-    }
-    U8 *XSAVEAddress = (U8 *)allocateKernelStructure(
-        XSAVESize.ebx, XSAVE_ALIGNMENT, false, scratch);
-    memset(XSAVEAddress, 0, XSAVESize.ebx);
+    U8 *XSAVEAddress = (U8 *)allocateKernelStructure(XSAVESize, XSAVE_ALIGNMENT,
+                                                     false, scratch);
+    memset(XSAVEAddress, 0, XSAVESize);
     INFO(STRING("XSAVE space location: "));
     INFO(XSAVEAddress, NEWLINE);
     XSAVESpace = XSAVEAddress;
