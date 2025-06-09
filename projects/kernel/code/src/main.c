@@ -68,9 +68,9 @@ static bool isMemoryIntegrous(AvailableMemoryState startPhysicalMemory,
 static constexpr auto GROWTH_RATE = 2;
 static constexpr auto START_ENTRIES_COUNT = 8;
 
-static U64 identityMemoryWriter(U64 *buffer, U64 arrayEntries) {
+static U64 identityMemoryWriter(U64 **buffer, U64 arrayEntries) {
     U64_d_a dynamicArray = {
-        .buf = buffer, .len = 0, .cap = START_ENTRIES_COUNT};
+        .buf = *buffer, .len = 0, .cap = START_ENTRIES_COUNT};
 
     U64 startCycleCount = currentCycleCounter(true, false);
     for (U64 i = 0; i < arrayEntries; i++) {
@@ -90,6 +90,8 @@ static U64 identityMemoryWriter(U64 *buffer, U64 arrayEntries) {
     }
     U64 endCycleCount = currentCycleCounter(false, true);
 
+    *buffer = dynamicArray.buf;
+
     return endCycleCount - startCycleCount;
 }
 
@@ -105,9 +107,9 @@ static U64 mappableMemoryWriter(U64 *buffer, U64 arrayEntries) {
 
 typedef enum { IDENTITY_MEMORY, MAPPABLE_MEMORY } MemoryWritableType;
 
-static U64 mappableArrayWritingTest(U64 alignment, U64 arrayEntries,
-                                    MemoryWritableType memoryWritableType,
-                                    U64 expectedPageFaults) {
+static U64 arrayWritingTest(U64 alignment, U64 arrayEntries,
+                            MemoryWritableType memoryWritableType,
+                            U64 expectedPageFaults) {
     AvailableMemoryState startPhysicalMemory = getAvailablePhysicalMemory();
     AvailableMemoryState startVirtualMemory = getAvailableVirtualMemory();
     U64 beforePageFaults = getPageFaults();
@@ -117,7 +119,7 @@ static U64 mappableArrayWritingTest(U64 alignment, U64 arrayEntries,
     if (memoryWritableType == IDENTITY_MEMORY) {
         buffer = allocateIdentityMemory(START_ENTRIES_COUNT * sizeof(U64),
                                         alignment);
-        cycles = identityMemoryWriter(buffer, arrayEntries);
+        cycles = identityMemoryWriter(&buffer, arrayEntries);
     } else {
         buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT, alignment);
         cycles = mappableMemoryWriter(buffer, arrayEntries);
@@ -139,8 +141,14 @@ static U64 mappableArrayWritingTest(U64 alignment, U64 arrayEntries,
 
     U64 afterPageFaults = getPageFaults();
 
-    freeMappableMemory(
-        (Memory){.start = (U64)buffer, .bytes = TEST_MEMORY_AMOUNT});
+    if (memoryWritableType == IDENTITY_MEMORY) {
+        freeIdentityMemory(
+            (Memory){.start = (U64)buffer,
+                     .bytes = ceilingPowerOf2(arrayEntries * alignof(U64))});
+    } else {
+        freeMappableMemory(
+            (Memory){.start = (U64)buffer, .bytes = TEST_MEMORY_AMOUNT});
+    }
 
     isMemoryIntegrous(startPhysicalMemory, startVirtualMemory);
 
@@ -173,7 +181,7 @@ static bool partialMappingTest(U64 alignment) {
     for (U64 iteration = 0; iteration < testIterations; iteration++) {
         U64 entriesToWrite =
             RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
-        U64 cycles = mappableArrayWritingTest(
+        U64 cycles = arrayWritingTest(
             alignment, entriesToWrite, MAPPABLE_MEMORY,
             CEILING_DIV_VALUE((entriesToWrite * sizeof(U64)), alignment));
         if (!cycles) {
@@ -183,7 +191,7 @@ static bool partialMappingTest(U64 alignment) {
     }
 
     KFLUSH_AFTER {
-        INFO(STRING(" clockcycles: "));
+        INFO(STRING("\taverage clockcycles: "));
         INFO(sum / testIterations, NEWLINE);
     }
 
@@ -199,7 +207,7 @@ static bool fullMappingTest(U64 alignment) {
     }
 
     for (U64 iteration = 0; iteration < testIterations; iteration++) {
-        U64 cycles = mappableArrayWritingTest(
+        U64 cycles = arrayWritingTest(
             alignment, MAX_TEST_ENTRIES, MAPPABLE_MEMORY,
             CEILING_DIV_VALUE((MAX_TEST_ENTRIES * sizeof(U64)), alignment));
         if (!cycles) {
@@ -209,7 +217,7 @@ static bool fullMappingTest(U64 alignment) {
     }
 
     KFLUSH_AFTER {
-        INFO(STRING(" clockcycles: "));
+        INFO(STRING("\taverage clockcycles: "));
         INFO(sum / testIterations, NEWLINE);
     }
 
@@ -223,13 +231,47 @@ static void identityTests() {
         INFO(STRING(" iterations\nMax identity memory is "));
         INFO((U64)TEST_MEMORY_AMOUNT);
         INFO(STRING("\n\n"));
+
+        INFO(STRING("Starting full writing test...\n"));
     }
 
-    for (U64 pageSize = 4 * KiB; pageSize <= (2 * MiB); pageSize <<= 1) {
-        pageSizeToMap = pageSize;
-        if (!fullMappingTest(pageSize)) {
+    U64 sum = 0;
+
+    for (U64 iteration = 0; iteration < testIterations; iteration++) {
+        U64 cycles = arrayWritingTest(alignof(U64), MAX_TEST_ENTRIES,
+                                      IDENTITY_MEMORY, 0);
+        if (!cycles) {
             return;
         }
+        sum += cycles;
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING("\t\t\t\t\t\taverage clockcycles: "));
+        INFO(sum / testIterations, NEWLINE);
+    }
+
+    KFLUSH_AFTER { INFO(STRING("\nStarting partial writing test...\n")); }
+
+    sum = 0;
+
+    BiskiState state;
+    biskiSeed(&state, PRNG_SEED);
+
+    for (U64 iteration = 0; iteration < testIterations; iteration++) {
+        U64 entriesToWrite =
+            RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
+        U64 cycles =
+            arrayWritingTest(alignof(U64), entriesToWrite, IDENTITY_MEMORY, 0);
+        if (!cycles) {
+            return;
+        }
+        sum += cycles;
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING("\t\t\t\t\t\taverage clockcycles: "));
+        INFO(sum / testIterations, NEWLINE);
     }
 
     KFLUSH_AFTER { INFO(STRING("\n")); }
@@ -298,8 +340,9 @@ kernelmain(PackedKernelParameters *kernelParams) {
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 
-    for (U64 i = 0; i < 1; i++) {
+    for (U64 i = 0; i < 2; i++) {
         mappingTests();
+        identityTests();
     }
 
     KFLUSH_AFTER {
