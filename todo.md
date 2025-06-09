@@ -14,6 +14,7 @@
 - maths has an extra maths folder that is not necessary
 - Decision to flush cpu cache or invalidate should be done in the architecture it's running on, not common code
 - wfunction-prototype
+- add some nicer logs to image-builder? i.e. more data about sizes in bytes and LBA, not one or the other.
 - rename abstraction/efi to abstraction/efi-to-kernel
 - make alignup/value into functions?
 - get rid of lots of virtual stuff in policy

@@ -11,6 +11,7 @@
 #include "shared/maths/maths.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/management.h"
+#include "shared/memory/management/status.h"
 #include "shared/memory/policy.h"
 #include "shared/memory/policy/status.h"
 #include "shared/memory/sizes.h"
@@ -20,12 +21,44 @@
 
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
-static constexpr auto TEST_MEMORY_AMOUNT = 32 * MiB;
+static constexpr auto TEST_MEMORY_AMOUNT = 2 * MiB;
 static constexpr auto MAX_TEST_ENTRIES = TEST_MEMORY_AMOUNT / (sizeof(U64));
 
 static constexpr U64 PRNG_SEED = 15466503514872390148ULL;
 
-static U64 testIterations = 32;
+static U64 TEST_ITERATIONS = 32;
+
+static void printTreeIndented(RedBlackNodeMM *node, int depth, string prefix) {
+    if (!node) {
+        return;
+    }
+
+    printTreeIndented(node->children[RB_TREE_RIGHT], depth + 1, STRING("R---"));
+
+    for (int i = 0; i < depth; i++) {
+        INFO(STRING("    "));
+    }
+    INFO(prefix);
+    INFO(STRING(", Color: "));
+    INFO(node->color == RB_TREE_RED ? STRING("RED") : STRING("BLACK"));
+
+    RedBlackNodeMM *memoryManagerNode = (RedBlackNodeMM *)node;
+    INFO(STRING(" Start: "));
+    INFO(memoryManagerNode->memory.start);
+    INFO(STRING(" Bytes: "));
+    INFO(memoryManagerNode->memory.bytes);
+    INFO(STRING(" Most bytes in subtree: "));
+    INFO(memoryManagerNode->mostBytesInSubtree);
+
+    INFO(STRING("\n"));
+
+    printTreeIndented(node->children[RB_TREE_LEFT], depth + 1, STRING("L---"));
+}
+
+void appendRedBlackTree(RedBlackNodeMM *root) {
+    INFO(STRING("Red-Black Tree Structure:"), NEWLINE);
+    printTreeIndented(root, 0, STRING("Root---"));
+}
 
 static bool isMemoryConstant(AvailableMemoryState startMemory,
                              AvailableMemoryState endMemory) {
@@ -117,6 +150,7 @@ static U64 arrayWritingTest(U64 alignment, U64 arrayEntries,
     U64 *buffer;
     U64 cycles;
     if (memoryWritableType == IDENTITY_MEMORY) {
+        KFLUSH_AFTER { appendPhysicalMemoryManagerStatus(); }
         buffer = allocateIdentityMemory(START_ENTRIES_COUNT * sizeof(U64),
                                         alignment);
         cycles = identityMemoryWriter(&buffer, arrayEntries);
@@ -150,7 +184,9 @@ static U64 arrayWritingTest(U64 alignment, U64 arrayEntries,
             (Memory){.start = (U64)buffer, .bytes = TEST_MEMORY_AMOUNT});
     }
 
-    isMemoryIntegrous(startPhysicalMemory, startVirtualMemory);
+    if (!isMemoryIntegrous(startPhysicalMemory, startVirtualMemory)) {
+        return 0;
+    }
 
     U64 expectedAfterPageFaults = beforePageFaults + expectedPageFaults;
     if (expectedAfterPageFaults != afterPageFaults) {
@@ -178,7 +214,10 @@ static bool partialMappingTest(U64 alignment) {
     BiskiState state;
     biskiSeed(&state, PRNG_SEED);
 
-    for (U64 iteration = 0; iteration < testIterations; iteration++) {
+    for (U64 i = 0; i < TEST_ITERATIONS; i++) {
+    }
+
+    for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
         U64 entriesToWrite =
             RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
         U64 cycles = arrayWritingTest(
@@ -192,7 +231,7 @@ static bool partialMappingTest(U64 alignment) {
 
     KFLUSH_AFTER {
         INFO(STRING("\taverage clockcycles: "));
-        INFO(sum / testIterations, NEWLINE);
+        INFO(sum / TEST_ITERATIONS, NEWLINE);
     }
 
     return true;
@@ -206,7 +245,7 @@ static bool fullMappingTest(U64 alignment) {
         INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(alignment), 10));
     }
 
-    for (U64 iteration = 0; iteration < testIterations; iteration++) {
+    for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
         U64 cycles = arrayWritingTest(
             alignment, MAX_TEST_ENTRIES, MAPPABLE_MEMORY,
             CEILING_DIV_VALUE((MAX_TEST_ENTRIES * sizeof(U64)), alignment));
@@ -218,7 +257,7 @@ static bool fullMappingTest(U64 alignment) {
 
     KFLUSH_AFTER {
         INFO(STRING("\taverage clockcycles: "));
-        INFO(sum / testIterations, NEWLINE);
+        INFO(sum / TEST_ITERATIONS, NEWLINE);
     }
 
     return true;
@@ -227,7 +266,7 @@ static bool fullMappingTest(U64 alignment) {
 static void identityTests() {
     KFLUSH_AFTER {
         INFO(STRING("Starting identity tests with "));
-        INFO(testIterations);
+        INFO(TEST_ITERATIONS);
         INFO(STRING(" iterations\nMax identity memory is "));
         INFO((U64)TEST_MEMORY_AMOUNT);
         INFO(STRING("\n\n"));
@@ -237,10 +276,12 @@ static void identityTests() {
 
     U64 sum = 0;
 
-    for (U64 iteration = 0; iteration < testIterations; iteration++) {
+    for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
+        KFLUSH_AFTER { appendRedBlackTree(physical.tree); }
         U64 cycles = arrayWritingTest(alignof(U64), MAX_TEST_ENTRIES,
                                       IDENTITY_MEMORY, 0);
         if (!cycles) {
+            KFLUSH_AFTER { appendRedBlackTree(physical.tree); }
             return;
         }
         sum += cycles;
@@ -248,7 +289,7 @@ static void identityTests() {
 
     KFLUSH_AFTER {
         INFO(STRING("\t\t\t\t\t\taverage clockcycles: "));
-        INFO(sum / testIterations, NEWLINE);
+        INFO(sum / TEST_ITERATIONS, NEWLINE);
     }
 
     KFLUSH_AFTER { INFO(STRING("\nStarting partial writing test...\n")); }
@@ -258,7 +299,7 @@ static void identityTests() {
     BiskiState state;
     biskiSeed(&state, PRNG_SEED);
 
-    for (U64 iteration = 0; iteration < testIterations; iteration++) {
+    for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
         U64 entriesToWrite =
             RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
         U64 cycles =
@@ -271,7 +312,7 @@ static void identityTests() {
 
     KFLUSH_AFTER {
         INFO(STRING("\t\t\t\t\t\taverage clockcycles: "));
-        INFO(sum / testIterations, NEWLINE);
+        INFO(sum / TEST_ITERATIONS, NEWLINE);
     }
 
     KFLUSH_AFTER { INFO(STRING("\n")); }
@@ -280,7 +321,7 @@ static void identityTests() {
 static void mappingTests() {
     KFLUSH_AFTER {
         INFO(STRING("Starting mapping tests with "));
-        INFO(testIterations);
+        INFO(TEST_ITERATIONS);
         INFO(STRING(" iterations\nTotal mappable memory is "));
         INFO((U64)TEST_MEMORY_AMOUNT);
         INFO(STRING("\n\n"));
@@ -331,6 +372,27 @@ kernelmain(PackedKernelParameters *kernelParams) {
     freeIdentityMemory(
         (Memory){.start = (U64)kernelParams, .bytes = sizeof(*kernelParams)});
 
+    KFLUSH_AFTER {
+        appendRedBlackTree(physical.tree);
+        appendMemoryManagementStatus();
+    }
+
+    BiskiState state;
+    biskiSeed(&state, PRNG_SEED);
+    for (U64 i = 0; i < 100; i++) {
+        U64 size = biskiNext(&state) % 64 * KiB;
+        void *address = allocateIdentityMemory(size, biskiNext(&state) % 1024);
+        if (i % 2 == 0) {
+            freeIdentityMemory(
+                (Memory){.start = (U64)address + size / 2, .bytes = size / 4});
+        }
+    }
+
+    KFLUSH_AFTER {
+        appendRedBlackTree(physical.tree);
+        appendMemoryManagementStatus();
+    }
+
     // NOTE: from here, everything is initialized
 
     KFLUSH_AFTER {
@@ -340,8 +402,24 @@ kernelmain(PackedKernelParameters *kernelParams) {
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 
-    for (U64 i = 0; i < 2; i++) {
-        mappingTests();
+    for (U64 i = 0; i < 1; i++) {
+        // BiskiState state;
+        // biskiSeed(&state, PRNG_SEED);
+        //
+        // KFLUSH_AFTER {
+        //     INFO(STRING("Max array entries used: "));
+        //     INFO((U64)MAX_TEST_ENTRIES, NEWLINE);
+        //     INFO(STRING("Random array entries used: "));
+        //     for (U64 i = 0; i < TEST_ITERATIONS; i++) {
+        //         INFO(
+        //             (U64)RING_RANGE_VALUE(biskiNext(&state),
+        //             MAX_TEST_ENTRIES));
+        //         INFO(STRING(" "));
+        //     }
+        //     INFO(STRING("\n"));
+        // }
+        //
+        // mappingTests();
         identityTests();
     }
 
