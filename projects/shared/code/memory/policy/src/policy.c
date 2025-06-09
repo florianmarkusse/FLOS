@@ -18,25 +18,29 @@ void *allocateIdentityMemory(U64 bytes, U64 align) {
 void freeIdentityMemory(Memory memory) { freePhysicalMemory(memory); }
 
 void *allocateMappableMemory(U64 bytes, U64 align) {
-    return allocVirtualMemory(ALIGN_UP_VALUE(bytes, SMALLEST_VIRTUAL_PAGE),
-                              ALIGN_UP_VALUE(align, SMALLEST_VIRTUAL_PAGE));
+    ASSERT(isPowerOf2(align));
+    ASSERT(isAlignedTo(bytes, align));
+
+    return allocVirtualMemory(bytes, align);
 }
 
+// TODO: This should be decided by the underlying architecture, realistically.
 static constexpr auto MAX_PAGE_FLUSHES = 64;
 
 void freeMappableMemory(Memory memory) {
-    // First is special
-    Memory mapped = unmapPage(memory.start);
+    ASSERT(isAlignedTo(memory.start, SMALLEST_VIRTUAL_PAGE));
+    ASSERT(isAlignedTo(memory.bytes, SMALLEST_VIRTUAL_PAGE));
 
-    // The virtual memory to free may be unaligned, make sure it is aligned
-    // because we did remove aligned memory from the allocator.
     U64 virtualAddresses[MAX_PAGE_FLUSHES];
     U64 virtualAddressesLen = 0;
 
-    U64 virtualPageStartAddress = ALIGN_DOWN_VALUE(memory.start, mapped.bytes);
     Memory toFreePhysical = {0};
-
-    for (U64 endVirtualAddress = memory.start + memory.bytes;;) {
+    Memory mapped;
+    for (U64 virtualPageStartAddress = memory.start,
+             endVirtualAddress = memory.start + memory.bytes;
+         virtualPageStartAddress < endVirtualAddress;
+         virtualPageStartAddress += mapped.bytes) {
+        mapped = unmapPage(virtualPageStartAddress);
         if (mapped.start) {
             if (!toFreePhysical.start) {
                 toFreePhysical = mapped;
@@ -53,15 +57,8 @@ void freeMappableMemory(Memory memory) {
             virtualAddresses[virtualAddressesLen] = virtualPageStartAddress;
             virtualAddressesLen++;
         }
-
-        virtualPageStartAddress += mapped.bytes;
-        if (virtualPageStartAddress >= endVirtualAddress) {
-            break;
-        }
-        mapped = unmapPage(virtualPageStartAddress);
     }
 
-    // Cleaup
     if (toFreePhysical.start) {
         freePhysicalMemory(toFreePhysical);
     }
@@ -74,7 +71,5 @@ void freeMappableMemory(Memory memory) {
         flushPageCache();
     }
 
-    freeVirtualMemory(
-        (Memory){.start = virtualAddresses[0],
-                 .bytes = virtualPageStartAddress - virtualAddresses[0]});
+    freeVirtualMemory(memory);
 }

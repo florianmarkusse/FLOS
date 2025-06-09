@@ -10,6 +10,9 @@
 
 - RED-ZONE ???
 
+- Mark functions whose return values should be used as such to avoid bugs.
+- maths has an extra maths folder that is not necessary
+- Decision to flush cpu cache or invalidate should be done in the architecture it's running on, not common code
 - wfunction-prototype
 - rename abstraction/efi to abstraction/efi-to-kernel
 - make alignup/value into functions?
@@ -30,4 +33,3 @@ CPU features to implement/turn on in x86
 
 - sse
 - avx
-

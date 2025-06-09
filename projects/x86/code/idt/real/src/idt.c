@@ -769,7 +769,7 @@ void fault_handler(regs *regs) {
     if (regs->interruptNumber == FAULT_PAGE_FAULT) {
         pageFaults++;
 
-        U64 startingMap = CR2();
+        U64 startingMap = ALIGN_DOWN_VALUE(CR2(), pageSizeToMap);
         U64 pageSizeToUse = pageSizeFitting(startingMap, pageSizeToMap);
         U8 *address = allocPhysicalMemory(pageSizeToMap, pageSizeToUse);
 

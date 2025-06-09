@@ -5,7 +5,12 @@
 
 void appendMemoryManagementStatus();
 
-U64 getAvailablePhysicalMemory();
-U64 getAvailableVirtualMemory();
+typedef struct {
+    U64 memory;
+    U64 nodes;
+} AvailableMemoryState;
+
+AvailableMemoryState getAvailablePhysicalMemory();
+AvailableMemoryState getAvailableVirtualMemory();
 
 #endif

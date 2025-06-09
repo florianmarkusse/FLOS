@@ -14,111 +14,255 @@
 #include "shared/memory/policy.h"
 #include "shared/memory/policy/status.h"
 #include "shared/memory/sizes.h"
+#include "shared/prng/biski.h"
 #include "shared/text/string.h"
 #include "shared/types/numeric.h" // for U32
-
-// void appendDescriptionHeaders(RSDPResult rsdp);
 
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
 static constexpr auto TEST_MEMORY_AMOUNT = 32 * MiB;
-static constexpr auto TEST_ENTRIES = TEST_MEMORY_AMOUNT / (sizeof(U64));
+static constexpr auto MAX_TEST_ENTRIES = TEST_MEMORY_AMOUNT / (sizeof(U64));
 
-static bool mappingTest(U64 alignment) {
-    U64 iterations = 1;
-    U64 sum = 0;
+static constexpr U64 PRNG_SEED = 15466503514872390148ULL;
 
-    KFLUSH_AFTER {
-        INFO(STRING("Running test with alignment of "));
-        INFO(alignment, NEWLINE);
+static U64 testIterations = 32;
+
+static bool isMemoryConstant(AvailableMemoryState startMemory,
+                             AvailableMemoryState endMemory) {
+    if (endMemory.memory != startMemory.memory ||
+        endMemory.nodes != startMemory.nodes) {
+        KFLUSH_AFTER {
+            INFO(STRING("Difference in memory detected!\n [BEGIN] memory: "));
+            INFO(startMemory.memory);
+            INFO(STRING(" nodes: "));
+            INFO(startMemory.nodes, NEWLINE);
+            INFO(STRING("[CURRENT] memory: "));
+            INFO(endMemory.memory);
+            INFO(STRING(" nodes: "));
+            INFO(endMemory.nodes, NEWLINE);
+            INFO(STRING("[DELTA] memory: "));
+            INFO((I64)endMemory.memory - (I64)startMemory.memory);
+            INFO(STRING(" nodes: "));
+            INFO((I64)endMemory.nodes - (I64)startMemory.nodes, NEWLINE);
+        }
+        return false;
+    }
+    return true;
+}
+
+static bool isMemoryIntegrous(AvailableMemoryState startPhysicalMemory,
+                              AvailableMemoryState startVirtualMemory) {
+    AvailableMemoryState endPhysicalMemory = getAvailablePhysicalMemory();
+    if (!isMemoryConstant(startPhysicalMemory, endPhysicalMemory)) {
+        return false;
     }
 
-    for (U64 iteration = 0; iteration < iterations; iteration++) {
-        U64 startPhysicalMemory = getAvailablePhysicalMemory();
-
-        // U64 *virtual = allocateIdentityMemory(TEST_MEMORY_AMOUNT, alignment);
-        U64 *virtual = allocateMappableMemory(TEST_MEMORY_AMOUNT, alignment);
-        U64 beforePageFaults = getPageFaults();
-
-        U64 startCycleCount = currentCycleCounter(true, false);
-        for (U64 i = 0; i < TEST_ENTRIES; i++) {
-            virtual[i] = i;
-        }
-        U64 endCycleCount = currentCycleCounter(false, true);
-
-        for (U64 i = 0; i < TEST_ENTRIES; i++) {
-            if (virtual[i] != i) {
-                KFLUSH_AFTER {
-                    INFO(STRING("arithmetic error at i="));
-                    INFO(i);
-                    INFO(STRING(", expected="));
-                    INFO(i);
-                    INFO(STRING(", actual="));
-                    INFO(virtual[i], NEWLINE);
-                }
-                return false;
-            }
-        }
-
-        U64 pageFaults = getPageFaults();
-
-        // freeIdentityMemory(
-        //     (Memory){.start = (U64)virtual, .bytes = TEST_MEMORY_AMOUNT});
-        freeMappableMemory(
-            (Memory){.start = (U64)virtual, .bytes = TEST_MEMORY_AMOUNT});
-
-        U64 endPhysicalMemory = getAvailablePhysicalMemory();
-        if (endPhysicalMemory != startPhysicalMemory) {
-            KFLUSH_AFTER {
-                INFO(STRING(
-                    "Difference in physical memory detected! Started with "));
-                INFO(startPhysicalMemory);
-                INFO(STRING(" and the delta is "));
-                INFO((I64)endPhysicalMemory - (I64)startPhysicalMemory,
-                     NEWLINE);
-            }
-            return false;
-        }
-
-        if ((beforePageFaults + (TEST_MEMORY_AMOUNT / alignment)) !=
-            pageFaults) {
-            KFLUSH_AFTER { INFO(STRING("Incorrect number of page faults.\n")); }
-            return false;
-        }
-
-        U64 nowPageFaults = getPageFaults();
-        if (pageFaults != nowPageFaults) {
-            KFLUSH_AFTER { INFO(STRING("Somehow had more page faults\n")); }
-            return false;
-        }
-
-        sum += (endCycleCount - startCycleCount);
-    }
-
-    KFLUSH_AFTER {
-        INFO(STRING("Total iterations: "));
-        INFO(iterations, NEWLINE);
-        INFO(STRING("Average clockcycles: "));
-        INFO(sum / iterations, NEWLINE);
+    AvailableMemoryState endVirtualMemory = getAvailableVirtualMemory();
+    if (!isMemoryConstant(startVirtualMemory, endVirtualMemory)) {
+        return false;
     }
 
     return true;
 }
 
+static constexpr auto GROWTH_RATE = 2;
+static constexpr auto START_ENTRIES_COUNT = 8;
+
+static U64 identityMemoryWriter(U64 *buffer, U64 arrayEntries) {
+    U64_d_a dynamicArray = {
+        .buf = buffer, .len = 0, .cap = START_ENTRIES_COUNT};
+
+    U64 startCycleCount = currentCycleCounter(true, false);
+    for (U64 i = 0; i < arrayEntries; i++) {
+        if (dynamicArray.len >= dynamicArray.cap) {
+            U64 currentBytes = dynamicArray.cap * sizeof(U64);
+            U64 *temp = allocateIdentityMemory(currentBytes * GROWTH_RATE,
+                                               alignof(U64));
+            memcpy(temp, dynamicArray.buf, currentBytes);
+
+            freeIdentityMemory((Memory){.start = (U64)dynamicArray.buf,
+                                        .bytes = currentBytes});
+            dynamicArray.buf = temp;
+            dynamicArray.cap *= GROWTH_RATE;
+        }
+        dynamicArray.buf[dynamicArray.len] = i;
+        dynamicArray.len++;
+    }
+    U64 endCycleCount = currentCycleCounter(false, true);
+
+    return endCycleCount - startCycleCount;
+}
+
+static U64 mappableMemoryWriter(U64 *buffer, U64 arrayEntries) {
+    U64 startCycleCount = currentCycleCounter(true, false);
+    for (U64 i = 0; i < arrayEntries; i++) {
+        buffer[i] = i;
+    }
+    U64 endCycleCount = currentCycleCounter(false, true);
+
+    return endCycleCount - startCycleCount;
+}
+
+typedef enum { IDENTITY_MEMORY, MAPPABLE_MEMORY } MemoryWritableType;
+
+static U64 mappableArrayWritingTest(U64 alignment, U64 arrayEntries,
+                                    MemoryWritableType memoryWritableType,
+                                    U64 expectedPageFaults) {
+    AvailableMemoryState startPhysicalMemory = getAvailablePhysicalMemory();
+    AvailableMemoryState startVirtualMemory = getAvailableVirtualMemory();
+    U64 beforePageFaults = getPageFaults();
+
+    U64 *buffer;
+    U64 cycles;
+    if (memoryWritableType == IDENTITY_MEMORY) {
+        buffer = allocateIdentityMemory(START_ENTRIES_COUNT * sizeof(U64),
+                                        alignment);
+        cycles = identityMemoryWriter(buffer, arrayEntries);
+    } else {
+        buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT, alignment);
+        cycles = mappableMemoryWriter(buffer, arrayEntries);
+    }
+
+    for (U64 i = 0; i < arrayEntries; i++) {
+        if (buffer[i] != i) {
+            KFLUSH_AFTER {
+                INFO(STRING("arithmetic error at i="));
+                INFO(i);
+                INFO(STRING(", expected="));
+                INFO(i);
+                INFO(STRING(", actual="));
+                INFO(buffer[i], NEWLINE);
+            }
+            return 0;
+        }
+    }
+
+    U64 afterPageFaults = getPageFaults();
+
+    freeMappableMemory(
+        (Memory){.start = (U64)buffer, .bytes = TEST_MEMORY_AMOUNT});
+
+    isMemoryIntegrous(startPhysicalMemory, startVirtualMemory);
+
+    U64 expectedAfterPageFaults = beforePageFaults + expectedPageFaults;
+    if (expectedAfterPageFaults != afterPageFaults) {
+        KFLUSH_AFTER {
+            INFO(STRING("Incorrect number of page faults.\n"));
+            INFO(STRING("Expected: "));
+            INFO(expectedAfterPageFaults, NEWLINE);
+            INFO(STRING("Actual: "));
+            INFO(afterPageFaults, NEWLINE);
+        }
+        return 0;
+    }
+
+    return cycles;
+}
+
+static bool partialMappingTest(U64 alignment) {
+    U64 sum = 0;
+
+    KFLUSH_AFTER {
+        INFO(STRING("Page Size: "));
+        INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(alignment), 10));
+    }
+
+    BiskiState state;
+    biskiSeed(&state, PRNG_SEED);
+
+    for (U64 iteration = 0; iteration < testIterations; iteration++) {
+        U64 entriesToWrite =
+            RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
+        U64 cycles = mappableArrayWritingTest(
+            alignment, entriesToWrite, MAPPABLE_MEMORY,
+            CEILING_DIV_VALUE((entriesToWrite * sizeof(U64)), alignment));
+        if (!cycles) {
+            return false;
+        }
+        sum += cycles;
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING(" clockcycles: "));
+        INFO(sum / testIterations, NEWLINE);
+    }
+
+    return true;
+}
+
+static bool fullMappingTest(U64 alignment) {
+    U64 sum = 0;
+
+    KFLUSH_AFTER {
+        INFO(STRING("Page Size: "));
+        INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(alignment), 10));
+    }
+
+    for (U64 iteration = 0; iteration < testIterations; iteration++) {
+        U64 cycles = mappableArrayWritingTest(
+            alignment, MAX_TEST_ENTRIES, MAPPABLE_MEMORY,
+            CEILING_DIV_VALUE((MAX_TEST_ENTRIES * sizeof(U64)), alignment));
+        if (!cycles) {
+            return false;
+        }
+        sum += cycles;
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING(" clockcycles: "));
+        INFO(sum / testIterations, NEWLINE);
+    }
+
+    return true;
+}
+
+static void identityTests() {
+    KFLUSH_AFTER {
+        INFO(STRING("Starting identity tests with "));
+        INFO(testIterations);
+        INFO(STRING(" iterations\nMax identity memory is "));
+        INFO((U64)TEST_MEMORY_AMOUNT);
+        INFO(STRING("\n\n"));
+    }
+
+    for (U64 pageSize = 4 * KiB; pageSize <= (2 * MiB); pageSize <<= 1) {
+        pageSizeToMap = pageSize;
+        if (!fullMappingTest(pageSize)) {
+            return;
+        }
+    }
+
+    KFLUSH_AFTER { INFO(STRING("\n")); }
+}
+
 static void mappingTests() {
-    // test
-    pageSizeToMap = 4 * KiB;
-    if (!mappingTest(4 * KiB)) {
-        return;
+    KFLUSH_AFTER {
+        INFO(STRING("Starting mapping tests with "));
+        INFO(testIterations);
+        INFO(STRING(" iterations\nTotal mappable memory is "));
+        INFO((U64)TEST_MEMORY_AMOUNT);
+        INFO(STRING("\n\n"));
+
+        INFO(STRING("Starting full mapping test...\n"));
     }
-    pageSizeToMap = 64 * KiB;
-    if (!mappingTest(64 * KiB)) {
-        return;
+
+    for (U64 pageSize = 4 * KiB; pageSize <= (2 * MiB); pageSize <<= 1) {
+        pageSizeToMap = pageSize;
+        if (!fullMappingTest(pageSize)) {
+            return;
+        }
     }
-    pageSizeToMap = 2 * MiB;
-    if (!mappingTest(2 * MiB)) {
-        return;
+
+    KFLUSH_AFTER { INFO(STRING("\nStarting partial mapping test...\n")); }
+
+    for (U64 pageSize = 4 * KiB; pageSize <= (2 * MiB); pageSize <<= 1) {
+        pageSizeToMap = pageSize;
+        if (!partialMappingTest(pageSize)) {
+            return;
+        }
     }
+
+    KFLUSH_AFTER { INFO(STRING("\n")); }
 }
 
 __attribute__((section("kernel-start"))) int
@@ -146,26 +290,29 @@ kernelmain(PackedKernelParameters *kernelParams) {
         (Memory){.start = (U64)kernelParams, .bytes = sizeof(*kernelParams)});
 
     // NOTE: from here, everything is initialized
+
     KFLUSH_AFTER {
         KLOG(STRING("ITS WEDNESDAY MY DUDES\n"));
-        KLOG(STRING("Available phys memory: "));
-        KLOG(getAvailablePhysicalMemory(), NEWLINE);
+        appendMemoryManagementStatus();
     }
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 
-    mappingTests();
+    for (U64 i = 0; i < 1; i++) {
+        mappingTests();
+    }
 
     KFLUSH_AFTER {
         KLOG(STRING("TESTING IS OVER MY DUDES\n"));
-        KLOG(STRING("Available phys memory: "));
-        KLOG(getAvailablePhysicalMemory(), NEWLINE);
+        appendMemoryManagementStatus();
     }
 
     while (1) {
         ;
     }
 }
+
+// void appendDescriptionHeaders(RSDPResult rsdp);
 
 // typedef enum { RSDT, XSDT, NUM_DESCRIPTION_TABLES }
 // DescriptionTableVersion; static USize entrySizes[NUM_DESCRIPTION_TABLES]

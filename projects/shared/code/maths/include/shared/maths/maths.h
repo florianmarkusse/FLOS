@@ -52,9 +52,10 @@
 
 // Moves value up to the closest power of 2. Unchanged if already a power of 2
 U64 ceilingPowerOf2(U64 x);
-
+bool isPowerOf2(U64 x);
 U64 power(U64 base, U64 exponent);
-
 U64 divideByPowerOf2(U64 value, U64 divisor);
+
+bool isAlignedTo(U64 x, U64 align);
 
 #endif

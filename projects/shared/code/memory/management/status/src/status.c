@@ -1,3 +1,4 @@
+#include "shared/memory/policy/status.h"
 #include "shared/memory/management/status.h"
 
 #include "abstraction/log.h"
@@ -5,60 +6,56 @@
 #include "shared/memory/management/management.h"
 #include "shared/text/string.h"
 
-static void preOrder(RedBlackNodeMM *current, U64 *totalValue) {
+static void countAvailable(RedBlackNodeMM *current, U64 *available,
+                           U64 *nodes) {
     if (!current) {
         return;
     }
 
-    preOrder(current->children[RB_TREE_LEFT], totalValue);
+    countAvailable(current->children[RB_TREE_LEFT], available, nodes);
 
-    KLOG(STRING("[address="));
-    KLOG((void *)current->memory.start);
-    KLOG(STRING(", bytes="));
-    KLOG(current->memory.bytes);
-    KLOG(STRING("] "));
-    *totalValue += current->memory.bytes;
+    *available += current->memory.bytes;
+    *nodes += 1;
 
-    preOrder(current->children[RB_TREE_RIGHT], totalValue);
+    countAvailable(current->children[RB_TREE_RIGHT], available, nodes);
 }
 
-static void appendMemoryManagerStatus(RedBlackNodeMM *tree, string name) {
+static void appendMemoryManagerStatus(MemoryAllocator *allocator, string name) {
     KLOG(name);
-    KLOG(STRING(" status\n"));
-    KLOG(STRING("================\n"));
-    U64 totalMemory = 0;
-    preOrder(tree, &totalMemory);
-    KLOG(STRING("\n================\n"));
-    KLOG(STRING("Total memory: "));
-    KLOG(totalMemory, NEWLINE);
+    AvailableMemoryState result = {0};
+    countAvailable(allocator->tree, &result.memory, &result.nodes);
+    KLOG(STRING(" mem: "));
+    KLOG(stringWithMinSizeDefault(CONVERT_TO_STRING(result.memory), 16));
+    KLOG(STRING(" nodes: "));
+    KLOG(stringWithMinSizeDefault(CONVERT_TO_STRING(result.nodes), 3));
+    KLOG(STRING("freelist size: "));
+    KLOG(stringWithMinSizeDefault(CONVERT_TO_STRING(allocator->freeList.len),
+                                  3));
+    KLOG(STRING("arena beg: "));
+    KLOG(allocator->arena.beg);
+    KLOG(STRING(" current free: "));
+    KLOG(allocator->arena.curFree);
+    KLOG(STRING(" end: "));
+    KLOG(allocator->arena.end, NEWLINE);
 }
 
 void appendPhysicalMemoryManagerStatus() {
-    appendMemoryManagerStatus(physical.tree, STRING("Physical Memory"));
+    appendMemoryManagerStatus(&physical, STRING("[PHYS]"));
 }
 
 void appendVirtualMemoryManagerStatus() {
-    appendMemoryManagerStatus(virt.tree, STRING("Virtual Memory"));
+    appendMemoryManagerStatus(&virt, STRING("[VIRT]"));
 }
 
-static void countAvailable(RedBlackNodeMM *current, U64 *available) {
-    if (!current) {
-        return;
-    }
-
-    countAvailable(current->children[RB_TREE_LEFT], available);
-
-    *available += current->memory.bytes;
-
-    countAvailable(current->children[RB_TREE_RIGHT], available);
+static AvailableMemoryState getAvailableMemory(RedBlackNodeMM *tree) {
+    AvailableMemoryState result = {0};
+    countAvailable(tree, &result.memory, &result.nodes);
+    return result;
 }
 
-static U64 getAvailableMemory(RedBlackNodeMM *tree) {
-    U64 availableMemory = 0;
-    countAvailable(tree, &availableMemory);
-
-    return availableMemory;
+AvailableMemoryState getAvailablePhysicalMemory() {
+    return getAvailableMemory(physical.tree);
 }
-
-U64 getAvailablePhysicalMemory() { return getAvailableMemory(physical.tree); }
-U64 getAvailableVirtualMemory() { return getAvailableMemory(virt.tree); }
+AvailableMemoryState getAvailableVirtualMemory() {
+    return getAvailableMemory(virt.tree);
+}
