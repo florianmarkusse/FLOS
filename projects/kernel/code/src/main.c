@@ -21,44 +21,12 @@
 
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
-static constexpr auto TEST_MEMORY_AMOUNT = 2 * MiB;
+static constexpr auto TEST_MEMORY_AMOUNT = 32 * MiB;
 static constexpr auto MAX_TEST_ENTRIES = TEST_MEMORY_AMOUNT / (sizeof(U64));
 
 static constexpr U64 PRNG_SEED = 15466503514872390148ULL;
 
 static U64 TEST_ITERATIONS = 32;
-
-static void printTreeIndented(RedBlackNodeMM *node, int depth, string prefix) {
-    if (!node) {
-        return;
-    }
-
-    printTreeIndented(node->children[RB_TREE_RIGHT], depth + 1, STRING("R---"));
-
-    for (int i = 0; i < depth; i++) {
-        INFO(STRING("    "));
-    }
-    INFO(prefix);
-    INFO(STRING(", Color: "));
-    INFO(node->color == RB_TREE_RED ? STRING("RED") : STRING("BLACK"));
-
-    RedBlackNodeMM *memoryManagerNode = (RedBlackNodeMM *)node;
-    INFO(STRING(" Start: "));
-    INFO(memoryManagerNode->memory.start);
-    INFO(STRING(" Bytes: "));
-    INFO(memoryManagerNode->memory.bytes);
-    INFO(STRING(" Most bytes in subtree: "));
-    INFO(memoryManagerNode->mostBytesInSubtree);
-
-    INFO(STRING("\n"));
-
-    printTreeIndented(node->children[RB_TREE_LEFT], depth + 1, STRING("L---"));
-}
-
-void appendRedBlackTree(RedBlackNodeMM *root) {
-    INFO(STRING("Red-Black Tree Structure:"), NEWLINE);
-    printTreeIndented(root, 0, STRING("Root---"));
-}
 
 static bool isMemoryConstant(AvailableMemoryState startMemory,
                              AvailableMemoryState endMemory) {
@@ -101,43 +69,6 @@ static bool isMemoryIntegrous(AvailableMemoryState startPhysicalMemory,
 static constexpr auto GROWTH_RATE = 2;
 static constexpr auto START_ENTRIES_COUNT = 8;
 
-static U64 identityMemoryWriter(U64 **buffer, U64 arrayEntries) {
-    U64_d_a dynamicArray = {
-        .buf = *buffer, .len = 0, .cap = START_ENTRIES_COUNT};
-
-    U64 startCycleCount = currentCycleCounter(true, false);
-    for (U64 i = 0; i < arrayEntries; i++) {
-        if (dynamicArray.len >= dynamicArray.cap) {
-            U64 currentBytes = dynamicArray.cap * sizeof(U64);
-            U64 *temp = allocateIdentityMemory(currentBytes * GROWTH_RATE,
-                                               alignof(U64));
-            memcpy(temp, dynamicArray.buf, currentBytes);
-
-            freeIdentityMemory((Memory){.start = (U64)dynamicArray.buf,
-                                        .bytes = currentBytes});
-            dynamicArray.buf = temp;
-            dynamicArray.cap *= GROWTH_RATE;
-        }
-        dynamicArray.buf[dynamicArray.len] = i;
-        dynamicArray.len++;
-    }
-    U64 endCycleCount = currentCycleCounter(false, true);
-
-    *buffer = dynamicArray.buf;
-
-    return endCycleCount - startCycleCount;
-}
-
-static U64 mappableMemoryWriter(U64 *buffer, U64 arrayEntries) {
-    U64 startCycleCount = currentCycleCounter(true, false);
-    for (U64 i = 0; i < arrayEntries; i++) {
-        buffer[i] = i;
-    }
-    U64 endCycleCount = currentCycleCounter(false, true);
-
-    return endCycleCount - startCycleCount;
-}
-
 typedef enum { IDENTITY_MEMORY, MAPPABLE_MEMORY } MemoryWritableType;
 
 static U64 arrayWritingTest(U64 alignment, U64 arrayEntries,
@@ -150,13 +81,43 @@ static U64 arrayWritingTest(U64 alignment, U64 arrayEntries,
     U64 *buffer;
     U64 cycles;
     if (memoryWritableType == IDENTITY_MEMORY) {
-        KFLUSH_AFTER { appendPhysicalMemoryManagerStatus(); }
         buffer = allocateIdentityMemory(START_ENTRIES_COUNT * sizeof(U64),
                                         alignment);
-        cycles = identityMemoryWriter(&buffer, arrayEntries);
+
+        U64_d_a dynamicArray = {
+            .buf = buffer, .len = 0, .cap = START_ENTRIES_COUNT};
+
+        U64 startCycleCount = currentCycleCounter(true, false);
+        for (U64 i = 0; i < arrayEntries; i++) {
+            if (dynamicArray.len >= dynamicArray.cap) {
+                U64 currentBytes = dynamicArray.cap * sizeof(U64);
+                U64 *temp = allocateIdentityMemory(currentBytes * GROWTH_RATE,
+                                                   alignof(U64));
+                memcpy(temp, dynamicArray.buf, currentBytes);
+
+                freeIdentityMemory((Memory){.start = (U64)dynamicArray.buf,
+                                            .bytes = currentBytes});
+                dynamicArray.buf = temp;
+                dynamicArray.cap *= GROWTH_RATE;
+            }
+            dynamicArray.buf[dynamicArray.len] = i;
+            dynamicArray.len++;
+        }
+        U64 endCycleCount = currentCycleCounter(false, true);
+
+        buffer = dynamicArray.buf;
+
+        cycles = endCycleCount - startCycleCount;
     } else {
         buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT, alignment);
-        cycles = mappableMemoryWriter(buffer, arrayEntries);
+
+        U64 startCycleCount = currentCycleCounter(true, false);
+        for (U64 i = 0; i < arrayEntries; i++) {
+            buffer[i] = i;
+        }
+        U64 endCycleCount = currentCycleCounter(false, true);
+
+        cycles = endCycleCount - startCycleCount;
     }
 
     for (U64 i = 0; i < arrayEntries; i++) {
@@ -214,9 +175,6 @@ static bool partialMappingTest(U64 alignment) {
     BiskiState state;
     biskiSeed(&state, PRNG_SEED);
 
-    for (U64 i = 0; i < TEST_ITERATIONS; i++) {
-    }
-
     for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
         U64 entriesToWrite =
             RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
@@ -265,23 +223,16 @@ static bool fullMappingTest(U64 alignment) {
 
 static void identityTests() {
     KFLUSH_AFTER {
-        INFO(STRING("Starting identity tests with "));
-        INFO(TEST_ITERATIONS);
-        INFO(STRING(" iterations\nMax identity memory is "));
-        INFO((U64)TEST_MEMORY_AMOUNT);
-        INFO(STRING("\n\n"));
-
+        INFO(STRING("Starting identity tests with\n\n"));
         INFO(STRING("Starting full writing test...\n"));
     }
 
     U64 sum = 0;
 
     for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
-        KFLUSH_AFTER { appendRedBlackTree(physical.tree); }
         U64 cycles = arrayWritingTest(alignof(U64), MAX_TEST_ENTRIES,
                                       IDENTITY_MEMORY, 0);
         if (!cycles) {
-            KFLUSH_AFTER { appendRedBlackTree(physical.tree); }
             return;
         }
         sum += cycles;
@@ -316,16 +267,12 @@ static void identityTests() {
     }
 
     KFLUSH_AFTER { INFO(STRING("\n")); }
+    return;
 }
 
 static void mappingTests() {
     KFLUSH_AFTER {
-        INFO(STRING("Starting mapping tests with "));
-        INFO(TEST_ITERATIONS);
-        INFO(STRING(" iterations\nTotal mappable memory is "));
-        INFO((U64)TEST_MEMORY_AMOUNT);
-        INFO(STRING("\n\n"));
-
+        INFO(STRING("Starting mapping tests\n\n"));
         INFO(STRING("Starting full mapping test...\n"));
     }
 
@@ -372,27 +319,6 @@ kernelmain(PackedKernelParameters *kernelParams) {
     freeIdentityMemory(
         (Memory){.start = (U64)kernelParams, .bytes = sizeof(*kernelParams)});
 
-    KFLUSH_AFTER {
-        appendRedBlackTree(physical.tree);
-        appendMemoryManagementStatus();
-    }
-
-    BiskiState state;
-    biskiSeed(&state, PRNG_SEED);
-    for (U64 i = 0; i < 100; i++) {
-        U64 size = biskiNext(&state) % 64 * KiB;
-        void *address = allocateIdentityMemory(size, biskiNext(&state) % 1024);
-        if (i % 2 == 0) {
-            freeIdentityMemory(
-                (Memory){.start = (U64)address + size / 2, .bytes = size / 4});
-        }
-    }
-
-    KFLUSH_AFTER {
-        appendRedBlackTree(physical.tree);
-        appendMemoryManagementStatus();
-    }
-
     // NOTE: from here, everything is initialized
 
     KFLUSH_AFTER {
@@ -402,24 +328,27 @@ kernelmain(PackedKernelParameters *kernelParams) {
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 
-    for (U64 i = 0; i < 1; i++) {
-        // BiskiState state;
-        // biskiSeed(&state, PRNG_SEED);
-        //
-        // KFLUSH_AFTER {
-        //     INFO(STRING("Max array entries used: "));
-        //     INFO((U64)MAX_TEST_ENTRIES, NEWLINE);
-        //     INFO(STRING("Random array entries used: "));
-        //     for (U64 i = 0; i < TEST_ITERATIONS; i++) {
-        //         INFO(
-        //             (U64)RING_RANGE_VALUE(biskiNext(&state),
-        //             MAX_TEST_ENTRIES));
-        //         INFO(STRING(" "));
-        //     }
-        //     INFO(STRING("\n"));
-        // }
-        //
-        // mappingTests();
+    for (U64 i = 0; i < 2; i++) {
+        BiskiState state;
+        biskiSeed(&state, PRNG_SEED);
+
+        KFLUSH_AFTER {
+            INFO(STRING("Iterations per test: "));
+            INFO(TEST_ITERATIONS, NEWLINE);
+            INFO(STRING("Max memory per test: "));
+            INFO((U64)TEST_MEMORY_AMOUNT, NEWLINE);
+            INFO(STRING("Max array entries used: "));
+            INFO((U64)MAX_TEST_ENTRIES, NEWLINE);
+            INFO(STRING("Random array entries used: "));
+            for (U64 i = 0; i < TEST_ITERATIONS; i++) {
+                INFO(
+                    (U64)RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES));
+                INFO(STRING(" "));
+            }
+            INFO(STRING("\n"));
+        }
+
+        mappingTests();
         identityTests();
     }
 

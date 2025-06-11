@@ -810,9 +810,9 @@ void fault_handler(regs *regs) {
             INFO((void *)regs->rsi, NEWLINE);
             INFO(STRING("rdi: "));
             INFO((void *)regs->rdi, NEWLINE);
-            INFO(STRING("r8: "));
+            INFO(STRING("r8 : "));
             INFO((void *)regs->r8, NEWLINE);
-            INFO(STRING("r9: "));
+            INFO(STRING("r9 : "));
             INFO((void *)regs->r9, NEWLINE);
             INFO(STRING("r10: "));
             INFO((void *)regs->r10, NEWLINE);
@@ -823,7 +823,7 @@ void fault_handler(regs *regs) {
             INFO(STRING("r13: "));
             INFO((void *)regs->r13, NEWLINE);
             INFO(STRING("r14: "));
-            INFO(regs->r14, NEWLINE);
+            INFO((void *)regs->r14, NEWLINE);
             INFO(STRING("r15: "));
             INFO((void *)regs->r15, NEWLINE);
         }

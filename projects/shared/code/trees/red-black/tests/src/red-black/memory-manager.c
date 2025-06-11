@@ -78,57 +78,19 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         (Memory_max_a){.buf = NEW(&scratch, Memory, MAX_NODES_IN_TREE),
                        .len = 0,
                        .cap = MAX_NODES_IN_TREE};
-    AvailableMemoryState currentMemory = {0};
-
     for (U64 i = 0; i < operations.len; i++) {
         switch (operations.buf[i].type) {
-        case MEMORY_CHECK: {
-            if (currentMemory.memory == 0) {
-                currentMemory = getAvailableMemory(tree);
-            } else {
-                AvailableMemoryState tempMemory = getAvailableMemory(tree);
-                if (tempMemory.memory != currentMemory.memory ||
-                    tempMemory.nodes != currentMemory.nodes) {
-                    TEST_FAILURE {
-                        INFO(STRING("Difference in memory detected!"));
-                        INFO(STRING("Difference in memory detected!\n[BEGIN] "
-                                    "memory: "));
-                        INFO(currentMemory.memory);
-                        INFO(STRING(" nodes: "));
-                        INFO(currentMemory.nodes, NEWLINE);
-                        INFO(STRING("[CURRENT] memory: "));
-                        INFO(tempMemory.memory);
-                        INFO(STRING(" nodes: "));
-                        INFO(tempMemory.nodes, NEWLINE);
-                        INFO(STRING("[DELTA] memory: "));
-                        INFO((I64)tempMemory.memory -
-                             (I64)currentMemory.memory);
-                        INFO(STRING(" nodes: "));
-                        INFO((I64)tempMemory.nodes - (I64)currentMemory.nodes,
-                             NEWLINE);
-                    }
-                }
-
-                KFLUSH_AFTER {
-                    INFO(STRING("WAS EQUAL\n"));
-                    INFO(STRING("WAS EQUAL\n"));
-                }
-
-                currentMemory = tempMemory;
-            }
-            break;
-        }
         case INSERT: {
             addValueToExpected(&expectedValues, operations.buf[i].memory, tree);
 
             RedBlackNodeMM *createdNode = NEW(&scratch, RedBlackNodeMM);
             createdNode->memory = operations.buf[i].memory;
-            insertRedBlackNodeMM(&tree, createdNode, false);
+            insertRedBlackNodeMM(&tree, createdNode);
             break;
         }
         case DELETE_AT_LEAST: {
             RedBlackNodeMM *deleted = deleteAtLeastRedBlackNodeMM(
-                &tree, operations.buf[i].memory.bytes, false);
+                &tree, operations.buf[i].memory.bytes);
             if (!deleted) {
                 for (U64 j = 0; j < expectedValues.len; j++) {
                     if (expectedValues.buf[j].bytes >=

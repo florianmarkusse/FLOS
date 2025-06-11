@@ -1,25 +1,33 @@
 #ifndef EFI_FIRMWARE_MEMORY_H
 #define EFI_FIRMWARE_MEMORY_H
 
+#include "shared/enum.h"
 #include "shared/types/numeric.h"
-typedef enum MemoryType : U32 {
-    RESERVED_MEMORY_TYPE,
-    LOADER_CODE,
-    LOADER_DATA,
-    BOOT_SERVICES_CODE,
-    BOOT_SERVICES_DATA,
-    RUNTIME_SERVICES_CODE,
-    RUNTIME_SERVICES_DATA,
-    CONVENTIONAL_MEMORY,
-    UNUSABLE_MEMORY,
-    ACPI_RECLAIM_MEMORY,
-    ACPI_MEMORY_NVS,
-    MEMORY_MAPPED_IO,
-    MEMORY_MAPPED_IO_PORT_SPACE,
-    PAL_CODE,
-    PERSISTENT_MEMORY,
-    MEMORY_TYPE_N,
-} MemoryType;
+
+#define EFI_MEMORY_TYPE_ENUM(VARIANT)                                          \
+    VARIANT(RESERVED_MEMORY_TYPE)                                              \
+    VARIANT(LOADER_CODE)                                                       \
+    VARIANT(LOADER_DATA)                                                       \
+    VARIANT(BOOT_SERVICES_CODE)                                                \
+    VARIANT(BOOT_SERVICES_DATA)                                                \
+    VARIANT(RUNTIME_SERVICES_CODE)                                             \
+    VARIANT(RUNTIME_SERVICES_DATA)                                             \
+    VARIANT(CONVENTIONAL_MEMORY)                                               \
+    VARIANT(UNUSABLE_MEMORY)                                                   \
+    VARIANT(ACPI_RECLAIM_MEMORY)                                               \
+    VARIANT(ACPI_MEMORY_NVS)                                                   \
+    VARIANT(MEMORY_MAPPED_IO)                                                  \
+    VARIANT(MEMORY_MAPPED_IO_PORT_SPACE)                                       \
+    VARIANT(PAL_CODE)                                                          \
+    VARIANT(PERSISTENT_MEMORY)                                                 \
+    VARIANT(UNACCEPTED_MEMORY_TYPE)                                            \
+    VARIANT(MAX_MEMORY_TYPE)
+
+typedef enum : U32 { EFI_MEMORY_TYPE_ENUM(ENUM_STANDARD_VARIANT) } MemoryType;
+
+static constexpr auto EFI_MEMORY_TYPE_COUNT = EFI_MEMORY_TYPE_ENUM(PLUS_ONE);
+static string efiMemoryStatusStrings[EFI_MEMORY_TYPE_COUNT] = {
+    EFI_MEMORY_TYPE_ENUM(ENUM_TO_STRING)};
 
 static constexpr U64 MEMORY_UC = 0x0000000000000001;
 static constexpr U64 MEMORY_WC = 0x0000000000000002;

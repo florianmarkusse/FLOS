@@ -12,6 +12,7 @@
 
 - Mark functions whose return values should be used as such to avoid bugs.
 - maths has an extra maths folder that is not necessary
+- remove getAvailableMemory from .h file, should not be called directly
 - Decision to flush cpu cache or invalidate should be done in the architecture it's running on, not common code
 - wfunction-prototype
 - add some nicer logs to image-builder? i.e. more data about sizes in bytes and LBA, not one or the other.

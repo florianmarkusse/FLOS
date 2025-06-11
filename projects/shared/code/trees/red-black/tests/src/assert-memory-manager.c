@@ -124,6 +124,33 @@ static void assertCorrectMostBytesTree(RedBlackNodeMM *tree) {
     assertCorrectMostBytesInSubtreeValue(tree, tree);
 }
 
+static void assertPrevNodeSmaller(RedBlackNodeMM *tree, RedBlackNodeMM *node,
+                                  U64 *prevEnd) {
+    if (!node) {
+        return;
+    }
+
+    assertPrevNodeSmaller(tree, node->children[RB_TREE_LEFT], prevEnd);
+
+    if (*prevEnd && node->memory.start <= *prevEnd) {
+        TEST_FAILURE {
+            INFO(STRING("Should not have been inserted as a separate node!\n"));
+            appendRedBlackTreeWithBadNode((RedBlackNode *)tree,
+                                          (RedBlackNode *)node,
+                                          RED_BLACK_MEMORY_MANAGER);
+        }
+    }
+
+    *prevEnd = node->memory.start + node->memory.bytes;
+
+    assertPrevNodeSmaller(tree, node->children[RB_TREE_RIGHT], prevEnd);
+}
+
+static void assertNoNodeOverlap(RedBlackNodeMM *tree) {
+    U64 startValue = 0;
+    assertPrevNodeSmaller(tree, tree, &startValue);
+}
+
 void assertMMRedBlackTreeValid(RedBlackNodeMM *tree,
                                Memory_max_a expectedValues, Arena scratch) {
     if (!tree) {
@@ -131,6 +158,8 @@ void assertMMRedBlackTreeValid(RedBlackNodeMM *tree,
     }
 
     U64 nodes = nodeCount((RedBlackNode *)tree, RED_BLACK_MEMORY_MANAGER);
+
+    assertNoNodeOverlap(tree);
 
     assertIsBSTWitExpectedValues(tree, nodes, expectedValues, scratch);
     assertNoRedNodeHasRedChild((RedBlackNode *)tree, nodes,

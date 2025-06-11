@@ -70,8 +70,9 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
                     continue;
                 }
 
+                // Keep the first 4096 bytes unused.
                 desc->physicalStart += UEFI_PAGE_SIZE;
-                desc->physicalStart--;
+                desc->numberOfPages--;
             }
 
             Memory availableMemoryBuf[MAX_KERNEL_STRUCTURES];
