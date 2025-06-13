@@ -11,6 +11,7 @@
 - RED-ZONE ???
 
 - Mark functions whose return values should be used as such to avoid bugs.
+- Extract page mapping code in real/idt.c
 - maths has an extra maths folder that is not necessary
 - remove getAvailableMemory from .h file, should not be called directly
 - Decision to flush cpu cache or invalidate should be done in the architecture it's running on, not common code
@@ -35,3 +36,11 @@ CPU features to implement/turn on in x86
 
 - sse
 - avx
+
+average fault timings:
+fault handling cycles: 2174
+simd saving cycles: 0
+simd restoring cycles: 228
+alloc cycles: 224
+page map cycles: 905
+page calc cycles: 390
