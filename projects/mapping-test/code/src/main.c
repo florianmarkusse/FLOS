@@ -51,13 +51,12 @@ static U64_d_a createDynamicArray() {
     } while (0)
 
 static Timing runMappingTest(U64 arrayEntries, bool is2MiBPage) {
-    int flags = MAP_PRIVATE | MAP_ANONYMOUS;
-    if (is2MiBPage) {
-        flags |= MAP_HUGETLB | MAP_HUGE_2MB;
-    }
+    U64 *buffer = mmap(NULL, TEST_MEMORY_AMOUNT, PROT_READ | PROT_WRITE,
+                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
-    U64 *buffer =
-        mmap(NULL, TEST_MEMORY_AMOUNT, PROT_READ | PROT_WRITE, flags, -1, 0);
+    if (is2MiBPage) {
+        madvise(buffer, TEST_MEMORY_AMOUNT, MADV_HUGEPAGE);
+    }
 
     U64 startNanos = currentTimeNanos();
     U64 startCycleCount = currentCycleCounter(true, false);
