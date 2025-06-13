@@ -1,3 +1,40 @@
+# Test Results
+
+## Linux
+
+```
+Starting full mapping test...
+Page Size: 4096
+Average clockcycles: 1193802249
+Average time ms: 341
+Page Size: 2097152
+Average clockcycles: 323959325
+Average time ms: 92
+
+
+Starting partial mapping test...
+Page Size: 4096
+Average clockcycles: 568762013
+Average time ms: 162
+Page Size: 2097152
+Average clockcycles: 155327138
+Average time ms: 44
+
+
+Starting full realloc writing test...
+Average clockcycles: 1302560093
+Average time ms: 372
+Starting partial realloc writing test...
+Average clockcycles: 640800190
+Average time ms: 182
+```
+
+# For 2MiB test
+
+```sh
+sudo sysctl -w vm.nr_hugepages=512
+```
+
 # References
 
 - Perfect growth ratio: https://www.youtube.com/watch?v=GZPqDvG615k
