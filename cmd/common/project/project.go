@@ -96,6 +96,7 @@ const X86_EFI_TO_KERNEL = "x86-efi-to-kernel"
 const EFI_UEFI = "efi-uefi"
 const FREESTANDING = "freestanding"
 const ABSTRACTION = "abstraction"
+const MAPPING_TEST = "mapping-test"
 
 // and here
 var kernelFolder = common.REPO_PROJECTS + "/" + KERNEL
@@ -112,6 +113,7 @@ var x86EfiToKernelFolder = common.REPO_PROJECTS + "/" + "x86/efi-to-kernel"
 var efiUefiFolder = common.REPO_PROJECTS + "/" + "efi/uefi"
 var freestandingFolder = common.REPO_PROJECTS + "/" + FREESTANDING
 var abstractionFolder = common.REPO_PROJECTS + "/" + ABSTRACTION
+var mappingTestFolder = common.REPO_PROJECTS + "/" + MAPPING_TEST
 
 // and here
 var PROJECT_STRUCTURES = map[string]*ProjectStructure{
@@ -240,6 +242,15 @@ var PROJECT_STRUCTURES = map[string]*ProjectStructure{
 		Environment:          string(environment.Freestanding),
 		FloatOperations:      true,
 		ExcludedIWYUMappings: nil,
+	},
+	MAPPING_TEST: {
+		CCompiler:            ELF.CCompiler,
+		Linker:               ELF.Linker,
+		Folder:               mappingTestFolder,
+		CodeFolder:           mappingTestFolder + "/code",
+		Environment:          string(environment.Posix),
+		FloatOperations:      true,
+		ExcludedIWYUMappings: []iwyu.IWYUMapping{iwyu.MEMORY_MANIPULATION},
 	},
 }
 
