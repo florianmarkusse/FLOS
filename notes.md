@@ -5,27 +5,27 @@
 ```
 Starting full mapping test...
 Page Size: 4096
-Average clockcycles: 1193802249
-Average time ms: 341
+Average clockcycles: 1192442678
+Average time ms: 340
 Page Size: 2097152
-Average clockcycles: 323959325
-Average time ms: 92
+Average clockcycles: 455731903
+Average time ms: 130
 
 
 Starting partial mapping test...
 Page Size: 4096
-Average clockcycles: 568762013
-Average time ms: 162
+Average clockcycles: 572622366
+Average time ms: 163
 Page Size: 2097152
-Average clockcycles: 155327138
-Average time ms: 44
+Average clockcycles: 218694242
+Average time ms: 62
 
 
 Starting full realloc writing test...
-Average clockcycles: 1302560093
-Average time ms: 372
+Average clockcycles: 1412330765
+Average time ms: 403
 Starting partial realloc writing test...
-Average clockcycles: 640800190
+Average clockcycles: 640416884
 Average time ms: 182
 ```
 
