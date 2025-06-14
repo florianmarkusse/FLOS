@@ -5,7 +5,7 @@ if(${ENVIRONMENT} STREQUAL "EFI")
     abstraction_add_sources(efi-memory)
 elseif(${ENVIRONMENT} STREQUAL "FREESTANDING")
     add_project("freestanding")
-    abstraction_add_sources(freestanding-memory-management)
+    abstraction_add_sources(freestanding-memory-virtual)
 elseif(${ENVIRONMENT} STREQUAL "POSIX")
     # Should not need an implementation
 else()

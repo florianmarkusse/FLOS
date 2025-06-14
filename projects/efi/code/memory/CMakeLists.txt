@@ -1,5 +1,5 @@
 project(efi-memory LANGUAGES C ASM)
-add_library(${PROJECT_NAME} OBJECT "src/virtual.c" "src/physical.c")
+add_library(${PROJECT_NAME} OBJECT "src/virtual/allocator.c" "src/physical.c")
 
 add_includes_for_sublibrary()
 

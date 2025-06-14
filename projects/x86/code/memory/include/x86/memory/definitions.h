@@ -17,7 +17,8 @@ static constexpr struct {
     VARIANT(X86_2MIB_PAGE, (1ULL << (12 + (9 * 1))))                           \
     VARIANT(X86_1GIB_PAGE, (1ULL << (12 + (9 * 2))))
 
-// NOTE: Does not really exist in the architecture this OS is targeting.
+// NOTE: Does not really exist in the architecture this OS is targeting. More
+// used as a range an entry covers.
 static constexpr auto X86_512GIB_PAGE = (1ULL << (12 + (9 * 3)));
 static constexpr auto X86_256TIB_PAGE = (1ULL << (12 + (9 * 4)));
 
@@ -45,42 +46,6 @@ typedef struct {
 static constexpr auto VIRTUAL_MEMORY_MAPPING_SIZE = sizeof(PhysicalBasePage);
 static constexpr auto VIRTUAL_MEMORY_MAPPER_ALIGNMENT =
     alignof(PhysicalBasePage);
-
-typedef struct {
-    union {
-        U64 value;
-        struct {
-            U64 present : 1;
-            U64 writable : 1;
-            U64 userAccessible : 1;
-            U64 writeThrough : 1;
-            U64 disableCache : 1;
-            U64 accessed : 1;
-            U64 dirty : 1;
-            U64 extendedSize : 1;
-            U64 global : 1;
-            U64 available_9 : 1;
-            U64 available_10 : 1;
-            U64 available_11 : 1;
-            U64 level_1 : 9;
-            U64 level_2 : 9;
-            U64 level_3 : 9;
-            U64 level_4 : 9;
-            U64 available_52 : 1;
-            U64 available_53 : 1;
-            U64 available_54 : 1;
-            U64 available_55 : 1;
-            U64 available_56 : 1;
-            U64 available_57 : 1;
-            U64 available_58 : 1;
-            U64 available_59 : 1;
-            U64 available_60 : 1;
-            U64 available_61 : 1;
-            U64 available_62 : 1;
-            U64 noExecute : 1;
-        };
-    };
-} VirtualEntry;
 
 static constexpr struct {
     U64 PAGE_PRESENT;         // The page is currently in memory
@@ -149,17 +114,7 @@ static constexpr struct {
                       .FRAME_OR_NEXT_PAGE_TABLE = 0x000FFFFFFFFF000};
 
 typedef struct {
-    U64 start;
-    U64 end;
-} VirtualRegion;
-
-typedef struct {
     U64 pages[PageTableFormat.ENTRIES];
-} VirtualPageTable;
-
-typedef struct {
-    VirtualEntry entry;
-    PageSize pageSize;
-} MappedPage;
+} VirtualPageTable __attribute__((aligned(X86_4KIB_PAGE)));
 
 #endif

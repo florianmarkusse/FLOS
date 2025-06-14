@@ -1,5 +1,5 @@
-project(freestanding-memory-management LANGUAGES C ASM)
-add_library(${PROJECT_NAME} OBJECT "src/management.c")
+project(freestanding-memory-virtual LANGUAGES C ASM)
+add_library(${PROJECT_NAME} OBJECT "src/allocator.c")
 
 add_includes_for_sublibrary()
 

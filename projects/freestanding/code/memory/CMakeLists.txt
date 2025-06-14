@@ -1,2 +1,2 @@
 add_subdirectory(manipulation)
-add_subdirectory(management)
+add_subdirectory(virtual)

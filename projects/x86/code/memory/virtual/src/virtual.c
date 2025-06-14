@@ -22,8 +22,20 @@
 //     STRING("Write Back (WB)"),        STRING("Uncached (UC-)"),
 // };
 
+//  1 MiB each time
+//  freelsit
+//  1 MiB
 VirtualPageTable *rootPageTable;
 PageMetaDataNode rootPageMetaData = {0};
+
+typedef MAX_LENGTH_ARRAY(VirtualPageTable *) VirtualPageTablePtr_max_a;
+
+typedef struct {
+    // VirtualPageTablePtr_max_a arrayPool;
+    VirtualPageTablePtr_max_a freeList;
+} VirtualPageTableAllocator;
+
+VirtualPageTableAllocator virtPageAllocator;
 
 static U64 getZeroedMemory(U64 bytes, U64 align) {
     U64 address = getBytesForMemoryMapping(bytes, align);
@@ -32,11 +44,9 @@ static U64 getZeroedMemory(U64 bytes, U64 align) {
     return address;
 }
 
-static constexpr auto NEW_META_DATA_TABLE_BYTES =
-    PageTableFormat.ENTRIES * sizeof(PageMetaDataNode);
 static PageMetaDataNode *getZeroedMetaDataTable() {
-    return (PageMetaDataNode *)getZeroedMemory(NEW_META_DATA_TABLE_BYTES,
-                                               alignof(PageMetaDataNode));
+    return (PageMetaDataNode *)getZeroedMemory(META_DATA_TABLE_BYTES,
+                                               META_DATA_TABLE_ALIGNMENT);
 }
 
 static U64 getZeroedPageTable() {
@@ -125,7 +135,7 @@ static void updateMappingData(VirtualPageTable *pageTables[MAX_PAGING_LEVELS],
                   .metaData.entriesMappedWithSmallerGranularity)) {
             metaData[len - 2][metaDataTableIndices[len - 2]].children = 0;
             freePhysicalMemory((Memory){.start = (U64)(metaData[len - 1]),
-                                        .bytes = NEW_META_DATA_TABLE_BYTES});
+                                        .bytes = META_DATA_TABLE_BYTES});
         }
 
         freePhysicalMemory((Memory){.start = (U64)pageTables[len - 1],
