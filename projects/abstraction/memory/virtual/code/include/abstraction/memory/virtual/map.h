@@ -15,4 +15,10 @@ Memory unmapPage(U64 virt);
 void flushPageCacheEntry(U64 virt);
 void flushPageCache();
 
+U64 getVirtualMemoryMappingBytes();
+U64 getVirtualMemoryMappingAlignment();
+
+U64 getVirtualMemoryMetaDataBytes();
+U64 getVirtualMemoryMetaDataAlignment();
+
 #endif

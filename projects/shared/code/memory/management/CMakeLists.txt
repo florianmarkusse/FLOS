@@ -8,7 +8,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE shared-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE efi-to-kernel-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-jmp-i)
-target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-physical-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-interrupts-i)
 
 add_subdirectory(status)

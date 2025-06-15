@@ -1,3 +1,5 @@
+- Create some type of "external" folder for x86 for things that are to be exported and use by using the abstraction indirection.
+  - Which just uses functions that return simple values to use.
 - look into sizeof usage and see if we can replace it with typeof
 - look into alignof calls, and see if I can replace it with the variable
 

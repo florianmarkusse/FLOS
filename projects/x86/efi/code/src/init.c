@@ -2,7 +2,7 @@
 
 #include "abstraction/log.h"
 #include "abstraction/memory/manipulation.h"
-#include "abstraction/memory/physical.h"
+#include "abstraction/memory/virtual/allocator.h"
 #include "abstraction/time.h"
 #include "efi-to-kernel/memory/definitions.h"
 #include "efi/error.h"
@@ -25,12 +25,8 @@
 #include "x86/memory/virtual.h"
 
 void bootstrapProcessorWork(Arena scratch) {
-    U64 newCR3 = getBytesForMemoryMapping(VIRTUAL_MEMORY_MAPPING_SIZE,
-                                          VIRTUAL_MEMORY_MAPPER_ALIGNMENT);
-    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    memset((void *)newCR3, 0, X86_4KIB_PAGE);
-
-    rootPageTable = (VirtualPageTable *)newCR3;
+    rootPageTable = (VirtualPageTable *)getZeroedMemoryForVirtual(
+        VIRTUAL_PAGE_TABLE_ALLOCATION);
 
     KFLUSH_AFTER {
         INFO(STRING("root page table memory location: "));

@@ -1,7 +1,6 @@
 #ifndef ABSTRACTION_MEMORY_VIRTUAL_ALLOCATOR_H
 #define ABSTRACTION_MEMORY_VIRTUAL_ALLOCATOR_H
 
-#include "shared/memory/management/definitions.h"
 #include "shared/types/numeric.h"
 
 typedef enum {

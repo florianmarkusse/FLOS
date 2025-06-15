@@ -1,7 +1,6 @@
 #include "os-loader/data-reading.h"
 
 #include "abstraction/log.h"
-#include "abstraction/memory/physical.h"
 #include "efi-to-kernel/generated/kernel-magic.h"
 #include "efi-to-kernel/memory/definitions.h"
 #include "efi/error.h"

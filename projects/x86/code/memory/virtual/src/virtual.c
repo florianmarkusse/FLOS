@@ -1,7 +1,7 @@
 #include "x86/memory/virtual.h"
 
 #include "abstraction/memory/manipulation.h"
-#include "abstraction/memory/physical.h"
+#include "abstraction/memory/virtual/allocator.h"
 #include "shared/assert.h"
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
@@ -37,21 +37,12 @@ typedef struct {
 
 VirtualPageTableAllocator virtPageAllocator;
 
-static U64 getZeroedMemory(U64 bytes, U64 align) {
-    U64 address = getBytesForMemoryMapping(bytes, align);
-    /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-    memset((void *)address, 0, bytes);
-    return address;
-}
-
 static PageMetaDataNode *getZeroedMetaDataTable() {
-    return (PageMetaDataNode *)getZeroedMemory(META_DATA_TABLE_BYTES,
-                                               META_DATA_TABLE_ALIGNMENT);
+    return getZeroedMemoryForVirtual(META_DATA_PAGE_ALLOCATION);
 }
 
 static U64 getZeroedPageTable() {
-    return getZeroedMemory(VIRTUAL_MEMORY_MAPPING_SIZE,
-                           VIRTUAL_MEMORY_MAPPER_ALIGNMENT);
+    return (U64)getZeroedMemoryForVirtual(VIRTUAL_PAGE_TABLE_ALLOCATION);
 }
 
 static U16 calculateTableIndex(U64 virt, U64 pageSize) {
@@ -200,3 +191,11 @@ Memory unmapPage(U64 virt) {
 
     __builtin_unreachable();
 }
+
+U64 getVirtualMemoryMappingBytes() { return VIRTUAL_MEMORY_MAPPING_SIZE; }
+U64 getVirtualMemoryMappingAlignment() {
+    return VIRTUAL_MEMORY_MAPPER_ALIGNMENT;
+}
+
+U64 getVirtualMemoryMetaDataBytes() { return META_DATA_TABLE_BYTES; }
+U64 getVirtualMemoryMetaDataAlignment() { return META_DATA_TABLE_ALIGNMENT; }

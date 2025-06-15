@@ -14,7 +14,6 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     add_project("abstraction/serial")
     add_project("abstraction/text/converter")
     add_project("abstraction/memory/virtual")
-    add_project("abstraction/memory/physical")
     add_project("abstraction/memory/manipulation")
 
     include(${REPO_PROJECTS}/print-configuration.cmake)
