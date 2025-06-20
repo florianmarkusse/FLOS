@@ -3,6 +3,12 @@
 
 #include "shared/types/numeric.h"
 
+#define PACKED_ARRAY(T)                                                        \
+    struct __attribute__((packed)) {                                           \
+        T *buf;                                                                \
+        U64 len;                                                               \
+    }
+
 #define ARRAY(T)                                                               \
     struct {                                                                   \
         T *buf;                                                                \

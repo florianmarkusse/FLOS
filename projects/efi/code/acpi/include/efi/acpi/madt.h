@@ -4,7 +4,7 @@
 #include "efi/acpi/c-acpi-rsdt.h"
 #include "shared/types/numeric.h"
 
-typedef struct __attribute((packed)) {
+typedef struct __attribute__((packed)) {
     CAcpiSDT header;
     U32 local_controller_addr;
     U32 flags;

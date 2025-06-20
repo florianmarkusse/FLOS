@@ -46,7 +46,7 @@ TRIE_ITERATOR_HEADER_FILE(trie_stringSet, trie_stringIterNode,
 // TRIE_NEW_ITERATOR(trie_StringSet, trie_Iter, trie_IterNode,
 // newIter);
 
-//__attribute((unused)) static trie_Iter *newIter(trie_StringSet
+//__attribute__((unused)) static trie_Iter *newIter(trie_StringSet
 //*set,
 //                                                        arena *perm) {
 //    trie_Iter *it = NEW(perm, trie_Iter, 1, ZERO_MEMORY);
@@ -60,7 +60,7 @@ TRIE_ITERATOR_HEADER_FILE(trie_stringSet, trie_stringIterNode,
 // TRIE_NEXT_ITERATOR(string, trie_Iter, trie_IterNode,
 // nextIter);
 
-//__attribute((unused)) static string nextIter(trie_Iter *it,
+//__attribute__((unused)) static string nextIter(trie_Iter *it,
 //                                                     arena *perm) {
 //    while (it->head) {
 //        int index = it->head->index++;

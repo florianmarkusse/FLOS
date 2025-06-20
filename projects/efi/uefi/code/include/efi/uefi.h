@@ -25,18 +25,18 @@ static constexpr UUID FLOS_BASIC_DATA_GUID = {
     .clockSeqLo = 0xc7,
     .node = {0xfb, 0xc3, 0x8a, 0x42, 0xff, 0x3e}};
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     U8 bootIndicator;
     U8 startingCHS[3];
     U8 osType;
     U8 endingCHS[3];
     U32 startingLBA;
     U32 sizeLBA;
-} __attribute__((packed)) MBRPartition;
+} MBRPartition;
 
 // NOTE: We are using the fact that this is 128 bytes in the GPTHeader as it is
 // set in the image builder's configuration.
-typedef struct {
+typedef struct __attribute__((packed)) {
     UUID partitionTypeGUID;
     UUID uniquePartitionGUID;
     U64 startingLBA;
@@ -44,6 +44,6 @@ typedef struct {
     U64 attributes;
     U16 partitionNameUTF16[36]; // UCS-2 (UTF-16 limited to code points 0x0000 -
                                 // 0xFFFF)
-} __attribute__((packed)) GPTPartitionEntry;
+} GPTPartitionEntry;
 
 #endif

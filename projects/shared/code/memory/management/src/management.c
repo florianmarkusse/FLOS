@@ -58,19 +58,19 @@ static void handleRemovedAllocator(RedBlackNodeMM *availableMemory,
 
     if (beforeResultBytes && afterResultBytes) {
         availableMemory->memory.bytes = beforeResultBytes;
-        insertRedBlackNodeMM(&allocator->tree, availableMemory);
+        (void)insertRedBlackNodeMM(&allocator->tree, availableMemory);
 
         insertMemory((Memory){.start = memoryUsed.start + memoryUsed.bytes,
                               .bytes = afterResultBytes},
                      allocator);
     } else if (beforeResultBytes) {
         availableMemory->memory.bytes = beforeResultBytes;
-        insertRedBlackNodeMM(&allocator->tree, availableMemory);
+        (void)insertRedBlackNodeMM(&allocator->tree, availableMemory);
     } else if (afterResultBytes) {
         availableMemory->memory =
             (Memory){.start = memoryUsed.start + memoryUsed.bytes,
                      .bytes = afterResultBytes};
-        insertRedBlackNodeMM(&allocator->tree, availableMemory);
+        (void)insertRedBlackNodeMM(&allocator->tree, availableMemory);
     } else {
         allocator->freeList.buf[allocator->freeList.len] = availableMemory;
         allocator->freeList.len++;

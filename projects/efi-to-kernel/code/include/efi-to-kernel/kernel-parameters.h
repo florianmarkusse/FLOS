@@ -13,34 +13,34 @@
 
 // This struct implicitly assumes that there are 4 bytes per pixel, hence a
 // U32 buffer
-typedef struct {
+typedef struct __attribute__((packed)) {
     U32 *screen;
     U64 size;
     U32 width;
     U32 height;
     U32 scanline;
-} __attribute__((packed)) PackedWindow;
+} PackedWindow;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     U8 *curFree;
     U8 *beg;
     U8 *end;
-} __attribute__((packed)) PackedArena;
+} PackedArena;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     RedBlackNodeMM *tree;
     PackedArena allocator;
-} __attribute__((packed)) PackedMemoryTree;
+} PackedMemoryTree;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     PackedMemoryTree physical;
     PackedMemoryTree virt;
-} __attribute__((packed)) PackedKernelMemory;
+} PackedKernelMemory;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     PackedWindow window;
     PackedKernelMemory memory;
     void *archParams;
-} __attribute__((packed)) PackedKernelParameters;
+} PackedKernelParameters;
 
 #endif

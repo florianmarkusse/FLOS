@@ -4,7 +4,7 @@
 #include "efi/acpi/configuration-table.h"
 #include "shared/types/numeric.h"
 
-typedef struct __attribute((packed)) {
+typedef struct __attribute__((packed)) {
     I8 signature[8];
     U8 checksum;
     I8 oem_id[6];

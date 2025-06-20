@@ -216,12 +216,12 @@ void initVirtualMemory(U64 startingAddress, U64 endingAddress,
     RedBlackNodeMM *node = NEW(&treeAllocator, RedBlackNodeMM);
     node->memory = (Memory){.start = startingAddress,
                             .bytes = LOWER_HALF_END - startingAddress};
-    insertRedBlackNodeMM(&root, node);
+    (void)insertRedBlackNodeMM(&root, node);
 
     node = NEW(&treeAllocator, RedBlackNodeMM);
     node->memory = (Memory){.start = HIGHER_HALF_START,
                             .bytes = endingAddress - HIGHER_HALF_START};
-    insertRedBlackNodeMM(&root, node);
+    (void)insertRedBlackNodeMM(&root, node);
 
     *virtualMemoryTree = (PackedMemoryTree){
         .allocator = (PackedArena){.beg = treeAllocator.beg,

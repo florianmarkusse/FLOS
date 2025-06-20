@@ -27,8 +27,8 @@ BuddyAllocator createBuddyAllocator(I8 *data, U64 size);
 
 void coalesceBuddies(BuddyBlock *head, BuddyBlock *tail);
 
-__attribute((malloc)) void *buddyAlloc(BuddyAllocator *buddyAllocator, I64 size,
-                                       I64 count, U8 flags);
+__attribute__((malloc)) void *buddyAlloc(BuddyAllocator *buddyAllocator,
+                                         I64 size, I64 count, U8 flags);
 
 void freeBuddy(BuddyAllocator *buddyAllocator, void *data);
 

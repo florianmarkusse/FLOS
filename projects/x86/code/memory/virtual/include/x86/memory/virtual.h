@@ -15,15 +15,15 @@ typedef struct PageMetaDataNode {
     PageMetaData metaData;
 } PageMetaDataNode;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     U16 entriesMapped;
     U16 entriesMappedWithSmallerGranularity;
-} __attribute__((packed)) PackedPageMetaData;
+} PackedPageMetaData;
 
-typedef struct PackedPageMetaDataNode {
+typedef struct __attribute__((packed)) {
     struct PackedPageMetaDataNode *children;
     PackedPageMetaData metaData;
-} __attribute__((packed)) PackedPageMetaDataNode;
+} PackedPageMetaDataNode;
 
 extern VirtualPageTable *rootPageTable;
 extern PageMetaDataNode rootPageMetaData;

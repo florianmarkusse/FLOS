@@ -42,7 +42,7 @@ PoolAllocator createPoolAllocator(I8 *buffer, I64 cap, I64 chunkSize) {
     return result;
 }
 
-__attribute((malloc)) void *poolAlloc(PoolAllocator *pool, U8 flags) {
+__attribute__((malloc)) void *poolAlloc(PoolAllocator *pool, U8 flags) {
     PoolHead *node = pool->head;
 
     if (node == nullptr) {

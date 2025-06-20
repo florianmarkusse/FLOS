@@ -19,6 +19,7 @@ struct RedBlackNodeMM {
 };
 
 typedef ARRAY(RedBlackNodeMM *) RedBlackNodeMMPtr_a;
+typedef PACKED_ARRAY(RedBlackNodeMM *) PackedRedBlackNodeMMPtr_a;
 
 static constexpr auto RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT = 2;
 
@@ -31,8 +32,9 @@ typedef struct {
 //  - a bridge merge with 2 other nodes: return 2 freed nodes
 //  - a single merge with 1 other node: return 1 freed node
 //  - no merges with other nodes: return 0 freed nodes
-InsertResult insertRedBlackNodeMM(RedBlackNodeMM **tree,
-                                  RedBlackNodeMM *createdNode);
-RedBlackNodeMM *deleteAtLeastRedBlackNodeMM(RedBlackNodeMM **tree, U64 bytes);
+[[nodiscard]] InsertResult insertRedBlackNodeMM(RedBlackNodeMM **tree,
+                                                RedBlackNodeMM *createdNode);
+[[nodiscard]] RedBlackNodeMM *deleteAtLeastRedBlackNodeMM(RedBlackNodeMM **tree,
+                                                          U64 bytes);
 
 #endif

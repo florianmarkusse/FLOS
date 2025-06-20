@@ -44,11 +44,3 @@ CPU features to implement/turn on in x86
 
 - sse
 - avx
-
-average fault timings:
-fault handling cycles: 2174
-simd saving cycles: 0
-simd restoring cycles: 228
-alloc cycles: 224
-page map cycles: 905
-page calc cycles: 390

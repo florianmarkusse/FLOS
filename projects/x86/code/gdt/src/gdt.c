@@ -2,7 +2,7 @@
 #include "shared/types/numeric.h" // for U64, U32, U16
 #include "x86/memory/definitions.h"
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     union {
         struct {
             U64 limit_15_0 : 16;
@@ -21,9 +21,9 @@ typedef struct {
         };
         U64 value;
     };
-} __attribute__((packed)) SegmentDescriptor;
+} SegmentDescriptor;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     union {
         struct {
             U64 limit_15_0 : 16;
@@ -47,9 +47,9 @@ typedef struct {
     U64 reserved_1 : 8;
     U64 zero_4 : 5;
     U64 reserved_2 : 19;
-} __attribute__((packed)) TSSDescriptor;
+} TSSDescriptor;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     U32 reserved_0;
     U32 rsp0_low;
     U32 rsp0_high;
@@ -77,14 +77,14 @@ typedef struct {
     U32 reserved_4;
     U16 reserved_5;
     U16 io_map_base_address;
-} __attribute__((packed)) TaskStateSegment;
+} TaskStateSegment;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     SegmentDescriptor null;
     SegmentDescriptor kernel_code;
     SegmentDescriptor kernel_data;
     TSSDescriptor tssDescriptor;
-} __attribute__((packed)) GDTTable;
+} GDTTable;
 
 DescriptorTableRegister *prepNewGDT(PhysicalBasePage zeroPages[3]) {
     TaskStateSegment *TSS = (TaskStateSegment *)zeroPages[0].data;

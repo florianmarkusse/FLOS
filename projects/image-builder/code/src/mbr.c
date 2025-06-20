@@ -4,13 +4,13 @@
 #include "image-builder/configuration.h"
 #include "shared/types/numeric.h"
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     U8 bootCode[440];
     U32 MBRSignature;
     U16 unknown;
     MBRPartition partitions[4];
     U16 signature;
-} __attribute__((packed)) MBR;
+} MBR;
 
 static MBR protectiveMBR = {
     .bootCode = {0},

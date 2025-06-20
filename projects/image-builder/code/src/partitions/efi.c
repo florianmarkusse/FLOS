@@ -92,7 +92,7 @@ static constexpr struct {
 // blocks. The size of the sector is decided by BIOSParameter.bytesPerSector
 // field.
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     U8 jmpBoot[3];
     U8 OEMName[8];
     U16 bytesPerSector;
@@ -122,9 +122,9 @@ typedef struct {
     U8 fileSystemType[8];
     U8 reserved2[420];
     U16 signature;
-} __attribute__((packed)) BIOSParameterBlock;
+} BIOSParameterBlock;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     U32 leadSignature;
     U8 reserved[480];
     U32 structureSignature;
@@ -132,9 +132,9 @@ typedef struct {
     U32 nextFree;
     U8 reserved1[12];
     U32 trailSignature;
-} __attribute__((packed)) FileSystemInformation;
+} FileSystemInformation;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     U8 name[FAT32_SHORT_NAME_LEN];
     U8 attributes;
     U8 reserved;
@@ -147,7 +147,7 @@ typedef struct {
     U16 writeDate;
     U16 lowClusterNumber;
     U32 fileSize;
-} __attribute__((packed)) DirEntryShortName;
+} DirEntryShortName;
 
 static BIOSParameterBlock parameterBlock = {
     .jmpBoot = {0xEB, 0x00, 0x90},

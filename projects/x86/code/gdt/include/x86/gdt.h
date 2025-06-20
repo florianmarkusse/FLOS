@@ -3,10 +3,10 @@
 
 #include "shared/types/numeric.h"
 #include "x86/memory/definitions.h"
-typedef struct {
+typedef struct __attribute__((packed)) {
     U16 limit;
     U64 base;
-} __attribute__((packed)) DescriptorTableRegister;
+} DescriptorTableRegister;
 
 DescriptorTableRegister *prepNewGDT(PhysicalBasePage zeroPages[3]);
 void enableNewGDT(DescriptorTableRegister *GDTRegister);

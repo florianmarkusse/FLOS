@@ -9,10 +9,10 @@
 // So, only use this struct for transfering data. Convert this data into native
 // structs for processing. Otherwise, performance will suffer.
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     U64 tscFrequencyPerMicroSecond;
     PackedPageMetaDataNode rootPageMetaData;
     U8 *XSAVELocation;
-} __attribute__((packed)) X86ArchParams;
+} X86ArchParams;
 
 #endif

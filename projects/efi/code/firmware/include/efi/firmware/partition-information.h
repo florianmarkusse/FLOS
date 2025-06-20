@@ -20,7 +20,7 @@ typedef enum : U32 {
     PARTITION_TYPE_GPT = 2,
 } PartitionType;
 
-typedef struct PartitionInformationProtocol {
+typedef struct __attribute__((packed)) {
     PartitionInfoProtocolRevision revision;
     PartitionType type;
     U8 system;
@@ -29,6 +29,6 @@ typedef struct PartitionInformationProtocol {
         MBRPartition mbr;
         GPTPartitionEntry gpt;
     };
-} __attribute__((packed)) PartitionInformationProtocol;
+} PartitionInformationProtocol;
 
 #endif

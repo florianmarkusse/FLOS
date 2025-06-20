@@ -6,7 +6,7 @@
 #include "image-builder/crc32.h"
 #include "shared/uuid.h"
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     U8 signature[8];
     U32 revision;
     U32 headerSize;
@@ -23,7 +23,7 @@ typedef struct {
     U32 partitionTableCRC32;
     // The rest of the block is reserved by UEFI and must be zero. Length is
     // blockSize - sizeof(GPTHeader)
-} __attribute__((packed)) GPTHeader;
+} GPTHeader;
 
 static constexpr UUID RANDOM_GUID_1 =
     (UUID){.timeLo = 0x314D4330,

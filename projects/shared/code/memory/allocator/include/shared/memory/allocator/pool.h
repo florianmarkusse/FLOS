@@ -25,7 +25,7 @@ void freePool(PoolAllocator *pool);
  */
 PoolAllocator createPoolAllocator(I8 *buffer, I64 cap, I64 chunkSize);
 
-__attribute((malloc)) void *poolAlloc(PoolAllocator *pool, U8 flags);
+__attribute__((malloc)) void *poolAlloc(PoolAllocator *pool, U8 flags);
 
 void freePoolNode(PoolAllocator *pool, void *ptr);
 

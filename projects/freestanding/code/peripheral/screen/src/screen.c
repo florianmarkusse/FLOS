@@ -34,7 +34,7 @@ typedef struct {
 // 110000000011 0000
 // 110000000011 0000
 // 110000000011 0000
-typedef struct {
+typedef struct __attribute__((packed)) {
     U32 magic;
     U32 version;
     U32 headersize;
@@ -44,7 +44,7 @@ typedef struct {
     U32 height;
     U32 width;
     U8 glyphs[];
-} __attribute__((packed)) psf2_t;
+} psf2_t;
 
 static U8 glyphsBinary[] = {
 #embed "freestanding/resources/font.psf"
