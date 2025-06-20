@@ -9,6 +9,7 @@
 #include "shared/memory/management/management.h"
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
+#include "x86/idt.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/flags.h"
 
@@ -22,27 +23,24 @@
 //     STRING("Write Back (WB)"),        STRING("Uncached (UC-)"),
 // };
 
-//  1 MiB each time
-//  freelsit
-//  1 MiB
+StructReq virtualStructReqs[VIRTUAL_ALLOCATION_TYPE_COUNT] = {
+    [VIRTUAL_PAGE_TABLE_ALLOCATION] = {.bytes = sizeof(PhysicalBasePage),
+                                       .align = alignof(PhysicalBasePage)},
+    [META_DATA_PAGE_ALLOCATION] = {.bytes = PageTableFormat.ENTRIES *
+                                            sizeof(PageMetaDataNode),
+                                   .align = alignof(PageMetaDataNode)}
+
+};
+
 VirtualPageTable *rootPageTable;
 PageMetaDataNode rootPageMetaData = {0};
 
-typedef MAX_LENGTH_ARRAY(VirtualPageTable *) VirtualPageTablePtr_max_a;
-
-typedef struct {
-    // VirtualPageTablePtr_max_a arrayPool;
-    VirtualPageTablePtr_max_a freeList;
-} VirtualPageTableAllocator;
-
-VirtualPageTableAllocator virtPageAllocator;
+VirtualPageTable *getZeroedPageTable() {
+    return getZeroedMemoryForVirtual(VIRTUAL_PAGE_TABLE_ALLOCATION);
+}
 
 static PageMetaDataNode *getZeroedMetaDataTable() {
     return getZeroedMemoryForVirtual(META_DATA_PAGE_ALLOCATION);
-}
-
-static U64 getZeroedPageTable() {
-    return (U64)getZeroedMemoryForVirtual(VIRTUAL_PAGE_TABLE_ALLOCATION);
 }
 
 static U16 calculateTableIndex(U64 virt, U64 pageSize) {
@@ -79,7 +77,8 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
         }
 
         if (!(*tableEntryAddress)) {
-            *tableEntryAddress = getZeroedPageTable() | STANDARD_PAGE_FLAGS;
+            *tableEntryAddress =
+                (U64)getZeroedPageTable() | STANDARD_PAGE_FLAGS;
 
             newMetaEntryAddress->metaData.entriesMapped++;
             newMetaEntryAddress->metaData.entriesMappedWithSmallerGranularity++;
@@ -119,19 +118,19 @@ static void updateMappingData(VirtualPageTable *pageTables[MAX_PAGING_LEVELS],
             return;
         }
 
+        // Will decrement entriesMapped in the next iteration of the loop.
         metaData[len - 2][metaDataTableIndices[len - 2]]
             .metaData.entriesMappedWithSmallerGranularity--;
 
         if (!(metaData[len - 2][metaDataTableIndices[len - 2]]
                   .metaData.entriesMappedWithSmallerGranularity)) {
             metaData[len - 2][metaDataTableIndices[len - 2]].children = 0;
-            freePhysicalMemory((Memory){.start = (U64)(metaData[len - 1]),
-                                        .bytes = META_DATA_TABLE_BYTES});
+            freeZeroedMemoryForVirtual((U64)(metaData[len - 1]),
+                                       META_DATA_PAGE_ALLOCATION);
         }
 
-        freePhysicalMemory((Memory){.start = (U64)pageTables[len - 1],
-                                    .bytes = VIRTUAL_MEMORY_MAPPING_SIZE});
-
+        freeZeroedMemoryForVirtual((U64)pageTables[len - 1],
+                                   VIRTUAL_PAGE_TABLE_ALLOCATION);
         len--;
     }
 }
@@ -191,11 +190,3 @@ Memory unmapPage(U64 virt) {
 
     __builtin_unreachable();
 }
-
-U64 getVirtualMemoryMappingBytes() { return VIRTUAL_MEMORY_MAPPING_SIZE; }
-U64 getVirtualMemoryMappingAlignment() {
-    return VIRTUAL_MEMORY_MAPPER_ALIGNMENT;
-}
-
-U64 getVirtualMemoryMetaDataBytes() { return META_DATA_TABLE_BYTES; }
-U64 getVirtualMemoryMetaDataAlignment() { return META_DATA_TABLE_ALIGNMENT; }

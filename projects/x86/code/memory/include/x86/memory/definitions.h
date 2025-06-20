@@ -31,6 +31,8 @@ static constexpr auto MEMORY_PAGE_SIZES_COUNT =
 // NOTE: Goes from smallest to largest!!!
 extern PageSize availablePageSizes[MEMORY_PAGE_SIZES_COUNT];
 
+// TODO: Can we make this a function instead to return the mask from an
+// abstraction and see if it gets inlined in -03 mode?
 static constexpr U64 AVAILABLE_PAGE_SIZES_MASK =
     (X86_4KIB_PAGE | X86_2MIB_PAGE | X86_1GIB_PAGE);
 static constexpr U64 SMALLEST_VIRTUAL_PAGE =
@@ -42,10 +44,6 @@ static constexpr U64 LARGEST_VIRTUAL_PAGE =
 typedef struct {
     U8 data[X86_4KIB_PAGE];
 } PhysicalBasePage __attribute__((aligned(X86_4KIB_PAGE)));
-
-static constexpr auto VIRTUAL_MEMORY_MAPPING_SIZE = sizeof(PhysicalBasePage);
-static constexpr auto VIRTUAL_MEMORY_MAPPER_ALIGNMENT =
-    alignof(PhysicalBasePage);
 
 static constexpr struct {
     U64 PAGE_PRESENT;         // The page is currently in memory

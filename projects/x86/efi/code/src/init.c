@@ -25,8 +25,7 @@
 #include "x86/memory/virtual.h"
 
 void bootstrapProcessorWork(Arena scratch) {
-    rootPageTable = (VirtualPageTable *)getZeroedMemoryForVirtual(
-        VIRTUAL_PAGE_TABLE_ALLOCATION);
+    rootPageTable = getZeroedPageTable();
 
     KFLUSH_AFTER {
         INFO(STRING("root page table memory location: "));

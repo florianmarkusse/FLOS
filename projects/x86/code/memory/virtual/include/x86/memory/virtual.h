@@ -25,13 +25,11 @@ typedef struct PackedPageMetaDataNode {
     PackedPageMetaData metaData;
 } __attribute__((packed)) PackedPageMetaDataNode;
 
-static constexpr auto META_DATA_TABLE_BYTES =
-    PageTableFormat.ENTRIES * sizeof(PageMetaDataNode);
-static constexpr auto META_DATA_TABLE_ALIGNMENT = alignof(PageMetaDataNode);
-
 extern VirtualPageTable *rootPageTable;
 extern PageMetaDataNode rootPageMetaData;
 
 U64 getPhysicalAddressFrame(U64 virtualPage);
+
+VirtualPageTable *getZeroedPageTable();
 
 #endif

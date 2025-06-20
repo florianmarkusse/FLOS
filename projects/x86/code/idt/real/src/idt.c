@@ -708,8 +708,11 @@ __attribute__((noreturn)) void triggerFault(Fault fault) {
     case FAULT_NO_MORE_PHYSICAL_MEMORY:
         asm volatile("int $0x22" :::);
         break;
-    case FAULT_TOO_LARGE_ALLOCATION:
+    case FAULT_NO_MORE_VIRTUAL_MEMORY:
         asm volatile("int $0x23" :::);
+        break;
+    case FAULT_UNEXPECTED_FAILURE:
+        asm volatile("int $0x24" :::);
         break;
     default:
         asm volatile("int $0xFF" :::);

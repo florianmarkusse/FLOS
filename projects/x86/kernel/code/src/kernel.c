@@ -1,8 +1,6 @@
 #include "abstraction/kernel.h"
 
 #include "abstraction/interrupts.h"
-#include "efi-to-kernel/kernel-parameters.h"
-#include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
 #include "x86/efi-to-kernel/params.h"
 #include "x86/idt.h"

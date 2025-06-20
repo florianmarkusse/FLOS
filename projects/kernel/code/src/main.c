@@ -6,6 +6,7 @@
 #include "efi-to-kernel/kernel-parameters.h"  // for KernelParameters
 #include "efi-to-kernel/memory/definitions.h" // for KERNEL_PARAMS_START
 #include "freestanding/log/init.h"
+#include "freestanding/memory/virtual/allocator.h"
 #include "freestanding/peripheral/screen.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
@@ -28,42 +29,36 @@ static constexpr U64 PRNG_SEED = 15466503514872390148ULL;
 
 static U64 TEST_ITERATIONS = 32;
 
-static bool isMemoryConstant(AvailableMemoryState startMemory,
-                             AvailableMemoryState endMemory) {
+static void appendMemoryDeltaType(AvailableMemoryState startMemory,
+                                  AvailableMemoryState endMemory) {
     if (endMemory.memory != startMemory.memory ||
         endMemory.nodes != startMemory.nodes) {
-        KFLUSH_AFTER {
-            INFO(STRING("Difference in memory detected!\n [BEGIN] memory: "));
-            INFO(startMemory.memory);
-            INFO(STRING(" nodes: "));
-            INFO(startMemory.nodes, NEWLINE);
-            INFO(STRING("[CURRENT] memory: "));
-            INFO(endMemory.memory);
-            INFO(STRING(" nodes: "));
-            INFO(endMemory.nodes, NEWLINE);
-            INFO(STRING("[DELTA] memory: "));
-            INFO((I64)endMemory.memory - (I64)startMemory.memory);
-            INFO(STRING(" nodes: "));
-            INFO((I64)endMemory.nodes - (I64)startMemory.nodes, NEWLINE);
-        }
-        return false;
+        INFO(STRING(
+            "Difference in available memory detected!\n[BEGIN]\tmemory: "));
+        INFO(startMemory.memory);
+        INFO(STRING(" nodes: "));
+        INFO(startMemory.nodes, NEWLINE);
+        INFO(STRING("[CURRENT]\tmemory: "));
+        INFO(endMemory.memory);
+        INFO(STRING(" nodes: "));
+        INFO(endMemory.nodes, NEWLINE);
+        INFO(STRING("[DELTA]\tmemory: "));
+        INFO((I64)endMemory.memory - (I64)startMemory.memory);
+        INFO(STRING(" nodes: "));
+        INFO((I64)endMemory.nodes - (I64)startMemory.nodes, NEWLINE);
     }
-    return true;
 }
 
-static bool isMemoryIntegrous(AvailableMemoryState startPhysicalMemory,
+static void appendMemoryDelta(AvailableMemoryState startPhysicalMemory,
                               AvailableMemoryState startVirtualMemory) {
     AvailableMemoryState endPhysicalMemory = getAvailablePhysicalMemory();
-    if (!isMemoryConstant(startPhysicalMemory, endPhysicalMemory)) {
-        return false;
-    }
+    appendMemoryDeltaType(startPhysicalMemory, endPhysicalMemory);
 
     AvailableMemoryState endVirtualMemory = getAvailableVirtualMemory();
-    if (!isMemoryConstant(startVirtualMemory, endVirtualMemory)) {
-        return false;
-    }
+    appendMemoryDeltaType(startVirtualMemory, endVirtualMemory);
 
-    return true;
+    // INFO(STRING("freelist len: "));
+    // INFO(getFreeListLen(), NEWLINE);
 }
 
 static constexpr auto GROWTH_RATE = 2;
@@ -112,6 +107,7 @@ static U64 arrayWritingTest(U64 alignment, U64 arrayEntries,
         buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT, alignment);
 
         U64 startCycleCount = currentCycleCounter(true, false);
+
         for (U64 i = 0; i < arrayEntries; i++) {
             buffer[i] = i;
         }
@@ -145,9 +141,7 @@ static U64 arrayWritingTest(U64 alignment, U64 arrayEntries,
             (Memory){.start = (U64)buffer, .bytes = TEST_MEMORY_AMOUNT});
     }
 
-    if (!isMemoryIntegrous(startPhysicalMemory, startVirtualMemory)) {
-        return 0;
-    }
+    KFLUSH_AFTER { appendMemoryDelta(startPhysicalMemory, startVirtualMemory); }
 
     U64 expectedAfterPageFaults = beforePageFaults + expectedPageFaults;
     if (expectedAfterPageFaults != afterPageFaults) {
@@ -299,6 +293,8 @@ __attribute__((section("kernel-start"))) int
 kernelmain(PackedKernelParameters *kernelParams) {
     archInit(kernelParams->archParams);
     initMemoryManager(kernelParams->memory);
+
+    initFreestandingAllocator();
 
     void *initMemory = (void *)allocateIdentityMemory(INIT_MEMORY, 1);
     Arena arena = (Arena){.curFree = initMemory,
