@@ -30,6 +30,23 @@ static MemoryInfo prepareMemoryInfo() {
     return memoryInfo;
 }
 
+static void allocatePages(AllocateType allocateType, U64 bytes, U64 *address) {
+    Status status = globals.st->boot_services->allocate_pages(
+        allocateType, LOADER_DATA, CEILING_DIV_VALUE(bytes, UEFI_PAGE_SIZE),
+        address);
+
+    if (!(*address)) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("Received the 0 memory address to use for the memory "
+                         "tree allocator!\n"));
+        }
+    }
+
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+        ERROR(STRING("allocating pages for memory failed!\n"));
+    }
+}
+
 static void fillMemoryInfo(MemoryInfo *memoryInfo) {
     Status status = globals.st->boot_services->get_memory_map(
         &memoryInfo->memoryMapSize, memoryInfo->memoryMap, &memoryInfo->mapKey,
@@ -157,17 +174,11 @@ static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
         }
 
         if (bestDescriptor.address != U64_MAX) {
-            Status status = globals.st->boot_services->allocate_pages(
-                ALLOCATE_ADDRESS, LOADER_DATA,
-                CEILING_DIV_VALUE(bestDescriptor.padding + bytes,
-                                  UEFI_PAGE_SIZE),
-                &bestDescriptor.address);
-            EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
-                ERROR(STRING("allocating pages for memory failed!\n"));
-            }
+            allocatePages(ALLOCATE_ADDRESS, bestDescriptor.padding + bytes,
+                          &bestDescriptor.address);
 
             if (bestDescriptor.padding) {
-                status = globals.st->boot_services->free_pages(
+                Status status = globals.st->boot_services->free_pages(
                     bestDescriptor.address,
                     CEILING_DIV_VALUE(bestDescriptor.padding, UEFI_PAGE_SIZE));
                 EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
@@ -201,12 +212,8 @@ U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
 
 U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure) {
     U64 address = 0;
-    Status status = globals.st->boot_services->allocate_pages(
-        ALLOCATE_ANY_PAGES, LOADER_DATA,
-        CEILING_DIV_VALUE(bytes, UEFI_PAGE_SIZE), &address);
-    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
-        ERROR(STRING("allocating unaligned memory failed!\n"));
-    }
+
+    allocatePages(ALLOCATE_ANY_PAGES, bytes, &address);
 
     if (isKernelStructure) {
         addAddressToKernelStructure(address, bytes);
@@ -214,17 +221,22 @@ U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure) {
     return address;
 }
 
-Arena createAllocatorForMemoryTree(U64 requiredNumberOfNodes, Arena scratch) {
-    U64 bytes = sizeof(RedBlackNodeMM) * requiredNumberOfNodes;
+RedBlackNodeMMPtr_a createFreeListForMemoryAllocator(U64 requiredNumberOfNodes,
+                                                     Arena scratch) {
+    U64 bytes = sizeof(RedBlackNodeMM *) * requiredNumberOfNodes;
 
+    RedBlackNodeMM **freeMemoryDescriptorsLocation =
+        (RedBlackNodeMM **)allocateKernelStructure(
+            bytes, alignof(RedBlackNodeMM *), false, scratch);
+
+    return (RedBlackNodeMMPtr_a){.buf = freeMemoryDescriptorsLocation,
+                                 .len = 0};
+}
+
+Arena createArenaForMemoryAllocator(U64 requiredNumberOfNodes, Arena scratch) {
+    U64 bytes = sizeof(RedBlackNodeMM) * requiredNumberOfNodes;
     U8 *freeMemoryDescriptorsLocation = (U8 *)allocateKernelStructure(
         bytes, alignof(RedBlackNodeMM), false, scratch);
-    if (!freeMemoryDescriptorsLocation) {
-        EXIT_WITH_MESSAGE {
-            ERROR(STRING("Received the 0 memory address to use for the memory "
-                         "tree allocator!\n"));
-        }
-    }
     return (Arena){.curFree = freeMemoryDescriptorsLocation,
                    .beg = freeMemoryDescriptorsLocation,
                    .end = freeMemoryDescriptorsLocation + bytes};

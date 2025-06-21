@@ -10,6 +10,16 @@
 // structs for processing. Otherwise, performance will suffer.
 
 typedef struct __attribute__((packed)) {
+    U16 entriesMapped;
+    U16 entriesMappedWithSmallerGranularity;
+} PackedPageMetaData;
+
+typedef struct __attribute__((packed)) {
+    struct PackedPageMetaDataNode *children;
+    PackedPageMetaData metaData;
+} PackedPageMetaDataNode;
+
+typedef struct __attribute__((packed)) {
     U64 tscFrequencyPerMicroSecond;
     PackedPageMetaDataNode rootPageMetaData;
     U8 *XSAVELocation;

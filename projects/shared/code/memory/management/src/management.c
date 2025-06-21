@@ -9,6 +9,19 @@
 MemoryAllocator virt;
 MemoryAllocator physical;
 
+void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
+                                          RedBlackNodeMM *newNode,
+                                          RedBlackNodeMMPtr_a *freeList) {
+    InsertResult insertResult = insertRedBlackNodeMM(root, newNode);
+
+    for (U64 i = 0; (i < RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT) &&
+                    insertResult.freed[i];
+         i++) {
+        freeList->buf[freeList->len] = insertResult.freed[i];
+        freeList->len++;
+    }
+}
+
 static void insertMemory(Memory memory, MemoryAllocator *allocator) {
     RedBlackNodeMM *newNode;
     if (allocator->freeList.len > 0) {
@@ -19,14 +32,8 @@ static void insertMemory(Memory memory, MemoryAllocator *allocator) {
     }
     newNode->memory = memory;
 
-    InsertResult insertResult = insertRedBlackNodeMM(&allocator->tree, newNode);
-    for (U64 i = 0; (i < RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT) &&
-                    insertResult.freed[i];
-         i++) {
-        allocator->freeList.buf[allocator->freeList.len] =
-            insertResult.freed[i];
-        allocator->freeList.len++;
-    }
+    insertRedBlackNodeMMAndAddToFreelist(&allocator->tree, newNode,
+                                         &allocator->freeList);
 }
 
 static RedBlackNodeMM *getMemoryAllocation(MemoryAllocator *allocator,
@@ -95,10 +102,16 @@ void *allocPhysicalMemory(U64 bytes, U64 align) {
     return allocAlignedMemory(bytes, align, &physical);
 }
 
-static void setupArena(PackedArena packed, Arena *arena) {
-    arena->beg = packed.beg;
-    arena->curFree = packed.curFree;
-    arena->end = packed.end;
+static void setupArena(PackedArena *packed, Arena *arena) {
+    arena->beg = packed->beg;
+    arena->curFree = packed->curFree;
+    arena->end = packed->end;
+}
+
+static void setupFreeList(PackedRedBlackNodeMMPtr_a *packed,
+                          RedBlackNodeMMPtr_a *freeList) {
+    freeList->buf = packed->buf;
+    freeList->len = packed->len;
 }
 
 static U64 getRequiredFreeListSize(MemoryAllocator *allocator) {
@@ -108,42 +121,25 @@ static U64 getRequiredFreeListSize(MemoryAllocator *allocator) {
     return redBlackNodeMMsPossibleInAllocator * sizeof(allocator->tree);
 }
 
-void initVirtualMemoryManager(PackedMemoryTree virtualMemoryTree) {
-    setupArena(virtualMemoryTree.allocator, &virt.arena);
+// TODO: Make this equal with physical memory init
+void initVirtualMemoryManager(PackedMemoryAllocator virtualMemoryTree) {
+    setupArena(&virtualMemoryTree.allocator, &virt.arena);
     if (setjmp(virt.arena.jmp_buf)) {
         interruptNoMoreVirtualMemory();
     }
+    setupFreeList(&virtualMemoryTree.freeList, &virt.freeList);
 
     virt.tree = virtualMemoryTree.tree;
-
-    U64 freeListRequiredSize = getRequiredFreeListSize(&virt);
-    virt.freeList = (RedBlackNodeMMPtr_a){
-        .len = 0,
-        .buf = allocPhysicalMemory(freeListRequiredSize,
-                                   alignof(*virt.freeList.buf))};
 }
 
 // NOTE: Coming into this, All the memory is identity mapped. Having to do some
 // boostrapping here.
-void initPhysicalMemoryManager(PackedMemoryTree physicalMemoryTree) {
-    setupArena(physicalMemoryTree.allocator, &physical.arena);
+void initPhysicalMemoryManager(PackedMemoryAllocator physicalMemoryTree) {
+    setupArena(&physicalMemoryTree.allocator, &physical.arena);
     if (setjmp(physical.arena.jmp_buf)) {
         interruptNoMorePhysicalMemory();
     }
+    setupFreeList(&physicalMemoryTree.freeList, &physical.freeList);
 
     physical.tree = physicalMemoryTree.tree;
-
-    U64 freeListRequiredSize = getRequiredFreeListSize(&physical);
-
-    RedBlackNodeMM *availableMemory = getMemoryAllocation(
-        &physical,
-        alignedToTotal(freeListRequiredSize, alignof(*virt.freeList.buf)));
-    U64 result = ALIGN_UP_VALUE(availableMemory->memory.start,
-                                alignof(*virt.freeList.buf));
-    physical.freeList =
-        (RedBlackNodeMMPtr_a){.len = 0, .buf = (RedBlackNodeMM **)result};
-
-    handleRemovedAllocator(
-        availableMemory,
-        (Memory){.start = result, .bytes = freeListRequiredSize}, &physical);
 }

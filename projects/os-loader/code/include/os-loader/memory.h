@@ -12,11 +12,12 @@
 
 static constexpr auto DYNAMIC_MEMORY_CAPACITY = 1 * MiB;
 
-Arena allocateSpaceForKernelMemory(Arena scratch);
+void allocateSpaceForKernelMemory(Arena *allocator,
+                                  RedBlackNodeMMPtr_a *freeList, Arena scratch);
 
 void convertToKernelMemory(MemoryInfo *memoryInfo,
-                           PackedMemoryTree *physicalMemoryTree,
-                           Arena treeAllocator);
+                           PackedMemoryAllocator *physicalMemoryTree,
+                           Arena *allocator, RedBlackNodeMMPtr_a *freeList);
 
 void findKernelMemory(U64 alignment, U64 numberOfThreads);
 

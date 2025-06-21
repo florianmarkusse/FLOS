@@ -4,6 +4,7 @@
 #include "efi/firmware/memory.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
+#include "shared/trees/red-black/memory-manager.h"
 #include "shared/types/array-types.h"
 #include "shared/types/numeric.h"
 
@@ -27,10 +28,9 @@ U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
                             bool tryEncompassingVirtual, Arena scratch);
 U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure);
 
-Arena createAllocatorForMemoryTree(U64 requiredNumberOfNodes, Arena scratch);
-
-U64 mappingSize(U64 physical, U64 bytes, bool tryEncompassingVirtual);
-U64 alignVirtual(U64 virt, U64 physical, U64 bytes);
+Arena createArenaForMemoryAllocator(U64 requiredNumberOfNodes, Arena scratch);
+RedBlackNodeMMPtr_a createFreeListForMemoryAllocator(U64 requiredNumberOfNodes,
+                                                     Arena scratch);
 
 #define FOR_EACH_DESCRIPTOR(memoryInfoAddress, descriptorName)                 \
     for (MemoryDescriptor *descriptorName = (memoryInfoAddress)->memoryMap;    \

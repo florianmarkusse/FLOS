@@ -22,7 +22,7 @@
 
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
-static constexpr auto TEST_MEMORY_AMOUNT = 1 * GiB;
+static constexpr auto TEST_MEMORY_AMOUNT = 32 * MiB;
 static constexpr auto MAX_TEST_ENTRIES = TEST_MEMORY_AMOUNT / (sizeof(U64));
 
 static constexpr U64 PRNG_SEED = 15466503514872390148ULL;
@@ -56,9 +56,6 @@ static void appendMemoryDelta(AvailableMemoryState startPhysicalMemory,
 
     AvailableMemoryState endVirtualMemory = getAvailableVirtualMemory();
     appendMemoryDeltaType(startVirtualMemory, endVirtualMemory);
-
-    // INFO(STRING("freelist len: "));
-    // INFO(getFreeListLen(), NEWLINE);
 }
 
 static constexpr auto GROWTH_RATE = 2;

@@ -5,6 +5,4 @@
 
 void initFreestandingAllocator();
 
-U64 getFreeListLen();
-
 #endif

@@ -11,6 +11,7 @@
 #include "shared/log.h"
 #include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
+#include "shared/memory/management/management.h"
 #include "shared/text/string.h"
 #include "shared/trees/red-black/memory-manager.h"
 
@@ -28,13 +29,18 @@ static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     }
 }
 
-Arena allocateSpaceForKernelMemory(Arena scratch) {
+void allocateSpaceForKernelMemory(Arena *allocator,
+                                  RedBlackNodeMMPtr_a *freeList,
+                                  Arena scratch) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
     U64 numberOfDescriptors =
         memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
-    U64 totalNumberOfDescriptors = ((numberOfDescriptors * 3) / 2);
+    U64 expectedNumberOfDescriptors = ((numberOfDescriptors * 3) / 2);
 
-    return createAllocatorForMemoryTree(totalNumberOfDescriptors, scratch);
+    *allocator =
+        createArenaForMemoryAllocator(expectedNumberOfDescriptors, scratch);
+    *freeList =
+        createFreeListForMemoryAllocator(expectedNumberOfDescriptors, scratch);
 }
 
 U64 alignVirtual(U64 virt, U64 physical, U64 bytes) {
@@ -58,8 +64,8 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
 }
 
 void convertToKernelMemory(MemoryInfo *memoryInfo,
-                           PackedMemoryTree *physicalMemoryTree,
-                           Arena treeAllocator) {
+                           PackedMemoryAllocator *physicalMemoryTree,
+                           Arena *allocator, RedBlackNodeMMPtr_a *freeList) {
     RedBlackNodeMM *root = nullptr;
 
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
@@ -107,16 +113,14 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
             }
 
             for (U64 i = 0; i < availableMemory.len; i++) {
-                RedBlackNodeMM *node = NEW(&treeAllocator, RedBlackNodeMM);
+                // TODO: Fix this to also maybe pick from the freeList first,
+                // again, use function to define in manee.ent.c
+                RedBlackNodeMM *node = NEW(allocator, RedBlackNodeMM);
                 node->memory = availableMemory.buf[i];
-                insertRedBlackNodeMM(&root, node);
+                insertRedBlackNodeMMAndAddToFreelist(&root, node, freeList);
             }
         }
     }
 
-    *physicalMemoryTree = (PackedMemoryTree){
-        .allocator = (PackedArena){.beg = treeAllocator.beg,
-                                   .curFree = treeAllocator.curFree,
-                                   .end = treeAllocator.end},
-        .tree = root};
+    setPackedMemoryAllocator(physicalMemoryTree, allocator, root, freeList);
 }

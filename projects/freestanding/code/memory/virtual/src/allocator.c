@@ -58,12 +58,12 @@ void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
         void *result = freeList->buf[freeList->len - 1];
 
         // // TODO: Remove this check!!!
-        // U8 *address = (U8 *)result;
-        // for (U64 i = 0; i < structReq.bytes; i++) {
-        //     if (address[i]) {
-        //         interruptUnexpectedError();
-        //     }
-        // }
+        U8 *address = (U8 *)result;
+        for (U64 i = 0; i < structReq.bytes; i++) {
+            if (address[i]) {
+                interruptUnexpectedError();
+            }
+        }
         freeList->len--;
         return result;
     }
@@ -82,14 +82,14 @@ void freeZeroedMemoryForVirtual(U64 address, VirtualAllocationType type) {
     BatchAllocator *allocator = &allocators[type];
 
     // // TODO: Remove this check!!!
-    // StructReq structReq = virtualStructReqs[type];
-    // U64 bytes = structReq.bytes;
-    // U8 *addressCheck = (U8 *)address;
-    // for (U64 i = 0; i < bytes; i++) {
-    //     if (addressCheck[i]) {
-    //         interruptUnexpectedError();
-    //     }
-    // }
+    StructReq structReq = virtualStructReqs[type];
+    U64 bytes = structReq.bytes;
+    U8 *addressCheck = (U8 *)address;
+    for (U64 i = 0; i < bytes; i++) {
+        if (addressCheck[i]) {
+            interruptUnexpectedError();
+        }
+    }
 
     if (allocator->freeList.len == allocator->freeList.maxCap) {
         interruptUnexpectedError();
@@ -123,14 +123,4 @@ void initFreestandingAllocator() {
         allocators[i].freeList.mappedBytes = 0;
         allocators[i].freeList.mappingSize = freeListPageSizeBytes;
     }
-}
-
-U64 getFreeListLen() {
-    U64 result = 0;
-
-    for (U64 i = 0; i < VIRTUAL_ALLOCATION_TYPE_COUNT; i++) {
-        result = allocators[i].freeList.len;
-    }
-
-    return result;
 }

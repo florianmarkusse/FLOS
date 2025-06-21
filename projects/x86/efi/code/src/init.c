@@ -207,9 +207,12 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
 }
 
 void initVirtualMemory(U64 startingAddress, U64 endingAddress,
-                       PackedMemoryTree *virtualMemoryTree, Arena scratch) {
+                       PackedMemoryAllocator *virtualMemoryTree,
+                       Arena scratch) {
     Arena treeAllocator =
-        createAllocatorForMemoryTree(X86_MAX_VIRTUAL_MEMORY_REGIONS, scratch);
+        createArenaForMemoryAllocator(X86_MAX_VIRTUAL_MEMORY_REGIONS, scratch);
+    RedBlackNodeMMPtr_a freeList = createFreeListForMemoryAllocator(
+        X86_MAX_VIRTUAL_MEMORY_REGIONS, scratch);
 
     RedBlackNodeMM *root = nullptr;
 
@@ -223,11 +226,8 @@ void initVirtualMemory(U64 startingAddress, U64 endingAddress,
                             .bytes = endingAddress - HIGHER_HALF_START};
     (void)insertRedBlackNodeMM(&root, node);
 
-    *virtualMemoryTree = (PackedMemoryTree){
-        .allocator = (PackedArena){.beg = treeAllocator.beg,
-                                   .curFree = treeAllocator.curFree,
-                                   .end = treeAllocator.end},
-        .tree = root};
+    setPackedMemoryAllocator(virtualMemoryTree, &treeAllocator, root,
+                             &freeList);
 }
 
 void fillArchParams(void *archParams) {
@@ -239,7 +239,7 @@ void fillArchParams(void *archParams) {
     x86ArchParams->XSAVELocation = XSAVESpace;
 
     x86ArchParams->rootPageMetaData.children =
-        (PackedPageMetaDataNode *)rootPageMetaData.children;
+        (struct PackedPageMetaDataNode *)rootPageMetaData.children;
     x86ArchParams->rootPageMetaData.metaData.entriesMapped =
         rootPageMetaData.metaData.entriesMapped;
     x86ArchParams->rootPageMetaData.metaData

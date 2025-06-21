@@ -45,7 +45,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE efi-globals)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE efi-uefi-i)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE efi-to-kernel-i)
+target_link_libraries(${PROJECT_NAME} PRIVATE efi-to-kernel)
 
 target_include_directories(
     ${PROJECT_NAME}

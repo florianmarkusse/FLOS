@@ -6,7 +6,7 @@
 #include "shared/types/numeric.h"
 
 void initVirtualMemory(U64 startingAddress, U64 endingAddress,
-                       PackedMemoryTree *virtualMemoryTree, Arena scratch);
+                       PackedMemoryAllocator *virtualMemoryTree, Arena scratch);
 
 typedef struct {
     U64 bytes;

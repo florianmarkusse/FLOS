@@ -30,11 +30,12 @@ typedef struct __attribute__((packed)) {
 typedef struct __attribute__((packed)) {
     RedBlackNodeMM *tree;
     PackedArena allocator;
-} PackedMemoryTree;
+    PackedRedBlackNodeMMPtr_a freeList;
+} PackedMemoryAllocator;
 
 typedef struct __attribute__((packed)) {
-    PackedMemoryTree physical;
-    PackedMemoryTree virt;
+    PackedMemoryAllocator physical;
+    PackedMemoryAllocator virt;
 } PackedKernelMemory;
 
 typedef struct __attribute__((packed)) {
@@ -42,5 +43,9 @@ typedef struct __attribute__((packed)) {
     PackedKernelMemory memory;
     void *archParams;
 } PackedKernelParameters;
+
+void setPackedMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator,
+                              Arena *arena, RedBlackNodeMM *root,
+                              RedBlackNodeMMPtr_a *freeList);
 
 #endif

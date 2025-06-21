@@ -218,8 +218,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)&kernelParams->memory.virt.tree, NEWLINE);
         INFO(STRING("The virt root is now at "));
         INFO((void *)kernelParams->memory.virt.tree, NEWLINE);
-        INFO(STRING("The allocator is:\n"));
-        INFO(STRING("curfree: "));
+        INFO(STRING("The allocator is:\ncurfree"));
         INFO((void *)kernelParams->memory.virt.allocator.curFree, NEWLINE);
         INFO(STRING("beg: "));
         INFO((void *)kernelParams->memory.virt.allocator.beg, NEWLINE);
@@ -232,7 +231,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                     "to the kernel.\n"));
     }
 
-    Arena physicalTreeArena = allocateSpaceForKernelMemory(arena);
+    Arena physicalTreeArena;
+    RedBlackNodeMMPtr_a physicalFreeList;
+    allocateSpaceForKernelMemory(&physicalTreeArena, &physicalFreeList, arena);
 
     /* NOTE: Keep this call in between the stub and the creation of available */
     /* memory! The stub allocates memory and logs on failure which is not */
@@ -241,13 +242,13 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     status = globals.st->boot_services->exit_boot_services(globals.h,
                                                            memoryInfo.mapKey);
     EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
-        ERROR(STRING("could not exit boot services!\n"));
-        ERROR(STRING("Am I running on a buggy implementation that needs to "
+        ERROR(STRING("could not exit boot services!\nAm I running on a buggy "
+                     "implementation that needs to "
                      "call exit boot services twice?\n"));
     }
 
     convertToKernelMemory(&memoryInfo, &kernelParams->memory.physical,
-                          physicalTreeArena);
+                          &physicalTreeArena, &physicalFreeList);
 
     jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE, kernelParams);
 
