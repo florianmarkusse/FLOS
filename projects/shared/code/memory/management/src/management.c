@@ -109,44 +109,28 @@ void *allocPhysicalMemory(U64 bytes, U64 align) {
     return allocAlignedMemory(bytes, align, &physical);
 }
 
-static void setupArena(PackedArena *packed, Arena *arena) {
-    arena->beg = packed->beg;
-    arena->curFree = packed->curFree;
-    arena->end = packed->end;
+static void initMemoryAllocator(PackedMemoryAllocator packedMemoryAllocator,
+                                MemoryAllocator *allocator) {
+    allocator->arena.beg = packedMemoryAllocator.allocator.beg;
+    allocator->arena.curFree = packedMemoryAllocator.allocator.curFree;
+    allocator->arena.end = packedMemoryAllocator.allocator.end;
+
+    allocator->freeList.buf = packedMemoryAllocator.freeList.buf;
+    allocator->freeList.len = packedMemoryAllocator.freeList.len;
+
+    allocator->tree = packedMemoryAllocator.tree;
 }
 
-static void setupFreeList(PackedRedBlackNodeMMPtr_a *packed,
-                          RedBlackNodeMMPtr_a *freeList) {
-    freeList->buf = packed->buf;
-    freeList->len = packed->len;
-}
-
-static U64 getRequiredFreeListSize(MemoryAllocator *allocator) {
-    U64 redBlackNodeMMsPossibleInAllocator =
-        (allocator->arena.end - allocator->arena.beg) /
-        sizeof(*(allocator->tree));
-    return redBlackNodeMMsPossibleInAllocator * sizeof(allocator->tree);
-}
-
-// TODO: Make this equal with physical memory init
 void initVirtualMemoryManager(PackedMemoryAllocator virtualMemoryTree) {
-    setupArena(&virtualMemoryTree.allocator, &virt.arena);
     if (setjmp(virt.arena.jmp_buf)) {
         interruptNoMoreVirtualMemory();
     }
-    setupFreeList(&virtualMemoryTree.freeList, &virt.freeList);
-
-    virt.tree = virtualMemoryTree.tree;
+    initMemoryAllocator(virtualMemoryTree, &virt);
 }
 
-// NOTE: Coming into this, All the memory is identity mapped. Having to do some
-// boostrapping here.
 void initPhysicalMemoryManager(PackedMemoryAllocator physicalMemoryTree) {
-    setupArena(&physicalMemoryTree.allocator, &physical.arena);
     if (setjmp(physical.arena.jmp_buf)) {
         interruptNoMorePhysicalMemory();
     }
-    setupFreeList(&physicalMemoryTree.freeList, &physical.freeList);
-
-    physical.tree = physicalMemoryTree.tree;
+    initMemoryAllocator(physicalMemoryTree, &physical);
 }
