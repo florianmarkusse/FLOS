@@ -113,9 +113,7 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
             }
 
             for (U64 i = 0; i < availableMemory.len; i++) {
-                // TODO: Fix this to also maybe pick from the freeList first,
-                // again, use function to define in manee.ent.c
-                RedBlackNodeMM *node = NEW(allocator, RedBlackNodeMM);
+                RedBlackNodeMM *node = getRedBlackNodeMM(freeList, allocator);
                 node->memory = availableMemory.buf[i];
                 insertRedBlackNodeMMAndAddToFreelist(&root, node, freeList);
             }

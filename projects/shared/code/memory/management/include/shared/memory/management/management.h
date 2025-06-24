@@ -17,6 +17,7 @@ extern MemoryAllocator physical;
 void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
                                           RedBlackNodeMM *newNode,
                                           RedBlackNodeMMPtr_a *freeList);
+RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_a *freeList, Arena *arena);
 
 void initVirtualMemoryManager(PackedMemoryAllocator virtualMemoryTree);
 void *allocVirtualMemory(U64 size, U64 align);

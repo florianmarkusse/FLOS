@@ -22,14 +22,21 @@ void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
     }
 }
 
-static void insertMemory(Memory memory, MemoryAllocator *allocator) {
-    RedBlackNodeMM *newNode;
-    if (allocator->freeList.len > 0) {
-        newNode = allocator->freeList.buf[allocator->freeList.len - 1];
-        allocator->freeList.len--;
+RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_a *freeList, Arena *arena) {
+    RedBlackNodeMM *result;
+    if (freeList->len > 0) {
+        result = freeList->buf[freeList->len - 1];
+        freeList->len--;
     } else {
-        newNode = NEW(&allocator->arena, RedBlackNodeMM);
+        result = NEW(arena, RedBlackNodeMM);
     }
+
+    return result;
+}
+
+static void insertMemory(Memory memory, MemoryAllocator *allocator) {
+    RedBlackNodeMM *newNode =
+        getRedBlackNodeMM(&allocator->freeList, &allocator->arena);
     newNode->memory = memory;
 
     insertRedBlackNodeMMAndAddToFreelist(&allocator->tree, newNode,
