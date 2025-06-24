@@ -19,11 +19,11 @@ void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
                                           RedBlackNodeMMPtr_a *freeList);
 RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_a *freeList, Arena *arena);
 
-void initVirtualMemoryManager(PackedMemoryAllocator virtualMemoryTree);
+void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree);
 void *allocVirtualMemory(U64 size, U64 align);
 void freeVirtualMemory(Memory memory);
 
-void initPhysicalMemoryManager(PackedMemoryAllocator physicalMemoryTree);
+void initPhysicalMemoryManager(PackedMemoryAllocator *physicalMemoryTree);
 void *allocPhysicalMemory(U64 bytes, U64 align);
 void freePhysicalMemory(Memory memory);
 

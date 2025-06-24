@@ -5,7 +5,7 @@
 #include "shared/memory/management/definitions.h"
 #include "shared/types/numeric.h"
 
-void initMemoryManager(PackedKernelMemory memory);
+void initMemoryManager(PackedKernelMemory *memory);
 
 void *allocateIdentityMemory(U64 bytes, U64 align);
 void freeIdentityMemory(Memory memory);

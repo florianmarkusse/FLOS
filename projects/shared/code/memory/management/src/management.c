@@ -109,26 +109,26 @@ void *allocPhysicalMemory(U64 bytes, U64 align) {
     return allocAlignedMemory(bytes, align, &physical);
 }
 
-static void initMemoryAllocator(PackedMemoryAllocator packedMemoryAllocator,
+static void initMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator,
                                 MemoryAllocator *allocator) {
-    allocator->arena.beg = packedMemoryAllocator.allocator.beg;
-    allocator->arena.curFree = packedMemoryAllocator.allocator.curFree;
-    allocator->arena.end = packedMemoryAllocator.allocator.end;
+    allocator->arena.beg = packedMemoryAllocator->allocator.beg;
+    allocator->arena.curFree = packedMemoryAllocator->allocator.curFree;
+    allocator->arena.end = packedMemoryAllocator->allocator.end;
 
-    allocator->freeList.buf = packedMemoryAllocator.freeList.buf;
-    allocator->freeList.len = packedMemoryAllocator.freeList.len;
+    allocator->freeList.buf = packedMemoryAllocator->freeList.buf;
+    allocator->freeList.len = packedMemoryAllocator->freeList.len;
 
-    allocator->tree = packedMemoryAllocator.tree;
+    allocator->tree = packedMemoryAllocator->tree;
 }
 
-void initVirtualMemoryManager(PackedMemoryAllocator virtualMemoryTree) {
+void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree) {
     if (setjmp(virt.arena.jmp_buf)) {
         interruptNoMoreVirtualMemory();
     }
     initMemoryAllocator(virtualMemoryTree, &virt);
 }
 
-void initPhysicalMemoryManager(PackedMemoryAllocator physicalMemoryTree) {
+void initPhysicalMemoryManager(PackedMemoryAllocator *physicalMemoryTree) {
     if (setjmp(physical.arena.jmp_buf)) {
         interruptNoMorePhysicalMemory();
     }

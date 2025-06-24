@@ -537,17 +537,17 @@ bool flushToScreen(U8_max_a buffer) {
     return true;
 }
 
-void initScreen(PackedWindow window, Arena *perm) {
+void initScreen(PackedWindow *window, Arena *perm) {
     buf = NEW(perm, U8, FILE_BUF_LEN);
     // Need correct alignment
     U32 *doubleBuffer =
-        NEW(perm, U32, CEILING_DIV_VALUE(window.size, (U32)BYTES_PER_PIXEL));
+        NEW(perm, U32, CEILING_DIV_VALUE(window->size, (U32)BYTES_PER_PIXEL));
 
-    dim.screen = window.screen;
-    dim.size = window.size;
-    dim.width = window.width;
-    dim.height = window.height;
-    dim.scanline = window.scanline;
+    dim.screen = window->screen;
+    dim.size = window->size;
+    dim.width = window->width;
+    dim.height = window->height;
+    dim.scanline = window->scanline;
     dim.backingBuffer = doubleBuffer;
 
     glyphsPerLine =

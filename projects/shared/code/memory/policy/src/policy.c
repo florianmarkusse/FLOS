@@ -6,9 +6,9 @@
 #include "shared/maths/maths.h"
 #include "shared/memory/management/management.h"
 
-void initMemoryManager(PackedKernelMemory memory) {
-    initPhysicalMemoryManager(memory.physical);
-    initVirtualMemoryManager(memory.virt);
+void initMemoryManager(PackedKernelMemory *memory) {
+    initPhysicalMemoryManager(&memory->physical);
+    initVirtualMemoryManager(&memory->virt);
 }
 
 void *allocateIdentityMemory(U64 bytes, U64 align) {

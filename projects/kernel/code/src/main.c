@@ -289,7 +289,7 @@ static void mappingTests() {
 __attribute__((section("kernel-start"))) int
 kernelmain(PackedKernelParameters *kernelParams) {
     archInit(kernelParams->archParams);
-    initMemoryManager(kernelParams->memory);
+    initMemoryManager(&kernelParams->memory);
 
     initFreestandingAllocator();
 
@@ -305,7 +305,7 @@ kernelmain(PackedKernelParameters *kernelParams) {
     }
 
     initLogger(&arena);
-    initScreen(kernelParams->window, &arena);
+    initScreen(&kernelParams->window, &arena);
 
     freeIdentityMemory((Memory){.start = (U64)arena.curFree,
                                 .bytes = (U64)(arena.end - arena.curFree)});
