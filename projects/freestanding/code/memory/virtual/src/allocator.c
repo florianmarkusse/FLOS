@@ -4,29 +4,28 @@
 
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/map.h"
+#include "shared/maths/maths.h"
 #include "shared/memory/converter.h"
 #include "shared/memory/management/management.h"
+#include "shared/memory/policy.h"
 #include "shared/memory/sizes.h"
 #include "shared/types/numeric.h"
 
 // NOTE: Don't cause page faults in this code. The code is called inside a page
 // fault. Any potential page faults must be anticipated and solved manually!
 
-#define MANUAL_DYN_ARRAY(T)                                                    \
-    struct {                                                                   \
-        T *buf;                                                                \
-        U64 len;                                                               \
-        U64 maxCap;                                                            \
-        U64 mappedBytes;                                                       \
-        U64 mappingSize;                                                       \
-    }
+typedef struct {
+    void *buf;
 
-typedef MANUAL_DYN_ARRAY(void *) voidPtr_man_da;
-typedef MANUAL_DYN_ARRAY(U8) U8Ptr_man_da;
+    U64 len;
+    U64 maxCap;
+    U64 mappedBytes;
+    U64 mappingSize;
+} ManualDynamicArray;
 
 typedef struct {
-    voidPtr_man_da freeList;
-    U8Ptr_man_da batcher;
+    ManualDynamicArray freeList;
+    ManualDynamicArray batcher;
 } BatchAllocator;
 
 static BatchAllocator allocators[VIRTUAL_ALLOCATION_TYPE_COUNT];
@@ -45,8 +44,25 @@ static bool needsNewMapping(U64 elementSizeBytes, U64 elementLen,
     return false;
 }
 
+static void ensureMapped(ManualDynamicArray *manualDynamicArray,
+                         U64 elementSizeBytes, bool needsZeroed) {
+    if (needsNewMapping(elementSizeBytes, manualDynamicArray->len,
+                        manualDynamicArray->mappedBytes)) {
+        void *backingAddress = allocateIdentityMemory(
+            manualDynamicArray->mappingSize, manualDynamicArray->mappingSize);
+        if (needsZeroed) {
+            memset(backingAddress, 0, manualDynamicArray->mappingSize);
+        }
+
+        mapPage(((U64)manualDynamicArray->buf) +
+                    manualDynamicArray->mappedBytes,
+                (U64)backingAddress, manualDynamicArray->mappingSize);
+        manualDynamicArray->mappedBytes += manualDynamicArray->mappingSize;
+    }
+}
+
 void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
-    voidPtr_man_da *freeList = &allocators[type].freeList;
+    ManualDynamicArray *freeList = &allocators[type].freeList;
 
     StructReq structReq = virtualStructReqs[type];
 
@@ -55,7 +71,7 @@ void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
         // May cause issues with the freezeroed function below.
         // We will never unmap kernel memory so all the memory used for
         // mapping virtual->physical will come from the batch allocator.
-        void *result = freeList->buf[freeList->len - 1];
+        void *result = ((void **)freeList->buf)[freeList->len - 1];
 
         // // TODO: Remove this check!!!
         U8 *address = (U8 *)result;
@@ -68,18 +84,22 @@ void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
         return result;
     }
 
-    // TODO: get from buffer instead...
+    // ManualDynamicArray *batcher = &allocators[type].batcher;
+    // ensureMapped(batcher, structReq.bytes, true);
+    //
+    // void *result = (U8 *)batcher->buf + (structReq.bytes * batcher->len);
+    // batcher->len++;
 
-    void *result = allocPhysicalMemory(structReq.bytes, structReq.align);
+    void *result = allocateIdentityMemory(structReq.bytes, structReq.align);
     memset(result, 0, structReq.bytes);
     return result;
 }
 
 // NOTE: When mapping more memory, it will potentially shrink the freelist since
-// it requires extra memory for the mapping. So we have to be really careful
-// here.
+// it requires extra memory for the mapping. So the memory we map in might not
+// immediately be used.
 void freeZeroedMemoryForVirtual(U64 address, VirtualAllocationType type) {
-    BatchAllocator *allocator = &allocators[type];
+    ManualDynamicArray *freeList = &allocators[type].freeList;
 
     // // TODO: Remove this check!!!
     StructReq structReq = virtualStructReqs[type];
@@ -91,36 +111,34 @@ void freeZeroedMemoryForVirtual(U64 address, VirtualAllocationType type) {
         }
     }
 
-    if (allocator->freeList.len == allocator->freeList.maxCap) {
+    if (freeList->len == freeList->maxCap) {
         interruptUnexpectedError();
     }
 
-    if (needsNewMapping(sizeof(*(allocator->freeList.buf)),
-                        allocator->freeList.len,
-                        allocator->freeList.mappedBytes)) {
-        void *address =
-            getZeroedMemoryForVirtual(VIRTUAL_PAGE_TABLE_ALLOCATION);
-        mapPage(((U64)allocator->freeList.buf) +
-                    allocator->freeList.mappedBytes,
-                (U64)address, allocator->freeList.mappingSize);
-        allocator->freeList.mappedBytes += allocator->freeList.mappingSize;
-    }
+    ensureMapped(freeList, sizeof(void *), false);
 
-    allocator->freeList.buf[allocator->freeList.len] = (void *)address;
-    allocator->freeList.len++;
+    ((void **)freeList->buf)[freeList->len] = (void *)address;
+    freeList->len++;
+}
+
+static void initManualDynamicArray(ManualDynamicArray *manualDynamicArray,
+                                   U64 elementSizeBytes) {
+    U64 pageSizeBytes = pageSizeEncompassing(BATCH_SIZE * elementSizeBytes);
+
+    manualDynamicArray->buf =
+        allocVirtualMemory(MAX_VIRTUAL_MEMORY, elementSizeBytes);
+    manualDynamicArray->len = 0;
+    manualDynamicArray->maxCap = MAX_VIRTUAL_MEMORY / elementSizeBytes;
+    manualDynamicArray->mappedBytes = 0;
+    manualDynamicArray->mappingSize = pageSizeBytes;
 }
 
 void initFreestandingAllocator() {
     U64 freeListElementSizeBytes = sizeof(*(allocators[0].freeList.buf));
-    U64 freeListPageSizeBytes =
-        pageSizeEncompassing(BATCH_SIZE * freeListElementSizeBytes);
     for (U64 i = 0; i < VIRTUAL_ALLOCATION_TYPE_COUNT; i++) {
-        allocators[i].freeList.buf =
-            allocVirtualMemory(MAX_VIRTUAL_MEMORY, freeListPageSizeBytes);
-        allocators[i].freeList.len = 0;
-        allocators[i].freeList.maxCap =
-            MAX_VIRTUAL_MEMORY / freeListElementSizeBytes;
-        allocators[i].freeList.mappedBytes = 0;
-        allocators[i].freeList.mappingSize = freeListPageSizeBytes;
+        initManualDynamicArray(&allocators[i].freeList,
+                               freeListElementSizeBytes);
+        initManualDynamicArray(&allocators[i].batcher,
+                               virtualStructReqs[i].bytes);
     }
 }

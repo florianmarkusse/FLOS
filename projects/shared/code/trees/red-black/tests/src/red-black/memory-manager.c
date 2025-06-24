@@ -85,7 +85,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
 
             RedBlackNodeMM *createdNode = NEW(&scratch, RedBlackNodeMM);
             createdNode->memory = operations.buf[i].memory;
-            insertRedBlackNodeMM(&tree, createdNode);
+            (void)insertRedBlackNodeMM(&tree, createdNode);
             break;
         }
         case DELETE_AT_LEAST: {

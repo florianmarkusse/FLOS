@@ -1,6 +1,6 @@
 - make os-loader when adding physical memory descriptors also use freeList if need be.
   - Create function in management
-- Collapse initVirtualMemoryManager and initPhysicalMemoryManager
+- have allocMappableMemory take into account the pageSize that will be used to map in case of page fault
 - Find better way to get aligned memory from allocPhysicalMemory, not "just" finding the bytes + align as it causes nasty fracturing
 - Create some type of "external" folder for x86 for things that are to be exported and use by using the abstraction indirection.
   - Which just uses functions that return simple values to use.

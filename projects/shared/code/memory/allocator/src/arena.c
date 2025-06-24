@@ -10,7 +10,7 @@ alloc(Arena *a, U64 size, U64 align, U64 count, U8 flags) {
     ASSERT((align & (align - 1)) == 0);
 
     U64 avail = a->end - a->curFree;
-    U64 padding = -(U64)a->curFree & (align - 1);
+    U64 padding = (-(U64)a->curFree) & (align - 1);
     if (count > (avail - padding) / size) {
         if (flags & NULLPTR_ON_FAIL) {
             return nullptr;

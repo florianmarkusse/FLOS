@@ -17,6 +17,8 @@ void *allocateIdentityMemory(U64 bytes, U64 align) {
 
 void freeIdentityMemory(Memory memory) { freePhysicalMemory(memory); }
 
+// NOTE: have allocMappableMemory take into account the pageSize that will be
+// used to map in case of page fault
 void *allocateMappableMemory(U64 bytes, U64 align) {
     ASSERT(isPowerOf2(align));
     ASSERT(isAlignedTo(bytes, align));
