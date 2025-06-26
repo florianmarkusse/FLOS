@@ -12,6 +12,7 @@
 #include "efi/memory/physical.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
+#include "shared/memory/management/management.h"
 #include "shared/text/string.h"
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
@@ -206,28 +207,41 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
                                     .align = alignof(X86ArchParams)};
 }
 
-void initVirtualMemory(U64 startingAddress, U64 endingAddress,
-                       PackedMemoryAllocator *virtualMemoryTree,
-                       Arena scratch) {
-    Arena treeAllocator =
+void initMemoryManagement(U64 startingAddress, U64 endingAddress,
+                          Arena scratch) {
+    physical = (MemoryAllocator){0};
+    // TODO: Make it impossible to call allocPhysical/allocVirtual in UEFI
+    // somehow?
+    if (setjmp(physical.arena.jmp_buf)) {
+        KFLUSH_AFTER {
+            INFO(STRING("Physical memory manager not available for direct use "
+                        "in UEFI!\nUse "
+                        "other options."));
+        }
+    }
+    if (setjmp(virt.arena.jmp_buf)) {
+        KFLUSH_AFTER {
+            INFO(STRING("Virtual memory manager not available for direct use "
+                        "in UEFI!\nUse "
+                        "other options."));
+        }
+    }
+    virt.arena =
         createArenaForMemoryAllocator(X86_MAX_VIRTUAL_MEMORY_REGIONS, scratch);
-    RedBlackNodeMMPtr_a freeList = createFreeListForMemoryAllocator(
+    virt.freeList = createFreeListForMemoryAllocator(
         X86_MAX_VIRTUAL_MEMORY_REGIONS, scratch);
 
-    RedBlackNodeMM *root = nullptr;
+    virt.tree = nullptr;
 
-    RedBlackNodeMM *node = NEW(&treeAllocator, RedBlackNodeMM);
+    RedBlackNodeMM *node = NEW(&virt.arena, RedBlackNodeMM);
     node->memory = (Memory){.start = startingAddress,
                             .bytes = LOWER_HALF_END - startingAddress};
-    (void)insertRedBlackNodeMM(&root, node);
+    (void)insertRedBlackNodeMM(&virt.tree, node);
 
-    node = NEW(&treeAllocator, RedBlackNodeMM);
+    node = NEW(&virt.arena, RedBlackNodeMM);
     node->memory = (Memory){.start = HIGHER_HALF_START,
                             .bytes = endingAddress - HIGHER_HALF_START};
-    (void)insertRedBlackNodeMM(&root, node);
-
-    setPackedMemoryAllocator(virtualMemoryTree, &treeAllocator, root,
-                             &freeList);
+    (void)insertRedBlackNodeMM(&virt.tree, node);
 }
 
 void fillArchParams(void *archParams) {

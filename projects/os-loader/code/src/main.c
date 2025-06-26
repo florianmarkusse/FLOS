@@ -21,10 +21,13 @@
 #include "shared/maths/maths.h" // for CEILING_DIV_V...
 #include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
+#include "shared/memory/management/management.h"
+#include "shared/memory/policy.h"
+#include "shared/memory/policy/status.h"
 #include "shared/text/string.h"   // for CEILING_DIV_V...
 #include "shared/types/numeric.h" // for U64, U32, USize
 
-static U64 kernelFreeVirtualMemory = HIGHER_HALF_START;
+static constexpr auto MIN_VIRTUAL_MEMORY_REQUIRED = 32 * GiB;
 
 Status efi_main(Handle handle, SystemTable *systemtable) {
     globals.h = handle;
@@ -104,13 +107,27 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     U64 firstFreeVirtual = mapMemory(0, 0, highestLowerHalfAddress,
                                      STANDARD_PAGE_FLAGS | GLOBAL_PAGE_FLAGS);
 
+    initMemoryManagement(firstFreeVirtual, KERNEL_CODE_START, arena);
+
+    U64 virtualForKernel =
+        (U64)allocVirtualMemory(MIN_VIRTUAL_MEMORY_REQUIRED, 1);
+
+    KFLUSH_AFTER {
+        INFO(STRING("Got "));
+        INFO(MIN_VIRTUAL_MEMORY_REQUIRED);
+        INFO(STRING(" virtual memory to use in kernel. Address starts at "));
+        INFO((void *)virtualForKernel, NEWLINE);
+    }
+
+    // NOTE: Virtual memory active from this point!
+
     KFLUSH_AFTER { INFO(STRING("Mapping screen memory into location\n")); }
-    kernelFreeVirtualMemory =
-        alignVirtual(kernelFreeVirtualMemory, gop->mode->frameBufferBase,
+    virtualForKernel =
+        alignVirtual(virtualForKernel, gop->mode->frameBufferBase,
                      gop->mode->frameBufferSize);
-    U64 screenMemoryVirtualStart = kernelFreeVirtualMemory;
-    kernelFreeVirtualMemory = mapMemory(
-        kernelFreeVirtualMemory, gop->mode->frameBufferBase,
+    U64 screenMemoryVirtualStart = virtualForKernel;
+    virtualForKernel = mapMemory(
+        virtualForKernel, gop->mode->frameBufferBase,
         gop->mode->frameBufferSize,
         STANDARD_PAGE_FLAGS | SCREEN_MEMORY_PAGE_FLAGS | GLOBAL_PAGE_FLAGS);
 
@@ -127,7 +144,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)(screenMemoryVirtualStart + gop->mode->frameBufferSize),
              NEWLINE);
         INFO(STRING("virt free memory is now at:     "));
-        INFO((void *)kernelFreeVirtualMemory, NEWLINE);
+        INFO((void *)virtualForKernel, NEWLINE);
     }
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }
@@ -136,13 +153,13 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     KFLUSH_AFTER { INFO(STRING("Mapping stack into location\n")); }
     // NOTE: Overflow precaution
-    kernelFreeVirtualMemory += KERNEL_STACK_SIZE;
-    kernelFreeVirtualMemory =
-        alignVirtual(kernelFreeVirtualMemory, stackAddress, KERNEL_STACK_SIZE);
+    virtualForKernel += KERNEL_STACK_SIZE;
+    virtualForKernel =
+        alignVirtual(virtualForKernel, stackAddress, KERNEL_STACK_SIZE);
 
-    U64 stackVirtualStart = kernelFreeVirtualMemory;
-    kernelFreeVirtualMemory =
-        mapMemory(kernelFreeVirtualMemory, stackAddress, KERNEL_STACK_SIZE,
+    U64 stackVirtualStart = virtualForKernel;
+    virtualForKernel =
+        mapMemory(virtualForKernel, stackAddress, KERNEL_STACK_SIZE,
                   STANDARD_PAGE_FLAGS | GLOBAL_PAGE_FLAGS);
 
     KFLUSH_AFTER {
@@ -156,7 +173,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(STRING("until:     "));
         INFO((void *)stackVirtualStart, NEWLINE);
         INFO(STRING("virt free memory is now at:     "));
-        INFO((void *)kernelFreeVirtualMemory, NEWLINE);
+        INFO((void *)virtualForKernel, NEWLINE);
     }
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
@@ -210,21 +227,10 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         EXIT_WITH_MESSAGE { ERROR(STRING("Could not find an RSDP!\n")); }
     }
 
-    initVirtualMemory(firstFreeVirtual, KERNEL_CODE_START,
-                      &kernelParams->memory.virt, arena);
-
-    KFLUSH_AFTER {
-        INFO(STRING("The virt root address "));
-        INFO((void *)&kernelParams->memory.virt.tree, NEWLINE);
-        INFO(STRING("The virt root is now at "));
-        INFO((void *)kernelParams->memory.virt.tree, NEWLINE);
-        INFO(STRING("The allocator is:\ncurfree"));
-        INFO((void *)kernelParams->memory.virt.allocator.curFree, NEWLINE);
-        INFO(STRING("beg: "));
-        INFO((void *)kernelParams->memory.virt.allocator.beg, NEWLINE);
-        INFO(STRING("end: "));
-        INFO((void *)kernelParams->memory.virt.allocator.end, NEWLINE);
-    }
+    // NOTE: Don't use virtual memory allocations anymore from this point
+    // onward.
+    setPackedMemoryAllocator(&kernelParams->memory.virt, &virt.arena, virt.tree,
+                             &virt.freeList);
 
     KFLUSH_AFTER {
         INFO(STRING("Finished set-up. Collecting physical memory and jumping "

@@ -6,7 +6,6 @@
 #include "efi-to-kernel/kernel-parameters.h"  // for KernelParameters
 #include "efi-to-kernel/memory/definitions.h" // for KERNEL_PARAMS_START
 #include "freestanding/log/init.h"
-#include "freestanding/memory/virtual/allocator.h"
 #include "freestanding/peripheral/screen.h"
 #include "shared/log.h"
 #include "shared/maths/maths.h"
@@ -22,7 +21,7 @@
 
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
-static constexpr auto TEST_MEMORY_AMOUNT = 32 * MiB;
+static constexpr auto TEST_MEMORY_AMOUNT = 1 * GiB;
 static constexpr auto MAX_TEST_ENTRIES = TEST_MEMORY_AMOUNT / (sizeof(U64));
 
 static constexpr U64 PRNG_SEED = 15466503514872390148ULL;
@@ -258,7 +257,35 @@ static void identityTests() {
     }
 
     KFLUSH_AFTER { INFO(STRING("\n")); }
-    return;
+}
+
+static void baseLineTest() {
+    KFLUSH_AFTER { INFO(STRING("Starting baseline test...\n")); }
+
+    U64 sum = 0;
+
+    for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
+        U64 *buffer = allocateIdentityMemory(MAX_TEST_ENTRIES * sizeof(U64),
+                                             alignof(U64));
+
+        U64 startCycleCount = currentCycleCounter(true, false);
+
+        for (U64 i = 0; i < MAX_TEST_ENTRIES; i++) {
+            buffer[i] = i;
+        }
+        U64 endCycleCount = currentCycleCounter(false, true);
+
+        freeIdentityMemory((Memory){.start = (U64)buffer,
+                                    .bytes = MAX_TEST_ENTRIES * sizeof(U64)});
+
+        U64 cycles = endCycleCount - startCycleCount;
+        sum += cycles;
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING("\t\t\t\t\t\taverage clockcycles: "));
+        INFO(sum / TEST_ITERATIONS, NEWLINE);
+    }
 }
 
 static void mappingTests() {
@@ -290,8 +317,6 @@ __attribute__((section("kernel-start"))) int
 kernelmain(PackedKernelParameters *kernelParams) {
     archInit(kernelParams->archParams);
     initMemoryManager(&kernelParams->memory);
-
-    initFreestandingAllocator();
 
     void *initMemory = (void *)allocateIdentityMemory(INIT_MEMORY, 1);
     Arena arena = (Arena){.curFree = initMemory,
@@ -343,6 +368,7 @@ kernelmain(PackedKernelParameters *kernelParams) {
 
         mappingTests();
         identityTests();
+        baseLineTest();
     }
 
     KFLUSH_AFTER {

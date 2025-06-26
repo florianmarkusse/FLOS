@@ -2,6 +2,11 @@
   - Create function in management
 - have allocMappableMemory take into account the pageSize that will be used to map in case of page fault
 - Find better way to get aligned memory from allocPhysicalMemory, not "just" finding the bytes + align as it causes nasty fracturing
+- Clean up virtualForKernel in os-loader
+  - It aligns data up, and thus that padding can be freed
+  - No checks on if we allocated enough virtual memory
+  - No freeing of all the leftover memory
+- Find long-term solution for number of descriptors/nodes that are possible in a physical/virtual memory manager, not just a hardcoded/calculated number.
 - Create some type of "external" folder for x86 for things that are to be exported and use by using the abstraction indirection.
   - Which just uses functions that return simple values to use.
 - look into sizeof usage and see if we can replace it with typeof
@@ -20,7 +25,7 @@
 
 - RED-ZONE ???
 
-- Mark functions whose return values should be used as such to avoid bugs.
+- Mark functions whose [[nodiscard]] return values should be used as such to avoid bugs.
 - Extract page mapping code in real/idt.c
 - maths has an extra maths folder that is not necessary
 - remove getAvailableMemory from .h file, should not be called directly

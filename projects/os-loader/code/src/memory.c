@@ -35,7 +35,9 @@ void allocateSpaceForKernelMemory(Arena *allocator,
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
     U64 numberOfDescriptors =
         memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
-    U64 expectedNumberOfDescriptors = ((numberOfDescriptors * 3) / 2);
+    // TODO: Find a better long-term solution for this, like a dynamic array
+    // that grows?
+    U64 expectedNumberOfDescriptors = ((numberOfDescriptors * 10));
 
     *allocator =
         createArenaForMemoryAllocator(expectedNumberOfDescriptors, scratch);

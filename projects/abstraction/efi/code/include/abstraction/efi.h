@@ -5,8 +5,8 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/types/numeric.h"
 
-void initVirtualMemory(U64 startingAddress, U64 endingAddress,
-                       PackedMemoryAllocator *virtualMemoryTree, Arena scratch);
+void initMemoryManagement(U64 startingAddress, U64 endingAddress,
+                          Arena scratch);
 
 typedef struct {
     U64 bytes;
