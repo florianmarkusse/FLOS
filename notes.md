@@ -30,7 +30,7 @@ for (let i = 1; i <= 3; i++) {
 }
 ```
 
-`C` is already showing some of the plumbing required:
+`C` is already pulling part of the curtain back:
 
 ```c
 int size = 0;
@@ -126,14 +126,14 @@ like this:
 
 ```c
 int TEST_MEMORY_AMOUNT = 1 << 30; // Or some other obscenely large number that will never be reached.
-                                  // (Or the maximum bytes the array to hold.)
+                                  // (Or the maximum bytes you want the array to hold.)
 int maxEntries = TEST_MEMORY_AMOUNT / sizeof(int);
 int *buffer = mmap(NULL, TEST_MEMORY_AMOUNT, PROT_READ | PROT_WRITE,
                    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 int size = 0;
 for (int i = 0; i <= 2; i++) {
     if (size == maxEntries) {
-        // Do something in case you hit the max
+        // Do something in case you hit the max entries
     }
     buffer[i] = (i + 1) * 10;
     size++;
