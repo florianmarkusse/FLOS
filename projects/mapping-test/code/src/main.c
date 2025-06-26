@@ -18,7 +18,7 @@ static U64 TEST_ITERATIONS = 32;
 
 static U64 currentTimeNanos() {
     struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
     return (U64)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
 }
 
@@ -50,12 +50,19 @@ static U64_d_a createDynamicArray() {
         (arr).len++;                                                           \
     } while (0)
 
-static Timing runMappingTest(U64 arrayEntries, bool is2MiBPage) {
+static Timing runMappingTest(U64 arrayEntries, bool is2MiBPage,
+                             bool isBaseline) {
     U64 *buffer = mmap(NULL, TEST_MEMORY_AMOUNT, PROT_READ | PROT_WRITE,
                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
     if (is2MiBPage) {
         madvise(buffer, TEST_MEMORY_AMOUNT, MADV_HUGEPAGE);
+    }
+
+    if (isBaseline) {
+        for (U64 i = 0; i < arrayEntries; i++) {
+            buffer[i] = i;
+        }
     }
 
     U64 startNanos = currentTimeNanos();
@@ -117,7 +124,8 @@ static void partialMappedWritingTest(bool is2MiBPage) {
     Timing bestSoFar = {.cycles = 0, .millis = 0};
     for (U64 i = 0; i < TEST_ITERATIONS; i++) {
         Timing timing = runMappingTest(
-            RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES), is2MiBPage);
+            RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES), is2MiBPage,
+            false);
 
         bestSoFar.cycles += timing.cycles;
         bestSoFar.millis += timing.millis;
@@ -132,7 +140,22 @@ static void partialMappedWritingTest(bool is2MiBPage) {
 static void fullMappedWritingTest(bool is2MiBPage) {
     Timing bestSoFar = {.cycles = 0, .millis = 0};
     for (U64 i = 0; i < TEST_ITERATIONS; i++) {
-        Timing timing = runMappingTest(MAX_TEST_ENTRIES, is2MiBPage);
+        Timing timing = runMappingTest(MAX_TEST_ENTRIES, is2MiBPage, false);
+
+        bestSoFar.cycles += timing.cycles;
+        bestSoFar.millis += timing.millis;
+    }
+
+    bestSoFar.cycles /= TEST_ITERATIONS;
+    bestSoFar.millis /= TEST_ITERATIONS;
+
+    printOutcomeMapped(bestSoFar, is2MiBPage);
+}
+
+static void fullMappedBaselineWritingTest(bool is2MiBPage) {
+    Timing bestSoFar = {.cycles = 0, .millis = 0};
+    for (U64 i = 0; i < TEST_ITERATIONS; i++) {
+        Timing timing = runMappingTest(MAX_TEST_ENTRIES, is2MiBPage, true);
 
         bestSoFar.cycles += timing.cycles;
         bestSoFar.millis += timing.millis;
@@ -148,6 +171,9 @@ static void fullMappingTest() {
     KFLUSH_AFTER { INFO(STRING("Starting full mapping test...\n")); }
     fullMappedWritingTest(false);
     fullMappedWritingTest(true);
+    KFLUSH_AFTER { INFO(STRING("Starting full mapping baseline test...\n")); }
+    fullMappedBaselineWritingTest(false);
+    fullMappedBaselineWritingTest(true);
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 }
 
@@ -252,10 +278,12 @@ static void fullReallocTest() {
 }
 
 int main() {
-    fullMappingTest();
-    partialMappingTest();
+    for (U64 i = 0; i < 2; i++) {
+        fullMappingTest();
+        partialMappingTest();
 
-    fullReallocTest();
+        fullReallocTest();
+    }
 
     return 0;
 }
