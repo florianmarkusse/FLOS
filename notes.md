@@ -63,12 +63,11 @@ A downside is that it is slightly less portable than the original
 implementation: it will only run on 64-bit CPUs with an MMU. This is an
 acceptable downside for me, and I think many others.
 
-The rest of this article is laid out as follows. First, I will describe the
-_copy_ variant of dynamic arrays in a little more detail. Thereafter follows the
-different implementation I am describing. After that, a comparison of both
-these variants in terms of performance is done on my host machine. Lastly, I
-will showcase these same results in my own (very bare-bones) kernel and put it
-head-to-head against Ubuntu.
+First, I will describe the _copy_ variant of dynamic arrays in a little more
+detail. Thereafter follows the different implementation I am describing. After
+that, a comparison of both these variants in terms of performance is done on my
+host machine. Lastly, I will showcase these same results in my own (very
+bare-bones) kernel and put it head-to-head against Ubuntu.
 
 ## The _copy_ variant
 
@@ -163,7 +162,7 @@ reception at best, in these places:
 To get everyone on the same page, I will explain _virtual_ memory below. If you
 understand this bad joke, feel free to skip the below section.
 
-### Virtual Memory
+### _Virtual_ Memory
 
 An idea more than three-quarter centuries old now, [_virtual_
 memory](https://en.wikipedia.org/wiki/Virtual_memory) is an abstraction atop
@@ -201,25 +200,26 @@ Want to run program D that takes up 12KiB, but can't run as there is no contiguo
 
 ```
 With Virtual Memory
+         --------------------------------------------------------------------------
+Virtual                | Program B | Program D                       |
+         --------------------------------------------------------------------------
+                       \ 4KiB      / 4KiB      | 4KiB      | 4KiB
+                        \         /            |           |
+           /-------------\--------             |           |
+          /               \                    |           |
+         /                 \                   |           |
          +-----------------------------------------------------------+
-Virtual                | Program B | Program D                    |
-         +-----------------------------------------------------------+
-                       \ 4 KiB     / 4KiB          | 4 KiB
-                        \         /               /
-           /-------------\--------               /
-          /               \                     /
-         /                 \                   |
-         +-----------------------------------------------------------+
-Physical | Free (4KiB)      | Program B (4KiB) | Free (8KiB)      |
+Physical | Free (4KiB)      | Program B (4KiB) | Free (8KiB)         |
          +-----------------------------------------------------------+
          0
 ```
 
-The virtual address space in the example above is split up into pages of 4KiB.
-Each of these pages can be mapped separately to a 4KiB page of physical memory.
-This way, we are now able to accommodate program D to run on our CPU: the first
-page is mapped to the free 4KiB _physical_ memory before program B and the
-second page is mapped to the free 4KiB _physical_ memory after program B.
+The _virtual_ address space in the example above is split up into pages of 4KiB.
+Each of these pages can be mapped separately to a 4KiB page of _physical_
+memory. This way, we are now able to accommodate program D to run on our CPU:
+the first page is mapped to the free 4KiB _physical_ memory before program B
+and the second page is mapped to the free 4KiB _physical_ memory after program
+B.
 
 As to how this mapping is implemented, you can read [Philip
 Oppermann](https://os.phil-opp.com/paging-introduction/) post. He does an
