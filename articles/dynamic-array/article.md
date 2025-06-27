@@ -342,6 +342,11 @@ iterations of the same test are run and averaged. All the data can be found in
 
 ### Linux / Ubuntu
 
+<div style="display: flex; justify-content: space-between; max-width: 100%;">
+  <img src="ubuntu-1GiB-ms.png" style="width: 49%; height: auto;" />
+  <img src="ubuntu-random-ms.png" style="width: 49%; height: auto;" />
+</div>
+
 | ![1GiB Array on Ubuntu](ubuntu-1GiB-ms.png) | ![1GiB Array on Ubuntu](ubuntu-random-ms.png) |
 | ------------------------------------------- | --------------------------------------------- |
 
