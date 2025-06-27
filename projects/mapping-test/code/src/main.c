@@ -137,6 +137,26 @@ static void partialMappedWritingTest(bool is2MiBPage) {
     printOutcomeMapped(bestSoFar, is2MiBPage);
 }
 
+static void partialMappedBaselineWritingTest(bool is2MiBPage) {
+    BiskiState state;
+    biskiSeed(&state, PRNG_SEED);
+
+    Timing bestSoFar = {.cycles = 0, .millis = 0};
+    for (U64 i = 0; i < TEST_ITERATIONS; i++) {
+        Timing timing = runMappingTest(
+            RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES), is2MiBPage,
+            true);
+
+        bestSoFar.cycles += timing.cycles;
+        bestSoFar.millis += timing.millis;
+    }
+
+    bestSoFar.cycles /= TEST_ITERATIONS;
+    bestSoFar.millis /= TEST_ITERATIONS;
+
+    printOutcomeMapped(bestSoFar, is2MiBPage);
+}
+
 static void fullMappedWritingTest(bool is2MiBPage) {
     Timing bestSoFar = {.cycles = 0, .millis = 0};
     for (U64 i = 0; i < TEST_ITERATIONS; i++) {
@@ -181,6 +201,11 @@ static void partialMappingTest() {
     KFLUSH_AFTER { INFO(STRING("Starting partial mapping test...\n")); }
     partialMappedWritingTest(false);
     partialMappedWritingTest(true);
+    KFLUSH_AFTER {
+        INFO(STRING("Starting partial mapping baseline test...\n"));
+    }
+    partialMappedBaselineWritingTest(false);
+    partialMappedBaselineWritingTest(true);
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 }
 

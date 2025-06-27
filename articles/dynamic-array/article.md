@@ -66,10 +66,11 @@ acceptable downside for me, and I think many others.
 First, I will describe the _copy_ variant of dynamic arrays in a little more
 detail. Thereafter follows the different implementation I am describing. After
 that, a comparison of both these variants in terms of performance is done on my
-host machine. Lastly, I will showcase these same results in my own (very
-bare-bones) kernel and put it head-to-head against Ubuntu.
+host machine on both Linux and my own OS, FLOS. Lastly, I will discuss some
+common concerns with my implementation and assuage those to the best of my
+abilities.
 
-## The _copy_ variant
+## The _copy_ Variant
 
 This variant is so ubiquitous that I only want to highlight how this
 implementation resizes when the initial container's size becomes too small to
@@ -164,7 +165,7 @@ understand this bad joke, feel free to skip the below section.
 
 ### _Virtual_ Memory
 
-An idea more than three-quarter centuries old now, [_virtual_
+An idea more than a half-century old now, [_virtual_
 memory](https://en.wikipedia.org/wiki/Virtual_memory) is an abstraction atop
 "real" _physical_ memory implemented in all modern CPU architectures, excluding
 embedded devices and the like. This abstraction allows programs to no longer
@@ -173,7 +174,7 @@ memory. The program operates in the idealized world of _virtual_ memory that is
 near infinite and contiguous.
 
 How does this work? _Virtual_ memory is a very large range of addresses, 256
-TiB or 512 PiB on modern x86 CPUs, that by themselves point to nothing. A lot
+TiB or 128 PiB on modern x86 CPUs, that by themselves point to nothing. A lot
 of addresses that point to nothing don't sound useful, and you're right. The
 crux of _virtual_ memory is that you can program to what _physical_ address a
 _virtual_ address maps.
@@ -192,7 +193,8 @@ Sometime later, we can see there is fragmentation of free memory
 | Free (4KiB)      | Program B (4KiB) | Free (8KiB)      |
 +--------------------------------------------------------+
 
-Want to run program D that takes up 12KiB, but can't run as there is no contiguous region of 12KiB
+Want to run program D that takes up 12KiB, but can't run as there is no
+contiguous region of 12KiB
 +--------------------------------------------------------+
 | Free (4KiB)      | Program B (4KiB) | Free (8KiB)      |
 +--------------------------------------------------------+
@@ -257,42 +259,137 @@ architectures to have the best of both static and dynamic arrays, respectively:
   - no swaths of memory are wasted,
   - and a large number of elements in the array is supported
 
-# Test Results
+A more graphical explanation is shown below.
 
-## Linux / Ubuntu
+```
+A large buffer of virtual memory, the first part is already mapped as you can see
+Virtual  [ 10 ][ 20 ][ 30 ][    ][----][----][----][----][----][----] ... and on
+           |      |     |    |
+Physical [ 10 ][ 20 ][ 30 ][    ][ 90 ][    ][    ][    ][    ]
 
-### Baseline Array
+Add one more (40):
+Virtual  [ 10 ][ 20 ][ 30 ][ 40 ][----][----][----][----][----][----] ... and on
+           |     |     |     |
+Physical [ 10 ][ 20 ][ 30 ][ 40 ][ 90 ][    ][    ][    ][    ]
+The next element will write to unmapped virtual memory.
+
+
+Add another (50):
+
+First, the OS maps a new virtual page to a physical page. Note that this does
+not need to be contiguous with the other backing physical pages
+Virtual  [ 10 ][ 20 ][ 30 ][ 40 ][    ][    ][    ][    ][----][----] ... and on
+           |     |     |     |      \    \     \     \
+           |     |     |     |       \    \     \     \
+           |     |     |     |        \    \     \     \
+           |     |     |     |         \    \     \     \
+           |     |     |     |          \    \     \     \
+Physical [ 10 ][ 20 ][ 30 ][ 40 ][ 90 ][    ][    ][    ][    ]
+
+Then, write the element to the array
+Virtual  [ 10 ][ 20 ][ 30 ][ 40 ][ 50 ][    ][    ][    ][----][----] ... and on
+           |     |     |     |      \    \     \     \
+           |     |     |     |       \    \     \     \
+           |     |     |     |        \    \     \     \
+           |     |     |     |         \    \     \     \
+           |     |     |     |          \    \     \     \
+Physical [ 10 ][ 20 ][ 30 ][ 40 ][ 90 ][ 50 ][    ][    ][    ]
+```
+
+A final note before the performance benchmarks: using virtual memory is not an
+optional feature in modern CPUs - it is used whether you want to or not.
+Therefore, the orignal _copy_ variant also does the mapping as described above,
+and needlessly adds a copy of all the elements on top because the _virtual_
+memory buffer it allocated initially was too small.
+
+Since _virtual_ memory is so bountiful, I consider it insensible to allocate
+such a small buffer if you know that you may need more.
+
+## Performance Benchmarks
+
+Now that both implementations are laid out, it's time to put them to the test
+and find out what implementation performs better.
+
+The following tests will be run:
+
+- Baseline test: a test using a static array. In other words, writing to an
+  array where you know the number of entries you want to write beforehand. This
+  test should be the fastest of the bunch: the array will already have the right
+  size and be mapped into physical memory.
+- _copy_ dynamic array test
+- _mappable_ dynamic array test
+
+The cases run are:
+
+- Filling the array up to 1GiB of _physical_ memory used
+- Filling the array with a variable number of elements, up to a maximum of 1GiB
+  of _physical_ memory used, to simulate a random number of elements being added
+  to the array. Exactly the use-case for a dynamic array.
+
+In addition, I will run some of the tests with different _virtual_ page sizes
+to see the difference in performance. In [Virtual Memory](#Virtual-Memory), I
+used page sizes of 4KiB as an example. On the x86 architectyre, there are 3
+different sizes you can use: 4KiB, 2MiB, and 1GiB. I will skip 1GiB as I don't
+see it having a use-case for dynamic arrays.
+
+The hardware I am running these tests on can be found [here](#Hardware). The
+code and the configuration to compile the code can be found in this project; I
+picked the most performant settings for these tests.
+
+All these tests are run first with a round of warming-up, after which 32
+iterations of the same test are run and averaged. All the data can be found in
+[Tabular Data](#Tabular-Data).
+
+### Linux / Ubuntu
+
+| ![1GiB Array on Ubuntu](ubuntu-1GiB-ms.png) | ![1GiB Array on Ubuntu](ubuntu-random-ms.png) |
+| ------------------------------------------- | --------------------------------------------- |
+
+## Appendix
+
+### Tabular Data
+
+Here you can find the raw results of the data for all the tests for each Operating System.
+
+#### Linux / Ubuntu
+
+##### Baseline Array
 
 | Final Array Size | Page Size | clock cycles | ms  |
 | ---------------- | --------- | ------------ | --- |
-| 1GiB             | 4KiB      | 561970000    | 160 |
-| 1GiB             | 2MiB      | 689760917    | 197 |
+| 1GiB             | 4KiB      | 571367989    | 163 |
+| 1GiB             | 2MiB      | 436341743    | 124 |
+| random <= 1GiB   | 4KiB      | 286846880    | 81  |
+| random <= 1GiB   | 2MiB      | 208957329    | 59  |
 
-### Mappable Dynamic Array
+##### _mappable_ Dynamic Array
 
 | Final Array Size | Page Size | clock cycles | ms  |
 | ---------------- | --------- | ------------ | --- |
 | 1GiB             | 4KiB      | 1186074432   | 339 |
-| 1GiB             | 2MiB      | 610235931    | 174 |
-| random <= 1GiB   | 4KiB      | 560675325    | 160 |
-| random <= 1GiB   | 2MiB      | 294586364    | 83  |
+| 1GiB             | 2MiB      | 453931408    | 129 |
+| random <= 1GiB   | 4KiB      | 570306529    | 162 |
+| random <= 1GiB   | 2MiB      | 219778049    | 62  |
 
-### Reallocable Dynamic Array
+##### _copy_ Dynamic Array
 
 | Final Array Size | clock cycles | ms  |
 | ---------------- | ------------ | --- |
 | 1GiB             | 1277500222   | 365 |
 | random <= 1GiB   | 641601994    | 183 |
 
-## FLOS
+#### FLOS
 
-### Baseline Array
+##### Baseline Array
+
+No page size was set here as I just used the identity-mapped memory available
+in my OS. This identity-memory is mapped with 1GiB paes.
 
 | Final Array Size | clock cycles |
 | ---------------- | ------------ |
 | 1GiB             | 412151675    |
 
-### Mappable Dynamic Array
+##### _mappable_ Dynamic Array
 
 | Final Array Size | Page Size | clock cycles |
 | ---------------- | --------- | ------------ |
@@ -317,9 +414,16 @@ architectures to have the best of both static and dynamic arrays, respectively:
 | random <= 1GiB   | 1MiB      | 270906293    |
 | random <= 1GiB   | 2MiB      | 192855687    |
 
-### Reallocable Dynamic Array
+##### _copy_ Dynamic Array
 
 | Final Array Size | clock cycles |
 | ---------------- | ------------ |
 | 1GiB             | 1074941751   |
 | random <= 1GiB   | 613948315    |
+
+## Hardware
+
+The relevant hardware used for the benchmarks above are:
+
+- Intel(R) Core(TM) i7-4770K CPU @ 3.50GHz
+- 12GiB DDR3 RAM
