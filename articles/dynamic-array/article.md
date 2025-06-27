@@ -120,9 +120,9 @@ Falconer](https://www.bytesbeneath.com/p/the-arena-custom-memory-allocators).
 
 Onto the new implementation. This implementation allocates a huge, say 1GiB,
 region of _virtual_ memory upfront. Upon adding a new element, the CPU "checks"
-if this page of memory is already mapped, and maps it to _physical_ memory if
-need be. The resulting code in an a POSIX-compliant system would look something
-like this:
+if this page of memory is already mapped (it causes a page fault otherwise),
+and maps it to _physical_ memory if need be. The resulting code in a
+POSIX-compliant system would look something like this:
 
 ```c
 int TEST_MEMORY_AMOUNT = 1 << 30; // Or some other obscenely large number that will never be reached.
@@ -140,10 +140,10 @@ for (int i = 0; i <= 2; i++) {
 }
 ```
 
-I admit, the `mmap` call looks a bit daunting, but that is merely the result of
-the POSIX interface. Gone is the check for growing beyond the array's original
-capacity and resizing if need be! The OS now transparently handles growing this
-dynamic array for you using [demand
+I admit that the `mmap` call looks a bit daunting, but that is merely the
+result of the POSIX interface. Gone is the check for growing beyond the array's
+original capacity and resizing if need be! The OS now transparently handles
+growing this dynamic array for you using [demand
 paging](https://en.wikipedia.org/wiki/Demand_paging) and does this faster than
 you copying your contents.
 
@@ -296,11 +296,11 @@ Virtual  [ 10 ][ 20 ][ 30 ][ 40 ][ 50 ][    ][    ][    ][----][----] ... and on
 Physical [ 10 ][ 20 ][ 30 ][ 40 ][ 90 ][ 50 ][    ][    ][    ]
 ```
 
-A final note before the performance benchmarks: using virtual memory is not an
-optional feature in modern CPUs - it is used whether you want to or not.
-Therefore, the orignal _copy_ variant also does the mapping as described above,
-and needlessly adds a copy of all the elements on top because the _virtual_
-memory buffer it allocated initially was too small.
+A final note before the performance benchmarks: using _virtual_ memory is not
+an optional feature in modern CPUs - it is used whether you want to or not.
+Therefore, the original _copy_ variant also does the mapping as described
+above, and needlessly adds a copy of all the elements on top because the
+_virtual_ memory buffer it allocated initially was too small.
 
 Since _virtual_ memory is so bountiful, I consider it insensible to allocate
 such a small buffer if you know that you may need more.
@@ -312,10 +312,10 @@ and find out what implementation performs better.
 
 The following tests will be run:
 
-- Baseline test: a test using a static array. In other words, writing to an
-  array where you know the number of entries you want to write beforehand. This
-  test should be the fastest of the bunch: the array will already have the right
-  size and be mapped into physical memory.
+- Baseline test: a test using a static array. In other words, write to an array
+  where you know the number of entries you want to write beforehand. This test
+  should be the fastest of the bunch: the array will already have the right size
+  and be mapped into _physical_ memory.
 - _copy_ dynamic array test
 - _mappable_ dynamic array test
 
@@ -328,7 +328,7 @@ The cases run are:
 
 In addition, I will run some of the tests with different _virtual_ page sizes
 to see the difference in performance. In [Virtual Memory](#Virtual-Memory), I
-used page sizes of 4KiB as an example. On the x86 architectyre, there are 3
+used page sizes of 4KiB as an example. On the x86 architecture, there are 3
 different sizes you can use: 4KiB, 2MiB, and 1GiB. I will skip 1GiB as I don't
 see it having a use-case for dynamic arrays.
 
@@ -347,8 +347,104 @@ iterations of the same test are run and averaged. All the data can be found in
   <img src="ubuntu-random-ms.png" style="width: 49%; height: auto;" />
 </div>
 
-| ![1GiB Array on Ubuntu](ubuntu-1GiB-ms.png) | ![1GiB Array on Ubuntu](ubuntu-random-ms.png) |
-| ------------------------------------------- | --------------------------------------------- |
+As you can see, the _copy_ variant performs the worst in both cases. The _copy_
+variant did not have different runs with different page sizes, as the standard
+implementation with `realloc` does not allow one to set it.
+
+The _mappable_ variant performs better than the _copy_ variant, even when
+setting the page size to the smallest size of 4 KiB. Interestingly, it comes
+very close to the baseline variant's performance when the page size is set to
+2MiB. The reduced number of page faults (512 instead of 512 x 512) likely plays
+a significant role in this. I suspected a considerable speedup going to 2MiB
+pages, and having a comparable speed to the baseline is encouraging.
+
+Below is the same graphs, showing not the number of milliseconds of each run,
+but the number of clock cycles that everything took. This data was collected to
+compare between Ubuntu and my own OS in the next section.
+
+<div style="display: flex; justify-content: space-between; max-width: 100%;">
+  <img src="ubuntu-1GiB-cycles.png" style="width: 49%; height: auto;" />
+  <img src="ubuntu-random-cycles.png" style="width: 49%; height: auto;" />
+</div>
+
+### FLOS
+
+FLOS is an operating system I am building myself. It supports very little, but
+it does support demand paging. The results of running the same tests on FLOS
+are shown below. FLOS doesn't have time support, so only the clock cycles are
+collected.
+
+Additionally, FLOS supports setting page sizes of any power of 2. This is not
+supported current hardware. If a buffer wants to use 8KiB _virtual_ pages, the
+buffer is split up into 8KiB pages and FLOS maps 2 4KiB pages when it finds an
+unmapped page.
+
+<div style="display: flex; justify-content: space-between; max-width: 100%;">
+  <img src="FLOS-1GiB-cycles.png" style="width: 49%; height: auto;" />
+  <img src="FLOS-random-cycles.png" style="width: 49%; height: auto;" />
+</div>
+
+Here we see the same results as observed in the benchmarks done for Ubuntu. The
+_copy_ variant is slower across the board, and gets comparatively worse as the
+page size increases.
+
+Interestingly, at a page size of 2MiB, the _mappable_ variant outperforms the
+baseline. The baseline was done with 1GiB _virtual_ pages, I suspect that the
+support for this may not be as strong as it is for 2Mib and 4KiB pages and it
+is tripping the CPU up in some other way.
+
+Finally, I'm happy to report that my OS is faster than Ubuntu at performing
+these operations! But, credit where credit is due, using 2MiB _virtual_ pages,
+Ubuntu is very competitive. Now I only need to add support for a litany of
+features that are supported by any Linux distro... :)
+
+## Discussion and Practical Considerations
+
+In my opinion, the _mappable_ variant blows the _copy_ variant out of the
+water. The speed of the _mappable_ variant is greater for all cases.
+Additionally, as mentioned before, references made to entries in the dynamic
+array are not potentially invalidated as in the _copy_ variant. This benefit
+removes the updating of references after a resizing of the array.
+
+A complaint lodged against the _mappable_ variant is that it uses a lot of
+_virtual_ memory; more memory than the _physical_ memory available. The
+consequence is that a program can suddenly run out of _physical_ memory (or
+start swapping memory) once the OS tries to map this _virtual_ memory. However,
+any "large" memory allocation on a modern OS currently returns _virtual_ memory
+and uses demand paging to map the memory. This problem is endemic in any
+scenario where there is more _virtual_ memory allotted than available
+_physical_ memory. To avoid this, they often mention disallowing giving out more
+_virtual_ memory than there is _physical_ memory available, rendering this
+_mappable_ variant infeasible among other _virtual_ memory benefits. I find
+this solution to be throwing out the baby with the bathwater, however. An OS
+knows which process caused the page fault, or any other implicit events
+resulting in a memory request that it can not satisfy. Linux does not normally
+signal this to the process, it just starts killing applications. Programs can
+receive signals of this state of events and then write code with this
+possibility in mind.
+
+Moreover, the _mappable_ solution has a minimum size requirement of 4KiB. Many
+very small dynamic arrays would explode in memory usage if they all started
+using this design. This is very true. In my experience, one rarely runs into
+this scenario, but perhaps your experience is different. In that case, one can
+consider implementing a "small-array optimization", akin to a [small-string
+optimization](https://pvs-studio.com/en/blog/terms/6658/).
+
+Finally, one can not forget the portability concern. As mentioned before, not
+all CPUs use _virtual_ memory. If you are working in that domain, the _copy_
+variant may be better or you have other heuristics that may do even better!
+
+There are probably other concerns that I have missed. Feel free to let me know!
+
+## Conclusion
+
+I found it fascinating to see how much faster the _mappable_ variant is over
+the _copy_ variant. Even more so with the lack of discourse about
+reimplementing such a fundamental data structure.
+
+I would suggest everyone to consider changing their dynamic array
+implementation to a _mappable_ variant, your code becomes easier to read and
+faster to boot!
 
 ## Appendix
 
@@ -388,11 +484,12 @@ Here you can find the raw results of the data for all the tests for each Operati
 ##### Baseline Array
 
 No page size was set here as I just used the identity-mapped memory available
-in my OS. This identity-memory is mapped with 1GiB paes.
+in my OS. This identity-memory is mapped with 1GiB pages.
 
 | Final Array Size | clock cycles |
 | ---------------- | ------------ |
 | 1GiB             | 412151675    |
+| random <= 1GiB   | 197411003    |
 
 ##### _mappable_ Dynamic Array
 

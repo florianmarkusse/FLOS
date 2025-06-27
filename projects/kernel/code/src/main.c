@@ -259,8 +259,11 @@ static void identityTests() {
     KFLUSH_AFTER { INFO(STRING("\n")); }
 }
 
-static void baseLineTest() {
-    KFLUSH_AFTER { INFO(STRING("Starting baseline test...\n")); }
+static void baselineTest() {
+    KFLUSH_AFTER {
+        INFO(STRING("Starting baseline test...\n"));
+        INFO(STRING("full writing test...\n"));
+    }
 
     U64 sum = 0;
 
@@ -271,6 +274,38 @@ static void baseLineTest() {
         U64 startCycleCount = currentCycleCounter(true, false);
 
         for (U64 i = 0; i < MAX_TEST_ENTRIES; i++) {
+            buffer[i] = i;
+        }
+        U64 endCycleCount = currentCycleCounter(false, true);
+
+        freeIdentityMemory((Memory){.start = (U64)buffer,
+                                    .bytes = MAX_TEST_ENTRIES * sizeof(U64)});
+
+        U64 cycles = endCycleCount - startCycleCount;
+        sum += cycles;
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING("\t\t\t\t\t\taverage clockcycles: "));
+        INFO(sum / TEST_ITERATIONS, NEWLINE);
+    }
+
+    KFLUSH_AFTER { INFO(STRING("partial writing test...\n")); }
+
+    sum = 0;
+
+    BiskiState state;
+    biskiSeed(&state, PRNG_SEED);
+
+    for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
+        U64 *buffer = allocateIdentityMemory(MAX_TEST_ENTRIES * sizeof(U64),
+                                             alignof(U64));
+        U64 entriesToWrite =
+            RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
+
+        U64 startCycleCount = currentCycleCounter(true, false);
+
+        for (U64 i = 0; i < entriesToWrite; i++) {
             buffer[i] = i;
         }
         U64 endCycleCount = currentCycleCounter(false, true);
@@ -368,7 +403,7 @@ kernelmain(PackedKernelParameters *kernelParams) {
 
         mappingTests();
         identityTests();
-        baseLineTest();
+        baselineTest();
     }
 
     KFLUSH_AFTER {
