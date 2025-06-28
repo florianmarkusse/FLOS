@@ -28,9 +28,9 @@ func getRepoRoot() string {
 			return ""
 		}
 
-		homegrownPath := filepath.Join(dir, "homegrown")
-		if _, err := os.Stat(homegrownPath); err == nil {
-			return homegrownPath
+		repoRootPath := filepath.Join(dir, "FLOS")
+		if _, err := os.Stat(repoRootPath); err == nil {
+			return repoRootPath
 		}
 
 		dir = filepath.Dir(dir)
