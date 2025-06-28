@@ -120,7 +120,7 @@ Falconer](https://www.bytesbeneath.com/p/the-arena-custom-memory-allocators).
 
 Onto the new implementation. This implementation allocates a huge, say 1GiB,
 region of _virtual_ memory upfront. Upon adding a new element, the CPU "checks"
-if this page of memory is already mapped (it causes a page fault otherwise),
+if this page of memory is already mapped (specifically, it causes a page fault),
 and maps it to _physical_ memory if need be. The resulting code in a
 POSIX-compliant system would look something like this:
 
@@ -393,10 +393,17 @@ baseline. The baseline was done with 1GiB _virtual_ pages, I suspect that the
 support for this may not be as strong as it is for 2Mib and 4KiB pages and it
 is tripping the CPU up in some other way.
 
+Additionally, going from a 4KiB _virtual_ page size to an emulated 8KiB
+_virtual_ page size greatly speeds the writing up for a marginal cost of at
+most 4KiB. The fewer - halved, to be exact - page faults play a great part.
+It's not just about the page sizes that the hardware supports - but also about
+the number of page faults. It's a shame that Linux does not support this
+emulation of page sizes in this manner.
+
 Finally, I'm happy to report that my OS is faster than Ubuntu at performing
-these operations! But, credit where credit is due, using 2MiB _virtual_ pages,
-Ubuntu is very competitive. Now I only need to add support for a litany of
-features that are supported by any Linux distro... :)
+these operations! But, credit where credit is due, on using 2MiB _virtual_
+pages, Ubuntu is very competitive. Now I only need to add support for a litany
+of features that are supported by any Linux distro... :)
 
 ## Discussion and Practical Considerations
 
