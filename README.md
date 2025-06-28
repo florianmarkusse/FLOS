@@ -5,6 +5,10 @@ run
 ```
 cmd/install-dependencies.sh
 cmd/build-go.sh
+# The below command is necessary to create the kernel magic file. This
+dependency will be removed once I have better hardware that has a more
+up-to-date UEFI implementation >2017 instead of 2015...
+cmd/compile.elf -p kernel
 cmd/compile-run.elf
 ```
 
@@ -15,10 +19,11 @@ cmd/compile-run.elf
 # Find out first on what file system your device is
 lsblk # You should see there your device if it is connected
 # Fill out the of command with the right path from the above command
-sudo dd bs=4M if=FLOS_UEFI_IMAGE.hdd of=/dev/sdc1 conv=notrunc
+cmd/hardware.elf --file /dev/sdb1
 # Restart your computer with the device still in there
 # Go to the boot menu and you should find it there, may need to hit F12
-# to go to boot system during startup or something else related to your machine
+# In my case: UEFI: <name of the USB stick>
+# but motherboards do things in mysterious ways
 ```
 
 ## x86_64 only

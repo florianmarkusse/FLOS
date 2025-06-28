@@ -88,6 +88,7 @@ add_custom_target(
         --remove-section=.strtab ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME_BIN}
     COMMAND
+        # TODO: remove this once moved on to better UEFI support, just reading it by GUID instead.
         mkdir -p ${KERNEL_MAGIC_FOLDER} && python3
         "${REPO_PROJECTS}/efi-to-kernel/code/create_magic.py"
         "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME_BIN}" ${KERNEL_MAGIC_OUTPUT}
