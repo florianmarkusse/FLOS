@@ -776,6 +776,11 @@ void faultHandler(regs *regs) {
     xsaveopt();
 
     if (regs->interruptNumber == FAULT_PAGE_FAULT) {
+        if (regs->errorCode & 1) {
+            KFLUSH_AFTER { INFO(STRING("Stack overflow!!!\n")); }
+
+            asm volatile("cli;hlt;");
+        }
         pageFaults++;
 
         U64 startingMap = ALIGN_DOWN_VALUE(CR2(), pageSizeToMap);
