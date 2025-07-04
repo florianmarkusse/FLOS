@@ -18,7 +18,7 @@ NewStringInsert trie_insertStringAutoU16Map(string key,
     }
     if (set->nodeCount == U16_MAX) {
         ASSERT(false);
-        longjmp(perm->jmp_buf, 1);
+        longjmp(perm->jmpBuf, 1);
     }
     *currentNode = NEW(perm, trie_stringAutoU16Node, 1, ZERO_MEMORY);
     (*currentNode)->data.key = key;

@@ -219,7 +219,7 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
 void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                                 Arena scratch) {
     physical = (MemoryAllocator){0};
-    if (setjmp(physical.arena.jmp_buf)) {
+    if (setjmp(physical.arena.jmpBuf)) {
         KFLUSH_AFTER {
             INFO(STRING("Physical memory manager not available for direct use "
                         "in UEFI!\nUse "
@@ -227,7 +227,7 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
         }
     }
 
-    if (setjmp(virt.arena.jmp_buf)) {
+    if (setjmp(virt.arena.jmpBuf)) {
         KFLUSH_AFTER { INFO(STRING("Ran out of virtual memory in UEFI.\n")); }
     }
     virt.arena =

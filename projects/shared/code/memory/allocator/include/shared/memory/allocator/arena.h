@@ -8,7 +8,7 @@ typedef struct {
     U8 *curFree;
     U8 *beg;
     U8 *end;
-    JumpBuffer jmp_buf;
+    JumpBuffer jmpBuf;
 } Arena;
 
 __attribute__((malloc, alloc_align(3))) void *

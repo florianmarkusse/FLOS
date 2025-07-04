@@ -11,8 +11,10 @@ struct RedBlackNodeBasic {
                                        // This is used in the insert so that
                                        // children->[0] and a RedBlackNode* are
                                        // the same location for doing inserts.
-    RedBlackColor color;
+                                       // And as polymorphism for some common
+                                       // operations.
     U64 value;
+    RedBlackColor color;
 };
 
 typedef ARRAY(RedBlackNodeBasic *) RedBlackNodeBasicPtr_a;

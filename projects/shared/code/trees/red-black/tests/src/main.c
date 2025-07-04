@@ -30,7 +30,7 @@ int main() {
     }
     Arena arena =
         (Arena){.curFree = begin, .beg = begin, .end = begin + MEMORY_CAP};
-    if (setjmp(arena.jmp_buf)) {
+    if (setjmp(arena.jmpBuf)) {
         PFLUSH_AFTER(STDERR) { ERROR(STRING("Ran out of memory!\n")); }
     }
 

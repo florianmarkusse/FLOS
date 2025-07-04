@@ -357,7 +357,7 @@ kernelMain(PackedKernelParameters *kernelParams) {
     Arena arena = (Arena){.curFree = initMemory,
                           .beg = initMemory,
                           .end = initMemory + INIT_MEMORY};
-    if (setjmp(arena.jmp_buf)) {
+    if (setjmp(arena.jmpBuf)) {
         KFLUSH_AFTER { KLOG(STRING("Ran out of init memory capacity\n")); }
         while (1) {
             ;

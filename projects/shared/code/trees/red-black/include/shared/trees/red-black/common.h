@@ -18,7 +18,6 @@ struct RedBlackNode {
                                        // This is used in the insert so that
                                        // children->[0] and a RedBlackNode* are
                                        // the same location for doing inserts.
-    RedBlackColor color;
 };
 
 typedef struct {

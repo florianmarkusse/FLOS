@@ -41,7 +41,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     Arena arena = (Arena){.curFree = memoryForArena,
                           .beg = memoryForArena,
                           .end = memoryForArena + DYNAMIC_MEMORY_CAPACITY};
-    if (setjmp(arena.jmp_buf)) {
+    if (setjmp(arena.jmpBuf)) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING("Ran out of dynamic memory capacity\n"));
         }

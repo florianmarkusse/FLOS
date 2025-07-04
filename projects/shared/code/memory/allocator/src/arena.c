@@ -15,7 +15,7 @@ alloc(Arena *a, U64 size, U64 align, U64 count, U8 flags) {
         if (flags & NULLPTR_ON_FAIL) {
             return nullptr;
         }
-        longjmp(a->jmp_buf, 1);
+        longjmp(a->jmpBuf, 1);
     }
     U64 total = size * count;
     U8 *p = a->curFree + padding;

@@ -4,6 +4,19 @@
 #include "shared/log.h"
 #include "shared/trees/red-black/memory-manager.h"
 
+static RedBlackColor getColor(RedBlackNode *node, RedBlackTreeType treeType) {
+    switch (treeType) {
+    case RED_BLACK_BASIC: {
+        RedBlackNodeBasic *basicNode = (RedBlackNodeBasic *)node;
+        return basicNode->color;
+    }
+    case RED_BLACK_MEMORY_MANAGER: {
+        RedBlackNodeMM *memoryManagerNode = (RedBlackNodeMM *)node;
+        return memoryManagerNode->color;
+    }
+    }
+}
+
 static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
                               RedBlackNode *badNode,
                               RedBlackTreeType treeType) {
@@ -19,7 +32,8 @@ static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
     }
     INFO(prefix);
     INFO(STRING(", Color: "));
-    INFO(node->color == RB_TREE_RED ? STRING("RED") : STRING("BLACK"));
+    INFO(getColor(node, treeType) == RB_TREE_RED ? STRING("RED")
+                                                 : STRING("BLACK"));
 
     switch (treeType) {
     case RED_BLACK_BASIC: {
@@ -89,9 +103,10 @@ U64 nodeCount(RedBlackNode *tree, RedBlackTreeType treeType) {
 }
 
 static bool redParentHasRedChild(RedBlackNode *node,
-                                 RedBlackDirection direction) {
+                                 RedBlackDirection direction,
+                                 RedBlackTreeType treeType) {
     if (node->children[direction] &&
-        node->children[direction]->color == RB_TREE_RED) {
+        getColor(node->children[direction], treeType) == RB_TREE_RED) {
         return true;
     }
 
@@ -109,9 +124,9 @@ void assertNoRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
         RedBlackNode *node = buffer[len - 1];
         len--;
 
-        if (node->color == RB_TREE_RED) {
-            if (redParentHasRedChild(node, RB_TREE_LEFT) ||
-                redParentHasRedChild(node, RB_TREE_RIGHT)) {
+        if (getColor(node, treeType) == RB_TREE_RED) {
+            if (redParentHasRedChild(node, RB_TREE_LEFT, treeType) ||
+                redParentHasRedChild(node, RB_TREE_RIGHT, treeType)) {
                 TEST_FAILURE {
                     INFO(STRING("Red node has a red child!\n"));
                     appendRedBlackTreeWithBadNode(tree, node, treeType);
@@ -129,19 +144,20 @@ void assertNoRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
 }
 
 static void collectBlackHeightsForEachPath(RedBlackNode *node,
-                                           U64_a *blackHeights, U64 current) {
+                                           U64_a *blackHeights, U64 current,
+                                           RedBlackTreeType treeType) {
     if (!node) {
         blackHeights->buf[blackHeights->len] = current + 1;
         blackHeights->len++;
     } else {
-        if (node->color == RB_TREE_BLACK) {
+        if (getColor(node, treeType) == RB_TREE_BLACK) {
             current++;
         }
 
         collectBlackHeightsForEachPath(node->children[RB_TREE_LEFT],
-                                       blackHeights, current);
+                                       blackHeights, current, treeType);
         collectBlackHeightsForEachPath(node->children[RB_TREE_RIGHT],
-                                       blackHeights, current);
+                                       blackHeights, current, treeType);
     }
 }
 
@@ -161,7 +177,7 @@ void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
         U64 *_blackHeightsBuffer = NEW(&scratch, U64, nodes);
         U64_a blackHeights = {.buf = _blackHeightsBuffer, .len = 0};
 
-        collectBlackHeightsForEachPath(node, &blackHeights, 0);
+        collectBlackHeightsForEachPath(node, &blackHeights, 0, treeType);
 
         U64 first = blackHeights.buf[0];
         for (U64 i = 1; i < blackHeights.len; i++) {

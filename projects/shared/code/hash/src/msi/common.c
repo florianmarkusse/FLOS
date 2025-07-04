@@ -15,7 +15,7 @@ void msi_newSet(void *setSlice, U64 size, U64 align, Arena *a) {
 
     if (replica->exp >= 31) {
         ASSERT(false);
-        longjmp(a->jmp_buf, 1);
+        longjmp(a->jmpBuf, 1);
     }
 
     U64 cap = 1 << replica->exp;

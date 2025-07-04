@@ -122,14 +122,17 @@ static void initMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator,
 }
 
 void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree) {
-    if (setjmp(virt.arena.jmp_buf)) {
+    // TODO: fix this, we are running out of nodes to use for the memory tree,
+    // not out of memory. Use virtual memory setup and then this is a fine
+    // interrupt I think.
+    if (setjmp(virt.arena.jmpBuf)) {
         interruptNoMoreVirtualMemory();
     }
     initMemoryAllocator(virtualMemoryTree, &virt);
 }
 
 void initPhysicalMemoryManager(PackedMemoryAllocator *physicalMemoryTree) {
-    if (setjmp(physical.arena.jmp_buf)) {
+    if (setjmp(physical.arena.jmpBuf)) {
         interruptNoMorePhysicalMemory();
     }
     initMemoryAllocator(physicalMemoryTree, &physical);
