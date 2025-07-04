@@ -2,7 +2,7 @@
 
 #include "abstraction/memory/virtual/converter.h"
 #include "shared/assert.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/types/numeric.h"
 static bool isPageSizeValid(U64 pageSize) {
     ASSERT(!(RING_RANGE_VALUE(pageSize, pageSize)));

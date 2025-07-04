@@ -3,7 +3,7 @@
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/allocator.h"
 #include "shared/assert.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/memory/management/management.h"

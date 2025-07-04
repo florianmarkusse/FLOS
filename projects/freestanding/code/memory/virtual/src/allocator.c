@@ -3,7 +3,7 @@
 
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/map.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/memory/converter.h"
 #include "shared/memory/management/management.h"
 #include "shared/memory/policy.h"

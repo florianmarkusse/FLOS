@@ -1,5 +1,5 @@
 #include "shared/trees/red-black/memory-manager.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/memory/allocator/macros.h"
 #include "shared/memory/sizes.h"
 #include "shared/types/array.h"

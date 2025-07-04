@@ -6,7 +6,7 @@
 #include "abstraction/log.h"
 #include "posix/log.h"
 #include "shared/log.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/text/string.h"
 
 Configuration configuration = {

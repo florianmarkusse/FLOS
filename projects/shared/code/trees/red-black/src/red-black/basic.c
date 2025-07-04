@@ -1,5 +1,5 @@
 #include "shared/trees/red-black/basic.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 
 typedef struct {
     RedBlackNodeBasic *node;

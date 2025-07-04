@@ -12,7 +12,7 @@
 #include "shared/assert.h"
 #include "shared/log.h"
 #include "shared/macros.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/text/string.h"
 #include "shared/types/array-types.h"
 #include "shared/types/numeric.h"

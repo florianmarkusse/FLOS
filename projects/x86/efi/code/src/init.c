@@ -11,7 +11,7 @@
 #include "efi/globals.h"
 #include "efi/memory/physical.h"
 #include "shared/log.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/memory/management/management.h"
 #include "shared/text/string.h"
 #include "shared/types/numeric.h"

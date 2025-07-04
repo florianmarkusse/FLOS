@@ -3,7 +3,7 @@
 #include "abstraction/log.h"
 #include "abstraction/memory/virtual/converter.h"
 #include "abstraction/memory/virtual/map.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/memory/management/management.h"
 
 void initMemoryManager(PackedKernelMemory *memory) {

@@ -1,5 +1,5 @@
-#ifndef SHARED_MATHS_MATHS_H
-#define SHARED_MATHS_MATHS_H
+#ifndef SHARED_MATHS_H
+#define SHARED_MATHS_H
 
 #include "shared/types/numeric.h"
 

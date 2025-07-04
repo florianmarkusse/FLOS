@@ -8,7 +8,7 @@
 #include "freestanding/log/init.h"
 #include "freestanding/peripheral/screen.h"
 #include "shared/log.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/management.h"
 #include "shared/memory/management/status.h"

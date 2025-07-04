@@ -2,7 +2,7 @@
 
 #include "abstraction/interrupts.h"
 #include "efi-to-kernel/kernel-parameters.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/trees/red-black/memory-manager.h"
 

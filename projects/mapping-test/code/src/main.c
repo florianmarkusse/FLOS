@@ -1,7 +1,7 @@
 #include "abstraction/log.h"
 #include "abstraction/time.h"
 #include "shared/log.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/memory/sizes.h"
 #include "shared/prng/biski.h"
 

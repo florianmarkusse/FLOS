@@ -18,7 +18,7 @@
 - Decide on how to implement pageSize setting when fetching mappable memory
 - do xsaveopt and xrstor in asm, not in C
 - Can we make AVAILABLE_PAGE_SIZES_MASK a function instead to return the mask from anabstraction and see if it gets inlined in -03 mode?
-- Look into optimizing struct layouts?
+- Look into optimizing struct layouts? pahole
 - Decide on how to deal with simd/non-simd stuff in interrupt handlers
 
   - do some benchmarking? Per interrupt??

@@ -2,7 +2,7 @@
 #include "abstraction/log.h"
 #include "posix/test-framework/test.h"
 #include "shared/log.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/trees/red-black/tests/assert.h"
 
 static void

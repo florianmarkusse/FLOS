@@ -16,7 +16,7 @@
 #include "posix/file/file-status.h"
 #include "posix/log.h"
 #include "shared/log.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/memory/sizes.h"
 #include "shared/text/parser.h"
 #include "shared/text/string.h"

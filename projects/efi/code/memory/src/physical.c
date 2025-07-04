@@ -6,7 +6,7 @@
 #include "efi/firmware/base.h"
 #include "efi/globals.h"
 #include "shared/log.h"
-#include "shared/maths/maths.h"
+#include "shared/maths.h"
 #include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/memory/sizes.h"
