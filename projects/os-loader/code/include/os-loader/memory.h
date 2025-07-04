@@ -21,7 +21,7 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
 
 void findKernelMemory(U64 alignment, U64 numberOfThreads);
 
-U64 alignVirtual(U64 physical, U64 virt, U64 bytes);
+U64 alignVirtual(U64 virtualAddress, U64 physicalAddress, U64 bytes);
 
 U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags);
 

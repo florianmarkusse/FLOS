@@ -5,8 +5,8 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/types/numeric.h"
 
-void initMemoryManagement(U64 startingAddress, U64 endingAddress,
-                          Arena scratch);
+void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
+                                Arena scratch);
 
 typedef struct {
     U64 bytes;

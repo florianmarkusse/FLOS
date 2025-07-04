@@ -61,24 +61,6 @@ static constexpr struct {
     U64 PAGE_AVAILABLE_9;  // Can be used freely by the OS
     U64 PAGE_AVAILABLE_10; // Can be used freely by the OS
     U64 PAGE_AVAILABLE_11; // Can be used freely by the OS
-    U64 PAGE_AVAILABLE_52; // Can be used freely by the OS (NOT with 5-level
-                           // paging, though!)
-    U64 PAGE_AVAILABLE_53; // Can be used freely by the OS (NOT with 5-level
-                           // paging, though!)
-    U64 PAGE_AVAILABLE_54; // Can be used freely by the OS (NOT with 5-level
-                           // paging, though!)
-    U64 PAGE_AVAILABLE_55; // Can be used freely by the OS (NOT with 5-level
-                           // paging, though!)
-    U64 PAGE_AVAILABLE_56; // Can be used freely by the OS (NOT with 5-level
-                           // paging, though!)
-    U64 PAGE_AVAILABLE_57; // Can be used freely by the OS (NOT with 5-level
-                           // paging, though!)
-    U64 PAGE_AVAILABLE_58; // Can be used freely by the OS (NOT with 5-level
-                           // paging, though!)
-    U64 PAGE_AVAILABLE_59; // Can be used freely by the OS (NOT with 5-level
-                           // paging, though!)
-    U64 PAGE_AVAILABLE_60; // Can be used freely by the OS (NOT with 5-level
-                           // paging, though!)
     U64 PAGE_AVAILABLE_61; // Can be used freely by the OS
     U64 PAGE_AVAILABLE_62; // Can be used freely by the OS
     U64 PAGE_NO_EXECUTE;   // Forbid executing code on this page (the NXE bit in
@@ -97,15 +79,6 @@ static constexpr struct {
                       .PAGE_AVAILABLE_9 = (1ULL << 9),
                       .PAGE_AVAILABLE_10 = (1ULL << 10),
                       .PAGE_AVAILABLE_11 = (1ULL << 11),
-                      .PAGE_AVAILABLE_52 = (1ULL << 52),
-                      .PAGE_AVAILABLE_53 = (1ULL << 53),
-                      .PAGE_AVAILABLE_54 = (1ULL << 54),
-                      .PAGE_AVAILABLE_55 = (1ULL << 55),
-                      .PAGE_AVAILABLE_56 = (1ULL << 56),
-                      .PAGE_AVAILABLE_57 = (1ULL << 57),
-                      .PAGE_AVAILABLE_58 = (1ULL << 58),
-                      .PAGE_AVAILABLE_59 = (1ULL << 59),
-                      .PAGE_AVAILABLE_60 = (1ULL << 60),
                       .PAGE_AVAILABLE_61 = (1ULL << 61),
                       .PAGE_AVAILABLE_62 = (1ULL << 62),
                       .PAGE_NO_EXECUTE = (1ULL << 63),

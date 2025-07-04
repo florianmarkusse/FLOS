@@ -45,13 +45,13 @@ void allocateSpaceForKernelMemory(Arena *allocator,
         createFreeListForMemoryAllocator(expectedNumberOfDescriptors, scratch);
 }
 
-U64 alignVirtual(U64 virt, U64 physical, U64 bytes) {
-    U64 alignment = pageSizeEncompassing(bytes * 2);
+U64 alignVirtual(U64 virtualAddress, U64 physicalAddress, U64 bytes) {
+    U64 alignment = pageSizeEncompassing(bytes);
 
-    virt = ALIGN_UP_VALUE(virt, alignment);
-    virt = virt | RING_RANGE_VALUE(physical, alignment);
+    U64 result = ALIGN_UP_VALUE(virtualAddress, alignment);
+    result |= RING_RANGE_VALUE(physicalAddress, alignment);
 
-    return virt;
+    return result;
 }
 
 U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {

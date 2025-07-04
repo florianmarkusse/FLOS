@@ -107,8 +107,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     U64 firstFreeVirtual = mapMemory(0, 0, highestLowerHalfAddress,
                                      STANDARD_PAGE_FLAGS | GLOBAL_PAGE_FLAGS);
 
-    initMemoryManagement(firstFreeVirtual, KERNEL_CODE_START, arena);
-
+    initKernelMemoryManagement(firstFreeVirtual, KERNEL_CODE_START, arena);
     U64 virtualForKernel =
         (U64)allocVirtualMemory(MIN_VIRTUAL_MEMORY_REQUIRED, 1);
 
@@ -156,6 +155,11 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     virtualForKernel += KERNEL_STACK_SIZE;
     virtualForKernel =
         alignVirtual(virtualForKernel, stackAddress, KERNEL_STACK_SIZE);
+    U64 stackGuardPageAddress = virtualForKernel - SMALLEST_VIRTUAL_PAGE;
+    KFLUSH_AFTER {
+        INFO(STRING("mapped guard page address: \n"));
+        INFO((void *)stackGuardPageAddress, NEWLINE);
+    }
 
     U64 stackVirtualStart = virtualForKernel;
     virtualForKernel =

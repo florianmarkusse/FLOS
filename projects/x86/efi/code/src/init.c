@@ -147,15 +147,24 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
     CPUIDResult extendedProcessorFeatures = CPUID(EXTENDED_FEATURES);
     if (extendedProcessorFeatures.ebx & (1 << 16)) {
         supportsAVX512 = true;
-        KFLUSH_AFTER { INFO(STRING("Support for AVX512 found\n")); }
+        KFLUSH_AFTER {
+            INFO(STRING("Support for AVX512 found\nCan set CR4.LA57 = 1 to "
+                        "turn it on."));
+        }
     } else {
         KFLUSH_AFTER { INFO(STRING("No Support for AVX512 found\n")); }
     }
 
     KFLUSH_AFTER {
-        INFO(STRING("Configuuing XSAVE to enable FPU / SSE / AVX\n"));
+        INFO(STRING("Configuring XSAVE to enable FPU / SSE / AVX\n"));
     }
     enableAndConfigureXSAVE(supportsAVX512);
+
+    if (extendedProcessorFeatures.ecx & (1 << 16)) {
+        KFLUSH_AFTER { INFO(STRING("Support for 5 level-paging found\n")); }
+    } else {
+        KFLUSH_AFTER { INFO(STRING("No Support for 5 level-paging found\n")); }
+    }
 
     CPUIDResult XSAVECPUSupport = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 1);
     if (XSAVECPUSupport.eax & (1 << 0)) {
@@ -207,11 +216,9 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
                                     .align = alignof(X86ArchParams)};
 }
 
-void initMemoryManagement(U64 startingAddress, U64 endingAddress,
-                          Arena scratch) {
+void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
+                                Arena scratch) {
     physical = (MemoryAllocator){0};
-    // TODO: Make it impossible to call allocPhysical/allocVirtual in UEFI
-    // somehow?
     if (setjmp(physical.arena.jmp_buf)) {
         KFLUSH_AFTER {
             INFO(STRING("Physical memory manager not available for direct use "
@@ -219,12 +226,9 @@ void initMemoryManagement(U64 startingAddress, U64 endingAddress,
                         "other options."));
         }
     }
+
     if (setjmp(virt.arena.jmp_buf)) {
-        KFLUSH_AFTER {
-            INFO(STRING("Virtual memory manager not available for direct use "
-                        "in UEFI!\nUse "
-                        "other options."));
-        }
+        KFLUSH_AFTER { INFO(STRING("Ran out of virtual memory in UEFI.\n")); }
     }
     virt.arena =
         createArenaForMemoryAllocator(X86_MAX_VIRTUAL_MEMORY_REGIONS, scratch);

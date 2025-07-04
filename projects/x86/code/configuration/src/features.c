@@ -127,13 +127,8 @@ void CPUEnableFPU() {
 void enableAndConfigureXSAVE(bool supportsAVX512) {
     CR4 cr4;
 
-    // Read CR4 register
     asm volatile("mov %%cr4, %%rax" : "=a"(cr4));
-
-    // Set Operating System Support for XSave
     cr4.OSXSAVE = 1;
-
-    // Write the modified CR4 register back
     asm volatile("mov %%rax, %%cr4" : : "a"(cr4));
 
     U32 eax;

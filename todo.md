@@ -27,7 +27,6 @@
 
 - Mark functions whose [[nodiscard]] return values should be used as such to avoid bugs.
 - Extract page mapping code in real/idt.c
-- maths has an extra maths folder that is not necessary
 - remove getAvailableMemory from .h file, should not be called directly
 - Decision to flush cpu cache or invalidate should be done in the architecture it's running on, not common code
 - wfunction-prototype
@@ -45,6 +44,7 @@
 - policy is quite architecture-dependent. What's required to completely make it so?
 - Reploe X_VALUE with X_EXP when it is not compile-time known value? I.e. pageSizes array should be bitshifts I think, check GODBOLT!!
 - Remove NOLINTNEXTLINE?
+- go over abstraction folders and find out if you can change the ifdefs into just function calls
 - Fix posix tests in physical memory
 - if you ever decide to use unit tests in the kernel, need to create an abstraction for test-framework so it can be used in both posix and freestanding environments
 - c2y updates: Are constexpr functions possible???
