@@ -1,6 +1,6 @@
 /*
  * This translation unit is compiled with  "-mno-vzeroupper" as we are handling
- * the SIMD state manually in the fault_handler
+ * the SIMD state manually in the faultHandler
  */
 
 #include "abstraction/interrupts.h"
@@ -772,7 +772,7 @@ U64 getPageFaults() { return pageFaults; }
 // 1. When bencchmarking code is gone, can pull it out in here
 // 2. When clarity on how the pageSizeToMap stuff will be done on a per address
 // region basis, can be pulled out of this code completely.
-void fault_handler(regs *regs) {
+void faultHandler(regs *regs) {
     xsaveopt();
 
     if (regs->interruptNumber == FAULT_PAGE_FAULT) {

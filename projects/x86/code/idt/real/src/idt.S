@@ -2,7 +2,7 @@
 .code64
 
 // The C isr handler
-.extern fault_handler
+.extern faultHandler
 
 // The current data segment we are using for the kernel
 #define KERNEL_DATA_SEG (1 << 4)
@@ -78,7 +78,7 @@ isr_stub:
     // And we get into it
     movq %rsp, %rdi
     cld
-    call fault_handler
+    call faultHandler
     // Restore segment registers
     movw (%rsp), %ds   # Restore ds from offset 0
     movw 2(%rsp), %es  # Restore es from offset 2

@@ -1,5 +1,5 @@
 /* Kernel Linker Script */
-ENTRY(kernelmain)
+ENTRY(kernelMain)
 SECTIONS {
     . = 0xFFFFFFFF80000000;
     kernel-start : {
