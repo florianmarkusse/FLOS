@@ -1,3 +1,4 @@
+- os-loader virtual memory doesnt check if memory overflows
 - create abstraction that fault handler calls to map memory in etc.
 - Create tree to map memory, unmapped / certain page sizes to use in fault handler
 - make os-loader when memory descriptors use dynamic memory to grow descriptor arena if need be
@@ -25,7 +26,8 @@
   - do some benchmarking? Per interrupt??
 
 - RED-ZONE ???
-
+- clean up red-black tree mess somehow? This should be possible to abstract!
+- add restrict to basically all pointers? look into aliasing again!!!
 - Mark functions whose [[nodiscard]] return values should be used as such to avoid bugs.
 - Extract page mapping code in real/idt.c
 - remove getAvailableMemory from .h file, should not be called directly
@@ -33,7 +35,9 @@
 - wfunction-prototype
 - add some nicer logs to image-builder? i.e. more data about sizes in bytes and LBA, not one or the other.
 - rename abstraction/efi to abstraction/efi-to-kernel
-- make alignup/value into functions?
+- make alignup/value into functions? Make a lot of maths macros into functions,
+  and look into where you are using VALUE and see if you can replace it by
+  divides by 2, which are faster
 - get rid of lots of virtual stuff in policy
   - move some stuff in policy to virtual?
   - Move policy & physical & (most of) virtual to be arch-independent?

@@ -50,6 +50,24 @@ static U64 rebalanceInsert(RedBlackDirection direction,
     return 0;
 }
 
+RedBlackNodeBasic *findGreatestBelowOrEqual(RedBlackNodeBasic **tree,
+                                            U64 value) {
+    RedBlackNodeBasic *current = *tree;
+    RedBlackNodeBasic *result = nullptr;
+
+    while (current) {
+        if (current->value == value) {
+            return current;
+        } else if (current->value < value) {
+            result = current;
+            current = current->children[RB_TREE_RIGHT];
+        } else {
+            current = current->children[RB_TREE_LEFT];
+        }
+    }
+    return result;
+}
+
 void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
                              RedBlackNodeBasic *createdNode) {
     createdNode->children[RB_TREE_LEFT] = nullptr;

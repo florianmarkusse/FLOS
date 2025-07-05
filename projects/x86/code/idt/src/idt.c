@@ -1,6 +1,6 @@
 /*
- * This translation unit is compiled with  "-mno-vzeroupper" as we are handling
- * the SIMD state manually in the faultHandler
+ * NOTE: This translation unit is compiled with  "-mno-vzeroupper" as we are
+ * handling the SIMD state manually in the faultHandler
  */
 
 #include "abstraction/interrupts.h"

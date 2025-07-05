@@ -13,9 +13,9 @@ struct RedBlackNodeMM {
                                        // This is used in the insert so that
                                        // children->[0] and a RedBlackNode* are
                                        // the same location for doing inserts.
-    RedBlackColor color;
     Memory memory;
     U64 mostBytesInSubtree;
+    RedBlackColor color;
 };
 
 typedef ARRAY(RedBlackNodeMM *) RedBlackNodeMMPtr_a;

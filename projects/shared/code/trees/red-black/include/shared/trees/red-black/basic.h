@@ -24,5 +24,7 @@ void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
 RedBlackNodeBasic *deleteRedBlackNodeBasic(RedBlackNodeBasic **tree, U64 value);
 RedBlackNodeBasic *deleteAtLeastRedBlackNodeBasic(RedBlackNodeBasic **tree,
                                                   U64 value);
+RedBlackNodeBasic *findGreatestBelowOrEqual(RedBlackNodeBasic **tree,
+                                            U64 value);
 
 #endif
