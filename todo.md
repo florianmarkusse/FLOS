@@ -1,4 +1,3 @@
-- os-loader virtual memory doesnt check if memory overflows
 - create abstraction that fault handler calls to map memory in etc.
 - Create tree to map memory, unmapped / certain page sizes to use in fault handler
 - make os-loader when memory descriptors use dynamic memory to grow descriptor arena if need be

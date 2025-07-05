@@ -1,4 +1,4 @@
-#include "shared/memory/page.h"
+#include "shared/memory/management/page.h"
 #include "abstraction/memory/virtual/map.h"
 #include "shared/maths.h"
 #include "shared/memory/converter.h"

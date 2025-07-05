@@ -107,9 +107,11 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     U64 firstFreeVirtual = mapMemory(0, 0, highestLowerHalfAddress,
                                      STANDARD_PAGE_FLAGS | GLOBAL_PAGE_FLAGS);
 
-    initKernelMemoryManagement(firstFreeVirtual, KERNEL_CODE_START, arena);
+    initKernelMemoryManagement(firstFreeVirtual, VIRTUAL_MEMORY_FREE_END,
+                               arena);
     U64 virtualForKernel =
         (U64)allocVirtualMemory(MIN_VIRTUAL_MEMORY_REQUIRED, 1);
+    U64 endVirtualForKernel = virtualForKernel + MIN_VIRTUAL_MEMORY_REQUIRED;
 
     KFLUSH_AFTER {
         INFO(STRING("Got "));
@@ -231,10 +233,18 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         EXIT_WITH_MESSAGE { ERROR(STRING("Could not find an RSDP!\n")); }
     }
 
+    if (virtualForKernel >= endVirtualForKernel) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("Kernel virtual memory exceeded maximum allowed "
+                         "memory\nHow did this happen? Allow more virtual "
+                         "memory to OS-loader or bug?"));
+        }
+    }
+
     // NOTE: Don't use virtual memory allocations anymore from this point
     // onward.
-    setPackedMemoryAllocator(&kernelParams->memory.virt, &virt.arena, virt.tree,
-                             &virt.freeList);
+    setPackedMemoryAllocator(&kernelParams->memory.virtualPMA, &virtualMA.arena,
+                             virtualMA.tree, &virtualMA.freeList);
 
     KFLUSH_AFTER {
         INFO(STRING("Finished set-up. Collecting physical memory and jumping "
@@ -257,7 +267,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                      "call exit boot services twice?\n"));
     }
 
-    convertToKernelMemory(&memoryInfo, &kernelParams->memory.physical,
+    convertToKernelMemory(&memoryInfo, &kernelParams->memory.physicalPMA,
                           &physicalTreeArena, &physicalFreeList);
 
     jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE, kernelParams);

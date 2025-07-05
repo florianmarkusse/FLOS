@@ -34,8 +34,8 @@ typedef struct __attribute__((packed)) {
 } PackedMemoryAllocator;
 
 typedef struct __attribute__((packed)) {
-    PackedMemoryAllocator physical;
-    PackedMemoryAllocator virt;
+    PackedMemoryAllocator physicalPMA;
+    PackedMemoryAllocator virtualPMA;
 } PackedKernelMemory;
 
 typedef struct __attribute__((packed)) {

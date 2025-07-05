@@ -40,11 +40,11 @@ static void appendMemoryManagerStatus(MemoryAllocator *allocator, string name) {
 }
 
 void appendPhysicalMemoryManagerStatus() {
-    appendMemoryManagerStatus(&physical, STRING("[PHYS]"));
+    appendMemoryManagerStatus(&physicalMA, STRING("[PHYS]"));
 }
 
 void appendVirtualMemoryManagerStatus() {
-    appendMemoryManagerStatus(&virt, STRING("[VIRT]"));
+    appendMemoryManagerStatus(&virtualMA, STRING("[VIRT]"));
 }
 
 static AvailableMemoryState getAvailableMemory(RedBlackNodeMM *tree) {
@@ -54,8 +54,8 @@ static AvailableMemoryState getAvailableMemory(RedBlackNodeMM *tree) {
 }
 
 AvailableMemoryState getAvailablePhysicalMemory() {
-    return getAvailableMemory(physical.tree);
+    return getAvailableMemory(physicalMA.tree);
 }
 AvailableMemoryState getAvailableVirtualMemory() {
-    return getAvailableMemory(virt.tree);
+    return getAvailableMemory(virtualMA.tree);
 }

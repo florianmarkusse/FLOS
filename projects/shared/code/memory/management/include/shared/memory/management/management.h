@@ -11,8 +11,8 @@ typedef struct {
     RedBlackNodeMM *tree;
 } MemoryAllocator;
 
-extern MemoryAllocator virt;
-extern MemoryAllocator physical;
+extern MemoryAllocator virtualMA;
+extern MemoryAllocator physicalMA;
 
 void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
                                           RedBlackNodeMM *newNode,

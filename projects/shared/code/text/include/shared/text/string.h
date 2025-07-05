@@ -11,7 +11,6 @@ typedef struct {
     U64 len;
 } string;
 
-typedef DYNAMIC_ARRAY(string) string_d_a;
 typedef MAX_LENGTH_ARRAY(string) string_max_a;
 
 static constexpr string EMPTY_STRING = ((string){0, 0});

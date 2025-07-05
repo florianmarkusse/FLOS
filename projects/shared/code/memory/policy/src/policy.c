@@ -7,8 +7,8 @@
 #include "shared/memory/management/management.h"
 
 void initMemoryManager(PackedKernelMemory *memory) {
-    initPhysicalMemoryManager(&memory->physical);
-    initVirtualMemoryManager(&memory->virt);
+    initPhysicalMemoryManager(&memory->physicalPMA);
+    initVirtualMemoryManager(&memory->virtualPMA);
 }
 
 void *allocateIdentityMemory(U64 bytes, U64 align) {

@@ -6,8 +6,8 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/trees/red-black/memory-manager.h"
 
-MemoryAllocator virt;
-MemoryAllocator physical;
+MemoryAllocator virtualMA;
+MemoryAllocator physicalMA;
 
 void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
                                           RedBlackNodeMM *newNode,
@@ -48,7 +48,7 @@ static RedBlackNodeMM *getMemoryAllocation(MemoryAllocator *allocator,
     RedBlackNodeMM *availableMemory =
         deleteAtLeastRedBlackNodeMM(&allocator->tree, bytes);
     if (!availableMemory) {
-        if (allocator == &physical) {
+        if (allocator == &physicalMA) {
             interruptNoMorePhysicalMemory();
         } else {
             interruptNoMoreVirtualMemory();
@@ -57,9 +57,9 @@ static RedBlackNodeMM *getMemoryAllocation(MemoryAllocator *allocator,
     return availableMemory;
 }
 
-void freeVirtualMemory(Memory memory) { insertMemory(memory, &virt); }
+void freeVirtualMemory(Memory memory) { insertMemory(memory, &virtualMA); }
 
-void freePhysicalMemory(Memory memory) { insertMemory(memory, &physical); }
+void freePhysicalMemory(Memory memory) { insertMemory(memory, &physicalMA); }
 
 static U64 alignedToTotal(U64 bytes, U64 align) { return bytes + align - 1; }
 
@@ -102,11 +102,11 @@ static void *allocAlignedMemory(U64 bytes, U64 align,
 }
 
 void *allocVirtualMemory(U64 bytes, U64 align) {
-    return allocAlignedMemory(bytes, align, &virt);
+    return allocAlignedMemory(bytes, align, &virtualMA);
 }
 
 void *allocPhysicalMemory(U64 bytes, U64 align) {
-    return allocAlignedMemory(bytes, align, &physical);
+    return allocAlignedMemory(bytes, align, &physicalMA);
 }
 
 static void initMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator,
@@ -125,15 +125,15 @@ void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree) {
     // TODO: fix this, we are running out of nodes to use for the memory tree,
     // not out of memory. Use virtual memory setup and then this is a fine
     // interrupt I think.
-    if (setjmp(virt.arena.jmpBuf)) {
+    if (setjmp(virtualMA.arena.jmpBuf)) {
         interruptNoMoreVirtualMemory();
     }
-    initMemoryAllocator(virtualMemoryTree, &virt);
+    initMemoryAllocator(virtualMemoryTree, &virtualMA);
 }
 
 void initPhysicalMemoryManager(PackedMemoryAllocator *physicalMemoryTree) {
-    if (setjmp(physical.arena.jmpBuf)) {
+    if (setjmp(physicalMA.arena.jmpBuf)) {
         interruptNoMorePhysicalMemory();
     }
-    initMemoryAllocator(physicalMemoryTree, &physical);
+    initMemoryAllocator(physicalMemoryTree, &physicalMA);
 }
