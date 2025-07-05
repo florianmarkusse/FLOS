@@ -5,14 +5,13 @@
 #include "shared/memory/management/management.h"
 #include "shared/memory/sizes.h"
 
-static U64 pageSizeToUse(U64 faultingAddress) { return 4 * KiB; }
+static U64 pageSizeFromVMM(U64 faultingAddress) { return 4 * KiB; }
 
 void handlePageFault(U64 faultingAddress) {
-    U64 pageSizeForFault = pageSizeToUse(faultingAddress);
+    U64 pageSizeForFault = pageSizeFromVMM(faultingAddress);
 
     U64 startingMap = ALIGN_DOWN_VALUE(faultingAddress, pageSizeForFault);
     U64 pageSizeToUse = pageSizeFitting(startingMap, pageSizeForFault);
-    U8 *address = allocPhysicalMemory(pageSizeForFault, pageSizeToUse);
 
     // NOTE: when starting to use SMP, I should first check if this memory
     // is now mapped before doing this.
@@ -22,7 +21,7 @@ void handlePageFault(U64 faultingAddress) {
 
     U64 mapsToDo = divideByPowerOf2(pageSizeForFault, pageSizeToUse);
     for (U64 i = 0; i < mapsToDo; i++) {
-        mapPage(startingMap + (i * pageSizeToUse),
-                (U64)address + (i * pageSizeToUse), pageSizeToUse);
+        U8 *address = allocPhysicalMemory(pageSizeToUse, pageSizeToUse);
+        mapPage(startingMap + (i * pageSizeToUse), (U64)address, pageSizeToUse);
     }
 }

@@ -75,7 +75,7 @@ static U64 arrayWritingTest(U64 alignment, U64 arrayEntries,
         buffer = allocateIdentityMemory(START_ENTRIES_COUNT * sizeof(U64),
                                         alignment);
 
-        U64_d_a dynamicArray = {
+        U64_max_a dynamicArray = {
             .buf = buffer, .len = 0, .cap = START_ENTRIES_COUNT};
 
         U64 startCycleCount = currentCycleCounter(true, false);

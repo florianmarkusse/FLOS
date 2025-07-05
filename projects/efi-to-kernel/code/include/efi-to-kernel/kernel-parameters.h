@@ -30,7 +30,7 @@ typedef struct __attribute__((packed)) {
 typedef struct __attribute__((packed)) {
     RedBlackNodeMM *tree;
     PackedArena allocator;
-    PackedRedBlackNodeMMPtr_a freeList;
+    PackedRedBlackNodeMMPtr_max_a freeList;
 } PackedMemoryAllocator;
 
 typedef struct __attribute__((packed)) {
@@ -46,6 +46,6 @@ typedef struct __attribute__((packed)) {
 
 void setPackedMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator,
                               Arena *arena, RedBlackNodeMM *root,
-                              RedBlackNodeMMPtr_a *freeList);
+                              RedBlackNodeMMPtr_max_a *freeList);
 
 #endif

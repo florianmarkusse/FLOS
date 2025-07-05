@@ -29,8 +29,8 @@ U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
 U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure);
 
 Arena createArenaForMemoryAllocator(U64 requiredNumberOfNodes, Arena scratch);
-RedBlackNodeMMPtr_a createFreeListForMemoryAllocator(U64 requiredNumberOfNodes,
-                                                     Arena scratch);
+RedBlackNodeMMPtr_max_a
+createFreeListForMemoryAllocator(U64 requiredNumberOfNodes, Arena scratch);
 
 #define FOR_EACH_DESCRIPTOR(memoryInfoAddress, descriptorName)                 \
     for (MemoryDescriptor *descriptorName = (memoryInfoAddress)->memoryMap;    \

@@ -1,9 +1,12 @@
 #include "shared/memory/management/management.h"
 
 #include "abstraction/interrupts.h"
+#include "abstraction/memory/manipulation.h"
 #include "efi-to-kernel/kernel-parameters.h"
 #include "shared/maths.h"
 #include "shared/memory/allocator/arena.h"
+#include "shared/memory/management/page.h"
+#include "shared/memory/sizes.h"
 #include "shared/trees/red-black/memory-manager.h"
 
 MemoryAllocator virtualMA;
@@ -11,7 +14,7 @@ MemoryAllocator physicalMA;
 
 void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
                                           RedBlackNodeMM *newNode,
-                                          RedBlackNodeMMPtr_a *freeList) {
+                                          RedBlackNodeMMPtr_max_a *freeList) {
     InsertResult insertResult = insertRedBlackNodeMM(root, newNode);
 
     for (U64 i = 0; (i < RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT) &&
@@ -22,7 +25,8 @@ void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
     }
 }
 
-RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_a *freeList, Arena *arena) {
+RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_max_a *freeList,
+                                  Arena *arena) {
     RedBlackNodeMM *result;
     if (freeList->len > 0) {
         result = freeList->buf[freeList->len - 1];
@@ -116,9 +120,38 @@ static void initMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator,
     allocator->arena.end = packedMemoryAllocator->allocator.end;
 
     allocator->freeList.buf = packedMemoryAllocator->freeList.buf;
+    allocator->freeList.cap = packedMemoryAllocator->freeList.cap;
     allocator->freeList.len = packedMemoryAllocator->freeList.len;
 
     allocator->tree = packedMemoryAllocator->tree;
+}
+
+static constexpr auto ALLOCATOR_MAX_BUFFER_SIZE = 1 * GiB;
+static constexpr auto ALLOCATOR_PAGE_SIZE = 4 * KiB;
+
+void initMemoryManagers(PackedMemoryAllocator *physicalMemoryTree,
+                        PackedMemoryAllocator *virtualMemoryTree) {
+    if (setjmp(physicalMA.arena.jmpBuf)) {
+        interruptNoMorePhysicalMemory();
+    }
+    initMemoryAllocator(physicalMemoryTree, &physicalMA);
+
+    if (setjmp(virtualMA.arena.jmpBuf)) {
+        interruptNoMoreVirtualMemory();
+    }
+    initMemoryAllocator(virtualMemoryTree, &virtualMA);
+
+    RedBlackNodeMM *virtualBufferForPhysical =
+        allocVirtualMemory(ALLOCATOR_MAX_BUFFER_SIZE, alignof(RedBlackNodeMM));
+    U64 arenaBytesUsed =
+        (U64)physicalMA.arena.curFree - (U64)physicalMA.arena.beg;
+
+    U64 mapsToDo = CEILING_DIV_VALUE(arenaBytesUsed, (U64)ALLOCATOR_PAGE_SIZE);
+    for (U64 i = 0; i < mapsToDo; i++) {
+        handlePageFault((U64)virtualBufferForPhysical +
+                        (i * ALLOCATOR_PAGE_SIZE));
+    }
+    memcpy(virtualBufferForPhysical, physicalMA.arena.beg, arenaBytesUsed);
 }
 
 void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree) {

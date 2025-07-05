@@ -18,8 +18,8 @@ struct RedBlackNodeMM {
     RedBlackColor color;
 };
 
-typedef ARRAY(RedBlackNodeMM *) RedBlackNodeMMPtr_a;
-typedef PACKED_ARRAY(RedBlackNodeMM *) PackedRedBlackNodeMMPtr_a;
+typedef MAX_LENGTH_ARRAY(RedBlackNodeMM *) RedBlackNodeMMPtr_max_a;
+typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeMM *) PackedRedBlackNodeMMPtr_max_a;
 
 static constexpr auto RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT = 2;
 

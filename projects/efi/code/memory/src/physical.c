@@ -221,16 +221,17 @@ U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure) {
     return address;
 }
 
-RedBlackNodeMMPtr_a createFreeListForMemoryAllocator(U64 requiredNumberOfNodes,
-                                                     Arena scratch) {
+RedBlackNodeMMPtr_max_a
+createFreeListForMemoryAllocator(U64 requiredNumberOfNodes, Arena scratch) {
     U64 bytes = sizeof(RedBlackNodeMM *) * requiredNumberOfNodes;
 
     RedBlackNodeMM **freeMemoryDescriptorsLocation =
         (RedBlackNodeMM **)allocateKernelStructure(
             bytes, alignof(RedBlackNodeMM *), false, scratch);
 
-    return (RedBlackNodeMMPtr_a){.buf = freeMemoryDescriptorsLocation,
-                                 .len = 0};
+    return (RedBlackNodeMMPtr_max_a){.buf = freeMemoryDescriptorsLocation,
+                                     .cap = requiredNumberOfNodes,
+                                     .len = 0};
 }
 
 Arena createArenaForMemoryAllocator(U64 requiredNumberOfNodes, Arena scratch) {

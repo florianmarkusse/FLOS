@@ -7,7 +7,7 @@
 
 typedef struct {
     Arena arena;
-    RedBlackNodeMMPtr_a freeList;
+    RedBlackNodeMMPtr_max_a freeList;
     RedBlackNodeMM *tree;
 } MemoryAllocator;
 
@@ -16,8 +16,12 @@ extern MemoryAllocator physicalMA;
 
 void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
                                           RedBlackNodeMM *newNode,
-                                          RedBlackNodeMMPtr_a *freeList);
-RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_a *freeList, Arena *arena);
+                                          RedBlackNodeMMPtr_max_a *freeList);
+RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_max_a *freeList,
+                                  Arena *arena);
+
+void initMemoryManagers(PackedMemoryAllocator *physicalMemoryTree,
+                        PackedMemoryAllocator *virtualMemoryTree);
 
 void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree);
 void *allocVirtualMemory(U64 size, U64 align);

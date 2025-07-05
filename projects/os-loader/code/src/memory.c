@@ -30,7 +30,7 @@ static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
 }
 
 void allocateSpaceForKernelMemory(Arena *allocator,
-                                  RedBlackNodeMMPtr_a *freeList,
+                                  RedBlackNodeMMPtr_max_a *freeList,
                                   Arena scratch) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
     U64 numberOfDescriptors =
@@ -67,7 +67,8 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
 
 void convertToKernelMemory(MemoryInfo *memoryInfo,
                            PackedMemoryAllocator *physicalMemoryTree,
-                           Arena *allocator, RedBlackNodeMMPtr_a *freeList) {
+                           Arena *allocator,
+                           RedBlackNodeMMPtr_max_a *freeList) {
     RedBlackNodeMM *root = nullptr;
 
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {

@@ -1,6 +1,5 @@
 add_subdirectory(converter)
 add_subdirectory(allocator)
 add_subdirectory(management)
-add_subdirectory(page)
 add_subdirectory(sizes)
 add_subdirectory(policy)

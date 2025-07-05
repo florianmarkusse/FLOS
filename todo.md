@@ -1,3 +1,4 @@
+- change memoryAllocator Arena to just be an array, should be easier to work with and clearer. No need for arena since it will only "allocate" a single struct
 - create abstraction that fault handler calls to map memory in etc.
 - Create tree to map memory, unmapped / certain page sizes to use in fault handler
 - make os-loader when memory descriptors use dynamic memory to grow descriptor arena if need be

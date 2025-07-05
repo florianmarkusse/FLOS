@@ -252,7 +252,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     Arena physicalTreeArena;
-    RedBlackNodeMMPtr_a physicalFreeList;
+    RedBlackNodeMMPtr_max_a physicalFreeList;
     allocateSpaceForKernelMemory(&physicalTreeArena, &physicalFreeList, arena);
 
     /* NOTE: Keep this call in between the stub and the creation of available */
