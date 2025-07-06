@@ -243,7 +243,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     // NOTE: Don't use virtual memory allocations anymore from this point
     // onward.
-    setPackedMemoryAllocator(&kernelParams->memory.virtualPMA, &virtualMA.arena,
+    setPackedMemoryAllocator(&kernelParams->memory.virtualPMA, &virtualMA.nodes,
                              virtualMA.tree, &virtualMA.freeList);
 
     KFLUSH_AFTER {
@@ -251,9 +251,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                     "to the kernel.\n"));
     }
 
-    Arena physicalTreeArena;
+    RedBlackNodeMM_max_a physicalNodes;
     RedBlackNodeMMPtr_max_a physicalFreeList;
-    allocateSpaceForKernelMemory(&physicalTreeArena, &physicalFreeList, arena);
+    allocateSpaceForKernelMemory(&physicalNodes, &physicalFreeList, arena);
 
     /* NOTE: Keep this call in between the stub and the creation of available */
     /* memory! The stub allocates memory and logs on failure which is not */

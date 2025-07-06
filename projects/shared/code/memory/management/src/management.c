@@ -26,21 +26,28 @@ void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
 }
 
 RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_max_a *freeList,
-                                  Arena *arena) {
-    RedBlackNodeMM *result;
+                                  RedBlackNodeMM_max_a *nodes) {
     if (freeList->len > 0) {
-        result = freeList->buf[freeList->len - 1];
+        RedBlackNodeMM *result = freeList->buf[freeList->len - 1];
         freeList->len--;
-    } else {
-        result = NEW(arena, RedBlackNodeMM);
+        return result;
     }
 
-    return result;
+    if (nodes->len < nodes->cap) {
+        RedBlackNodeMM *result = &nodes->buf[nodes->len - 1];
+        nodes->len++;
+        return result;
+    }
+
+    return nullptr;
 }
 
 static void insertMemory(Memory memory, MemoryAllocator *allocator) {
     RedBlackNodeMM *newNode =
-        getRedBlackNodeMM(&allocator->freeList, &allocator->arena);
+        getRedBlackNodeMM(&allocator->freeList, &allocator->nodes);
+    if (!newNode) {
+        interruptUnexpectedError();
+    }
     newNode->memory = memory;
 
     insertRedBlackNodeMMAndAddToFreelist(&allocator->tree, newNode,
@@ -115,9 +122,9 @@ void *allocPhysicalMemory(U64 bytes, U64 align) {
 
 static void initMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator,
                                 MemoryAllocator *allocator) {
-    allocator->arena.beg = packedMemoryAllocator->allocator.beg;
-    allocator->arena.curFree = packedMemoryAllocator->allocator.curFree;
-    allocator->arena.end = packedMemoryAllocator->allocator.end;
+    allocator->nodes.buf = packedMemoryAllocator->nodes.buf;
+    allocator->nodes.len = packedMemoryAllocator->nodes.len;
+    allocator->nodes.cap = packedMemoryAllocator->nodes.cap;
 
     allocator->freeList.buf = packedMemoryAllocator->freeList.buf;
     allocator->freeList.cap = packedMemoryAllocator->freeList.cap;
@@ -131,14 +138,7 @@ static constexpr auto ALLOCATOR_PAGE_SIZE = 4 * KiB;
 
 void initMemoryManagers(PackedMemoryAllocator *physicalMemoryTree,
                         PackedMemoryAllocator *virtualMemoryTree) {
-    if (setjmp(physicalMA.arena.jmpBuf)) {
-        interruptNoMorePhysicalMemory();
-    }
     initMemoryAllocator(physicalMemoryTree, &physicalMA);
-
-    if (setjmp(virtualMA.arena.jmpBuf)) {
-        interruptNoMoreVirtualMemory();
-    }
     initMemoryAllocator(virtualMemoryTree, &virtualMA);
 
     RedBlackNodeMM *virtualBufferForPhysical =
@@ -158,15 +158,9 @@ void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree) {
     // TODO: fix this, we are running out of nodes to use for the memory tree,
     // not out of memory. Use virtual memory setup and then this is a fine
     // interrupt I think.
-    if (setjmp(virtualMA.arena.jmpBuf)) {
-        interruptNoMoreVirtualMemory();
-    }
     initMemoryAllocator(virtualMemoryTree, &virtualMA);
 }
 
 void initPhysicalMemoryManager(PackedMemoryAllocator *physicalMemoryTree) {
-    if (setjmp(physicalMA.arena.jmpBuf)) {
-        interruptNoMorePhysicalMemory();
-    }
     initMemoryAllocator(physicalMemoryTree, &physicalMA);
 }

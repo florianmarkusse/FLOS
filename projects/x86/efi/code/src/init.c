@@ -216,33 +216,28 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
                                     .align = alignof(X86ArchParams)};
 }
 
+// NOTE: Should be enough until put into final kernel position.
+static constexpr auto INITIAL_VIRTUAL_MEMORY_REGIONS = 16;
+
 void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                                 Arena scratch) {
     physicalMA = (MemoryAllocator){0};
-    if (setjmp(physicalMA.arena.jmpBuf)) {
-        KFLUSH_AFTER {
-            INFO(STRING("Physical memory manager not available for direct use "
-                        "in UEFI!\nUse "
-                        "other options."));
-        }
-    }
-
-    if (setjmp(virtualMA.arena.jmpBuf)) {
-        KFLUSH_AFTER { INFO(STRING("Ran out of virtual memory in UEFI.\n")); }
-    }
-    virtualMA.arena =
-        createArenaForMemoryAllocator(X86_MAX_VIRTUAL_MEMORY_REGIONS, scratch);
+    virtualMA.nodes =
+        createArrayForMemoryAllocator(INITIAL_VIRTUAL_MEMORY_REGIONS, scratch);
     virtualMA.freeList = createFreeListForMemoryAllocator(
-        X86_MAX_VIRTUAL_MEMORY_REGIONS, scratch);
+        INITIAL_VIRTUAL_MEMORY_REGIONS, scratch);
 
     virtualMA.tree = nullptr;
 
-    RedBlackNodeMM *node = NEW(&virtualMA.arena, RedBlackNodeMM);
+    // Initial size > 2 so no bounds checking here.
+    RedBlackNodeMM *node = &virtualMA.nodes.buf[virtualMA.nodes.len];
+    virtualMA.nodes.len++;
     node->memory = (Memory){.start = startingAddress,
                             .bytes = LOWER_HALF_END - startingAddress};
     (void)insertRedBlackNodeMM(&virtualMA.tree, node);
 
-    node = NEW(&virtualMA.arena, RedBlackNodeMM);
+    node = &virtualMA.nodes.buf[virtualMA.nodes.len];
+    virtualMA.nodes.len++;
     node->memory = (Memory){.start = HIGHER_HALF_START,
                             .bytes = endingAddress - HIGHER_HALF_START};
     (void)insertRedBlackNodeMM(&virtualMA.tree, node);

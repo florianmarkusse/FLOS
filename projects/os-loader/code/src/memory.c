@@ -29,18 +29,18 @@ static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     }
 }
 
-void allocateSpaceForKernelMemory(Arena *allocator,
+void allocateSpaceForKernelMemory(RedBlackNodeMM_max_a *nodes,
                                   RedBlackNodeMMPtr_max_a *freeList,
                                   Arena scratch) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
     U64 numberOfDescriptors =
         memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
-    // TODO: Find a better long-term solution for this, like a dynamic array
-    // that grows?
-    U64 expectedNumberOfDescriptors = ((numberOfDescriptors * 10));
+    // NOTE: just to hold the initial descriptors before moved into final kernel
+    // state.
+    U64 expectedNumberOfDescriptors = ((numberOfDescriptors * 4));
 
-    *allocator =
-        createArenaForMemoryAllocator(expectedNumberOfDescriptors, scratch);
+    *nodes =
+        createArrayForMemoryAllocator(expectedNumberOfDescriptors, scratch);
     *freeList =
         createFreeListForMemoryAllocator(expectedNumberOfDescriptors, scratch);
 }
@@ -67,7 +67,7 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
 
 void convertToKernelMemory(MemoryInfo *memoryInfo,
                            PackedMemoryAllocator *physicalMemoryTree,
-                           Arena *allocator,
+                           RedBlackNodeMM_max_a *nodes,
                            RedBlackNodeMMPtr_max_a *freeList) {
     RedBlackNodeMM *root = nullptr;
 
@@ -116,12 +116,14 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
             }
 
             for (U64 i = 0; i < availableMemory.len; i++) {
-                RedBlackNodeMM *node = getRedBlackNodeMM(freeList, allocator);
+                // NOTE: no checking for null here, the initial size is large
+                // enough!
+                RedBlackNodeMM *node = getRedBlackNodeMM(freeList, nodes);
                 node->memory = availableMemory.buf[i];
                 insertRedBlackNodeMMAndAddToFreelist(&root, node, freeList);
             }
         }
     }
 
-    setPackedMemoryAllocator(physicalMemoryTree, allocator, root, freeList);
+    setPackedMemoryAllocator(physicalMemoryTree, nodes, root, freeList);
 }

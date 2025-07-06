@@ -6,7 +6,7 @@
 #include "shared/trees/red-black/memory-manager.h"
 
 typedef struct {
-    Arena arena;
+    RedBlackNodeMM_max_a nodes;
     RedBlackNodeMMPtr_max_a freeList;
     RedBlackNodeMM *tree;
 } MemoryAllocator;
@@ -18,7 +18,7 @@ void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
                                           RedBlackNodeMM *newNode,
                                           RedBlackNodeMMPtr_max_a *freeList);
 RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_max_a *freeList,
-                                  Arena *arena);
+                                  RedBlackNodeMM_max_a *nodes);
 
 void initMemoryManagers(PackedMemoryAllocator *physicalMemoryTree,
                         PackedMemoryAllocator *virtualMemoryTree);

@@ -18,6 +18,8 @@ struct RedBlackNodeMM {
     RedBlackColor color;
 };
 
+typedef MAX_LENGTH_ARRAY(RedBlackNodeMM) RedBlackNodeMM_max_a;
+typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeMM) PackedRedBlackNodeMM_max_a;
 typedef MAX_LENGTH_ARRAY(RedBlackNodeMM *) RedBlackNodeMMPtr_max_a;
 typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeMM *) PackedRedBlackNodeMMPtr_max_a;
 

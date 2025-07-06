@@ -3,8 +3,6 @@
 
 #include "shared/types/numeric.h"
 #include "x86/memory/definitions.h"
-static constexpr auto X86_MAX_VIRTUAL_MEMORY_REGIONS = 512;
-
 typedef struct {
     U16 entriesMapped;
     U16 entriesMappedWithSmallerGranularity;

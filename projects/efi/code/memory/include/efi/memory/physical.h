@@ -28,7 +28,8 @@ U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
                             bool tryEncompassingVirtual, Arena scratch);
 U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure);
 
-Arena createArenaForMemoryAllocator(U64 requiredNumberOfNodes, Arena scratch);
+RedBlackNodeMM_max_a createArrayForMemoryAllocator(U64 requiredNumberOfNodes,
+                                                   Arena scratch);
 RedBlackNodeMMPtr_max_a
 createFreeListForMemoryAllocator(U64 requiredNumberOfNodes, Arena scratch);
 
