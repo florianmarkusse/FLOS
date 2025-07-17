@@ -5,7 +5,8 @@ U64 ceilingPowerOf2(U64 x) {
     if (x <= 1) {
         return 1;
     }
-    return 1ULL << ((sizeof(U64) * BITS_PER_BYTE) - __builtin_clzll(x - 1));
+    return 1ULL << ((sizeof(U64) * BITS_PER_BYTE) -
+                    (U64)__builtin_clzll(x - 1));
 }
 
 bool isPowerOf2(U64 x) { return (x & (x - 1)) == 0; }
@@ -34,8 +35,7 @@ U64 power(U64 base, U64 exponent) {
 }
 
 U64 divideByPowerOf2(U64 value, U64 divisor) {
-    U64 shift = __builtin_ctzll(divisor);
-    return value >> shift;
+    return value >> (__builtin_ctzll(divisor));
 }
 
 bool isAlignedTo(U64 x, U64 align) { return (x & (align - 1)) == 0; }

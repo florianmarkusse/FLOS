@@ -1,9 +1,9 @@
-#include "shared/assert.h"      // for ASSERT
+#include "shared/assert.h"                    // for ASSERT
 #include "shared/hash/hashes.h"               // for hash16_xm3
 #include "shared/hash/trie/common-iterator.h" // for TRIE_ITERATOR_SOURCE...
 #include "shared/hash/trie/u16-set.h"
-#include "shared/memory/allocator/macros.h"
 #include "shared/memory/allocator/arena.h"
+#include "shared/memory/allocator/macros.h"
 #include "shared/types/numeric.h"
 
 bool trie_insertU16Set(U16 key, trie_U16Set **set, Arena *perm) {
@@ -20,4 +20,4 @@ bool trie_insertU16Set(U16 key, trie_U16Set **set, Arena *perm) {
 }
 
 TRIE_ITERATOR_SOURCE_FILE(trie_U16Set, trie_U16IterNode, trie_U16Iterator, U16,
-                          createU16Iterator, nextU16Iterator);
+                          createU16Iterator, nextU16Iterator)

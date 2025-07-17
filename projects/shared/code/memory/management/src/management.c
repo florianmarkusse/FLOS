@@ -141,17 +141,18 @@ void initMemoryManagers(PackedMemoryAllocator *physicalMemoryTree,
     initMemoryAllocator(physicalMemoryTree, &physicalMA);
     initMemoryAllocator(virtualMemoryTree, &virtualMA);
 
-    RedBlackNodeMM *virtualBufferForPhysical =
-        allocVirtualMemory(ALLOCATOR_MAX_BUFFER_SIZE, alignof(RedBlackNodeMM));
-    U64 arenaBytesUsed =
-        (U64)physicalMA.arena.curFree - (U64)physicalMA.arena.beg;
+    RedBlackNodeMM *virtualBufferForPhysical = allocVirtualMemory(
+        ALLOCATOR_MAX_BUFFER_SIZE, alignof(*physicalMA.nodes.buf));
+    U64 bytesUsed = physicalMA.nodes.len * sizeof(*physicalMA.nodes.buf);
 
-    U64 mapsToDo = CEILING_DIV_VALUE(arenaBytesUsed, (U64)ALLOCATOR_PAGE_SIZE);
+    // NOTE: One extra to be safe becouse handling page fault causes
+    // allocations.
+    U64 mapsToDo = CEILING_DIV_VALUE(bytesUsed, (U64)ALLOCATOR_PAGE_SIZE) + 1;
     for (U64 i = 0; i < mapsToDo; i++) {
         handlePageFault((U64)virtualBufferForPhysical +
                         (i * ALLOCATOR_PAGE_SIZE));
     }
-    memcpy(virtualBufferForPhysical, physicalMA.arena.beg, arenaBytesUsed);
+    // memcpy(virtualBufferForPhysical, physicalMA.arena.beg, arenaBytesUsed);
 }
 
 void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree) {

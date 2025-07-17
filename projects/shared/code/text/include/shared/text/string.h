@@ -16,7 +16,8 @@ typedef MAX_LENGTH_ARRAY(string) string_max_a;
 static constexpr string EMPTY_STRING = ((string){0, 0});
 #define STRING(s) ((string){(U8 *)(s), sizeof(s) - 1})
 #define STRING_LEN(s, len) ((string){(U8 *)(s), len})
-#define STRING_PTRS(begin, end) ((string){(U8 *)(begin), ((end) - (begin))})
+#define STRING_PTRS(begin, end)                                                \
+    ((string){(U8 *)(begin), (U64)((end) - (begin))})
 
 #define STRING_APPEND(string1, string2, perm)                                  \
     ({                                                                         \
@@ -49,7 +50,7 @@ static inline U8 getChar(string str, U64 index) {
 
 static inline U8 getCharOr(string str, U64 index, I8 or) {
     if (index < 0 || index >= str.len) {
-        return or ;
+        return (U8) or ;
     }
     return str.buf[index];
 }
@@ -98,7 +99,7 @@ static inline I64 firstOccurenceOfFrom(string s, U8 ch, U64 from) {
 
     for (U64 i = from; i < s.len; i++) {
         if (s.buf[i] == ch) {
-            return i;
+            return (I64)i;
         }
     }
     return -1;
@@ -111,7 +112,7 @@ static inline I64 lastOccurenceOf(string s, U8 ch) {
     // Is uint here so it will wrap at 0
     for (U64 i = s.len - 1; i >= s.len; i--) {
         if (s.buf[i] == ch) {
-            return i;
+            return (I64)i;
         }
     }
     return -1;

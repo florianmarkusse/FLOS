@@ -13,7 +13,8 @@
   - Which just uses functions that return simple values to use.
 - look into sizeof usage and see if we can replace it with typeof
 - per-cpu caches??
-- look into alignof calls, and see if I can replace it with the variable
+- look into alignof calls, and see if I can replace it with the variable?
+- look into sizeof calls, and see if I can replace iw with the variable?
 
   - https://old.reddit.com/r/C_Programming/comments/1i74hii/quick_hash_tables_and_dynamic_arrays_in_c/m8l40fo/
 
@@ -25,9 +26,12 @@
 
   - do some benchmarking? Per interrupt??
 
+- redundant decls warning
+- look into divisiona and see where can used shift instead for power of 2 div
 - RED-ZONE ???
 - clean up red-black tree mess somehow? This should be possible to abstract!
 - add restrict to basically all pointers? look into aliasing again!!!
+- warning pointer cast turn on again? Maybe ask c_programming how to fix this better? Or whether this can be ignored?
 - Mark functions whose [[nodiscard]] return values should be used as such to avoid bugs.
 - Extract page mapping code in real/idt.c
 - remove getAvailableMemory from .h file, should not be called directly
@@ -52,6 +56,8 @@
 - go over abstraction folders and find out if you can change the ifdefs into just function calls
 - Fix posix tests in physical memory
 - if you ever decide to use unit tests in the kernel, need to create an abstraction for test-framework so it can be used in both posix and freestanding environments
+- use countof replacement instead of macro
+- small enums
 - c2y updates: Are constexpr functions possible???
 
 CPU features to implement/turn on in x86

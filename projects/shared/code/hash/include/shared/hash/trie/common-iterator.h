@@ -16,7 +16,7 @@
         /* NOLINTNEXTLINE */                                                   \
         T *set;                                                                \
         unsigned char index;                                                   \
-    };
+    }
 
 #define TRIE_ITERATOR(iterNodeType, iteratorName)                              \
     typedef struct {                                                           \
@@ -24,7 +24,7 @@
         iterNodeType *head;                                                    \
         /* NOLINTNEXTLINE */                                                   \
         iterNodeType *free;                                                    \
-    }(iteratorName);
+    }(iteratorName)
 
 #define TRIE_ITERATOR_HEADER_FILE(setType, iterNodeType, iteratorType,         \
                                   returnType, createIteratorFunctionName,      \

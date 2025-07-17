@@ -22,7 +22,7 @@ U16 trie_insertStringU16Map(string key, U16 value, trie_stringU16Map **set,
 
 TRIE_ITERATOR_HEADER_FILE(trie_stringU16Map, trie_stringU16IterNode,
                           trie_stringU16Iterator, trie_stringU16Data,
-                          createStringU16Iterator, nextStringU16Iterator);
+                          createStringU16Iterator, nextStringU16Iterator)
 
 #define FOR_EACH_TRIE_STRING_U16(element, stringU16Map, scratch)               \
     for (trie_stringU16Iterator * MACRO_VAR(iter) =                            \

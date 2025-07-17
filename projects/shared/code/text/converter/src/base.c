@@ -10,7 +10,7 @@
 string stringToString(string data) { return data; }
 
 string charToString(char data, U8_a tmp) {
-    tmp.buf[0] = data;
+    tmp.buf[0] = (U8)data;
     return (string){.len = 1, .buf = tmp.buf};
 }
 

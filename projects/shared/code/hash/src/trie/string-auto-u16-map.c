@@ -43,4 +43,4 @@ U16 trie_containsStringAutoU16Map(string key, trie_stringAutoU16Map *set) {
 TRIE_ITERATOR_SOURCE_FILE(trie_stringAutoU16Node, trie_stringAutoU16IterNode,
                           trie_stringAutoU16Iterator, trie_stringAutoU16Data,
                           createStringAutoU16Iterator,
-                          nextStringAutoU16Iterator);
+                          nextStringAutoU16Iterator)

@@ -1,9 +1,9 @@
 #include "shared/hash/trie/string-set.h"
-#include "shared/types/numeric.h"
-#include "shared/assert.h"      // for ASSERT
+#include "shared/assert.h"                    // for ASSERT
 #include "shared/hash/hashes.h"               // for hashStringDjb2
 #include "shared/hash/trie/common-iterator.h" // for TRIE_ITERATOR_SOURCE...
 #include "shared/memory/allocator/macros.h"
+#include "shared/types/numeric.h"
 
 bool trie_insertStringSet(string key, trie_stringSet **set, Arena *perm) {
     ASSERT(key.len > 0);
@@ -20,4 +20,4 @@ bool trie_insertStringSet(string key, trie_stringSet **set, Arena *perm) {
 
 TRIE_ITERATOR_SOURCE_FILE(trie_stringSet, trie_stringIterNode,
                           trie_stringIterator, string, createStringIterator,
-                          nextStringIterator);
+                          nextStringIterator)

@@ -2,9 +2,9 @@
 #define SHARED_HASH_TRIE_STRING_AUTO_U16_MAP_H
 
 #include "common-iterator.h" // for TRIE_ITERATOR_HEADER_FILE
-#include "shared/types/numeric.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/text/string.h" // for string
+#include "shared/types/numeric.h"
 
 typedef struct {
     string key;
@@ -37,7 +37,7 @@ U16 trie_containsStringAutoU16Map(string key, trie_stringAutoU16Map *set);
 TRIE_ITERATOR_HEADER_FILE(trie_stringAutoU16Node, trie_stringAutoU16IterNode,
                           trie_stringAutoU16Iterator, trie_stringAutoU16Data,
                           createStringAutoU16Iterator,
-                          nextStringAutoU16Iterator);
+                          nextStringAutoU16Iterator)
 
 #define FOR_EACH_TRIE_STRING_AUTO_U16(element, stringAutoU16Map, scratch)      \
     for (trie_stringAutoU16Iterator *iter =                                    \

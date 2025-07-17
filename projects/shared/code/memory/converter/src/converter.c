@@ -24,7 +24,7 @@ U64 increasePageSize(U64 pageSize) {
 U64 decreasePageSize(U64 pageSize) {
     U64 smallerPages = ((pageSize - 1) & AVAILABLE_PAGE_SIZES_MASK);
     return 1ULL << (((sizeof(U64) * BITS_PER_BYTE) - 1) -
-                    (__builtin_clzll(smallerPages)));
+                    (U64)(__builtin_clzll(smallerPages)));
 }
 
 U64 pageSizeEncompassing(U64 bytes) {

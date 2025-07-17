@@ -16,7 +16,7 @@ bool trie_insertStringSet(string key, trie_stringSet **set, Arena *perm);
 
 TRIE_ITERATOR_HEADER_FILE(trie_stringSet, trie_stringIterNode,
                           trie_stringIterator, string, createStringIterator,
-                          nextStringIterator);
+                          nextStringIterator)
 
 #define FOR_EACH_TRIE_STRING(element, stringSet, scratch)                      \
     for (trie_stringIterator * MACRO_VAR(iter) =                               \

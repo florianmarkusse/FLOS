@@ -31,12 +31,12 @@ static void appendMemoryManagerStatus(MemoryAllocator *allocator, string name) {
     KLOG(STRING("freelist size: "));
     KLOG(stringWithMinSizeDefault(CONVERT_TO_STRING(allocator->freeList.len),
                                   3));
-    KLOG(STRING("arena beg: "));
-    KLOG(allocator->arena.beg);
-    KLOG(STRING(" current free: "));
-    KLOG(allocator->arena.curFree);
-    KLOG(STRING(" end: "));
-    KLOG(allocator->arena.end, NEWLINE);
+    KLOG(STRING("nodes buf: "));
+    KLOG((void *)allocator->nodes.buf);
+    KLOG(STRING(" len: "));
+    KLOG(allocator->nodes.len);
+    KLOG(STRING(" cap: "));
+    KLOG(allocator->nodes.cap, NEWLINE);
 }
 
 void appendPhysicalMemoryManagerStatus() {

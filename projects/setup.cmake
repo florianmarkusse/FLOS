@@ -4,7 +4,7 @@ set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -march=native -m64 -Wall -Wextra -Wconversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-pointer-sign -Wno-sign-conversion -Wdouble-promotion -Wvla"
+    "${CMAKE_C_FLAGS} -march=native -m64 -Wall -Wpedantic -Wextra -Wconversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-gnu-alignof-expression -Wno-gnu-statement-expression-from-macro-expansion -Wdouble-promotion -Wvla"
 )
 
 option(FLOAT_OPERATIONS "Turn on/off floating-point operations" ON)
@@ -53,7 +53,7 @@ endif()
 if(${ENVIRONMENT} STREQUAL "EFI")
     add_compile_definitions(EFI)
     set(CMAKE_C_FLAGS
-        "${CMAKE_C_FLAGS} -ffreestanding -nostdlib -nostdinc --target=x86_64-unknown-windows -mgeneral-regs-only -mno-stack-arg-probe"
+        "${CMAKE_C_FLAGS} -nostdinc -nostdlib -ffreestanding --target=x86_64-unknown-windows -mgeneral-regs-only -mno-stack-arg-probe"
     )
     get_filename_component(LINKER_FILENAME ${CMAKE_LINKER} NAME)
     add_link_options(
