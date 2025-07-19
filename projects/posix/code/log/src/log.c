@@ -32,7 +32,7 @@ bool flushBufferWithFileDescriptor(int fileDescriptor, U8 *buffer, U64 size) {
             ASSERT(false);
             return false;
         } else {
-            bytesWritten += partialBytesWritten;
+            bytesWritten += (U64)partialBytesWritten;
         }
     }
 

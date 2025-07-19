@@ -2,15 +2,16 @@
 
 #include <string.h>
 
-#include "image-builder/partitions/efi.h"
 #include "abstraction/log.h"
+#include "image-builder/partitions/efi.h"
 #include "posix/log.h"
 #include "shared/log.h"
 #include "shared/maths.h"
 #include "shared/text/string.h"
 
-Configuration configuration = {
-    .imageName = "FLOS_UEFI_IMAGE.hdd", .LBASizeBytes = 512, .alignmentLBA = 1};
+Configuration configuration = {.imageName = (U8 *)"FLOS_UEFI_IMAGE.hdd",
+                               .LBASizeBytes = 512,
+                               .alignmentLBA = 1};
 
 void setConfiguration(U64 efiApplicationSizeBytes, U64 kernelSizeBytes,
                       U32 alignmentSizeBytes) {
@@ -54,7 +55,7 @@ void setConfiguration(U64 efiApplicationSizeBytes, U64 kernelSizeBytes,
 
         INFO(STRING("Image name: "));
         INFO(STRING_LEN(configuration.imageName,
-                        strlen(configuration.imageName)),
+                        strlen((char *)configuration.imageName)),
              NEWLINE);
 
         INFO(STRING("LBA size bytes: "));

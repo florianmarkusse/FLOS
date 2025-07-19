@@ -371,15 +371,6 @@ static Cluster createPath(string FAT32FilePath, Cluster startCluster) {
                          ((bufferVariable).buf[(bufferVariable).len])) -       \
                         ((U64)((bufferVariable).buf)))))
 
-//#define CREATE_FAT32_FILE(fileName, parentCluster, bufferVariable,             \
-//                          bufferStartVariable)                                 \
-//    (bufferVariable) = getDataCluster(CURRENT_FREE_DATA_CLUSTER_INDEX);        \
-//    (bufferStartVariable) = (bufferVariable);                                  \
-//    for (auto MACRO_VAR(i) = 0; MACRO_VAR(i) < 1; MACRO_VAR(i) = 1,            \
-//              createFileEntryAfterWritingData((fileName), parentCluster,       \
-//                                              (U32)((bufferVariable) -         \
-//                                                    (bufferStartVariable))))
-
 bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U64 efiSizeBytes,
                              U64 kernelSizeBytes) {
     parameterBlock.hiddenSectors = configuration.EFISystemPartitionStartLBA;
@@ -416,7 +407,7 @@ bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U64 efiSizeBytes,
 
     U8_a buffer;
 
-    CREATE_FAT32_FILE("BOOTX64 EFI", efiBootCluster, buffer) {
+    CREATE_FAT32_FILE((U8 *)"BOOTX64 EFI", efiBootCluster, buffer) {
         while (buffer.len < efiSizeBytes) {
             I64 partialBytesRead = read(efifd, &buffer.buf[buffer.len],
                                         (U64)(efiSizeBytes - buffer.len));
@@ -428,23 +419,23 @@ bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U64 efiSizeBytes,
                     PERROR(STRING("Error code: "));
                     PERROR(errno, NEWLINE);
                     PERROR(STRING("Error message: "));
-                    U8 *errorString = strerror(errno);
+                    char *errorString = strerror(errno);
                     PERROR(STRING_LEN(errorString, strlen(errorString)),
                            NEWLINE);
                 }
                 return false;
             }
-            buffer.len += partialBytesRead;
+            buffer.len += (U64)partialBytesRead;
         }
     }
 
-    CREATE_FAT32_FILE("KERNEL  INF", efiFLOSCluster, buffer) {
+    CREATE_FAT32_FILE((U8 *)"KERNEL  INF", efiFLOSCluster, buffer) {
         KLOG_APPEND(&buffer, STRING("KERNEL_SIZE_BYTES="));
         KLOG_APPEND(&buffer, kernelSizeBytes);
         KLOG_APPEND(&buffer, STRING("\n"));
     }
 
-    CREATE_FAT32_FILE("DISKDATAINF", efiFLOSCluster, buffer) {
+    CREATE_FAT32_FILE((U8 *)"DISKDATAINF", efiFLOSCluster, buffer) {
         KLOG_APPEND(&buffer, STRING("DISK_SIZE_BYTES="));
         KLOG_APPEND(&buffer, configuration.totalImageSizeBytes);
         KLOG_APPEND(&buffer, STRING("\n"));

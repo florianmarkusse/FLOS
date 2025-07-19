@@ -13,7 +13,6 @@
 #include "image-builder/mbr.h"
 #include "image-builder/partitions/data.h"
 #include "image-builder/partitions/efi.h"
-#include "posix/file/file-status.h"
 #include "posix/log.h"
 #include "shared/log.h"
 #include "shared/maths.h"
@@ -31,7 +30,7 @@ typedef struct {
 static File efiFileInfo;
 static File kernelFileInfo;
 
-File openFile(U8 *name) {
+File openFile(char *name) {
     File result;
     result.fileDescriptor = open(name, O_RDONLY | O_CLOEXEC);
     if (!result.fileDescriptor) {
@@ -58,34 +57,37 @@ File openFile(U8 *name) {
         }
         longjmp(errorHandler, 1);
     }
-    result.size = buf.st_size;
+    result.size = (U64)buf.st_size;
 
     return result;
 }
 
+static constexpr auto READ_WRITE_OWNER_READ_OTHERS = 0644;
 int createUEFIImage() {
-    int fileDescriptor =
-        open(configuration.imageName, O_CLOEXEC | O_TRUNC | O_CREAT | O_RDWR,
-             READ_WRITE_OWNER_READ_OTHERS);
+    int fileDescriptor = open((char *)configuration.imageName,
+                              O_CLOEXEC | O_TRUNC | O_CREAT | O_RDWR,
+                              READ_WRITE_OWNER_READ_OTHERS);
     if (fileDescriptor == -1) {
         PFLUSH_AFTER(STDERR) {
             PERROR((STRING("Failed to open file for writing!\n")));
             PERROR(STRING("Error code: "));
             PERROR(errno, NEWLINE);
             PERROR(STRING("Error message: "));
-            U8 *errorString = strerror(errno);
-            PERROR(STRING_LEN(errorString, strlen(errorString)), NEWLINE);
+            U8 *errorString = (U8 *)strerror(errno);
+            PERROR(STRING_LEN(errorString, strlen((char *)errorString)),
+                   NEWLINE);
         }
         longjmp(errorHandler, 1);
     }
 
-    if (ftruncate(fileDescriptor, configuration.totalImageSizeBytes) == -1) {
+    if (ftruncate(fileDescriptor, (__off_t)configuration.totalImageSizeBytes) ==
+        -1) {
         PFLUSH_AFTER(STDERR) {
             PERROR((STRING("Failed to truncate file!\n")));
             PERROR(STRING("Error code: "));
             PERROR(errno, NEWLINE);
             PERROR(STRING("Error message: "));
-            U8 *errorString = strerror(errno);
+            char *errorString = strerror(errno);
             PERROR(STRING_LEN(errorString, strlen(errorString)), NEWLINE);
         }
         longjmp(errorHandler, 1);
@@ -101,7 +103,7 @@ int createUEFIImage() {
             PERROR(STRING("Error code: "));
             PERROR(errno, NEWLINE);
             PERROR(STRING("Error message: "));
-            U8 *errorString = strerror(errno);
+            char *errorString = strerror(errno);
             PERROR(STRING_LEN(errorString, strlen(errorString)), NEWLINE);
         }
         longjmp(errorHandler, 1);
@@ -139,11 +141,11 @@ int main(int argc, char **argv) {
     time_t programStartTime = time(NULL);
     if (setjmp(errorHandler)) {
         struct stat fileStat;
-        if (stat(configuration.imageName, &fileStat) == -1) {
+        if (stat((char *)configuration.imageName, &fileStat) == -1) {
             PFLUSH_AFTER(STDERR) {
                 PERROR(STRING("Could not stat file: "));
                 PERROR(STRING_LEN(configuration.imageName,
-                                  strlen(configuration.imageName)),
+                                  strlen((char *)configuration.imageName)),
                        NEWLINE);
                 PERROR(STRING("Aborting error handler!\n"));
                 PERROR(STRING("Perform manual checks to decide what to do with "
@@ -156,7 +158,7 @@ int main(int argc, char **argv) {
             PFLUSH_AFTER(STDERR) {
                 PERROR(STRING("File: "));
                 PERROR(STRING_LEN(configuration.imageName,
-                                  strlen(configuration.imageName)));
+                                  strlen((char *)configuration.imageName)));
                 PERROR(STRING(
                     " was not modified by the program, no cleanup done.\n"));
             }
@@ -164,10 +166,10 @@ int main(int argc, char **argv) {
             PFLUSH_AFTER(STDERR) {
                 PERROR(STRING("File: "));
                 PERROR(STRING_LEN(configuration.imageName,
-                                  strlen(configuration.imageName)));
+                                  strlen((char *)configuration.imageName)));
                 PERROR(STRING(" was modified by the program removing...\n"));
             }
-            unlink(configuration.imageName);
+            unlink((char *)configuration.imageName);
         }
 
         return 1;

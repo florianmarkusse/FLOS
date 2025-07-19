@@ -2,6 +2,7 @@
 
 #include "abstraction/interrupts.h"
 #include "abstraction/memory/manipulation.h"
+#include "abstraction/memory/virtual/converter.h"
 #include "efi-to-kernel/kernel-parameters.h"
 #include "shared/maths.h"
 #include "shared/memory/allocator/arena.h"
@@ -134,25 +135,36 @@ static void initMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator,
 }
 
 static constexpr auto ALLOCATOR_MAX_BUFFER_SIZE = 1 * GiB;
-static constexpr auto ALLOCATOR_PAGE_SIZE = 4 * KiB;
+static constexpr auto ALLOCATOR_PAGE_SIZE = SMALLEST_VIRTUAL_PAGE;
 
-void initMemoryManagers(PackedMemoryAllocator *physicalMemoryTree,
-                        PackedMemoryAllocator *virtualMemoryTree) {
-    initMemoryAllocator(physicalMemoryTree, &physicalMA);
-    initMemoryAllocator(virtualMemoryTree, &virtualMA);
-
-    RedBlackNodeMM *virtualBufferForPhysical = allocVirtualMemory(
-        ALLOCATOR_MAX_BUFFER_SIZE, alignof(*physicalMA.nodes.buf));
-    U64 bytesUsed = physicalMA.nodes.len * sizeof(*physicalMA.nodes.buf);
-
-    // NOTE: One extra to be safe becouse handling page fault causes
-    // allocations.
-    U64 mapsToDo = CEILING_DIV_VALUE(bytesUsed, (U64)ALLOCATOR_PAGE_SIZE) + 1;
-    for (U64 i = 0; i < mapsToDo; i++) {
-        handlePageFault((U64)virtualBufferForPhysical +
-                        (i * ALLOCATOR_PAGE_SIZE));
+static void transferAllocatorToVirtual(RedBlackNodeMM_max_a *nodesArray,
+                                       U64 initialMapsToDo) {
+    RedBlackNodeMM *virtualBuffer = allocVirtualMemory(
+        ALLOCATOR_MAX_BUFFER_SIZE, alignof(*nodesArray->buf));
+    for (U64 i = 0; i < initialMapsToDo; i++) {
+        handlePageFault((U64)virtualBuffer + (i * ALLOCATOR_PAGE_SIZE));
     }
-    // memcpy(virtualBufferForPhysical, physicalMA.arena.beg, arenaBytesUsed);
+    memcpy(virtualBuffer, nodesArray->buf,
+           nodesArray->len * sizeof(*nodesArray->buf));
+    nodesArray->buf = virtualBuffer;
+    nodesArray->cap = ALLOCATOR_MAX_BUFFER_SIZE / sizeof(*nodesArray->buf);
+}
+
+void initMemoryManagers(PackedKernelMemory *kernelMemory) {
+    initMemoryAllocator(&kernelMemory->physicalPMA, &physicalMA);
+    initMemoryAllocator(&kernelMemory->virtualPMA, &virtualMA);
+
+    U64 bytesUsed = physicalMA.nodes.len * sizeof(*physicalMA.nodes.buf);
+    // NOTE: Adding one extra map here because we are doing page faults manually
+    // which will increase the physical memory usage
+    transferAllocatorToVirtual(
+        &physicalMA.nodes,
+        CEILING_DIV_VALUE(bytesUsed, (U64)ALLOCATOR_PAGE_SIZE) + 1);
+
+    bytesUsed = virtualMA.nodes.len * sizeof(*virtualMA.nodes.buf);
+    transferAllocatorToVirtual(
+        &virtualMA.nodes,
+        CEILING_DIV_VALUE(bytesUsed, (U64)ALLOCATOR_PAGE_SIZE));
 }
 
 void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree) {

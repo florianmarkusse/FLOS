@@ -351,7 +351,7 @@ static void mappingTests() {
 __attribute__((section("kernel-start"))) int
 kernelMain(PackedKernelParameters *kernelParams) {
     archInit(kernelParams->archParams);
-    initMemoryManager(&kernelParams->memory);
+    initMemoryManagers(&kernelParams->memory);
 
     void *initMemory = (void *)allocateIdentityMemory(INIT_MEMORY, 1);
     Arena arena = (Arena){.curFree = initMemory,

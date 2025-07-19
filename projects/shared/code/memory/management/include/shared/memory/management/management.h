@@ -20,8 +20,7 @@ void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
 RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_max_a *freeList,
                                   RedBlackNodeMM_max_a *nodes);
 
-void initMemoryManagers(PackedMemoryAllocator *physicalMemoryTree,
-                        PackedMemoryAllocator *virtualMemoryTree);
+void initMemoryManagers(PackedKernelMemory *kernelMemory);
 
 void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree);
 void *allocVirtualMemory(U64 size, U64 align);

@@ -1,5 +1,5 @@
 project(posix-file LANGUAGES C ASM)
-add_library(${PROJECT_NAME} OBJECT "src/path.c" "src/read.c")
+add_library(${PROJECT_NAME} OBJECT "src/path.c")
 
 add_includes_for_sublibrary()
 

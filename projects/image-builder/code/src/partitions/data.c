@@ -7,8 +7,8 @@
 #include "posix/log.h"
 #include "shared/assert.h"
 #include "shared/log.h"
-#include "shared/types/numeric.h"
 #include "shared/text/string.h"
+#include "shared/types/numeric.h"
 
 bool writeDataPartition(U8 *fileBuffer, int kernelfd, U64 kernelSizeBytes) {
     fileBuffer +=
@@ -26,7 +26,7 @@ bool writeDataPartition(U8 *fileBuffer, int kernelfd, U64 kernelSizeBytes) {
                 PERROR(STRING("Error code: "));
                 PERROR(errno, NEWLINE);
                 PERROR(STRING("Error message: "));
-                U8 *errorString = strerror(errno);
+                char *errorString = strerror(errno);
                 PERROR(STRING_LEN(errorString, strlen(errorString)), NEWLINE);
             }
             return false;

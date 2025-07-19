@@ -6,11 +6,6 @@
 #include "shared/maths.h"
 #include "shared/memory/management/management.h"
 
-void initMemoryManager(PackedKernelMemory *memory) {
-    initPhysicalMemoryManager(&memory->physicalPMA);
-    initVirtualMemoryManager(&memory->virtualPMA);
-}
-
 void *allocateIdentityMemory(U64 bytes, U64 align) {
     return allocPhysicalMemory(bytes, align);
 }

@@ -19,7 +19,7 @@ static U64 TEST_ITERATIONS = 32;
 static U64 currentTimeNanos() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-    return (U64)ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+    return (U64)ts.tv_sec * 1000000000ULL + (U64)ts.tv_nsec;
 }
 
 typedef struct {
@@ -32,15 +32,15 @@ typedef struct {
 static constexpr auto GROWTH_RATE = 2;
 static constexpr auto START_ENTRIES_COUNT = 8;
 
-static U64_d_a createDynamicArray() {
-    U64_d_a result;
+static U64_max_a createDynamicArray() {
+    U64_max_a result;
     result.cap = START_ENTRIES_COUNT;
     result.len = 0;
     result.buf = malloc(result.cap * sizeof(U64));
     return result;
 }
 
-#define U64_D_A_APPEND(arr, val)                                               \
+#define U64_MAX_A_APPEND(arr, val)                                             \
     do {                                                                       \
         if ((arr).len == (arr).cap) {                                          \
             (arr).cap *= (GROWTH_RATE);                                        \
@@ -213,13 +213,13 @@ static void fullReallocWritingTest() {
     KFLUSH_AFTER { INFO(STRING("Starting full realloc writing test...\n")); }
     Timing bestSoFar = {.cycles = 0, .millis = 0};
     for (U64 i = 0; i < TEST_ITERATIONS; i++) {
-        U64_d_a array = createDynamicArray();
+        U64_max_a array = createDynamicArray();
 
         U64 startNanos = currentTimeNanos();
         U64 startCycleCount = currentCycleCounter(true, false);
 
         for (U64 i = 0; i < MAX_TEST_ENTRIES; i++) {
-            U64_D_A_APPEND(array, i);
+            U64_MAX_A_APPEND(array, i);
         }
 
         U64 endCycleCount = currentCycleCounter(false, true);
@@ -257,7 +257,7 @@ static void partialReallocWritingTest() {
     BiskiState state;
     biskiSeed(&state, PRNG_SEED);
     for (U64 i = 0; i < TEST_ITERATIONS; i++) {
-        U64_d_a array = createDynamicArray();
+        U64_max_a array = createDynamicArray();
         U64 arrayEntries =
             RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
 
@@ -265,7 +265,7 @@ static void partialReallocWritingTest() {
         U64 startCycleCount = currentCycleCounter(true, false);
 
         for (U64 i = 0; i < arrayEntries; i++) {
-            U64_D_A_APPEND(array, i);
+            U64_MAX_A_APPEND(array, i);
         }
 
         U64 endCycleCount = currentCycleCounter(false, true);

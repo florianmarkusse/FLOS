@@ -58,7 +58,7 @@ static void fillMemoryInfo(MemoryInfo *memoryInfo) {
 
 Memory_max_a kernelStructureLocations;
 
-static void initKernelStructureLocations(Arena *perm) {
+void initKernelStructureLocations(Arena *perm) {
     kernelStructureLocations = (Memory_max_a){
         .buf = NEW(perm, Memory, MAX_KERNEL_STRUCTURES),
         .len = 0,

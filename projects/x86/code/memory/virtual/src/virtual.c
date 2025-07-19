@@ -96,7 +96,7 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
 }
 
 void mapPage(U64 virt, U64 physical, U64 mappingSize) {
-    return mapPageWithFlags(virt, physical, mappingSize, STANDARD_PAGE_FLAGS);
+    mapPageWithFlags(virt, physical, mappingSize, STANDARD_PAGE_FLAGS);
 }
 
 U64 getPhysicalAddressFrame(U64 virtualPage) {
