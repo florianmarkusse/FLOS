@@ -137,11 +137,8 @@ static void initMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator,
 static constexpr auto ALLOCATOR_MAX_BUFFER_SIZE = 1 * GiB;
 static constexpr auto ALLOCATOR_PAGE_SIZE = SMALLEST_VIRTUAL_PAGE;
 
-[[nodiscard]] static U64 identityArrayToMappable(void_ptr_max_a *array,
-                                                 U64 alignBytes,
-                                                 U64 elementSizeBytes,
-                                                 U64 additionalMaps) {
-    U64 originalBufferLocation = (U64)array->buf;
+static void identityArrayToMappable(void_ptr_max_a *array, U64 alignBytes,
+                                    U64 elementSizeBytes, U64 additionalMaps) {
     void *virtualBuffer =
         allocVirtualMemory(ALLOCATOR_MAX_BUFFER_SIZE, alignBytes);
 
@@ -155,42 +152,54 @@ static constexpr auto ALLOCATOR_PAGE_SIZE = SMALLEST_VIRTUAL_PAGE;
     memcpy(virtualBuffer, array->buf, array->len * elementSizeBytes);
     array->buf = virtualBuffer;
     array->cap = ALLOCATOR_MAX_BUFFER_SIZE / elementSizeBytes;
-
-    return (U64)virtualBuffer - originalBufferLocation;
 }
 
 static void identityAllocatorToMappable(MemoryAllocator *memoryAllocator,
                                         U64 additionalMapsForNodesBuffer) {
-    U64 nodesBias = identityArrayToMappable(
-        (void_ptr_max_a *)&memoryAllocator->nodes,
-        alignof(*memoryAllocator->nodes.buf),
-        sizeof(*memoryAllocator->nodes.buf), additionalMapsForNodesBuffer);
-    for (U64 i = 0; i < memoryAllocator->nodes.len; i++) {
-        // RedBlackNodeMM ***children = &memoryAllocator->nodes.buf[i].children;
+    U64 originalBufferLocation = (U64)memoryAllocator->nodes.buf;
 
-        if (memoryAllocator->nodes.buf[i].children[RB_TREE_LEFT]) {
-            memoryAllocator->nodes.buf[i].children[RB_TREE_LEFT] =
-                (RedBlackNodeMM *)(((U8 *)memoryAllocator->nodes.buf[i]
-                                        .children[RB_TREE_LEFT]) +
-                                   nodesBias);
+    identityArrayToMappable((void_ptr_max_a *)&memoryAllocator->nodes,
+                            alignof(*memoryAllocator->nodes.buf),
+                            sizeof(*memoryAllocator->nodes.buf),
+                            additionalMapsForNodesBuffer);
+    U64 newNodesLocation = (U64)memoryAllocator->nodes.buf;
+    U64 nodesBias = newNodesLocation - originalBufferLocation;
+    for (U64 i = 0; i < memoryAllocator->nodes.len; i++) {
+        RedBlackNodeMM **children = memoryAllocator->nodes.buf[i].children;
+
+        if (children[RB_TREE_LEFT]) {
+            children[RB_TREE_LEFT] =
+                (RedBlackNodeMM *)(((U8 *)children[RB_TREE_LEFT]) + nodesBias);
         }
-        if (memoryAllocator->nodes.buf[i].children[RB_TREE_RIGHT]) {
-            memoryAllocator->nodes.buf[i].children[RB_TREE_RIGHT] =
-                (RedBlackNodeMM *)(((U8 *)memoryAllocator->nodes.buf[i]
-                                        .children[RB_TREE_RIGHT]) +
-                                   nodesBias);
+        if (children[RB_TREE_RIGHT]) {
+            children[RB_TREE_RIGHT] =
+                (RedBlackNodeMM *)(((U8 *)children[RB_TREE_RIGHT]) + nodesBias);
         }
     }
 
-    U64 freeListBias =
-        identityArrayToMappable((void_ptr_max_a *)&memoryAllocator->freeList,
-                                alignof(*memoryAllocator->freeList.buf),
-                                sizeof(*memoryAllocator->freeList.buf), 0);
+    identityArrayToMappable((void_ptr_max_a *)&memoryAllocator->freeList,
+                            alignof(*memoryAllocator->freeList.buf),
+                            sizeof(*memoryAllocator->freeList.buf), 0);
     for (U64 i = 0; i < memoryAllocator->freeList.len; i++) {
         memoryAllocator->freeList.buf[i] =
             (RedBlackNodeMM *)((U8 *)memoryAllocator->freeList.buf[i] +
-                               freeListBias);
+                               nodesBias);
     }
+
+    memoryAllocator->tree =
+        (RedBlackNodeMM *)((U8 *)memoryAllocator->tree + nodesBias);
+}
+
+static void
+freePackedMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator) {
+    freePhysicalMemory(
+        (Memory){.start = (U64)packedMemoryAllocator->nodes.buf,
+                 .bytes = packedMemoryAllocator->nodes.cap *
+                          sizeof(*packedMemoryAllocator->nodes.buf)});
+    freePhysicalMemory(
+        (Memory){.start = (U64)packedMemoryAllocator->freeList.buf,
+                 .bytes = packedMemoryAllocator->freeList.cap *
+                          sizeof(*packedMemoryAllocator->freeList.buf)});
 }
 
 void initMemoryManagers(PackedKernelMemory *kernelMemory) {
@@ -202,7 +211,8 @@ void initMemoryManagers(PackedKernelMemory *kernelMemory) {
     identityAllocatorToMappable(&physicalMA, 1);
     identityAllocatorToMappable(&virtualMA, 0);
 
-    // NOTE: Need to free the used memory from packed kernel after!!!
+    freePackedMemoryAllocator(&kernelMemory->physicalPMA);
+    freePackedMemoryAllocator(&kernelMemory->virtualPMA);
 }
 
 void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree) {
