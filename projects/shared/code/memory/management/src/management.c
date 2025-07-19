@@ -35,7 +35,7 @@ RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_max_a *freeList,
     }
 
     if (nodes->len < nodes->cap) {
-        RedBlackNodeMM *result = &nodes->buf[nodes->len - 1];
+        RedBlackNodeMM *result = &nodes->buf[nodes->len];
         nodes->len++;
         return result;
     }
@@ -137,34 +137,70 @@ static void initMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator,
 static constexpr auto ALLOCATOR_MAX_BUFFER_SIZE = 1 * GiB;
 static constexpr auto ALLOCATOR_PAGE_SIZE = SMALLEST_VIRTUAL_PAGE;
 
-static void transferAllocatorToVirtual(RedBlackNodeMM_max_a *nodesArray,
-                                       U64 initialMapsToDo) {
-    RedBlackNodeMM *virtualBuffer = allocVirtualMemory(
-        ALLOCATOR_MAX_BUFFER_SIZE, alignof(*nodesArray->buf));
-    for (U64 i = 0; i < initialMapsToDo; i++) {
+static void identityArrayToMappableArray(void_ptr_max_a *array, U64 alignBytes,
+                                         U64 elementSizeBytes,
+                                         U64 additionalMaps) {
+    void *virtualBuffer =
+        allocVirtualMemory(ALLOCATOR_MAX_BUFFER_SIZE, alignBytes);
+
+    U64 bytesUsed = array->len * elementSizeBytes;
+    U64 mapsToDo =
+        CEILING_DIV_VALUE(bytesUsed, (U64)ALLOCATOR_PAGE_SIZE) + additionalMaps;
+    for (U64 i = 0; i < mapsToDo; i++) {
         handlePageFault((U64)virtualBuffer + (i * ALLOCATOR_PAGE_SIZE));
     }
-    memcpy(virtualBuffer, nodesArray->buf,
-           nodesArray->len * sizeof(*nodesArray->buf));
-    nodesArray->buf = virtualBuffer;
-    nodesArray->cap = ALLOCATOR_MAX_BUFFER_SIZE / sizeof(*nodesArray->buf);
+
+    memcpy(virtualBuffer, array->buf, array->len * elementSizeBytes);
+    array->buf = virtualBuffer;
+    array->cap = ALLOCATOR_MAX_BUFFER_SIZE / elementSizeBytes;
+}
+
+static void transferAllocatorToVirtual(MemoryAllocator *memoryAllocator,
+                                       U64 additionalMapsForNodesBuffer) {
+    RedBlackNodeMM *virtualBufferForNodes = allocVirtualMemory(
+        ALLOCATOR_MAX_BUFFER_SIZE, alignof(*memoryAllocator->nodes.buf));
+
+    U64 bytesUsed =
+        memoryAllocator->nodes.len * sizeof(*memoryAllocator->nodes.buf);
+    U64 mapsToDo = CEILING_DIV_VALUE(bytesUsed, (U64)ALLOCATOR_PAGE_SIZE) +
+                   additionalMapsForNodesBuffer;
+    for (U64 i = 0; i < mapsToDo; i++) {
+        handlePageFault((U64)virtualBufferForNodes + (i * ALLOCATOR_PAGE_SIZE));
+    }
+
+    memcpy(virtualBufferForNodes, memoryAllocator->nodes.buf,
+           memoryAllocator->nodes.len * sizeof(*memoryAllocator->nodes.buf));
+    memoryAllocator->nodes.buf = virtualBufferForNodes;
+    memoryAllocator->nodes.cap =
+        ALLOCATOR_MAX_BUFFER_SIZE / sizeof(*memoryAllocator->nodes.buf);
+
+    RedBlackNodeMM **virtualBufferForFreeList = allocVirtualMemory(
+        ALLOCATOR_MAX_BUFFER_SIZE, alignof(*memoryAllocator->freeList.buf));
+
+    bytesUsed =
+        memoryAllocator->freeList.len * sizeof(*memoryAllocator->freeList.buf);
+    mapsToDo = CEILING_DIV_VALUE(bytesUsed, (U64)ALLOCATOR_PAGE_SIZE);
+    for (U64 i = 0; i < mapsToDo; i++) {
+        handlePageFault((U64)virtualBufferForFreeList +
+                        (i * ALLOCATOR_PAGE_SIZE));
+    }
+
+    memcpy(virtualBufferForFreeList, memoryAllocator->freeList.buf,
+           memoryAllocator->freeList.len *
+               sizeof(*memoryAllocator->freeList.buf));
+    memoryAllocator->freeList.buf = virtualBufferForFreeList;
+    memoryAllocator->freeList.cap =
+        ALLOCATOR_MAX_BUFFER_SIZE / sizeof(*memoryAllocator->freeList.buf);
 }
 
 void initMemoryManagers(PackedKernelMemory *kernelMemory) {
     initMemoryAllocator(&kernelMemory->physicalPMA, &physicalMA);
     initMemoryAllocator(&kernelMemory->virtualPMA, &virtualMA);
 
-    U64 bytesUsed = physicalMA.nodes.len * sizeof(*physicalMA.nodes.buf);
     // NOTE: Adding one extra map here because we are doing page faults manually
     // which will increase the physical memory usage
-    transferAllocatorToVirtual(
-        &physicalMA.nodes,
-        CEILING_DIV_VALUE(bytesUsed, (U64)ALLOCATOR_PAGE_SIZE) + 1);
-
-    bytesUsed = virtualMA.nodes.len * sizeof(*virtualMA.nodes.buf);
-    transferAllocatorToVirtual(
-        &virtualMA.nodes,
-        CEILING_DIV_VALUE(bytesUsed, (U64)ALLOCATOR_PAGE_SIZE));
+    transferAllocatorToVirtual(&physicalMA, 1);
+    transferAllocatorToVirtual(&virtualMA, 0);
 }
 
 void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree) {
