@@ -182,14 +182,15 @@ static void identityAllocatorToMappable(MemoryAllocator *memoryAllocator,
             (RedBlackNodeMM *)((U8 *)memoryAllocator->tree + nodesBias);
     }
 
-    identityArrayToMappable((void_ptr_max_a *)&memoryAllocator->freeList,
-                            alignof(*memoryAllocator->freeList.buf),
-                            sizeof(*memoryAllocator->freeList.buf), 0);
     for (U64 i = 0; i < memoryAllocator->freeList.len; i++) {
         memoryAllocator->freeList.buf[i] =
             (RedBlackNodeMM *)((U8 *)memoryAllocator->freeList.buf[i] +
                                nodesBias);
     }
+
+    identityArrayToMappable((void_ptr_max_a *)&memoryAllocator->freeList,
+                            alignof(*memoryAllocator->freeList.buf),
+                            sizeof(*memoryAllocator->freeList.buf), 0);
 }
 
 static void
