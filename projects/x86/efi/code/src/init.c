@@ -257,7 +257,6 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                        alignof(*virtualMemorySizeMapper.freeList.buf),
                        (void_ptr_max_a *)&virtualMemorySizeMapper.freeList,
                        scratch);
-
     virtualMemorySizeMapper.tree = nullptr;
 }
 
