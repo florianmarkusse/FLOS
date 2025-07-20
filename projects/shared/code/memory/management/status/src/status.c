@@ -34,7 +34,7 @@ static void appendMemoryManagerStatus(MemoryAllocator *allocator, string name) {
     KLOG(STRING("nodes buf: "));
     KLOG((void *)allocator->nodes.buf);
     KLOG(STRING(" len: "));
-    KLOG(allocator->nodes.len);
+    KLOG(stringWithMinSizeDefault(CONVERT_TO_STRING(allocator->nodes.len), 3));
     KLOG(STRING(" cap: "));
     KLOG(allocator->nodes.cap, NEWLINE);
 }

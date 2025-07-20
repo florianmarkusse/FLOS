@@ -7,8 +7,8 @@
 
 typedef struct {
     RedBlackNodeMM_max_a nodes;
-    RedBlackNodeMMPtr_max_a freeList;
     RedBlackNodeMM *tree;
+    RedBlackNodeMMPtr_max_a freeList;
 } MemoryAllocator;
 
 extern MemoryAllocator virtualMA;

@@ -33,15 +33,15 @@ static void appendMemoryDeltaType(AvailableMemoryState startMemory,
     if (endMemory.memory != startMemory.memory ||
         endMemory.nodes != startMemory.nodes) {
         INFO(STRING(
-            "Difference in available memory detected!\n[BEGIN]\tmemory: "));
+            "Difference in available memory detected!\n[BEGIN  ] memory: "));
         INFO(startMemory.memory);
         INFO(STRING(" nodes: "));
         INFO(startMemory.nodes, NEWLINE);
-        INFO(STRING("[CURRENT]\tmemory: "));
+        INFO(STRING("[CURRENT] memory: "));
         INFO(endMemory.memory);
         INFO(STRING(" nodes: "));
         INFO(endMemory.nodes, NEWLINE);
-        INFO(STRING("[DELTA]\tmemory: "));
+        INFO(STRING("[DELTA  ] memory: "));
         INFO((I64)endMemory.memory - (I64)startMemory.memory);
         INFO(STRING(" nodes: "));
         INFO((I64)endMemory.nodes - (I64)startMemory.nodes, NEWLINE);
