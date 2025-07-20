@@ -28,17 +28,16 @@ U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
                             bool tryEncompassingVirtual, Arena scratch);
 U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure);
 
-RedBlackNodeMM_max_a createArrayForMemoryAllocator(U64 requiredNumberOfNodes,
-                                                   Arena scratch);
-RedBlackNodeMMPtr_max_a
-createFreeListForMemoryAllocator(U64 requiredNumberOfNodes, Arena scratch);
+void createDynamicArray(U64 elements, U64 elementSizeBytes,
+                        U64 elementAlignBytes, void_ptr_max_a *result,
+                        Arena scratch);
 
 #define FOR_EACH_DESCRIPTOR(memoryInfoAddress, descriptorName)                 \
-    for (MemoryDescriptor *descriptorName = (memoryInfoAddress)->memoryMap;    \
-         (U64)descriptorName < ((U64)(memoryInfoAddress)->memoryMap +          \
-                                (memoryInfoAddress)->memoryMapSize);           \
-         descriptorName =                                                      \
-             (MemoryDescriptor *)((U8 *)descriptorName +                       \
+    for (MemoryDescriptor * (descriptorName) = (memoryInfoAddress)->memoryMap; \
+         (U64)(descriptorName) < ((U64)(memoryInfoAddress)->memoryMap +        \
+                                  (memoryInfoAddress)->memoryMapSize);         \
+         (descriptorName) =                                                    \
+             (MemoryDescriptor *)((U8 *)(descriptorName) +                     \
                                   (memoryInfoAddress)->descriptorSize))
 
 #endif

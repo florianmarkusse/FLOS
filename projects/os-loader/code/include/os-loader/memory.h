@@ -3,6 +3,7 @@
 
 #include "efi-to-kernel/kernel-parameters.h"
 #include "efi/firmware/base.h" // for PhysicalAddress
+#include "efi/firmware/graphics-output.h"
 #include "efi/firmware/memory.h"
 #include "efi/memory/physical.h"
 #include "shared/memory/allocator/arena.h"
@@ -19,7 +20,8 @@ void allocateSpaceForKernelMemory(RedBlackNodeMM_max_a *nodes,
 void convertToKernelMemory(MemoryInfo *memoryInfo,
                            PackedMemoryAllocator *physicalMemoryTree,
                            RedBlackNodeMM_max_a *nodes,
-                           RedBlackNodeMMPtr_max_a *freeList);
+                           RedBlackNodeMMPtr_max_a *freeList,
+                           GraphicsOutputProtocolMode *mode);
 
 void findKernelMemory(U64 alignment, U64 numberOfThreads);
 

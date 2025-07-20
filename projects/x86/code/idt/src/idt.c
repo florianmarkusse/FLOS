@@ -7,6 +7,7 @@
 
 #include "abstraction/log.h"
 #include "abstraction/memory/virtual/map.h"
+#include "abstraction/thread.h"
 #include "shared/enum.h"
 #include "shared/log.h"
 #include "shared/maths.h"
@@ -823,7 +824,7 @@ void faultHandler(regs *regs) {
             INFO((void *)regs->r15, NEWLINE);
         }
 
-        asm volatile("cli;hlt;");
+        hangThread();
     }
 
     xrstor();

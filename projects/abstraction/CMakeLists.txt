@@ -16,6 +16,7 @@ add_subdirectory("serial/code")
 
 add_subdirectory("jmp/code")
 add_subdirectory("time/code")
+add_subdirectory("thread/code")
 add_subdirectory("kernel/code")
 
 add_subdirectory("memory/manipulation/code")

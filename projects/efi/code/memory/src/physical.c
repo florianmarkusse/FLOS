@@ -221,9 +221,9 @@ U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure) {
     return address;
 }
 
-static void createDynamicArray(U64 elements, U64 elementSizeBytes,
-                               U64 elementAlignBytes, void_ptr_max_a *result,
-                               Arena scratch) {
+void createDynamicArray(U64 elements, U64 elementSizeBytes,
+                        U64 elementAlignBytes, void_ptr_max_a *result,
+                        Arena scratch) {
     U64 bytes = elementSizeBytes * elements;
     void *buffer = (void *)allocateKernelStructure(bytes, elementAlignBytes,
                                                    false, scratch);
@@ -231,22 +231,4 @@ static void createDynamicArray(U64 elements, U64 elementSizeBytes,
     result->buf = buffer;
     result->cap = elements;
     result->len = 0;
-}
-
-RedBlackNodeMMPtr_max_a
-createFreeListForMemoryAllocator(U64 requiredNumberOfNodes, Arena scratch) {
-    RedBlackNodeMMPtr_max_a result;
-    createDynamicArray(requiredNumberOfNodes, sizeof(RedBlackNodeMM *),
-                       alignof(RedBlackNodeMM *), (void_ptr_max_a *)&result,
-                       scratch);
-    return result;
-}
-
-RedBlackNodeMM_max_a createArrayForMemoryAllocator(U64 requiredNumberOfNodes,
-                                                   Arena scratch) {
-    RedBlackNodeMM_max_a result;
-    createDynamicArray(requiredNumberOfNodes, sizeof(RedBlackNodeMM),
-                       alignof(RedBlackNodeMM), (void_ptr_max_a *)&result,
-                       scratch);
-    return result;
 }

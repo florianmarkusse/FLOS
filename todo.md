@@ -4,7 +4,7 @@
 - make os-loader when memory descriptors use dynamic memory to grow descriptor arena if need be
 - have allocMappableMemory take into account the pageSize that will be used to map in case of page fault
 - Find better way to get aligned memory from allocPhysicalMemory, not "just" finding the bytes + align as it causes nasty fracturing
-- noserial?
+- no graphics what happens to the GOP???
 - Clean up virtualForKernel in os-loader
   - It aligns data up, and thus that padding can be freed
   - No checks on if we allocated enough virtual memory

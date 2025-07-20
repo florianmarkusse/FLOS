@@ -9,6 +9,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-text-converter-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-virtual-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-jmp-i)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-thread-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE efi-to-kernel-i)
 

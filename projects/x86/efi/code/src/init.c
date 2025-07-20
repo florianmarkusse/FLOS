@@ -71,14 +71,13 @@ static constexpr auto EXTENDED_MAX_REQUIRED_PARAMETER =
 static constexpr auto CALIBRATION_MICROSECONDS = 10000;
 static U64 calibrateWait() {
     CPUIDResult leaf15 = CPUID(0x15);
-    if (leaf15.ebx && leaf15.ecx > 10'000) {
-        return (leaf15.ecx * (leaf15.ebx / leaf15.eax)) / 1'000'000;
-}
-else {
-    CPUIDResult leaf16 = CPUID(0x16);
+    if (leaf15.ebx && leaf15.ecx > 10000) {
+        return (leaf15.ecx * (leaf15.ebx / leaf15.eax)) / 1000000;
+    } else {
+        CPUIDResult leaf16 = CPUID(0x16);
         if (leaf16.eax > 1'000) {
             return leaf16.eax;
-}
+    }
 }
 
 U64 currentCycles = currentCycleCounter(false, false);
@@ -219,14 +218,19 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
 
 // NOTE: Should be enough until put into final kernel position.
 static constexpr auto INITIAL_VIRTUAL_MEMORY_REGIONS = 16;
+static constexpr auto INITIAL_VIRTUAL_MAPPING_SIZES = 128;
 
 void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                                 Arena scratch) {
     physicalMA = (MemoryAllocator){0};
-    virtualMA.nodes =
-        createArrayForMemoryAllocator(INITIAL_VIRTUAL_MEMORY_REGIONS, scratch);
-    virtualMA.freeList = createFreeListForMemoryAllocator(
-        INITIAL_VIRTUAL_MEMORY_REGIONS, scratch);
+    createDynamicArray(INITIAL_VIRTUAL_MEMORY_REGIONS,
+                       sizeof(*virtualMA.nodes.buf),
+                       alignof(*virtualMA.nodes.buf),
+                       (void_ptr_max_a *)&virtualMA.nodes, scratch);
+    createDynamicArray(INITIAL_VIRTUAL_MEMORY_REGIONS,
+                       sizeof(*virtualMA.freeList.buf),
+                       alignof(*virtualMA.freeList.buf),
+                       (void_ptr_max_a *)&virtualMA.freeList, scratch);
 
     virtualMA.tree = nullptr;
 
@@ -243,13 +247,18 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                             .bytes = endingAddress - HIGHER_HALF_START};
     (void)insertRedBlackNodeMM(&virtualMA.tree, node);
 
-    // virtualMemorySizeMapper.nodes =
-    //     createArrayForMemoryAllocator(INITIAL_VIRTUAL_MEMORY_REGIONS,
-    //     scratch);
-    // virtualMemorySizeMapper.freeList = createFreeListForMemoryAllocator(
-    //     INITIAL_VIRTUAL_MEMORY_REGIONS, scratch);
-    //
-    // virtualMemorySizeMapper.tree = nullptr;
+    createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,
+                       sizeof(*virtualMemorySizeMapper.nodes.buf),
+                       alignof(*virtualMemorySizeMapper.nodes.buf),
+                       (void_ptr_max_a *)&virtualMemorySizeMapper.nodes,
+                       scratch);
+    createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,
+                       sizeof(*virtualMemorySizeMapper.freeList.buf),
+                       alignof(*virtualMemorySizeMapper.freeList.buf),
+                       (void_ptr_max_a *)&virtualMemorySizeMapper.freeList,
+                       scratch);
+
+    virtualMemorySizeMapper.tree = nullptr;
 }
 
 void fillArchParams(void *archParams) {

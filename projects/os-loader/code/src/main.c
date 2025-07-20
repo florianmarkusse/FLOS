@@ -268,7 +268,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     convertToKernelMemory(&memoryInfo, &kernelParams->memory.physicalPMA,
-                          &physicalNodes, &physicalFreeList);
+                          &physicalNodes, &physicalFreeList, gop->mode);
 
     jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE, kernelParams);
 

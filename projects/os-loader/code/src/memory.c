@@ -4,6 +4,7 @@
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/converter.h"
 #include "abstraction/memory/virtual/map.h"
+#include "abstraction/thread.h"
 #include "efi/error.h"
 #include "efi/firmware/system.h"
 #include "efi/globals.h"
@@ -37,12 +38,14 @@ void allocateSpaceForKernelMemory(RedBlackNodeMM_max_a *nodes,
         memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
     // NOTE: just to hold the initial descriptors before moved into final kernel
     // state.
-    U64 expectedNumberOfDescriptors = ((numberOfDescriptors * 4));
+    U64 expectedNumberOfDescriptors = numberOfDescriptors * 2;
 
-    *nodes =
-        createArrayForMemoryAllocator(expectedNumberOfDescriptors, scratch);
-    *freeList =
-        createFreeListForMemoryAllocator(expectedNumberOfDescriptors, scratch);
+    createDynamicArray(expectedNumberOfDescriptors, sizeof(*nodes->buf),
+                       alignof(*nodes->buf), (void_ptr_max_a *)nodes, scratch);
+
+    createDynamicArray(expectedNumberOfDescriptors, sizeof(*freeList->buf),
+                       alignof(*freeList->buf), (void_ptr_max_a *)freeList,
+                       scratch);
 }
 
 U64 alignVirtual(U64 virtualAddress, U64 physicalAddress, U64 bytes) {
@@ -65,10 +68,23 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
     return virt;
 }
 
+static constexpr auto TEAL_COLOR = 0x00FFFF;
+
+static void errorInConvertingKernelMemory(GraphicsOutputProtocolMode *mode) {
+    U32 *screen = ((U32 *)mode->frameBufferBase);
+    for (U64 x = 0; x < 10; x++) {
+        for (U64 y = 0; y < 10; y++) {
+            screen[y * mode->info->pixelsPerScanLine + x] = TEAL_COLOR;
+        }
+    }
+    hangThread();
+}
+
 void convertToKernelMemory(MemoryInfo *memoryInfo,
                            PackedMemoryAllocator *physicalMemoryTree,
                            RedBlackNodeMM_max_a *nodes,
-                           RedBlackNodeMMPtr_max_a *freeList) {
+                           RedBlackNodeMMPtr_max_a *freeList,
+                           GraphicsOutputProtocolMode *mode) {
     RedBlackNodeMM *root = nullptr;
 
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
@@ -119,6 +135,9 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
                 // NOTE: no checking for null here, the initial size is large
                 // enough!
                 RedBlackNodeMM *node = getRedBlackNodeMM(freeList, nodes);
+                if (!node) {
+                    errorInConvertingKernelMemory(mode);
+                }
                 node->memory = availableMemory.buf[i];
                 insertRedBlackNodeMMAndAddToFreelist(&root, node, freeList);
             }
