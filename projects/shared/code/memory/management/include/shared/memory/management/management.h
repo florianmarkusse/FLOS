@@ -22,11 +22,9 @@ RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_max_a *freeList,
 
 void initMemoryManagers(PackedKernelMemory *kernelMemory);
 
-void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree);
 void *allocVirtualMemory(U64 size, U64 align);
 void freeVirtualMemory(Memory memory);
 
-void initPhysicalMemoryManager(PackedMemoryAllocator *physicalMemoryTree);
 void *allocPhysicalMemory(U64 bytes, U64 align);
 void freePhysicalMemory(Memory memory);
 

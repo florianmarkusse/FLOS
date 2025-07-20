@@ -5,8 +5,18 @@
 #include "shared/memory/management/management.h"
 #include "shared/memory/sizes.h"
 
+// RedBlackVMM *result = findGreatestBelowOrEqualRedBlackVMM(
+//     tree, value);
+// if (result && result->basic.value + result->bytes > value) {
+//     return result->mappingSize;
+// }
+//
+// return SMALLEST_VIRTUAL_PAGE;
+
 // TODO: Actually do this!!!!
 static U64 pageSizeFromVMM(U64 faultingAddress) { return 4 * KiB; }
+
+VirtualMemorySizeMapper virtualMemorySizeMapper;
 
 void handlePageFault(U64 faultingAddress) {
     U64 pageSizeForFault = pageSizeFromVMM(faultingAddress);

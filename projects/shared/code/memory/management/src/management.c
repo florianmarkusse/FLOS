@@ -217,14 +217,3 @@ void initMemoryManagers(PackedKernelMemory *kernelMemory) {
     freePackedMemoryAllocator(&kernelMemory->physicalPMA);
     freePackedMemoryAllocator(&kernelMemory->virtualPMA);
 }
-
-void initVirtualMemoryManager(PackedMemoryAllocator *virtualMemoryTree) {
-    // TODO: fix this, we are running out of nodes to use for the memory tree,
-    // not out of memory. Use virtual memory setup and then this is a fine
-    // interrupt I think.
-    initMemoryAllocator(virtualMemoryTree, &virtualMA);
-}
-
-void initPhysicalMemoryManager(PackedMemoryAllocator *physicalMemoryTree) {
-    initMemoryAllocator(physicalMemoryTree, &physicalMA);
-}

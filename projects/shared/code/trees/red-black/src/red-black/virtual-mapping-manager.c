@@ -11,12 +11,8 @@ RedBlackVMM *deleteAtLeastRedBlackVMM(RedBlackVMM **tree, U64 value) {
                                                   value);
 }
 
-U64 getPageSizeVMM(RedBlackVMM **tree, U64 value) {
-    RedBlackVMM *result = (RedBlackVMM *)findGreatestBelowOrEqual(
-        (RedBlackNodeBasic **)tree, value);
-    if (result && result->basic.value + result->bytes > value) {
-        return result->mappingSize;
-    }
-
-    return SMALLEST_VIRTUAL_PAGE;
+RedBlackVMM *findGreatestBelowOrEqualRedBlackVMM(RedBlackVMM **tree,
+                                                 U64 address) {
+    return (RedBlackVMM *)findGreatestBelowOrEqual((RedBlackNodeBasic **)tree,
+                                                   address);
 }

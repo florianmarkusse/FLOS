@@ -10,12 +10,15 @@ typedef struct RedBlackVMM {
     U64 mappingSize;
 } RedBlackVMM;
 
-typedef ARRAY(RedBlackVMM *) RedBlackVMMPtr_a;
-typedef PACKED_ARRAY(RedBlackVMM *) PackedRedBlackVMMPtr_a;
+typedef MAX_LENGTH_ARRAY(RedBlackVMM) RedBlackVMM_max_a;
+typedef PACKED_MAX_LENGTH_ARRAY(RedBlackVMM) PackedRedBlackVMM_max_a;
+typedef MAX_LENGTH_ARRAY(RedBlackVMM *) RedBlackVMMPtr_max_a;
+typedef PACKED_MAX_LENGTH_ARRAY(RedBlackVMM *) PackedRedBlackVMMPtr_max_a;
 
 void insertRedBlackVMM(RedBlackVMM **tree, RedBlackVMM *createdNode);
-[[nodiscard]] RedBlackNodeBasic *deleteRedBlackVMM(RedBlackVMM **tree,
-                                                   U64 value);
-[[nodiscard]] U64 getPageSizeVMM(RedBlackVMM **tree, U64 address);
+[[nodiscard]] RedBlackVMM *deleteAtLeastRedBlackVMM(RedBlackVMM **tree,
+                                                    U64 value);
+[[nodiscard]] RedBlackVMM *
+findGreatestBelowOrEqualRedBlackVMM(RedBlackVMM **tree, U64 address);
 
 #endif

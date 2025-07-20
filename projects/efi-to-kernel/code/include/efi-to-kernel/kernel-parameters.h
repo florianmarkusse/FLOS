@@ -4,6 +4,7 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/trees/red-black/memory-manager.h"
+#include "shared/trees/red-black/virtual-mapping-manager.h"
 #include "shared/types/numeric.h"
 
 // NOTE: Crossing ABI boundaries here, so ensuring that both
@@ -28,14 +29,21 @@ typedef struct __attribute__((packed)) {
 } PackedArena;
 
 typedef struct __attribute__((packed)) {
+    PackedRedBlackVMM_max_a nodes;
+    RedBlackVMM *tree;
+    PackedRedBlackVMMPtr_max_a freeList;
+} PackedVirtualMemorySizeMapper;
+
+typedef struct __attribute__((packed)) {
     PackedRedBlackNodeMM_max_a nodes;
-    PackedRedBlackNodeMMPtr_max_a freeList;
     RedBlackNodeMM *tree;
+    PackedRedBlackNodeMMPtr_max_a freeList;
 } PackedMemoryAllocator;
 
 typedef struct __attribute__((packed)) {
     PackedMemoryAllocator physicalPMA;
     PackedMemoryAllocator virtualPMA;
+    PackedVirtualMemorySizeMapper virtualMemoryMapper;
 } PackedKernelMemory;
 
 typedef struct __attribute__((packed)) {

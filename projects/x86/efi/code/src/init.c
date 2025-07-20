@@ -13,6 +13,7 @@
 #include "shared/log.h"
 #include "shared/maths.h"
 #include "shared/memory/management/management.h"
+#include "shared/memory/management/page.h"
 #include "shared/text/string.h"
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
@@ -241,6 +242,14 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
     node->memory = (Memory){.start = HIGHER_HALF_START,
                             .bytes = endingAddress - HIGHER_HALF_START};
     (void)insertRedBlackNodeMM(&virtualMA.tree, node);
+
+    // virtualMemorySizeMapper.nodes =
+    //     createArrayForMemoryAllocator(INITIAL_VIRTUAL_MEMORY_REGIONS,
+    //     scratch);
+    // virtualMemorySizeMapper.freeList = createFreeListForMemoryAllocator(
+    //     INITIAL_VIRTUAL_MEMORY_REGIONS, scratch);
+    //
+    // virtualMemorySizeMapper.tree = nullptr;
 }
 
 void fillArchParams(void *archParams) {

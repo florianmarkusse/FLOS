@@ -12,6 +12,7 @@
 #include "shared/maths.h"
 #include "shared/memory/converter.h"
 #include "shared/memory/management/management.h"
+#include "shared/memory/management/page.h"
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
 #include "x86/fault.h"
@@ -776,28 +777,8 @@ void faultHandler(regs *regs) {
     xsaveopt();
 
     if (regs->interruptNumber == FAULT_PAGE_FAULT) {
-        if (regs->errorCode & 1) {
-            KFLUSH_AFTER { INFO(STRING("Stack overflow!!!\n")); }
-
-            asm volatile("cli;hlt;");
-        }
         pageFaults++;
-
-        U64 startingMap = ALIGN_DOWN_VALUE(CR2(), pageSizeToMap);
-        U64 pageSizeToUse = pageSizeFitting(startingMap, pageSizeToMap);
-        U8 *address = allocPhysicalMemory(pageSizeToMap, pageSizeToUse);
-
-        // NOTE: when starting to use SMP, I should first check if this memory
-        // is now mapped before doing this.
-        // In the context of mapping and unmapping. It may be interesting to
-        // mark which cores have accessed which memory so we can limit the
-        // flushPage calls to all cores.
-
-        U64 mapsToDo = divideByPowerOf2(pageSizeToMap, pageSizeToUse);
-        for (U64 i = 0; i < mapsToDo; i++) {
-            mapPage(startingMap + (i * pageSizeToUse),
-                    (U64)address + (i * pageSizeToUse), pageSizeToUse);
-        }
+        handlePageFault(CR2());
     } else {
         KFLUSH_AFTER {
             INFO(STRING("We are in an interrupt!!!\n"));
