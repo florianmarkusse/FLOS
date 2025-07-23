@@ -30,9 +30,8 @@ static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     }
 }
 
-void allocateSpaceForKernelMemory(RedBlackNodeMM_max_a *nodes,
-                                  RedBlackNodeMMPtr_max_a *freeList,
-                                  Arena scratch) {
+void allocateSpaceForKernelMemory(
+    RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList, Arena scratch) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
     U64 numberOfDescriptors =
         memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
@@ -40,11 +39,15 @@ void allocateSpaceForKernelMemory(RedBlackNodeMM_max_a *nodes,
     // state.
     U64 expectedNumberOfDescriptors = numberOfDescriptors * 2;
 
-    createDynamicArray(expectedNumberOfDescriptors, sizeof(*nodes->buf),
-                       alignof(*nodes->buf), (void_max_a *)nodes, scratch);
-
-    createDynamicArray(expectedNumberOfDescriptors, sizeof(*freeList->buf),
-                       alignof(*freeList->buf), (void_max_a *)freeList,
+    createDynamicArray(expectedNumberOfDescriptors,
+                       sizeof(*redBlackMMTreeWithFreeList->nodes.buf),
+                       alignof(*redBlackMMTreeWithFreeList->nodes.buf),
+                       (void_max_a *)&redBlackMMTreeWithFreeList->nodes,
+                       scratch);
+    createDynamicArray(expectedNumberOfDescriptors,
+                       sizeof(*redBlackMMTreeWithFreeList->freeList.buf),
+                       alignof(*redBlackMMTreeWithFreeList->freeList.buf),
+                       (void_max_a *)&redBlackMMTreeWithFreeList->freeList,
                        scratch);
 }
 
@@ -70,13 +73,10 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
 
 static constexpr auto RED_COLOR = 0xFF0000;
 
-void convertToKernelMemory(MemoryInfo *memoryInfo,
-                           PackedMemoryAllocator *physicalMemoryTree,
-                           RedBlackNodeMM_max_a *nodes,
-                           RedBlackNodeMMPtr_max_a *freeList,
-                           GraphicsOutputProtocolMode *mode) {
-    RedBlackNodeMM *root = nullptr;
-
+void convertToKernelMemory(
+    MemoryInfo *memoryInfo, PackedMemoryAllocator *physicalMemoryTree,
+    RedBlackMMTreeWithFreeList *RedBlackMMtreeWithFreeList,
+    GraphicsOutputProtocolMode *mode) {
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
         if (memoryTypeCanBeUsedByKernel(desc->type)) {
             if (desc->physicalStart == 0) {
@@ -122,16 +122,21 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
             }
 
             for (U64 i = 0; i < availableMemory.len; i++) {
-                RedBlackNodeMM *node = getRedBlackNodeMM(freeList, nodes);
+                RedBlackNodeMM *node =
+                    getRedBlackNodeMM(&RedBlackMMtreeWithFreeList->freeList,
+                                      &RedBlackMMtreeWithFreeList->nodes);
                 if (!node) {
                     drawStatusRectangle(mode, RED_COLOR);
                     hangThread();
                 }
                 node->memory = availableMemory.buf[i];
-                insertRedBlackNodeMMAndAddToFreelist(&root, node, freeList);
+                insertRedBlackNodeMMAndAddToFreelist(
+                    &RedBlackMMtreeWithFreeList->tree, node,
+                    &RedBlackMMtreeWithFreeList->freeList);
             }
         }
     }
 
-    setPackedMemoryAllocator(physicalMemoryTree, nodes, root, freeList);
+    setPackedMemoryAllocator((PackedTreeWithFreeList *)physicalMemoryTree,
+                             (TreeWithFreeList *)RedBlackMMtreeWithFreeList);
 }

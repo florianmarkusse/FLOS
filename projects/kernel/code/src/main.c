@@ -62,7 +62,7 @@ static constexpr auto START_ENTRIES_COUNT = 8;
 
 typedef enum { IDENTITY_MEMORY, MAPPABLE_MEMORY } MemoryWritableType;
 
-static U64 arrayWritingTest(U64 alignment, U64 arrayEntries,
+static U64 arrayWritingTest(U64 pageSize, U64 arrayEntries,
                             MemoryWritableType memoryWritableType,
                             U64 expectedPageFaults) {
     AvailableMemoryState startPhysicalMemory = getAvailablePhysicalMemory();
@@ -73,7 +73,7 @@ static U64 arrayWritingTest(U64 alignment, U64 arrayEntries,
     U64 cycles;
     if (memoryWritableType == IDENTITY_MEMORY) {
         buffer = allocateIdentityMemory(START_ENTRIES_COUNT * sizeof(U64),
-                                        alignment);
+                                        alignof(U64));
 
         U64_max_a dynamicArray = {
             .buf = buffer, .len = 0, .cap = START_ENTRIES_COUNT};
@@ -100,7 +100,7 @@ static U64 arrayWritingTest(U64 alignment, U64 arrayEntries,
 
         cycles = endCycleCount - startCycleCount;
     } else {
-        buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT, alignment);
+        buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT, pageSize, pageSize);
 
         U64 startCycleCount = currentCycleCounter(true, false);
 
@@ -154,12 +154,12 @@ static U64 arrayWritingTest(U64 alignment, U64 arrayEntries,
     return cycles;
 }
 
-static bool partialMappingTest(U64 alignment) {
+static bool partialMappingTest(U64 pageSize) {
     U64 sum = 0;
 
     KFLUSH_AFTER {
         INFO(STRING("Page Size: "));
-        INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(alignment), 10));
+        INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(pageSize), 10));
     }
 
     BiskiState state;
@@ -169,8 +169,8 @@ static bool partialMappingTest(U64 alignment) {
         U64 entriesToWrite =
             RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
         U64 cycles = arrayWritingTest(
-            alignment, entriesToWrite, MAPPABLE_MEMORY,
-            CEILING_DIV_VALUE((entriesToWrite * sizeof(U64)), alignment));
+            pageSize, entriesToWrite, MAPPABLE_MEMORY,
+            CEILING_DIV_VALUE((entriesToWrite * sizeof(U64)), pageSize));
         if (!cycles) {
             return false;
         }
@@ -185,18 +185,18 @@ static bool partialMappingTest(U64 alignment) {
     return true;
 }
 
-static bool fullMappingTest(U64 alignment) {
+static bool fullMappingTest(U64 pageSize) {
     U64 sum = 0;
 
     KFLUSH_AFTER {
         INFO(STRING("Page Size: "));
-        INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(alignment), 10));
+        INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(pageSize), 10));
     }
 
     for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
         U64 cycles = arrayWritingTest(
-            alignment, MAX_TEST_ENTRIES, MAPPABLE_MEMORY,
-            CEILING_DIV_VALUE((MAX_TEST_ENTRIES * sizeof(U64)), alignment));
+            pageSize, MAX_TEST_ENTRIES, MAPPABLE_MEMORY,
+            CEILING_DIV_VALUE((MAX_TEST_ENTRIES * sizeof(U64)), pageSize));
         if (!cycles) {
             return false;
         }

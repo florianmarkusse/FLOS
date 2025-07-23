@@ -5,6 +5,7 @@
 #include "shared/memory/management/definitions.h"
 #include "shared/trees/red-black/memory-manager.h"
 #include "shared/trees/red-black/virtual-mapping-manager.h"
+#include "shared/types/array.h"
 #include "shared/types/numeric.h"
 
 // NOTE: Crossing ABI boundaries here, so ensuring that both
@@ -28,17 +29,29 @@ typedef struct __attribute__((packed)) {
     U8 *end;
 } PackedArena;
 
+typedef PACKED_MAX_LENGTH_ARRAY(RedBlackVMM) PackedRedBlackVMM_max_a;
+typedef PACKED_MAX_LENGTH_ARRAY(RedBlackVMM *) PackedRedBlackVMMPtr_max_a;
 typedef struct __attribute__((packed)) {
     PackedRedBlackVMM_max_a nodes;
     RedBlackVMM *tree;
     PackedRedBlackVMMPtr_max_a freeList;
 } PackedVirtualMemorySizeMapper;
 
+typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeMM) PackedRedBlackNodeMM_max_a;
+typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeMM *) PackedRedBlackNodeMMPtr_max_a;
 typedef struct __attribute__((packed)) {
     PackedRedBlackNodeMM_max_a nodes;
     RedBlackNodeMM *tree;
     PackedRedBlackNodeMMPtr_max_a freeList;
 } PackedMemoryAllocator;
+
+typedef PACKED_MAX_LENGTH_ARRAY(void) PackedVoid_max_a;
+typedef PACKED_MAX_LENGTH_ARRAY(void *) PackedVoidPtr_max_a;
+typedef struct __attribute__((packed)) {
+    PackedVoid_max_a nodes;
+    RedBlackVMM *tree;
+    PackedVoidPtr_max_a freeList;
+} PackedTreeWithFreeList;
 
 typedef struct __attribute__((packed)) {
     PackedMemoryAllocator physicalPMA;
@@ -52,8 +65,12 @@ typedef struct __attribute__((packed)) {
     void *archParams;
 } PackedKernelParameters;
 
-void setPackedMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator,
-                              RedBlackNodeMM_max_a *nodes, RedBlackNodeMM *root,
-                              RedBlackNodeMMPtr_max_a *freeList);
+typedef struct {
+    void_max_a nodes;
+    void *tree;
+    voidPtr_max_a freeList;
+} TreeWithFreeList;
+void setPackedMemoryAllocator(PackedTreeWithFreeList *packedTreeWithFreeList,
+                              TreeWithFreeList *treeWithFreeList);
 
 #endif

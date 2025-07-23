@@ -23,6 +23,7 @@
 #include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/memory/management/management.h"
+#include "shared/memory/management/page.h"
 #include "shared/memory/policy.h"
 #include "shared/memory/policy/status.h"
 #include "shared/text/string.h"   // for CEILING_DIV_V...
@@ -157,7 +158,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     KFLUSH_AFTER { INFO(STRING("Mapping stack into location\n")); }
     // NOTE: Overflow precaution
-    virtualForKernel += KERNEL_STACK_SIZE;
+    virtualForKernel += MAX(KERNEL_STACK_SIZE, SMALLEST_VIRTUAL_PAGE);
     virtualForKernel =
         alignVirtual(virtualForKernel, stackAddress, KERNEL_STACK_SIZE);
     U64 stackGuardPageAddress = virtualForKernel - SMALLEST_VIRTUAL_PAGE;
@@ -246,8 +247,12 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     // NOTE: Don't use virtual memory allocations anymore from this point
     // onward.
-    setPackedMemoryAllocator(&kernelParams->memory.virtualPMA, &virtualMA.nodes,
-                             virtualMA.tree, &virtualMA.freeList);
+    setPackedMemoryAllocator(
+        (PackedTreeWithFreeList *)&kernelParams->memory.virtualPMA,
+        (TreeWithFreeList *)&virtualMA);
+    setPackedMemoryAllocator(
+        (PackedTreeWithFreeList *)&kernelParams->memory.virtualMemoryMapper,
+        (TreeWithFreeList *)&virtualMemorySizeMapper);
 
     KFLUSH_AFTER {
         INFO(STRING("Finished set-up. Collecting physical memory and jumping "
@@ -256,9 +261,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
     drawStatusRectangle(gop->mode, GREEN_COLOR);
 
-    RedBlackNodeMM_max_a physicalNodes;
-    RedBlackNodeMMPtr_max_a physicalFreeList;
-    allocateSpaceForKernelMemory(&physicalNodes, &physicalFreeList, arena);
+    RedBlackMMTreeWithFreeList physical;
+    physical.tree = nullptr;
+    allocateSpaceForKernelMemory(&physical, arena);
 
     /* NOTE: Keep this call in between the stub and the creation of available */
     /* memory! The stub allocates memory and logs on failure which is not */
@@ -273,7 +278,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     convertToKernelMemory(&memoryInfo, &kernelParams->memory.physicalPMA,
-                          &physicalNodes, &physicalFreeList, gop->mode);
+                          &physical, gop->mode);
 
     jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE, kernelParams);
 

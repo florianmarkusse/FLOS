@@ -19,9 +19,7 @@ struct RedBlackNodeMM {
 };
 
 typedef MAX_LENGTH_ARRAY(RedBlackNodeMM) RedBlackNodeMM_max_a;
-typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeMM) PackedRedBlackNodeMM_max_a;
 typedef MAX_LENGTH_ARRAY(RedBlackNodeMM *) RedBlackNodeMMPtr_max_a;
-typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeMM *) PackedRedBlackNodeMMPtr_max_a;
 
 static constexpr auto RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT = 2;
 

@@ -14,4 +14,8 @@ extern VirtualMemorySizeMapper virtualMemorySizeMapper;
 
 void handlePageFault(U64 faultingAddress);
 
+RedBlackVMM *getRedBlackVMM(RedBlackVMMPtr_max_a *freeList,
+                            RedBlackVMM_max_a *nodes);
+void addPageMapping(Memory memory, U64 pageSize);
+
 #endif

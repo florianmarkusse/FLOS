@@ -1,4 +1,6 @@
 #include "shared/memory/management/page.h"
+#include "abstraction/interrupts.h"
+#include "abstraction/memory/virtual/converter.h"
 #include "abstraction/memory/virtual/map.h"
 #include "shared/maths.h"
 #include "shared/memory/converter.h"
@@ -13,16 +15,54 @@
 //
 // return SMALLEST_VIRTUAL_PAGE;
 
-// TODO: Actually do this!!!!
-static U64 pageSizeFromVMM(U64 faultingAddress) { return 4 * KiB; }
-
 VirtualMemorySizeMapper virtualMemorySizeMapper;
+
+static U64 pageSizeFromVMM(U64 faultingAddress) {
+    RedBlackVMM *result = findGreatestBelowOrEqualRedBlackVMM(
+        &virtualMemorySizeMapper.tree, faultingAddress);
+    if (result && result->basic.value + result->bytes > faultingAddress) {
+        return result->mappingSize;
+    }
+
+    return SMALLEST_VIRTUAL_PAGE;
+}
+
+// TODO: Ready for code generation
+RedBlackVMM *getRedBlackVMM(RedBlackVMMPtr_max_a *freeList,
+                            RedBlackVMM_max_a *nodes) {
+    if (freeList->len > 0) {
+        RedBlackVMM *result = freeList->buf[freeList->len - 1];
+        freeList->len--;
+        return result;
+    }
+
+    if (nodes->len < nodes->cap) {
+        RedBlackVMM *result = &nodes->buf[nodes->len];
+        nodes->len++;
+        return result;
+    }
+
+    return nullptr;
+}
+
+void addPageMapping(Memory memory, U64 pageSize) {
+    RedBlackVMM *newNode = getRedBlackVMM(&virtualMemorySizeMapper.freeList,
+                                          &virtualMemorySizeMapper.nodes);
+    if (!newNode) {
+        interruptUnexpectedError();
+    }
+    newNode->basic.value = memory.start;
+    newNode->bytes = memory.bytes;
+    newNode->mappingSize = pageSize;
+
+    insertRedBlackVMM(&virtualMemorySizeMapper.tree, newNode);
+}
 
 void handlePageFault(U64 faultingAddress) {
     U64 pageSizeForFault = pageSizeFromVMM(faultingAddress);
 
     U64 startingMap = ALIGN_DOWN_VALUE(faultingAddress, pageSizeForFault);
-    U64 pageSizeToUse = pageSizeFitting(startingMap, pageSizeForFault);
+    U64 pageSizeToUse = pageSizeFitting(pageSizeForFault);
 
     // NOTE: when starting to use SMP, I should first check if this memory
     // is now mapped before doing this.

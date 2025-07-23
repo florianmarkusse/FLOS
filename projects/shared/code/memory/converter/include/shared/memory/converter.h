@@ -12,7 +12,6 @@ U64 decreasePageSize(U64 pageSize);
 U64 pageSizeEncompassing(U64 bytes);
 // Returns max page size if too big
 U64 pageSizeLeastLargerThan(U64 address, U64 bytes);
-// Returns max page size if too big
-U64 pageSizeFitting(U64 address, U64 bytes);
+U64 pageSizeFitting(U64 bytes);
 
 #endif

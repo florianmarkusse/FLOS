@@ -8,20 +8,19 @@
 #include "efi/memory/physical.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
+#include "shared/memory/management/management.h"
 #include "shared/memory/sizes.h"
 #include "shared/types/numeric.h" // for USize, U64, U32
 
 static constexpr auto DYNAMIC_MEMORY_CAPACITY = 1 * MiB;
 
-void allocateSpaceForKernelMemory(RedBlackNodeMM_max_a *nodes,
-                                  RedBlackNodeMMPtr_max_a *freeList,
-                                  Arena scratch);
+void allocateSpaceForKernelMemory(
+    RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList, Arena scratch);
 
-void convertToKernelMemory(MemoryInfo *memoryInfo,
-                           PackedMemoryAllocator *physicalMemoryTree,
-                           RedBlackNodeMM_max_a *nodes,
-                           RedBlackNodeMMPtr_max_a *freeList,
-                           GraphicsOutputProtocolMode *mode);
+void convertToKernelMemory(
+    MemoryInfo *memoryInfo, PackedMemoryAllocator *physicalMemoryTree,
+    RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList,
+    GraphicsOutputProtocolMode *mode);
 
 void findKernelMemory(U64 alignment, U64 numberOfThreads);
 

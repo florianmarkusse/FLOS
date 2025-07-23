@@ -12,13 +12,16 @@ void *allocateIdentityMemory(U64 bytes, U64 align) {
 
 void freeIdentityMemory(Memory memory) { freePhysicalMemory(memory); }
 
-// NOTE: have allocMappableMemory take into account the pageSize that will be
-// used to map in case of page fault
-void *allocateMappableMemory(U64 bytes, U64 align) {
+void *allocateMappableMemory(U64 bytes, U64 align, U64 mappingSize) {
     ASSERT(isPowerOf2(align));
+    ASSERT(isPowerOf2(mappingSize));
+    ASSERT(align >= mappingSize);
+    ASSERT(mappingSize >= SMALLEST_VIRTUAL_PAGE);
     ASSERT(isAlignedTo(bytes, align));
 
-    return allocVirtualMemory(bytes, align);
+    void *result = allocVirtualMemory(bytes, align);
+
+    return result;
 }
 
 // TODO: This should be decided by the underlying architecture, realistically.

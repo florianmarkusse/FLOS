@@ -35,6 +35,14 @@ U64 pageSizeEncompassing(U64 bytes) {
     return increasePageSize(result);
 }
 
+U64 pageSizeFitting(U64 bytes) {
+    U64 result = pageAligned(bytes);
+    if (isPageSizeValid(result)) {
+        return result;
+    }
+    return decreasePageSize(result);
+}
+
 static U64 largestAlignedPage(U64 address) {
     ASSERT(!(RING_RANGE_VALUE(address, SMALLEST_VIRTUAL_PAGE)));
 
@@ -65,19 +73,4 @@ U64 pageSizeLeastLargerThan(U64 address, U64 bytes) {
         return alignedBytes;
     }
     return increasePageSize(alignedBytes);
-}
-
-// NOTE: ready for code generation
-U64 pageSizeFitting(U64 address, U64 bytes) {
-    U64 maxPageSize = largestAlignedPage(address);
-    U64 alignedBytes = pageAligned(bytes);
-
-    if (alignedBytes > maxPageSize) {
-        return maxPageSize;
-    }
-
-    if (isPageSizeValid(alignedBytes)) {
-        return alignedBytes;
-    }
-    return decreasePageSize(alignedBytes);
 }

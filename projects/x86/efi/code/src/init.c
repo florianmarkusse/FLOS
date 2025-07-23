@@ -223,6 +223,8 @@ static constexpr auto INITIAL_VIRTUAL_MAPPING_SIZES = 128;
 void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                                 Arena scratch) {
     physicalMA = (RedBlackMMTreeWithFreeList){0};
+
+    virtualMA.tree = nullptr;
     createDynamicArray(
         INITIAL_VIRTUAL_MEMORY_REGIONS, sizeof(*virtualMA.nodes.buf),
         alignof(*virtualMA.nodes.buf), (void_max_a *)&virtualMA.nodes, scratch);
@@ -230,8 +232,6 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                        sizeof(*virtualMA.freeList.buf),
                        alignof(*virtualMA.freeList.buf),
                        (void_max_a *)&virtualMA.freeList, scratch);
-
-    virtualMA.tree = nullptr;
 
     // Initial size > 2 so no bounds checking here.
     RedBlackNodeMM *node = &virtualMA.nodes.buf[virtualMA.nodes.len];
@@ -246,6 +246,7 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                             .bytes = endingAddress - HIGHER_HALF_START};
     (void)insertRedBlackNodeMM(&virtualMA.tree, node);
 
+    virtualMemorySizeMapper.tree = nullptr;
     createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,
                        sizeof(*virtualMemorySizeMapper.nodes.buf),
                        alignof(*virtualMemorySizeMapper.nodes.buf),
@@ -255,7 +256,6 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                        alignof(*virtualMemorySizeMapper.freeList.buf),
                        (void_max_a *)&virtualMemorySizeMapper.freeList,
                        scratch);
-    virtualMemorySizeMapper.tree = nullptr;
 }
 
 void fillArchParams(void *archParams) {

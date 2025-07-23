@@ -26,6 +26,7 @@ void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
     }
 }
 
+// TODO: Ready for code generation
 RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_max_a *freeList,
                                   RedBlackNodeMM_max_a *nodes) {
     if (freeList->len > 0) {

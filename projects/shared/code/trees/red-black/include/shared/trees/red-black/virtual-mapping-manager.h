@@ -11,9 +11,7 @@ typedef struct RedBlackVMM {
 } RedBlackVMM;
 
 typedef MAX_LENGTH_ARRAY(RedBlackVMM) RedBlackVMM_max_a;
-typedef PACKED_MAX_LENGTH_ARRAY(RedBlackVMM) PackedRedBlackVMM_max_a;
 typedef MAX_LENGTH_ARRAY(RedBlackVMM *) RedBlackVMMPtr_max_a;
-typedef PACKED_MAX_LENGTH_ARRAY(RedBlackVMM *) PackedRedBlackVMMPtr_max_a;
 
 void insertRedBlackVMM(RedBlackVMM **tree, RedBlackVMM *createdNode);
 [[nodiscard]] RedBlackVMM *deleteAtLeastRedBlackVMM(RedBlackVMM **tree,
