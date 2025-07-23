@@ -10,8 +10,8 @@
 #include "shared/memory/sizes.h"
 #include "shared/trees/red-black/memory-manager.h"
 
-MemoryAllocator virtualMA;
-MemoryAllocator physicalMA;
+RedBlackMMTreeWithFreeList virtualMA;
+RedBlackMMTreeWithFreeList physicalMA;
 
 void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
                                           RedBlackNodeMM *newNode,
@@ -43,7 +43,7 @@ RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_max_a *freeList,
     return nullptr;
 }
 
-static void insertMemory(Memory memory, MemoryAllocator *allocator) {
+static void insertMemory(Memory memory, RedBlackMMTreeWithFreeList *allocator) {
     RedBlackNodeMM *newNode =
         getRedBlackNodeMM(&allocator->freeList, &allocator->nodes);
     if (!newNode) {
@@ -55,8 +55,8 @@ static void insertMemory(Memory memory, MemoryAllocator *allocator) {
                                          &allocator->freeList);
 }
 
-static RedBlackNodeMM *getMemoryAllocation(MemoryAllocator *allocator,
-                                           U64 bytes) {
+static RedBlackNodeMM *
+getMemoryAllocation(RedBlackMMTreeWithFreeList *allocator, U64 bytes) {
     RedBlackNodeMM *availableMemory =
         deleteAtLeastRedBlackNodeMM(&allocator->tree, bytes);
     if (!availableMemory) {
@@ -77,7 +77,7 @@ static U64 alignedToTotal(U64 bytes, U64 align) { return bytes + align - 1; }
 
 static void handleRemovedAllocator(RedBlackNodeMM *availableMemory,
                                    Memory memoryUsed,
-                                   MemoryAllocator *allocator) {
+                                   RedBlackMMTreeWithFreeList *allocator) {
     U64 beforeResultBytes = memoryUsed.start - availableMemory->memory.start;
     U64 afterResultBytes =
         availableMemory->memory.bytes - (beforeResultBytes + memoryUsed.bytes);
@@ -104,7 +104,7 @@ static void handleRemovedAllocator(RedBlackNodeMM *availableMemory,
 }
 
 static void *allocAlignedMemory(U64 bytes, U64 align,
-                                MemoryAllocator *allocator) {
+                                RedBlackMMTreeWithFreeList *allocator) {
     RedBlackNodeMM *availableMemory =
         getMemoryAllocation(allocator, alignedToTotal(bytes, align));
     U64 result = ALIGN_UP_VALUE(availableMemory->memory.start, align);
@@ -122,7 +122,7 @@ void *allocPhysicalMemory(U64 bytes, U64 align) {
 }
 
 static void initMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator,
-                                MemoryAllocator *allocator) {
+                                RedBlackMMTreeWithFreeList *allocator) {
     allocator->nodes.buf = packedMemoryAllocator->nodes.buf;
     allocator->nodes.len = packedMemoryAllocator->nodes.len;
     allocator->nodes.cap = packedMemoryAllocator->nodes.cap;
@@ -154,8 +154,9 @@ static void identityArrayToMappable(void_max_a *array, U64 alignBytes,
     array->cap = ALLOCATOR_MAX_BUFFER_SIZE / elementSizeBytes;
 }
 
-static void identityAllocatorToMappable(MemoryAllocator *memoryAllocator,
-                                        U64 additionalMapsForNodesBuffer) {
+static void
+identityAllocatorToMappable(RedBlackMMTreeWithFreeList *memoryAllocator,
+                            U64 additionalMapsForNodesBuffer) {
     U64 originalBufferLocation = (U64)memoryAllocator->nodes.buf;
 
     identityArrayToMappable((void_max_a *)&memoryAllocator->nodes,

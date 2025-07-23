@@ -222,11 +222,10 @@ static constexpr auto INITIAL_VIRTUAL_MAPPING_SIZES = 128;
 
 void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                                 Arena scratch) {
-    physicalMA = (MemoryAllocator){0};
-    createDynamicArray(INITIAL_VIRTUAL_MEMORY_REGIONS,
-                       sizeof(*virtualMA.nodes.buf),
-                       alignof(*virtualMA.nodes.buf),
-                       (void_max_a *)&virtualMA.nodes, scratch);
+    physicalMA = (RedBlackMMTreeWithFreeList){0};
+    createDynamicArray(
+        INITIAL_VIRTUAL_MEMORY_REGIONS, sizeof(*virtualMA.nodes.buf),
+        alignof(*virtualMA.nodes.buf), (void_max_a *)&virtualMA.nodes, scratch);
     createDynamicArray(INITIAL_VIRTUAL_MEMORY_REGIONS,
                        sizeof(*virtualMA.freeList.buf),
                        alignof(*virtualMA.freeList.buf),
@@ -250,8 +249,7 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
     createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,
                        sizeof(*virtualMemorySizeMapper.nodes.buf),
                        alignof(*virtualMemorySizeMapper.nodes.buf),
-                       (void_max_a *)&virtualMemorySizeMapper.nodes,
-                       scratch);
+                       (void_max_a *)&virtualMemorySizeMapper.nodes, scratch);
     createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,
                        sizeof(*virtualMemorySizeMapper.freeList.buf),
                        alignof(*virtualMemorySizeMapper.freeList.buf),

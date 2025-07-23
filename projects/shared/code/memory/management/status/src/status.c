@@ -20,7 +20,8 @@ static void countAvailable(RedBlackNodeMM *current, U64 *available,
     countAvailable(current->children[RB_TREE_RIGHT], available, nodes);
 }
 
-static void appendMemoryManagerStatus(MemoryAllocator *allocator, string name) {
+static void appendMemoryManagerStatus(RedBlackMMTreeWithFreeList *allocator,
+                                      string name) {
     KLOG(name);
     AvailableMemoryState result = {0};
     countAvailable(allocator->tree, &result.memory, &result.nodes);

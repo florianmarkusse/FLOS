@@ -9,10 +9,10 @@ typedef struct {
     RedBlackNodeMM_max_a nodes;
     RedBlackNodeMM *tree;
     RedBlackNodeMMPtr_max_a freeList;
-} MemoryAllocator;
+} RedBlackMMTreeWithFreeList;
 
-extern MemoryAllocator virtualMA;
-extern MemoryAllocator physicalMA;
+extern RedBlackMMTreeWithFreeList virtualMA;
+extern RedBlackMMTreeWithFreeList physicalMA;
 
 void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
                                           RedBlackNodeMM *newNode,

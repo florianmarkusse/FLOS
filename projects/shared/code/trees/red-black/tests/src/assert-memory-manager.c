@@ -4,6 +4,9 @@
 #include "shared/log.h"
 #include "shared/maths.h"
 #include "shared/trees/red-black/tests/assert.h"
+#include "shared/types/array.h"
+
+typedef ARRAY(RedBlackNodeMM *) RedBlackNodeMMPtr_a;
 
 static void
 appendExpectedValuesAndTreeValues(Memory_max_a expectedValues,
