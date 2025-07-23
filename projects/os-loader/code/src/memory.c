@@ -68,17 +68,7 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
     return virt;
 }
 
-static constexpr auto TEAL_COLOR = 0x00FFFF;
-
-static void errorInConvertingKernelMemory(GraphicsOutputProtocolMode *mode) {
-    U32 *screen = ((U32 *)mode->frameBufferBase);
-    for (U64 x = 0; x < 10; x++) {
-        for (U64 y = 0; y < 10; y++) {
-            screen[y * mode->info->pixelsPerScanLine + x] = TEAL_COLOR;
-        }
-    }
-    hangThread();
-}
+static constexpr auto RED_COLOR = 0xFF0000;
 
 void convertToKernelMemory(MemoryInfo *memoryInfo,
                            PackedMemoryAllocator *physicalMemoryTree,
@@ -132,11 +122,10 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
             }
 
             for (U64 i = 0; i < availableMemory.len; i++) {
-                // NOTE: no checking for null here, the initial size is large
-                // enough!
                 RedBlackNodeMM *node = getRedBlackNodeMM(freeList, nodes);
                 if (!node) {
-                    errorInConvertingKernelMemory(mode);
+                    drawStatusRectangle(mode, RED_COLOR);
+                    hangThread();
                 }
                 node->memory = availableMemory.buf[i];
                 insertRedBlackNodeMMAndAddToFreelist(&root, node, freeList);

@@ -3,6 +3,7 @@
 #include "abstraction/log.h"
 #include "abstraction/memory/virtual/converter.h"
 #include "abstraction/memory/virtual/map.h"
+#include "abstraction/thread.h"
 #include "efi-to-kernel/kernel-parameters.h"  // for KernelParameters
 #include "efi-to-kernel/memory/definitions.h" // for STACK_SIZE
 #include "efi/acpi/rdsp.h"                    // for getRSDP, RSDP...
@@ -29,12 +30,14 @@
 
 static constexpr auto MIN_VIRTUAL_MEMORY_REQUIRED = 32 * GiB;
 
+static constexpr auto GREEN_COLOR = 0x00FF00;
+
 Status efi_main(Handle handle, SystemTable *systemtable) {
     globals.h = handle;
     globals.st = systemtable;
     globals.st->con_out->reset(globals.st->con_out, false);
     globals.st->con_out->set_attribute(globals.st->con_out,
-                                       BACKGROUND_RED | YELLOW);
+                                       BACKGROUND_BLACK | WHITE);
 
     void *memoryForArena =
         (void *)allocateBytesInUefiPages(DYNAMIC_MEMORY_CAPACITY, false);
@@ -248,8 +251,10 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     KFLUSH_AFTER {
         INFO(STRING("Finished set-up. Collecting physical memory and jumping "
-                    "to the kernel.\n"));
+                    "to the kernel. Setting up a square in the top-left corner "
+                    "that indicates the status.\nGreen: Good\nRed: Bad\n"));
     }
+    drawStatusRectangle(gop->mode, GREEN_COLOR);
 
     RedBlackNodeMM_max_a physicalNodes;
     RedBlackNodeMMPtr_max_a physicalFreeList;
