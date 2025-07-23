@@ -226,11 +226,11 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
     createDynamicArray(INITIAL_VIRTUAL_MEMORY_REGIONS,
                        sizeof(*virtualMA.nodes.buf),
                        alignof(*virtualMA.nodes.buf),
-                       (void_ptr_max_a *)&virtualMA.nodes, scratch);
+                       (void_max_a *)&virtualMA.nodes, scratch);
     createDynamicArray(INITIAL_VIRTUAL_MEMORY_REGIONS,
                        sizeof(*virtualMA.freeList.buf),
                        alignof(*virtualMA.freeList.buf),
-                       (void_ptr_max_a *)&virtualMA.freeList, scratch);
+                       (void_max_a *)&virtualMA.freeList, scratch);
 
     virtualMA.tree = nullptr;
 
@@ -250,12 +250,12 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
     createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,
                        sizeof(*virtualMemorySizeMapper.nodes.buf),
                        alignof(*virtualMemorySizeMapper.nodes.buf),
-                       (void_ptr_max_a *)&virtualMemorySizeMapper.nodes,
+                       (void_max_a *)&virtualMemorySizeMapper.nodes,
                        scratch);
     createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,
                        sizeof(*virtualMemorySizeMapper.freeList.buf),
                        alignof(*virtualMemorySizeMapper.freeList.buf),
-                       (void_ptr_max_a *)&virtualMemorySizeMapper.freeList,
+                       (void_max_a *)&virtualMemorySizeMapper.freeList,
                        scratch);
     virtualMemorySizeMapper.tree = nullptr;
 }

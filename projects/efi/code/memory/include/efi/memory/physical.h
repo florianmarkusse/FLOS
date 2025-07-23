@@ -29,7 +29,7 @@ U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
 U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure);
 
 void createDynamicArray(U64 elements, U64 elementSizeBytes,
-                        U64 elementAlignBytes, void_ptr_max_a *result,
+                        U64 elementAlignBytes, void_max_a *result,
                         Arena scratch);
 
 #define FOR_EACH_DESCRIPTOR(memoryInfoAddress, descriptorName)                 \

@@ -137,7 +137,7 @@ static void initMemoryAllocator(PackedMemoryAllocator *packedMemoryAllocator,
 static constexpr auto ALLOCATOR_MAX_BUFFER_SIZE = 1 * GiB;
 static constexpr auto ALLOCATOR_PAGE_SIZE = SMALLEST_VIRTUAL_PAGE;
 
-static void identityArrayToMappable(void_ptr_max_a *array, U64 alignBytes,
+static void identityArrayToMappable(void_max_a *array, U64 alignBytes,
                                     U64 elementSizeBytes, U64 additionalMaps) {
     void *virtualBuffer =
         allocVirtualMemory(ALLOCATOR_MAX_BUFFER_SIZE, alignBytes);
@@ -158,7 +158,7 @@ static void identityAllocatorToMappable(MemoryAllocator *memoryAllocator,
                                         U64 additionalMapsForNodesBuffer) {
     U64 originalBufferLocation = (U64)memoryAllocator->nodes.buf;
 
-    identityArrayToMappable((void_ptr_max_a *)&memoryAllocator->nodes,
+    identityArrayToMappable((void_max_a *)&memoryAllocator->nodes,
                             alignof(*memoryAllocator->nodes.buf),
                             sizeof(*memoryAllocator->nodes.buf),
                             additionalMapsForNodesBuffer);
@@ -188,7 +188,7 @@ static void identityAllocatorToMappable(MemoryAllocator *memoryAllocator,
                                nodesBias);
     }
 
-    identityArrayToMappable((void_ptr_max_a *)&memoryAllocator->freeList,
+    identityArrayToMappable((void_max_a *)&memoryAllocator->freeList,
                             alignof(*memoryAllocator->freeList.buf),
                             sizeof(*memoryAllocator->freeList.buf), 0);
 }

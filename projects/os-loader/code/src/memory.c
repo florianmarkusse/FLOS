@@ -41,10 +41,10 @@ void allocateSpaceForKernelMemory(RedBlackNodeMM_max_a *nodes,
     U64 expectedNumberOfDescriptors = numberOfDescriptors * 2;
 
     createDynamicArray(expectedNumberOfDescriptors, sizeof(*nodes->buf),
-                       alignof(*nodes->buf), (void_ptr_max_a *)nodes, scratch);
+                       alignof(*nodes->buf), (void_max_a *)nodes, scratch);
 
     createDynamicArray(expectedNumberOfDescriptors, sizeof(*freeList->buf),
-                       alignof(*freeList->buf), (void_ptr_max_a *)freeList,
+                       alignof(*freeList->buf), (void_max_a *)freeList,
                        scratch);
 }
 
