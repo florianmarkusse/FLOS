@@ -4,19 +4,20 @@
 #include "shared/trees/red-black/basic.h"
 #include "shared/types/numeric.h"
 
-typedef struct RedBlackVMM {
+typedef struct {
     RedBlackNodeBasic basic;
     U64 bytes;
     U64 mappingSize;
-} RedBlackVMM;
+} RedBlackNodeVMM;
 
-typedef MAX_LENGTH_ARRAY(RedBlackVMM) RedBlackVMM_max_a;
-typedef MAX_LENGTH_ARRAY(RedBlackVMM *) RedBlackVMMPtr_max_a;
+typedef MAX_LENGTH_ARRAY(RedBlackNodeVMM) RedBlackVMM_max_a;
+typedef MAX_LENGTH_ARRAY(RedBlackNodeVMM *) RedBlackVMMPtr_max_a;
 
-void insertRedBlackVMM(RedBlackVMM **tree, RedBlackVMM *createdNode);
-[[nodiscard]] RedBlackVMM *deleteAtLeastRedBlackVMM(RedBlackVMM **tree,
-                                                    U64 value);
-[[nodiscard]] RedBlackVMM *
-findGreatestBelowOrEqualRedBlackVMM(RedBlackVMM **tree, U64 address);
+void insertRedBlackNodeVMM(RedBlackNodeVMM **tree,
+                           RedBlackNodeVMM *createdNode);
+[[nodiscard]] RedBlackNodeVMM *
+deleteAtLeastRedBlackNodeVMM(RedBlackNodeVMM **tree, U64 value);
+[[nodiscard]] RedBlackNodeVMM *
+findGreatestBelowOrEqualRedBlackNodeVMM(RedBlackNodeVMM **tree, U64 address);
 
 #endif

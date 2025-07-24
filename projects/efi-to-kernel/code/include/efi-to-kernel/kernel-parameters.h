@@ -3,6 +3,7 @@
 
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
+#include "shared/memory/management/memory-tree.h"
 #include "shared/trees/red-black/memory-manager.h"
 #include "shared/trees/red-black/virtual-mapping-manager.h"
 #include "shared/types/array.h"
@@ -29,13 +30,14 @@ typedef struct __attribute__((packed)) {
     U8 *end;
 } PackedArena;
 
-typedef PACKED_MAX_LENGTH_ARRAY(RedBlackVMM) PackedRedBlackVMM_max_a;
-typedef PACKED_MAX_LENGTH_ARRAY(RedBlackVMM *) PackedRedBlackVMMPtr_max_a;
+typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeVMM) PackedRedBlackNodeVMM_max_a;
+typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeVMM *)
+    PackedRedBlackNodeVMMPtr_max_a;
 typedef struct __attribute__((packed)) {
-    PackedRedBlackVMM_max_a nodes;
-    RedBlackVMM *tree;
-    PackedRedBlackVMMPtr_max_a freeList;
-} PackedVirtualMemorySizeMapper;
+    PackedRedBlackNodeVMM_max_a nodes;
+    RedBlackNodeVMM *tree;
+    PackedRedBlackNodeVMMPtr_max_a freeList;
+} PackedVMMTreeWithFreeList;
 
 typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeMM) PackedRedBlackNodeMM_max_a;
 typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeMM *) PackedRedBlackNodeMMPtr_max_a;
@@ -43,20 +45,20 @@ typedef struct __attribute__((packed)) {
     PackedRedBlackNodeMM_max_a nodes;
     RedBlackNodeMM *tree;
     PackedRedBlackNodeMMPtr_max_a freeList;
-} PackedMemoryAllocator;
+} PackedRedBlackMMTreeWithFreeList;
 
 typedef PACKED_MAX_LENGTH_ARRAY(void) PackedVoid_max_a;
 typedef PACKED_MAX_LENGTH_ARRAY(void *) PackedVoidPtr_max_a;
 typedef struct __attribute__((packed)) {
     PackedVoid_max_a nodes;
-    RedBlackVMM *tree;
+    RedBlackNodeVMM *tree;
     PackedVoidPtr_max_a freeList;
 } PackedTreeWithFreeList;
 
 typedef struct __attribute__((packed)) {
-    PackedMemoryAllocator physicalPMA;
-    PackedMemoryAllocator virtualPMA;
-    PackedVirtualMemorySizeMapper virtualMemoryMapper;
+    PackedRedBlackMMTreeWithFreeList physicalPMA;
+    PackedRedBlackMMTreeWithFreeList virtualPMA;
+    PackedVMMTreeWithFreeList virtualMemoryMapper;
 } PackedKernelMemory;
 
 typedef struct __attribute__((packed)) {
@@ -65,11 +67,6 @@ typedef struct __attribute__((packed)) {
     void *archParams;
 } PackedKernelParameters;
 
-typedef struct {
-    void_max_a nodes;
-    void *tree;
-    voidPtr_max_a freeList;
-} TreeWithFreeList;
 void setPackedMemoryAllocator(PackedTreeWithFreeList *packedTreeWithFreeList,
                               TreeWithFreeList *treeWithFreeList);
 

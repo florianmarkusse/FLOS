@@ -74,7 +74,8 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
 static constexpr auto RED_COLOR = 0xFF0000;
 
 void convertToKernelMemory(
-    MemoryInfo *memoryInfo, PackedMemoryAllocator *physicalMemoryTree,
+    MemoryInfo *memoryInfo,
+    PackedRedBlackMMTreeWithFreeList *physicalMemoryTree,
     RedBlackMMTreeWithFreeList *RedBlackMMtreeWithFreeList,
     GraphicsOutputProtocolMode *mode) {
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
