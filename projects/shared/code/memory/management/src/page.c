@@ -7,7 +7,7 @@
 #include "shared/memory/management/management.h"
 #include "shared/memory/sizes.h"
 
-VMMTreeWithFreeList virtualMemorySizeMapper;
+VMMTreeWithFreeList virtualMemorySizeMapper = {0};
 
 static U64 pageSizeFromVMM(U64 faultingAddress) {
     VMMNode *result = findGreatestBelowOrEqualVMMNode(

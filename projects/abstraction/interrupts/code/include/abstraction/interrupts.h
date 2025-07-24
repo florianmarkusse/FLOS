@@ -12,7 +12,4 @@ __attribute__((noreturn)) void interruptUnexpectedError();
 // TODO: remove?
 U64 getPageFaults();
 
-// TODO: remove??
-extern U64 pageSizeToMap;
-
 #endif

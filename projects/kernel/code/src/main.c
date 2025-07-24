@@ -333,7 +333,6 @@ static void mappingTests() {
     }
 
     for (U64 pageSize = 4 * KiB; pageSize <= (2 * MiB); pageSize <<= 1) {
-        pageSizeToMap = pageSize;
         if (!fullMappingTest(pageSize)) {
             return;
         }
@@ -342,7 +341,6 @@ static void mappingTests() {
     KFLUSH_AFTER { INFO(STRING("\nStarting partial mapping test...\n")); }
 
     for (U64 pageSize = 4 * KiB; pageSize <= (2 * MiB); pageSize <<= 1) {
-        pageSizeToMap = pageSize;
         if (!partialMappingTest(pageSize)) {
             return;
         }

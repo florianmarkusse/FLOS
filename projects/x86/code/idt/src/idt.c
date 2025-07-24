@@ -763,17 +763,9 @@ typedef struct {
     //    U64 ss;
 } regs;
 
-U64 pageSizeToMap = X86_4KIB_PAGE;
-
 static U64 pageFaults = 0;
 U64 getPageFaults() { return pageFaults; }
 
-// TODO: extract function that fetches the memory and does all the page size
-// calculations so it's easy to expose to the user if they want to do
-// prefetching and "avoid" the fault since it can definitely save some cycles.
-// 1. When bencchmarking code is gone, can pull it out in here
-// 2. When clarity on how the pageSizeToMap stuff will be done on a per address
-// region basis, can be pulled out of this code completely.
 void faultHandler(regs *regs) {
     xsaveopt();
 
