@@ -19,7 +19,7 @@ void allocateSpaceForKernelMemory(
 
 void convertToKernelMemory(
     MemoryInfo *memoryInfo,
-    PackedRedBlackMMTreeWithFreeList *physicalMemoryTree,
+    PackedMMTreeWithFreeList *physicalMemoryTree,
     RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList,
     GraphicsOutputProtocolMode *mode);
 

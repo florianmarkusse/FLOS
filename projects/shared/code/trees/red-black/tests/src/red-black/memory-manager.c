@@ -15,7 +15,7 @@
 #include "shared/trees/red-black/tests/cases/memory-manager.h"
 
 static void addValueToExpected(Memory_max_a *expectedValues, Memory toAdd,
-                               RedBlackNodeMM *tree) {
+                               MMNode *tree) {
     U64 indexToInsert = 0;
     while (indexToInsert < expectedValues->len &&
            expectedValues->buf[indexToInsert].start < toAdd.start) {
@@ -73,7 +73,7 @@ static void addValueToExpected(Memory_max_a *expectedValues, Memory toAdd,
 }
 
 static void testTree(TreeOperation_a operations, Arena scratch) {
-    RedBlackNodeMM *tree = nullptr;
+    MMNode *tree = nullptr;
     Memory_max_a expectedValues =
         (Memory_max_a){.buf = NEW(&scratch, Memory, MAX_NODES_IN_TREE),
                        .len = 0,
@@ -83,13 +83,13 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         case INSERT: {
             addValueToExpected(&expectedValues, operations.buf[i].memory, tree);
 
-            RedBlackNodeMM *createdNode = NEW(&scratch, RedBlackNodeMM);
+            MMNode *createdNode = NEW(&scratch, MMNode);
             createdNode->memory = operations.buf[i].memory;
-            (void)insertRedBlackNodeMM(&tree, createdNode);
+            (void)insertMMNode(&tree, createdNode);
             break;
         }
         case DELETE_AT_LEAST: {
-            RedBlackNodeMM *deleted = deleteAtLeastRedBlackNodeMM(
+            MMNode *deleted = deleteAtLeastMMNode(
                 &tree, operations.buf[i].memory.bytes);
             if (!deleted) {
                 for (U64 j = 0; j < expectedValues.len; j++) {

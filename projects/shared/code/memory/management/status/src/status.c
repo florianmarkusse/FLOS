@@ -6,7 +6,7 @@
 #include "shared/memory/management/management.h"
 #include "shared/text/string.h"
 
-static void countAvailable(RedBlackNodeMM *current, U64 *available,
+static void countAvailable(MMNode *current, U64 *available,
                            U64 *nodes) {
     if (!current) {
         return;
@@ -48,7 +48,7 @@ void appendVirtualMemoryManagerStatus() {
     appendMemoryManagerStatus(&virtualMA, STRING("[VIRT]"));
 }
 
-static AvailableMemoryState getAvailableMemory(RedBlackNodeMM *tree) {
+static AvailableMemoryState getAvailableMemory(MMNode *tree) {
     AvailableMemoryState result = {0};
     countAvailable(tree, &result.memory, &result.nodes);
     return result;

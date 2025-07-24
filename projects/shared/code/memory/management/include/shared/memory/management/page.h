@@ -6,7 +6,7 @@
 
 typedef struct {
     RedBlackVMM_max_a nodes;
-    RedBlackNodeVMM *tree;
+    VMMNode *tree;
     RedBlackVMMPtr_max_a freeList;
 } VMMTreeWithFreeList;
 
@@ -14,8 +14,7 @@ extern VMMTreeWithFreeList virtualMemorySizeMapper;
 
 void handlePageFault(U64 faultingAddress);
 
-RedBlackNodeVMM *getRedBlackVMM(RedBlackVMMPtr_max_a *freeList,
-                                RedBlackVMM_max_a *nodes);
 void addPageMapping(Memory memory, U64 pageSize);
+void removePageMapping(U64 address);
 
 #endif

@@ -13,10 +13,9 @@
 RedBlackMMTreeWithFreeList virtualMA;
 RedBlackMMTreeWithFreeList physicalMA;
 
-void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
-                                          RedBlackNodeMM *newNode,
-                                          RedBlackNodeMMPtr_max_a *freeList) {
-    InsertResult insertResult = insertRedBlackNodeMM(root, newNode);
+void insertMMNodeAndAddToFreelist(MMNode **root, MMNode *newNode,
+                                  MMNodePtr_max_a *freeList) {
+    InsertResult insertResult = insertMMNode(root, newNode);
 
     for (U64 i = 0; (i < RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT) &&
                     insertResult.freed[i];
@@ -27,16 +26,15 @@ void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
 }
 
 // TODO: Ready for code generation
-RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_max_a *freeList,
-                                  RedBlackNodeMM_max_a *nodes) {
+MMNode *getMMNode(MMNodePtr_max_a *freeList, MMNode_max_a *nodes) {
     if (freeList->len > 0) {
-        RedBlackNodeMM *result = freeList->buf[freeList->len - 1];
+        MMNode *result = freeList->buf[freeList->len - 1];
         freeList->len--;
         return result;
     }
 
     if (nodes->len < nodes->cap) {
-        RedBlackNodeMM *result = &nodes->buf[nodes->len];
+        MMNode *result = &nodes->buf[nodes->len];
         nodes->len++;
         return result;
     }
@@ -45,21 +43,19 @@ RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_max_a *freeList,
 }
 
 static void insertMemory(Memory memory, RedBlackMMTreeWithFreeList *allocator) {
-    RedBlackNodeMM *newNode =
-        getRedBlackNodeMM(&allocator->freeList, &allocator->nodes);
+    MMNode *newNode = getMMNode(&allocator->freeList, &allocator->nodes);
     if (!newNode) {
         interruptUnexpectedError();
     }
     newNode->memory = memory;
 
-    insertRedBlackNodeMMAndAddToFreelist(&allocator->tree, newNode,
-                                         &allocator->freeList);
+    insertMMNodeAndAddToFreelist(&allocator->tree, newNode,
+                                 &allocator->freeList);
 }
 
-static RedBlackNodeMM *
-getMemoryAllocation(RedBlackMMTreeWithFreeList *allocator, U64 bytes) {
-    RedBlackNodeMM *availableMemory =
-        deleteAtLeastRedBlackNodeMM(&allocator->tree, bytes);
+static MMNode *getMemoryAllocation(RedBlackMMTreeWithFreeList *allocator,
+                                   U64 bytes) {
+    MMNode *availableMemory = deleteAtLeastMMNode(&allocator->tree, bytes);
     if (!availableMemory) {
         if (allocator == &physicalMA) {
             interruptNoMorePhysicalMemory();
@@ -76,8 +72,7 @@ void freePhysicalMemory(Memory memory) { insertMemory(memory, &physicalMA); }
 
 static U64 alignedToTotal(U64 bytes, U64 align) { return bytes + align - 1; }
 
-static void handleRemovedAllocator(RedBlackNodeMM *availableMemory,
-                                   Memory memoryUsed,
+static void handleRemovedAllocator(MMNode *availableMemory, Memory memoryUsed,
                                    RedBlackMMTreeWithFreeList *allocator) {
     U64 beforeResultBytes = memoryUsed.start - availableMemory->memory.start;
     U64 afterResultBytes =
@@ -85,19 +80,19 @@ static void handleRemovedAllocator(RedBlackNodeMM *availableMemory,
 
     if (beforeResultBytes && afterResultBytes) {
         availableMemory->memory.bytes = beforeResultBytes;
-        (void)insertRedBlackNodeMM(&allocator->tree, availableMemory);
+        (void)insertMMNode(&allocator->tree, availableMemory);
 
         insertMemory((Memory){.start = memoryUsed.start + memoryUsed.bytes,
                               .bytes = afterResultBytes},
                      allocator);
     } else if (beforeResultBytes) {
         availableMemory->memory.bytes = beforeResultBytes;
-        (void)insertRedBlackNodeMM(&allocator->tree, availableMemory);
+        (void)insertMMNode(&allocator->tree, availableMemory);
     } else if (afterResultBytes) {
         availableMemory->memory =
             (Memory){.start = memoryUsed.start + memoryUsed.bytes,
                      .bytes = afterResultBytes};
-        (void)insertRedBlackNodeMM(&allocator->tree, availableMemory);
+        (void)insertMMNode(&allocator->tree, availableMemory);
     } else {
         allocator->freeList.buf[allocator->freeList.len] = availableMemory;
         allocator->freeList.len++;
@@ -106,7 +101,7 @@ static void handleRemovedAllocator(RedBlackNodeMM *availableMemory,
 
 static void *allocAlignedMemory(U64 bytes, U64 align,
                                 RedBlackMMTreeWithFreeList *allocator) {
-    RedBlackNodeMM *availableMemory =
+    MMNode *availableMemory =
         getMemoryAllocation(allocator, alignedToTotal(bytes, align));
     U64 result = ALIGN_UP_VALUE(availableMemory->memory.start, align);
     handleRemovedAllocator(
@@ -155,8 +150,8 @@ static void identityArrayToMappable(void_max_a *array, U64 alignBytes,
     array->cap = ALLOCATOR_MAX_BUFFER_SIZE / elementSizeBytes;
 }
 
-static void
-VMMTreeWithFreeListToMappable(VMMTreeWithFreeList *memoryAllocator) {
+// NOTE: Ready for code generation
+static void VMMTreeToMappable(VMMTreeWithFreeList *memoryAllocator) {
     U64 originalBufferLocation = (U64)memoryAllocator->nodes.buf;
 
     identityArrayToMappable((void_max_a *)&memoryAllocator->nodes,
@@ -182,13 +177,12 @@ VMMTreeWithFreeListToMappable(VMMTreeWithFreeList *memoryAllocator) {
 
     if (memoryAllocator->tree) {
         memoryAllocator->tree =
-            (RedBlackNodeVMM *)((U8 *)memoryAllocator->tree + nodesBias);
+            (VMMNode *)((U8 *)memoryAllocator->tree + nodesBias);
     }
 
     for (U64 i = 0; i < memoryAllocator->freeList.len; i++) {
         memoryAllocator->freeList.buf[i] =
-            (RedBlackNodeVMM *)((U8 *)memoryAllocator->freeList.buf[i] +
-                                nodesBias);
+            (VMMNode *)((U8 *)memoryAllocator->freeList.buf[i] + nodesBias);
     }
 
     identityArrayToMappable((void_max_a *)&memoryAllocator->freeList,
@@ -196,8 +190,8 @@ VMMTreeWithFreeListToMappable(VMMTreeWithFreeList *memoryAllocator) {
                             sizeof(*memoryAllocator->freeList.buf), 0);
 }
 
-static void
-MMTreeWithFreeListToMappable(RedBlackMMTreeWithFreeList *memoryAllocator,
+// NOTE: Ready for code generation
+static void MMTreeToMappable(RedBlackMMTreeWithFreeList *memoryAllocator,
                              U64 additionalMapsForNodesBuffer) {
     U64 originalBufferLocation = (U64)memoryAllocator->nodes.buf;
 
@@ -208,27 +202,26 @@ MMTreeWithFreeListToMappable(RedBlackMMTreeWithFreeList *memoryAllocator,
     U64 newNodesLocation = (U64)memoryAllocator->nodes.buf;
     U64 nodesBias = newNodesLocation - originalBufferLocation;
     for (U64 i = 0; i < memoryAllocator->nodes.len; i++) {
-        RedBlackNodeMM **children = memoryAllocator->nodes.buf[i].children;
+        MMNode **children = memoryAllocator->nodes.buf[i].children;
 
         if (children[RB_TREE_LEFT]) {
             children[RB_TREE_LEFT] =
-                (RedBlackNodeMM *)(((U8 *)children[RB_TREE_LEFT]) + nodesBias);
+                (MMNode *)(((U8 *)children[RB_TREE_LEFT]) + nodesBias);
         }
         if (children[RB_TREE_RIGHT]) {
             children[RB_TREE_RIGHT] =
-                (RedBlackNodeMM *)(((U8 *)children[RB_TREE_RIGHT]) + nodesBias);
+                (MMNode *)(((U8 *)children[RB_TREE_RIGHT]) + nodesBias);
         }
     }
 
     if (memoryAllocator->tree) {
         memoryAllocator->tree =
-            (RedBlackNodeMM *)((U8 *)memoryAllocator->tree + nodesBias);
+            (MMNode *)((U8 *)memoryAllocator->tree + nodesBias);
     }
 
     for (U64 i = 0; i < memoryAllocator->freeList.len; i++) {
         memoryAllocator->freeList.buf[i] =
-            (RedBlackNodeMM *)((U8 *)memoryAllocator->freeList.buf[i] +
-                               nodesBias);
+            (MMNode *)((U8 *)memoryAllocator->freeList.buf[i] + nodesBias);
     }
 
     identityArrayToMappable((void_max_a *)&memoryAllocator->freeList,
@@ -236,8 +229,7 @@ MMTreeWithFreeListToMappable(RedBlackMMTreeWithFreeList *memoryAllocator,
                             sizeof(*memoryAllocator->freeList.buf), 0);
 }
 
-static void
-freePackedRedBlackVMMTreeWithFreeList(PackedVMMTreeWithFreeList *packed) {
+static void freePackedVMMTree(PackedVMMTreeWithFreeList *packed) {
     freePhysicalMemory(
         (Memory){.start = (U64)packed->nodes.buf,
                  .bytes = packed->nodes.cap * sizeof(*packed->nodes.buf)});
@@ -246,8 +238,7 @@ freePackedRedBlackVMMTreeWithFreeList(PackedVMMTreeWithFreeList *packed) {
                                          sizeof(*packed->freeList.buf)});
 }
 
-static void
-freePackedRedBlackMMTreeWithFreeList(PackedRedBlackMMTreeWithFreeList *packed) {
+static void freePackedMMTree(PackedMMTreeWithFreeList *packed) {
     freePhysicalMemory(
         (Memory){.start = (U64)packed->nodes.buf,
                  .bytes = packed->nodes.cap * sizeof(*packed->nodes.buf)});
@@ -262,15 +253,16 @@ void initMemoryManagers(PackedKernelMemory *kernelMemory) {
     initMemoryAllocator((PackedTreeWithFreeList *)&kernelMemory->virtualPMA,
                         (TreeWithFreeList *)&virtualMA);
     initMemoryAllocator(
-        (PackedTreeWithFreeList *)&kernelMemory->virtualMemoryMapper,
+        (PackedTreeWithFreeList *)&kernelMemory->virtualMemorySizeMapper,
         (TreeWithFreeList *)&virtualMemorySizeMapper);
 
     // NOTE: Adding one extra map here because we are doing page faults manually
     // which will increase the physical memory usage
-    MMTreeWithFreeListToMappable(&physicalMA, 1);
-    MMTreeWithFreeListToMappable(&virtualMA, 0);
-    VMMTreeWithFreeListToMappable(&virtualMemorySizeMapper);
+    MMTreeToMappable(&physicalMA, 1);
+    MMTreeToMappable(&virtualMA, 0);
+    VMMTreeToMappable(&virtualMemorySizeMapper);
 
-    freePackedRedBlackMMTreeWithFreeList(&kernelMemory->physicalPMA);
-    freePackedRedBlackMMTreeWithFreeList(&kernelMemory->virtualPMA);
+    freePackedMMTree(&kernelMemory->physicalPMA);
+    freePackedMMTree(&kernelMemory->virtualPMA);
+    freePackedVMMTree(&kernelMemory->virtualMemorySizeMapper);
 }

@@ -67,7 +67,8 @@ static U64 arrayWritingTest(U64 pageSize, U64 arrayEntries,
                             U64 expectedPageFaults) {
     AvailableMemoryState startPhysicalMemory = getAvailablePhysicalMemory();
     AvailableMemoryState startVirtualMemory = getAvailableVirtualMemory();
-    U64 beforePageFaults = getPageFaults();
+    U64 beforePageFaults;
+    U64 afterPageFaults;
 
     U64 *buffer;
     U64 cycles;
@@ -100,14 +101,18 @@ static U64 arrayWritingTest(U64 pageSize, U64 arrayEntries,
 
         cycles = endCycleCount - startCycleCount;
     } else {
-        buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT, pageSize, pageSize);
+        buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT, sizeof alignof(U64),
+                                        pageSize);
 
+        beforePageFaults = getPageFaults();
         U64 startCycleCount = currentCycleCounter(true, false);
 
         for (U64 i = 0; i < arrayEntries; i++) {
             buffer[i] = i;
         }
+
         U64 endCycleCount = currentCycleCounter(false, true);
+        afterPageFaults = getPageFaults();
 
         cycles = endCycleCount - startCycleCount;
     }
@@ -126,8 +131,6 @@ static U64 arrayWritingTest(U64 pageSize, U64 arrayEntries,
         }
     }
 
-    U64 afterPageFaults = getPageFaults();
-
     if (memoryWritableType == IDENTITY_MEMORY) {
         freeIdentityMemory(
             (Memory){.start = (U64)buffer,
@@ -135,21 +138,21 @@ static U64 arrayWritingTest(U64 pageSize, U64 arrayEntries,
     } else {
         freeMappableMemory(
             (Memory){.start = (U64)buffer, .bytes = TEST_MEMORY_AMOUNT});
+
+        U64 expectedAfterPageFaults = beforePageFaults + expectedPageFaults;
+        if (expectedAfterPageFaults != afterPageFaults) {
+            KFLUSH_AFTER {
+                INFO(STRING("Incorrect number of page faults.\n"));
+                INFO(STRING("Expected: "));
+                INFO(expectedAfterPageFaults, NEWLINE);
+                INFO(STRING("Actual: "));
+                INFO(afterPageFaults, NEWLINE);
+            }
+            return 0;
+        }
     }
 
     KFLUSH_AFTER { appendMemoryDelta(startPhysicalMemory, startVirtualMemory); }
-
-    U64 expectedAfterPageFaults = beforePageFaults + expectedPageFaults;
-    if (expectedAfterPageFaults != afterPageFaults) {
-        KFLUSH_AFTER {
-            INFO(STRING("Incorrect number of page faults.\n"));
-            INFO(STRING("Expected: "));
-            INFO(expectedAfterPageFaults, NEWLINE);
-            INFO(STRING("Actual: "));
-            INFO(afterPageFaults, NEWLINE);
-        }
-        return 0;
-    }
 
     return cycles;
 }

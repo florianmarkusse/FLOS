@@ -312,7 +312,6 @@ RedBlackNodeBasic *deleteAtLeastRedBlackNodeBasic(RedBlackNodeBasic **tree,
 // Assumes the value is inside the tree
 RedBlackNodeBasic *deleteRedBlackNodeBasic(RedBlackNodeBasic **tree,
                                            U64 value) {
-    // Search
     VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
 
     visitedNodes[0].node = (RedBlackNodeBasic *)tree;

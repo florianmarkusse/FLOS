@@ -5,6 +5,7 @@
 #include "abstraction/memory/virtual/map.h"
 #include "shared/maths.h"
 #include "shared/memory/management/management.h"
+#include "shared/memory/management/page.h"
 
 void *allocateIdentityMemory(U64 bytes, U64 align) {
     return allocPhysicalMemory(bytes, align);
@@ -12,15 +13,17 @@ void *allocateIdentityMemory(U64 bytes, U64 align) {
 
 void freeIdentityMemory(Memory memory) { freePhysicalMemory(memory); }
 
+// NOTE: in subsequent iteration, we should only allow power of 2's for
+// requests, minimum of virtual page size
 void *allocateMappableMemory(U64 bytes, U64 align, U64 mappingSize) {
     ASSERT(isPowerOf2(align));
     ASSERT(isPowerOf2(mappingSize));
-    ASSERT(align >= mappingSize);
     ASSERT(mappingSize >= SMALLEST_VIRTUAL_PAGE);
     ASSERT(isAlignedTo(bytes, align));
+    ASSERT(isAlignedTo(bytes, mappingSize));
 
-    void *result = allocVirtualMemory(bytes, align);
-
+    void *result = allocVirtualMemory(bytes, MAX(align, mappingSize));
+    addPageMapping((Memory){.start = (U64)result, .bytes = bytes}, mappingSize);
     return result;
 }
 
@@ -71,5 +74,6 @@ void freeMappableMemory(Memory memory) {
         flushPageCache();
     }
 
+    removePageMapping(memory.start);
     freeVirtualMemory(memory);
 }

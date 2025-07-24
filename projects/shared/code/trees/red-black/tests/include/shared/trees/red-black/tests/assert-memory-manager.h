@@ -4,7 +4,7 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/trees/red-black/memory-manager.h"
 
-void assertMMRedBlackTreeValid(RedBlackNodeMM *tree,
+void assertMMRedBlackTreeValid(MMNode *tree,
                                Memory_max_a expectedValues, Arena scratch);
 
 #endif

@@ -6,11 +6,11 @@
 #include "shared/trees/red-black/tests/assert.h"
 #include "shared/types/array.h"
 
-typedef ARRAY(RedBlackNodeMM *) RedBlackNodeMMPtr_a;
+typedef ARRAY(MMNode *) MMNodePtr_a;
 
 static void
 appendExpectedValuesAndTreeValues(Memory_max_a expectedValues,
-                                  RedBlackNodeMMPtr_a inOrderValues) {
+                                  MMNodePtr_a inOrderValues) {
     INFO(STRING("Expected values:\n"));
     for (U64 i = 0; i < expectedValues.len; i++) {
         INFO(STRING("start: "));
@@ -28,8 +28,8 @@ appendExpectedValuesAndTreeValues(Memory_max_a expectedValues,
     INFO(STRING("\n"));
 }
 
-static void inOrderTraversalFillValues(RedBlackNodeMM *node,
-                                       RedBlackNodeMMPtr_a *values) {
+static void inOrderTraversalFillValues(MMNode *node,
+                                       MMNodePtr_a *values) {
     if (!node) {
         return;
     }
@@ -40,11 +40,11 @@ static void inOrderTraversalFillValues(RedBlackNodeMM *node,
     inOrderTraversalFillValues(node->children[RB_TREE_RIGHT], values);
 }
 
-static void assertIsBSTWitExpectedValues(RedBlackNodeMM *node, U64 nodes,
+static void assertIsBSTWitExpectedValues(MMNode *node, U64 nodes,
                                          Memory_max_a expectedValues,
                                          Arena scratch) {
-    RedBlackNodeMM **_buffer = NEW(&scratch, RedBlackNodeMM *, nodes);
-    RedBlackNodeMMPtr_a inOrderValues = {.buf = _buffer, .len = 0};
+    MMNode **_buffer = NEW(&scratch, MMNode *, nodes);
+    MMNodePtr_a inOrderValues = {.buf = _buffer, .len = 0};
 
     inOrderTraversalFillValues(node, &inOrderValues);
 
@@ -95,7 +95,7 @@ static void assertIsBSTWitExpectedValues(RedBlackNodeMM *node, U64 nodes,
     }
 }
 
-static U64 mostBytes(RedBlackNodeMM *node) {
+static U64 mostBytes(MMNode *node) {
     if (!node) {
         return 0;
     }
@@ -104,8 +104,8 @@ static U64 mostBytes(RedBlackNodeMM *node) {
                mostBytes(node->children[RB_TREE_RIGHT]));
 }
 
-static void assertCorrectMostBytesInSubtreeValue(RedBlackNodeMM *tree,
-                                                 RedBlackNodeMM *node) {
+static void assertCorrectMostBytesInSubtreeValue(MMNode *tree,
+                                                 MMNode *node) {
     if (!node) {
         return;
     }
@@ -123,11 +123,11 @@ static void assertCorrectMostBytesInSubtreeValue(RedBlackNodeMM *tree,
     assertCorrectMostBytesInSubtreeValue(tree, node->children[RB_TREE_RIGHT]);
 }
 
-static void assertCorrectMostBytesTree(RedBlackNodeMM *tree) {
+static void assertCorrectMostBytesTree(MMNode *tree) {
     assertCorrectMostBytesInSubtreeValue(tree, tree);
 }
 
-static void assertPrevNodeSmaller(RedBlackNodeMM *tree, RedBlackNodeMM *node,
+static void assertPrevNodeSmaller(MMNode *tree, MMNode *node,
                                   U64 *prevEnd) {
     if (!node) {
         return;
@@ -149,12 +149,12 @@ static void assertPrevNodeSmaller(RedBlackNodeMM *tree, RedBlackNodeMM *node,
     assertPrevNodeSmaller(tree, node->children[RB_TREE_RIGHT], prevEnd);
 }
 
-static void assertNoNodeOverlap(RedBlackNodeMM *tree) {
+static void assertNoNodeOverlap(MMNode *tree) {
     U64 startValue = 0;
     assertPrevNodeSmaller(tree, tree, &startValue);
 }
 
-void assertMMRedBlackTreeValid(RedBlackNodeMM *tree,
+void assertMMRedBlackTreeValid(MMNode *tree,
                                Memory_max_a expectedValues, Arena scratch) {
     if (!tree) {
         return;

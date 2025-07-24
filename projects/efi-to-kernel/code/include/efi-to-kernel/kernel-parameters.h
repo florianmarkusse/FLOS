@@ -30,35 +30,34 @@ typedef struct __attribute__((packed)) {
     U8 *end;
 } PackedArena;
 
-typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeVMM) PackedRedBlackNodeVMM_max_a;
-typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeVMM *)
-    PackedRedBlackNodeVMMPtr_max_a;
+typedef PACKED_MAX_LENGTH_ARRAY(VMMNode) PackedVMMNode_max_a;
+typedef PACKED_MAX_LENGTH_ARRAY(VMMNode *) PackedVMMNodePtr_max_a;
 typedef struct __attribute__((packed)) {
-    PackedRedBlackNodeVMM_max_a nodes;
-    RedBlackNodeVMM *tree;
-    PackedRedBlackNodeVMMPtr_max_a freeList;
+    PackedVMMNode_max_a nodes;
+    VMMNode *tree;
+    PackedVMMNodePtr_max_a freeList;
 } PackedVMMTreeWithFreeList;
 
-typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeMM) PackedRedBlackNodeMM_max_a;
-typedef PACKED_MAX_LENGTH_ARRAY(RedBlackNodeMM *) PackedRedBlackNodeMMPtr_max_a;
+typedef PACKED_MAX_LENGTH_ARRAY(MMNode) PackedMMNode_max_a;
+typedef PACKED_MAX_LENGTH_ARRAY(MMNode *) PackedMMNodePtr_max_a;
 typedef struct __attribute__((packed)) {
-    PackedRedBlackNodeMM_max_a nodes;
-    RedBlackNodeMM *tree;
-    PackedRedBlackNodeMMPtr_max_a freeList;
-} PackedRedBlackMMTreeWithFreeList;
+    PackedMMNode_max_a nodes;
+    MMNode *tree;
+    PackedMMNodePtr_max_a freeList;
+} PackedMMTreeWithFreeList;
 
 typedef PACKED_MAX_LENGTH_ARRAY(void) PackedVoid_max_a;
 typedef PACKED_MAX_LENGTH_ARRAY(void *) PackedVoidPtr_max_a;
 typedef struct __attribute__((packed)) {
     PackedVoid_max_a nodes;
-    RedBlackNodeVMM *tree;
+    VMMNode *tree;
     PackedVoidPtr_max_a freeList;
 } PackedTreeWithFreeList;
 
 typedef struct __attribute__((packed)) {
-    PackedRedBlackMMTreeWithFreeList physicalPMA;
-    PackedRedBlackMMTreeWithFreeList virtualPMA;
-    PackedVMMTreeWithFreeList virtualMemoryMapper;
+    PackedMMTreeWithFreeList physicalPMA;
+    PackedMMTreeWithFreeList virtualPMA;
+    PackedVMMTreeWithFreeList virtualMemorySizeMapper;
 } PackedKernelMemory;
 
 typedef struct __attribute__((packed)) {

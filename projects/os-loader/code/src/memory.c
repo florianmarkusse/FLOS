@@ -75,7 +75,7 @@ static constexpr auto RED_COLOR = 0xFF0000;
 
 void convertToKernelMemory(
     MemoryInfo *memoryInfo,
-    PackedRedBlackMMTreeWithFreeList *physicalMemoryTree,
+    PackedMMTreeWithFreeList *physicalMemoryTree,
     RedBlackMMTreeWithFreeList *RedBlackMMtreeWithFreeList,
     GraphicsOutputProtocolMode *mode) {
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
@@ -123,15 +123,15 @@ void convertToKernelMemory(
             }
 
             for (U64 i = 0; i < availableMemory.len; i++) {
-                RedBlackNodeMM *node =
-                    getRedBlackNodeMM(&RedBlackMMtreeWithFreeList->freeList,
+                MMNode *node =
+                    getMMNode(&RedBlackMMtreeWithFreeList->freeList,
                                       &RedBlackMMtreeWithFreeList->nodes);
                 if (!node) {
                     drawStatusRectangle(mode, RED_COLOR);
                     hangThread();
                 }
                 node->memory = availableMemory.buf[i];
-                insertRedBlackNodeMMAndAddToFreelist(
+                insertMMNodeAndAddToFreelist(
                     &RedBlackMMtreeWithFreeList->tree, node,
                     &RedBlackMMtreeWithFreeList->freeList);
             }

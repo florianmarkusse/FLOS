@@ -7,18 +7,10 @@
 #include "shared/memory/management/management.h"
 #include "shared/memory/sizes.h"
 
-// RedBlackVMM *result = findGreatestBelowOrEqualRedBlackVMM(
-//     tree, value);
-// if (result && result->basic.value + result->bytes > value) {
-//     return result->mappingSize;
-// }
-//
-// return SMALLEST_VIRTUAL_PAGE;
-
 VMMTreeWithFreeList virtualMemorySizeMapper;
 
 static U64 pageSizeFromVMM(U64 faultingAddress) {
-    RedBlackNodeVMM *result = findGreatestBelowOrEqualRedBlackNodeVMM(
+    VMMNode *result = findGreatestBelowOrEqualVMMNode(
         &virtualMemorySizeMapper.tree, faultingAddress);
     if (result && result->basic.value + result->bytes > faultingAddress) {
         return result->mappingSize;
@@ -28,16 +20,16 @@ static U64 pageSizeFromVMM(U64 faultingAddress) {
 }
 
 // TODO: Ready for code generation
-RedBlackNodeVMM *getRedBlackVMM(RedBlackVMMPtr_max_a *freeList,
-                                RedBlackVMM_max_a *nodes) {
+static VMMNode *getVMM(RedBlackVMMPtr_max_a *freeList,
+                       RedBlackVMM_max_a *nodes) {
     if (freeList->len > 0) {
-        RedBlackNodeVMM *result = freeList->buf[freeList->len - 1];
+        VMMNode *result = freeList->buf[freeList->len - 1];
         freeList->len--;
         return result;
     }
 
     if (nodes->len < nodes->cap) {
-        RedBlackNodeVMM *result = &nodes->buf[nodes->len];
+        VMMNode *result = &nodes->buf[nodes->len];
         nodes->len++;
         return result;
     }
@@ -45,9 +37,16 @@ RedBlackNodeVMM *getRedBlackVMM(RedBlackVMMPtr_max_a *freeList,
     return nullptr;
 }
 
+void removePageMapping(U64 address) {
+    VMMNode *deleted = deleteVMMNode(&virtualMemorySizeMapper.tree, address);
+    virtualMemorySizeMapper.freeList.buf[virtualMemorySizeMapper.freeList.len] =
+        deleted;
+    virtualMemorySizeMapper.freeList.len++;
+}
+
 void addPageMapping(Memory memory, U64 pageSize) {
-    RedBlackNodeVMM *newNode = getRedBlackVMM(&virtualMemorySizeMapper.freeList,
-                                              &virtualMemorySizeMapper.nodes);
+    VMMNode *newNode = getVMM(&virtualMemorySizeMapper.freeList,
+                              &virtualMemorySizeMapper.nodes);
     if (!newNode) {
         interruptUnexpectedError();
     }
@@ -55,7 +54,7 @@ void addPageMapping(Memory memory, U64 pageSize) {
     newNode->bytes = memory.bytes;
     newNode->mappingSize = pageSize;
 
-    insertRedBlackNodeVMM(&virtualMemorySizeMapper.tree, newNode);
+    insertVMMNode(&virtualMemorySizeMapper.tree, newNode);
 }
 
 void handlePageFault(U64 faultingAddress) {

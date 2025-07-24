@@ -6,19 +6,17 @@
 #include "shared/trees/red-black/memory-manager.h"
 
 typedef struct {
-    RedBlackNodeMM_max_a nodes;
-    RedBlackNodeMM *tree;
-    RedBlackNodeMMPtr_max_a freeList;
+    MMNode_max_a nodes;
+    MMNode *tree;
+    MMNodePtr_max_a freeList;
 } RedBlackMMTreeWithFreeList;
 
 extern RedBlackMMTreeWithFreeList virtualMA;
 extern RedBlackMMTreeWithFreeList physicalMA;
 
-void insertRedBlackNodeMMAndAddToFreelist(RedBlackNodeMM **root,
-                                          RedBlackNodeMM *newNode,
-                                          RedBlackNodeMMPtr_max_a *freeList);
-RedBlackNodeMM *getRedBlackNodeMM(RedBlackNodeMMPtr_max_a *freeList,
-                                  RedBlackNodeMM_max_a *nodes);
+void insertMMNodeAndAddToFreelist(MMNode **root, MMNode *newNode,
+                                  MMNodePtr_max_a *freeList);
+MMNode *getMMNode(MMNodePtr_max_a *freeList, MMNode_max_a *nodes);
 
 void initMemoryManagers(PackedKernelMemory *kernelMemory);
 

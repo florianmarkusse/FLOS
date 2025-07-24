@@ -251,7 +251,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         (PackedTreeWithFreeList *)&kernelParams->memory.virtualPMA,
         (TreeWithFreeList *)&virtualMA);
     setPackedMemoryAllocator(
-        (PackedTreeWithFreeList *)&kernelParams->memory.virtualMemoryMapper,
+        (PackedTreeWithFreeList *)&kernelParams->memory.virtualMemorySizeMapper,
         (TreeWithFreeList *)&virtualMemorySizeMapper);
 
     KFLUSH_AFTER {

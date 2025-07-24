@@ -234,17 +234,17 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                        (void_max_a *)&virtualMA.freeList, scratch);
 
     // Initial size > 2 so no bounds checking here.
-    RedBlackNodeMM *node = &virtualMA.nodes.buf[virtualMA.nodes.len];
+    MMNode *node = &virtualMA.nodes.buf[virtualMA.nodes.len];
     virtualMA.nodes.len++;
     node->memory = (Memory){.start = startingAddress,
                             .bytes = LOWER_HALF_END - startingAddress};
-    (void)insertRedBlackNodeMM(&virtualMA.tree, node);
+    (void)insertMMNode(&virtualMA.tree, node);
 
     node = &virtualMA.nodes.buf[virtualMA.nodes.len];
     virtualMA.nodes.len++;
     node->memory = (Memory){.start = HIGHER_HALF_START,
                             .bytes = endingAddress - HIGHER_HALF_START};
-    (void)insertRedBlackNodeMM(&virtualMA.tree, node);
+    (void)insertMMNode(&virtualMA.tree, node);
 
     virtualMemorySizeMapper.tree = nullptr;
     createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,

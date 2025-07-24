@@ -5,11 +5,11 @@
 #include "shared/types/array.h"
 
 typedef struct {
-    RedBlackNodeMM *node;
+    MMNode *node;
     RedBlackDirection direction;
 } VisitedNode;
 
-static void recalculateMostBytes(RedBlackNodeMM *node) {
+static void recalculateMostBytes(MMNode *node) {
     node->mostBytesInSubtree = node->memory.bytes;
     if (node->children[RB_TREE_RIGHT]) {
         node->mostBytesInSubtree =
@@ -30,7 +30,7 @@ static void propagateInsertUpwards(U64 newMostBytesInSubtree,
                                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
                                    U64 len) {
     while (len > ROOT_NODE_ADDRESS_LEN) {
-        RedBlackNodeMM *node = visitedNodes[len - 1].node;
+        MMNode *node = visitedNodes[len - 1].node;
         if (node->mostBytesInSubtree >= newMostBytesInSubtree) {
             return;
         }
@@ -43,7 +43,7 @@ static void propagateDeleteUpwards(U64 deletedBytes,
                                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
                                    U64 len, U64 end) {
     while (len > end) {
-        RedBlackNodeMM *node = visitedNodes[len - 1].node;
+        MMNode *node = visitedNodes[len - 1].node;
         recalculateMostBytes(node);
         if (node->mostBytesInSubtree >= deletedBytes) {
             return;
@@ -52,8 +52,8 @@ static void propagateDeleteUpwards(U64 deletedBytes,
     }
 }
 
-static void setMostBytesAfterRotation(RedBlackNodeMM *prevRotationNode,
-                                      RedBlackNodeMM *prevRotationChild) {
+static void setMostBytesAfterRotation(MMNode *prevRotationNode,
+                                      MMNode *prevRotationChild) {
     prevRotationChild->mostBytesInSubtree =
         prevRotationNode->mostBytesInSubtree;
     recalculateMostBytes(prevRotationNode);
@@ -62,11 +62,11 @@ static void setMostBytesAfterRotation(RedBlackNodeMM *prevRotationNode,
 static U64 rebalanceInsert(RedBlackDirection direction,
                            VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
                            U64 len) {
-    RedBlackNodeMM *grandParent = visitedNodes[len - 3].node;
-    RedBlackNodeMM *parent = visitedNodes[len - 2].node;
-    RedBlackNodeMM *node = visitedNodes[len - 1].node;
+    MMNode *grandParent = visitedNodes[len - 3].node;
+    MMNode *parent = visitedNodes[len - 2].node;
+    MMNode *node = visitedNodes[len - 1].node;
 
-    RedBlackNodeMM *uncle = grandParent->children[!direction];
+    MMNode *uncle = grandParent->children[!direction];
     if (uncle && uncle->color == RB_TREE_RED) {
         uncle->color = RB_TREE_BLACK;
         parent->color = RB_TREE_BLACK;
@@ -115,8 +115,8 @@ static U64 rebalanceInsert(RedBlackDirection direction,
 static U64 rebalanceDelete(RedBlackDirection direction,
                            VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
                            U64 len) {
-    RedBlackNodeMM *node = visitedNodes[len - 1].node;
-    RedBlackNodeMM *childOtherDirection = node->children[!direction];
+    MMNode *node = visitedNodes[len - 1].node;
+    MMNode *childOtherDirection = node->children[!direction];
     // Ensure the other child is colored black, we "push" the problem a level
     // down in the process.
     //                       x(B)              y(B)
@@ -147,9 +147,9 @@ static U64 rebalanceDelete(RedBlackDirection direction,
         childOtherDirection = node->children[!direction];
     }
 
-    RedBlackNodeMM *innerChildOtherDirection =
+    MMNode *innerChildOtherDirection =
         childOtherDirection->children[direction];
-    RedBlackNodeMM *outerChildOtherDirection =
+    MMNode *outerChildOtherDirection =
         childOtherDirection->children[!direction];
     // Bubble up the problem by 1 level.
     if (((!innerChildOtherDirection) ||
@@ -183,7 +183,7 @@ static U64 rebalanceDelete(RedBlackDirection direction,
         setMostBytesAfterRotation(childOtherDirection,
                                   innerChildOtherDirection);
 
-        RedBlackNodeMM *temp = childOtherDirection;
+        MMNode *temp = childOtherDirection;
         childOtherDirection = innerChildOtherDirection;
         outerChildOtherDirection = temp;
     }
@@ -211,9 +211,9 @@ static U64 rebalanceDelete(RedBlackDirection direction,
     return 0;
 }
 
-static RedBlackNodeMM *
+static MMNode *
 deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len,
-                 RedBlackNodeMM *toDelete) {
+                 MMNode *toDelete) {
     U64 stepsToSuccessor = findAdjacentInSteps(
         (RedBlackNode *)toDelete, (CommonVisitedNode *)&visitedNodes[len],
         RB_TREE_RIGHT);
@@ -258,7 +258,7 @@ deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len,
     // be deleted.
     if (toDelete->color == RB_TREE_BLACK) {
         while (len >= 2) {
-            RedBlackNodeMM *childDeficitBlackDirection =
+            MMNode *childDeficitBlackDirection =
                 visitedNodes[len - 1]
                     .node->children[visitedNodes[len - 1].direction];
             if (childDeficitBlackDirection &&
@@ -276,7 +276,7 @@ deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len,
 }
 
 static void
-propogateInsertIfRequired(RedBlackNodeMM *current,
+propogateInsertIfRequired(MMNode *current,
                           VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
                           U64 len) {
     if (current->memory.bytes > current->mostBytesInSubtree) {
@@ -285,7 +285,7 @@ propogateInsertIfRequired(RedBlackNodeMM *current,
     }
 }
 
-static RedBlackNodeMM *bridgeMerge(RedBlackNodeMM *current, U64 adjacentBytes,
+static MMNode *bridgeMerge(MMNode *current, U64 adjacentBytes,
                                    U64 adjacentSteps,
                                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
                                    U64 len) {
@@ -298,8 +298,8 @@ static RedBlackNodeMM *bridgeMerge(RedBlackNodeMM *current, U64 adjacentBytes,
             .node->children[visitedNodes[newLen - 1].direction]);
 }
 
-static RedBlackNodeMM *
-beforeRegionMerge(RedBlackNodeMM *current, RedBlackNodeMM *createdNode,
+static MMNode *
+beforeRegionMerge(MMNode *current, MMNode *createdNode,
                   VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len) {
     current->memory.bytes += createdNode->memory.bytes;
 
@@ -307,7 +307,7 @@ beforeRegionMerge(RedBlackNodeMM *current, RedBlackNodeMM *createdNode,
         (RedBlackNode *)current, (CommonVisitedNode *)&visitedNodes[len],
         RB_TREE_LEFT);
     if (predecessorSteps) {
-        RedBlackNodeMM *predecessor =
+        MMNode *predecessor =
             visitedNodes[len + predecessorSteps - 1]
                 .node
                 ->children[visitedNodes[len + predecessorSteps - 1].direction];
@@ -325,8 +325,8 @@ beforeRegionMerge(RedBlackNodeMM *current, RedBlackNodeMM *createdNode,
     return nullptr;
 }
 
-static RedBlackNodeMM *
-afterRegionMerge(RedBlackNodeMM *current, RedBlackNodeMM *createdNode,
+static MMNode *
+afterRegionMerge(MMNode *current, MMNode *createdNode,
                  U64 createdEnd, VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
                  U64 len) {
     current->memory.bytes += createdNode->memory.bytes;
@@ -335,7 +335,7 @@ afterRegionMerge(RedBlackNodeMM *current, RedBlackNodeMM *createdNode,
         (RedBlackNode *)current, (CommonVisitedNode *)&visitedNodes[len],
         RB_TREE_RIGHT);
     if (successorSteps) {
-        RedBlackNodeMM *successor =
+        MMNode *successor =
             visitedNodes[len + successorSteps - 1]
                 .node
                 ->children[visitedNodes[len + successorSteps - 1].direction];
@@ -350,8 +350,8 @@ afterRegionMerge(RedBlackNodeMM *current, RedBlackNodeMM *createdNode,
     return nullptr;
 }
 
-InsertResult insertRedBlackNodeMM(RedBlackNodeMM **tree,
-                                  RedBlackNodeMM *createdNode) {
+InsertResult insertMMNode(MMNode **tree,
+                                  MMNode *createdNode) {
     InsertResult result = {0};
 
     createdNode->children[RB_TREE_LEFT] = nullptr;
@@ -367,11 +367,11 @@ InsertResult insertRedBlackNodeMM(RedBlackNodeMM **tree,
     // Search
     VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
 
-    visitedNodes[0].node = (RedBlackNodeMM *)tree;
+    visitedNodes[0].node = (MMNode *)tree;
     visitedNodes[0].direction = RB_TREE_LEFT;
     U64 len = 1;
 
-    RedBlackNodeMM *current = *tree;
+    MMNode *current = *tree;
     U64 createdEnd = createdNode->memory.start + createdNode->memory.bytes;
     while (1) {
         U64 currentEnd = current->memory.start + current->memory.bytes;
@@ -395,7 +395,7 @@ InsertResult insertRedBlackNodeMM(RedBlackNodeMM **tree,
             createdNode->memory.start, current->memory.start);
         len++;
 
-        RedBlackNodeMM *next =
+        MMNode *next =
             current->children[visitedNodes[len - 1].direction];
         if (!next) {
             break;
@@ -424,21 +424,21 @@ InsertResult insertRedBlackNodeMM(RedBlackNodeMM **tree,
     return result;
 }
 
-RedBlackNodeMM *deleteAtLeastRedBlackNodeMM(RedBlackNodeMM **tree, U64 bytes) {
+MMNode *deleteAtLeastMMNode(MMNode **tree, U64 bytes) {
     if (!(*tree) || (*tree)->mostBytesInSubtree < bytes) {
         return nullptr;
     }
 
     VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
 
-    visitedNodes[0].node = (RedBlackNodeMM *)tree;
+    visitedNodes[0].node = (MMNode *)tree;
     visitedNodes[0].direction = RB_TREE_LEFT;
     U64 len = 1;
 
     U64 bestSoFar = (*tree)->mostBytesInSubtree;
     U64 bestWithVisitedNodesLen = 0;
 
-    for (RedBlackNodeMM *potential = *tree; potential;) {
+    for (MMNode *potential = *tree; potential;) {
         if (potential->memory.bytes >= bytes &&
             potential->memory.bytes <= bestSoFar) {
             bestSoFar = potential->memory.bytes;
@@ -447,8 +447,8 @@ RedBlackNodeMM *deleteAtLeastRedBlackNodeMM(RedBlackNodeMM **tree, U64 bytes) {
 
         visitedNodes[len].node = potential;
 
-        RedBlackNodeMM *leftChild = potential->children[RB_TREE_LEFT];
-        RedBlackNodeMM *rightChild = potential->children[RB_TREE_RIGHT];
+        MMNode *leftChild = potential->children[RB_TREE_LEFT];
+        MMNode *rightChild = potential->children[RB_TREE_RIGHT];
 
         if (leftChild && leftChild->mostBytesInSubtree >= bytes) {
             if (rightChild && rightChild->mostBytesInSubtree >= bytes &&

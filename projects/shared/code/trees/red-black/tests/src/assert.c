@@ -11,7 +11,7 @@ static RedBlackColor getColor(RedBlackNode *node, RedBlackTreeType treeType) {
         return basicNode->color;
     }
     case RED_BLACK_MEMORY_MANAGER: {
-        RedBlackNodeMM *memoryManagerNode = (RedBlackNodeMM *)node;
+        MMNode *memoryManagerNode = (MMNode *)node;
         return memoryManagerNode->color;
     }
     }
@@ -43,7 +43,7 @@ static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
         break;
     }
     case RED_BLACK_MEMORY_MANAGER: {
-        RedBlackNodeMM *memoryManagerNode = (RedBlackNodeMM *)node;
+        MMNode *memoryManagerNode = (MMNode *)node;
         INFO(STRING(" Start: "));
         INFO(memoryManagerNode->memory.start);
         INFO(STRING(" Bytes: "));
