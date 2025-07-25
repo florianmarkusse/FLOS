@@ -3,7 +3,8 @@
 
 #include "shared/types/numeric.h"
 
-void initIDT();
+void setupInterrupts();
+void enableInterrupts();
 
 __attribute__((noreturn)) void interruptNoMorePhysicalMemory();
 __attribute__((noreturn)) void interruptNoMoreVirtualMemory();

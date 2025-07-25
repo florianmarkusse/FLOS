@@ -2,6 +2,5 @@
 #define ABSTRACTION_THREAD_H
 
 void hangThread();
-void enableInterrupts();
 
 #endif

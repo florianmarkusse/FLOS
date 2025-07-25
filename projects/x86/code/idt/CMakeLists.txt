@@ -3,9 +3,14 @@ add_library(
     ${PROJECT_NAME}
     OBJECT
     "src/trigger.c"
+    "src/fault.c"
     "src/idt.c"
-    "src/init.c"
-    "src/idt.S"
+    "src/isr.S"
+)
+
+set_source_files_properties(
+    "src/fault.c"
+    PROPERTIES COMPILE_FLAGS "-mno-vzeroupper"
 )
 
 add_includes_for_sublibrary()
