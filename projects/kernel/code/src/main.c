@@ -2,6 +2,7 @@
 #include "abstraction/kernel.h"
 #include "abstraction/log.h" // for LOG, LOG_CHOOSER_IMPL_1, rewind, pro...
 #include "abstraction/memory/virtual/map.h"
+#include "abstraction/thread.h"
 #include "abstraction/time.h"
 #include "efi-to-kernel/kernel-parameters.h"  // for KernelParameters
 #include "efi-to-kernel/memory/definitions.h" // for KERNEL_PARAMS_START
@@ -379,6 +380,8 @@ kernelMain(PackedKernelParameters *kernelParams) {
                                 .bytes = (U64)(arena.end - arena.curFree)});
     freeIdentityMemory(
         (Memory){.start = (U64)kernelParams, .bytes = sizeof(*kernelParams)});
+
+    enableInterrupts();
 
     // NOTE: from here, everything is initialized
 

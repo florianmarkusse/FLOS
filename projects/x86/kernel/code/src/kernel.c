@@ -13,9 +13,6 @@ void archInit(void *archParams) {
     X86ArchParams *x86ArchParams = (X86ArchParams *)archParams;
     XSAVESpace = x86ArchParams->XSAVELocation;
     initIDT();
-
-    // TODO: [X86] I need to enable NMIs here also again!
-
     cyclesPerMicroSecond = x86ArchParams->tscFrequencyPerMicroSecond;
 
     rootPageTable = (VirtualPageTable *)CR3();
@@ -28,6 +25,7 @@ void archInit(void *archParams) {
         x86ArchParams->rootPageMetaData.metaData
             .entriesMappedWithSmallerGranularity;
 
+    // TODO: This is just for serial output, should we ifdef this or something?
     outb(COM1 + 1, 0x00); // Disable interrupts
     outb(COM1 + 3, 0x80); // Enable DLAB
     outb(COM1 + 0, 0x03); // Baud rate low byte (38400 baud)

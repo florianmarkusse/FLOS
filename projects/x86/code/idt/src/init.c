@@ -577,6 +577,8 @@ void initIDT() {
     idt_set_gate(255, (U64)isr255, INTERRUPT_GATE);
 
     asm_lidt(&idtp);
+
+    asm volatile("sti");
 }
 
 __attribute__((noreturn)) void triggerFault(Fault fault) {
