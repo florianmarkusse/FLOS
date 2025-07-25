@@ -11,8 +11,8 @@
 
 void archInit(void *archParams) {
     X86ArchParams *x86ArchParams = (X86ArchParams *)archParams;
-    initIDT();
     XSAVESpace = x86ArchParams->XSAVELocation;
+    initIDT();
 
     // TODO: [X86] I need to enable NMIs here also again!
 

@@ -1,5 +1,12 @@
 project(x86-idt LANGUAGES C ASM)
-add_library(${PROJECT_NAME} OBJECT "src/trigger.c" "src/idt.c" "src/idt.S")
+add_library(
+    ${PROJECT_NAME}
+    OBJECT
+    "src/trigger.c"
+    "src/idt.c"
+    "src/init.c"
+    "src/idt.S"
+)
 
 add_includes_for_sublibrary()
 

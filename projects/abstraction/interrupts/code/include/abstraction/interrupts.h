@@ -9,7 +9,6 @@ __attribute__((noreturn)) void interruptNoMorePhysicalMemory();
 __attribute__((noreturn)) void interruptNoMoreVirtualMemory();
 __attribute__((noreturn)) void interruptUnexpectedError();
 
-// TODO: remove?
-U64 getPageFaults();
+extern U64 currentNumberOfPageFaults;
 
 #endif
