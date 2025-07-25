@@ -65,7 +65,8 @@
 - small enums
 - c2y updates: Are constexpr functions possible???
 
-CPU features to implement/turn on in x86
-
-- sse
-- avx
+IST sti usage Kernel design rationale
+IST1 No Double Fault = kernel panic, no nesting
+IST2 No NMI = critical, no nesting
+IST3 No Machine Check = critical, no nesting
+IST4 Yes (after prologue) Normal interrupts, allow nesting
