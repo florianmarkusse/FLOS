@@ -166,6 +166,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(STRING("mapped guard page address: \n"));
         INFO((void *)stackGuardPageAddress, NEWLINE);
     }
+    addPageMapping((Memory){.start = stackGuardPageAddress,
+                            .bytes = SMALLEST_VIRTUAL_PAGE},
+                   0);
 
     U64 stackVirtualStart = virtualForKernel;
     virtualForKernel =

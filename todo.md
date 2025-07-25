@@ -32,6 +32,8 @@
 - look into divisiona and see where can used shift instead for power of 2 div
 - RED-ZONE ???
 - clean up red-black tree mess somehow? This should be possible to abstract!
+- how to hide extern variables from showing up everywhere
+- look into struct x = {.y = 5} and check if it's actually necessary to zero initialize the rest of the struct, we can avoid this in most cases i think
 - add restrict to basically all pointers? look into aliasing again!!!
 - warning pointer cast turn on again? Maybe ask c_programming how to fix this better? Or whether this can be ignored?
 - Mark functions whose [[nodiscard]] return values should be used as such to avoid bugs.

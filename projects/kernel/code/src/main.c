@@ -349,6 +349,13 @@ static void mappingTests() {
     KFLUSH_AFTER { INFO(STRING("\n")); }
 }
 
+U64 recursion(U64 x) {
+    U8 thing[18000];
+    thing[0] = 5;
+
+    return thing[1] + x;
+}
+
 __attribute__((section("kernel-start"))) int
 kernelMain(PackedKernelParameters *kernelParams) {
     archInit(kernelParams->archParams);
@@ -379,6 +386,8 @@ kernelMain(PackedKernelParameters *kernelParams) {
         KLOG(STRING("ITS WEDNESDAY MY DUDES\n"));
         appendMemoryManagementStatus();
     }
+
+    recursion(5);
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 

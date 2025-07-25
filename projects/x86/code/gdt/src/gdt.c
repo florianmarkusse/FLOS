@@ -152,9 +152,7 @@ void enableNewGDT(DescriptorTableRegister *GDTRegister) {
                  "movw %%ax, %%es;"
                  "movw %%ax, %%fs;"
                  "movw %%ax, %%gs;"
-                 "movw %%ax, %%ss;" // NOTE: Why are we not setting the CS
-                                    // register here to the same value too?
-
+                 "movw %%ax, %%ss;"
                  :
                  : "m"(*GDTRegister)
                  : "rax", "memory");

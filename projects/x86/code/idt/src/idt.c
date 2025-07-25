@@ -732,8 +732,8 @@ typedef struct {
         U16 gs;
     } segs; // Packed into 8 bytes
 
-    U64 __paddingForStackAlignment; // SYS V ABI requires 16-byte stack
-                                    // alignemnt
+    U64 _paddingForStackAlignment; // SYS V ABI requires 16-byte stack
+                                   // alignemnt
 
     U64 r15;
     U64 r14;

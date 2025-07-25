@@ -1,7 +1,9 @@
 #include "shared/memory/management/page.h"
 #include "abstraction/interrupts.h"
+#include "abstraction/log.h"
 #include "abstraction/memory/virtual/converter.h"
 #include "abstraction/memory/virtual/map.h"
+#include "abstraction/thread.h"
 #include "shared/maths.h"
 #include "shared/memory/converter.h"
 #include "shared/memory/management/management.h"
@@ -59,6 +61,11 @@ void addPageMapping(Memory memory, U64 pageSize) {
 
 void handlePageFault(U64 faultingAddress) {
     U64 pageSizeForFault = pageSizeFromVMM(faultingAddress);
+
+    if (!pageSizeForFault) {
+        KFLUSH_AFTER { INFO(STRING("Stack overflow!!!\n")); }
+        hangThread();
+    }
 
     U64 startingMap = ALIGN_DOWN_VALUE(faultingAddress, pageSizeForFault);
     U64 pageSizeToUse = pageSizeFitting(pageSizeForFault);

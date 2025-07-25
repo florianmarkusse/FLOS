@@ -84,7 +84,7 @@ isr_stub:
     movw 2(%rsp), %es  # Restore es from offset 2
     movw 4(%rsp), %fs  # Restore fs from offset 4
     movw 6(%rsp), %gs  # Restore gs from offset 6
-    addq $16, %rsp      # Restore stack pointer
+    addq $16, %rsp     # Restore stack pointer
 
     // And pop all the registers
     popaq
