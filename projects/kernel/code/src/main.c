@@ -349,7 +349,7 @@ static void mappingTests() {
     KFLUSH_AFTER { INFO(STRING("\n")); }
 }
 
-U64 recursion(U64 x) {
+static U64 recursion(U64 x) {
     U8 thing[18000];
     thing[0] = 5;
 
@@ -387,7 +387,7 @@ kernelMain(PackedKernelParameters *kernelParams) {
         appendMemoryManagementStatus();
     }
 
-    recursion(5);
+    // recursion(5);
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 

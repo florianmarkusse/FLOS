@@ -725,16 +725,6 @@ __attribute__((noreturn)) void triggerFault(Fault fault) {
 }
 
 typedef struct {
-    struct {
-        U16 ds;
-        U16 es;
-        U16 fs;
-        U16 gs;
-    } segs; // Packed into 8 bytes
-
-    U64 _paddingForStackAlignment; // SYS V ABI requires 16-byte stack
-                                   // alignemnt
-
     U64 r15;
     U64 r14;
     U64 r13;

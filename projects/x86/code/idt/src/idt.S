@@ -62,29 +62,11 @@ asm_lidt:
 isr_stub:
     // Push all the 64-bit registers
     pushaq
-    // Push all the data segments (Stack alignment is kept because all segments add up to 64-bits here)
-    subq $16, %rsp
-    movw %ds, (%rsp)   # Store ds at offset 0
-    movw %es, 2(%rsp)  # Store es at offset 2
-    movw %fs, 4(%rsp)  # Store fs at offset 4
-    movw %gs, 6(%rsp)  # Store gs at offset 6
 
-    // Load the kernel data segments
-    movw $8, %ax
-    movw %ax, %ds
-    movw %ax, %es
-    movw %ax, %fs
-    movw %ax, %gs
     // And we get into it
     movq %rsp, %rdi
     cld
     call faultHandler
-    // Restore segment registers
-    movw (%rsp), %ds   # Restore ds from offset 0
-    movw 2(%rsp), %es  # Restore es from offset 2
-    movw 4(%rsp), %fs  # Restore fs from offset 4
-    movw 6(%rsp), %gs  # Restore gs from offset 6
-    addq $16, %rsp     # Restore stack pointer
 
     // And pop all the registers
     popaq
