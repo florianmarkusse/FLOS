@@ -38,7 +38,7 @@ void bootstrapProcessorWork(Arena scratch) {
     disablePIC();
 
     gdtData =
-        allocateKernelStructure(sizeof(PhysicalBasePage) * 3,
+        allocateKernelStructure(sizeof(PhysicalBasePage) * 7,
                                 alignof(PhysicalBasePage), false, scratch);
     gdtDescriptor = prepNewGDT((PhysicalBasePage *)gdtData);
 

@@ -8,7 +8,7 @@ typedef struct __attribute__((packed)) {
     U64 base;
 } DescriptorTableRegister;
 
-DescriptorTableRegister *prepNewGDT(PhysicalBasePage zeroPages[3]);
+DescriptorTableRegister *prepNewGDT(PhysicalBasePage zeroPages[7]);
 void enableNewGDT(DescriptorTableRegister *GDTRegister);
 
 #endif
