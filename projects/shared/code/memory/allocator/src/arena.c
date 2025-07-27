@@ -10,6 +10,7 @@ alloc(Arena *a, U64 size, U64 align, U64 count, U8 flags) {
     ASSERT((align & (align - 1)) == 0);
 
     U64 avail = (U64)(a->end - a->curFree);
+    // 2's complement is all bits flipped + 1
     U64 padding = (-(U64)a->curFree) & (align - 1);
     if (count > (avail - padding) / size) {
         if (flags & NULLPTR_ON_FAIL) {

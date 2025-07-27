@@ -183,8 +183,6 @@ typedef struct {
     };
 } BASICCPUFeatures;
 
-extern BASICCPUFeatures features;
-
 void CPUEnablePGE();
 void CPUEnableFPU();
 void enableAndConfigureXSAVE(bool supportsAVX512);

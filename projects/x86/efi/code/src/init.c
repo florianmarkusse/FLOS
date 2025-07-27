@@ -23,10 +23,130 @@
 #include "x86/gdt.h"
 #include "x86/idt.h"
 #include "x86/memory/definitions.h"
-#include "x86/memory/pat.h"
 #include "x86/memory/virtual.h"
 
-void bootstrapProcessorWork(Arena scratch) {
+static constexpr auto INTERRUPT_STACK_SIZE = 1 * KiB;
+static constexpr auto MAX_BYTES_GDT = 64 * KiB;
+// the GDT can contain up to 8192 descriptors 8-byte = 655365 bytes = 64 KiB
+// - null              = 8 bytes
+// - kernel code       = 8 bytes
+// - kernel data       = 8 butes
+// - padding           = 8 butes
+// - x tss descriptors = 16 * x bytes !!! should be aligned to 16 bytes for
+// performance reasons.
+// So, we align the GDT to 16 bytes, so everything is at least self-aligned.
+static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
+                               Arena scratch) {
+    U64 requiredBytesForDescriptorTable =
+        CODE_SEGMENTS_BYTES + numberOfProcessors * sizeof(TSSDescriptor);
+    if (requiredBytesForDescriptorTable > MAX_BYTES_GDT) {
+        EXIT_WITH_MESSAGE {
+            INFO(STRING("The GDT is too big!\nSize: "));
+            INFO(requiredBytesForDescriptorTable);
+            INFO(STRING(" while maximum allowed is: "));
+            INFO(MAX_BYTES_GDT, NEWLINE);
+        }
+    }
+    KFLUSH_AFTER {
+        INFO(STRING("sizeof segmentdescriptor (should be 8 bytes): "));
+        INFO(sizeof(SegmentDescriptor), NEWLINE);
+        INFO(STRING("sizeof TSSDescriptor (should be 16 bytes): "));
+        INFO(sizeof(TSSDescriptor), NEWLINE);
+        INFO(STRING("Total bytes required for GDT: "));
+        INFO(requiredBytesForDescriptorTable, NEWLINE);
+    }
+
+    SegmentDescriptor *GDT = (SegmentDescriptor *)allocateKernelStructure(
+        requiredBytesForDescriptorTable, sizeof(TSSDescriptor), false, scratch);
+    GDT[0] = (SegmentDescriptor){0}; // null segment;
+    GDT[1] = (SegmentDescriptor){
+        .limit_15_0 = 0, // ignored in 64-bit
+        .base_15_0 = 0,  // ignored in 64-bit
+        .base_23_16 = 0, // ignored in 64-bit
+        .type = 0xA,     // Execute | Read
+        .systemDescriptor = 1,
+        .descriptorprivilegelevel = 0,
+        .present = 1,
+        .limit_19_16 = 0, // ignored in 64-bit
+        .availableToUse = 0,
+        .use64Bit = 1,
+        .defaultOperationSizeUpperBound = 0, // 0 for correctness but ignored
+        .granularity = 0,                    // ignored in 64-bit
+        .base_31_24 = 0                      // ignored in 64-bit
+    }; // kernel code segment
+    GDT[2] = (SegmentDescriptor){
+        .limit_15_0 = 0, // ignored in 64-bit
+        .base_15_0 = 0,  // ignored in 64-bit
+        .base_23_16 = 0, // ignored in 64-bit
+        .type = 0x2,     // Read | Write
+        .systemDescriptor = 1,
+        .descriptorprivilegelevel = 0,
+        .present = 1,
+        .limit_19_16 = 0, // ignored in 64-bit
+        .availableToUse = 0,
+        .use64Bit = 0,                       // ignored in 64-bit
+        .defaultOperationSizeUpperBound = 0, // 0 for correctness but ignored
+        .granularity = 0,                    // ignored in 64-bit
+        .base_31_24 = 0                      // ignored in 64-bit
+    }; // kernel data segment
+
+    // We are skipping GDT[3] here because the TSSDescriptor is 16 bytes, so
+    // making sure it's nicely aligned and making it easier to count
+    TSSDescriptor *tssDescriptors = (TSSDescriptor *)&GDT[4];
+
+    // Task State Segment is packed, but the CPU sometimes writes to the Task
+    // State Segment itself, so ensure that the structures are laid out to avoid
+    // false sharing.
+    U64 bytesPerTSS =
+        ALIGN_UP_VALUE(sizeof(TaskStateSegment), cacheLineSizeBytes);
+    KFLUSH_AFTER {
+        INFO(STRING("Size in bytes per TSS: "));
+        INFO(bytesPerTSS, NEWLINE);
+    }
+
+    U8 *TSSes = (U8 *)allocateKernelStructure(bytesPerTSS * numberOfProcessors,
+                                              bytesPerTSS, false, scratch);
+    PhysicalBasePage *interruptStacks =
+        (PhysicalBasePage *)allocateKernelStructure(
+            sizeof(PhysicalBasePage) * numberOfProcessors,
+            alignof(PhysicalBasePage), false, scratch);
+
+    for (U64 i = 0; i < numberOfProcessors; i++) {
+        TaskStateSegment *TSS = (TaskStateSegment *)(TSSes + (bytesPerTSS * i));
+        TSS->IOMapBaseAddress =
+            sizeof(TaskStateSegment); // but limit is set to max TSS, so the CPU
+                                      // understands that there is no io
+                                      // permission bitmap.
+        TSS->ist1 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 0;
+        TSS->ist2 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 1;
+        TSS->ist3 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 2;
+        TSS->ist4 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 3;
+
+        tssDescriptors[i] =
+            (TSSDescriptor){(SegmentDescriptor){
+                                .limit_15_0 = sizeof(TaskStateSegment) - 1,
+                                .base_15_0 = (U64)(TSS) & 0xFFFF,
+                                .base_23_16 = ((U64)(TSS) >> 16) & 0xFF,
+                                .type = 0x9, // 0b1001 = 64 bit TSS (available)
+                                .systemDescriptor = 0,
+                                .descriptorprivilegelevel = 0,
+                                .present = 1,
+                                .limit_19_16 = 0,
+                                .availableToUse = 0,
+                                .use64Bit = 0,
+                                .defaultOperationSizeUpperBound = 0,
+                                .granularity = 0,
+                                .base_31_24 = ((U64)(TSS) >> 24) & 0xFF,
+                            },
+                            .base_63_32 = ((U64)(TSS) >> 32) & 0xFFFFFFFF,
+                            .reserved_1 = 0, .zero_4 = 0, .reserved_2 = 0};
+    }
+
+    gdtDescriptor = (DescriptorTableRegister){
+        .limit = ((U16)requiredBytesForDescriptorTable) - 1, .base = (U64)GDT};
+}
+
+void bootstrapProcessorWork(U16 cacheLineSizeBytes, Arena scratch) {
     rootPageTable = getZeroedPageTable();
 
     KFLUSH_AFTER {
@@ -35,17 +155,17 @@ void bootstrapProcessorWork(Arena scratch) {
         INFO((void *)rootPageTable, NEWLINE);
     }
 
+    // NOTE: What the fuck does this do and why?
     disablePIC();
 
-    gdtData =
-        allocateKernelStructure(sizeof(PhysicalBasePage) * 7,
-                                alignof(PhysicalBasePage), false, scratch);
-    gdtDescriptor = prepNewGDT((PhysicalBasePage *)gdtData);
+    // TODO: Find out number of processors!
+    prepareDescriptors(1, cacheLineSizeBytes, scratch);
 
     // Maybe when there is other CPUs in here??
     //    // NOTE: WHY????
     //    globals.st->boot_services->stall(100000);
 
+    // NOTE: Whaw the fuck is this and why are you here?
     asm volatile("pause" : : : "memory"); // memory barrier
 }
 
@@ -97,11 +217,18 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
         }
     }
 
-    CPUIDResult processorInfoAndFeatureBits = CPUID(0x1);
-    features.ecx = processorInfoAndFeatureBits.ecx;
-    features.edx = processorInfoAndFeatureBits.edx;
+    CPUIDResult processorInfoAndFeatureBits =
+        CPUID(BASIC_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER);
+    BASICCPUFeatures features = {.ecx = processorInfoAndFeatureBits.ecx,
+                                 .edx = processorInfoAndFeatureBits.edx};
     if (!features.APIC) {
         EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support APIC")); }
+    }
+
+    U16 cacheLineSizeBytes = (processorInfoAndFeatureBits.ebx >> 8 & 0xFF) * 8;
+    KFLUSH_AFTER {
+        INFO(STRING("Cache line size is: \n"));
+        INFO(cacheLineSizeBytes, NEWLINE);
     }
 
     U32 BSPID = processorInfoAndFeatureBits.ebx >> 24;
@@ -210,7 +337,7 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
     }
 
     KFLUSH_AFTER { INFO(STRING("Bootstrap processor work\n")); }
-    bootstrapProcessorWork(scratch);
+    bootstrapProcessorWork(cacheLineSizeBytes, scratch);
 
     return (ArchParamsRequirements){.bytes = sizeof(X86ArchParams),
                                     .align = alignof(X86ArchParams)};

@@ -3,8 +3,6 @@
 #include "x86/configuration/cpu.h"
 #include "x86/memory/pat.h"
 
-BASICCPUFeatures features;
-
 typedef struct {
     union {
         U64 value;

@@ -32,8 +32,10 @@ toKernel(U64 newStackPointer, PackedKernelParameters *kernelParams) {
     __builtin_unreachable();
 }
 
-void jumpIntoKernel(U64 newStackPointer, PackedKernelParameters *kernelParams) {
-    enableNewGDT(gdtDescriptor);
+void jumpIntoKernel(U64 newStackPointer, U16 processorID,
+                    PackedKernelParameters *kernelParams) {
+    loadGDTAndSegments(&gdtDescriptor);
+    loadTaskRegister(processorID);
     enableNewMemoryMapping();
     toKernel(newStackPointer, kernelParams);
 }

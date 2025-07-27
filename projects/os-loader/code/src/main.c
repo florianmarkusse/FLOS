@@ -282,8 +282,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     convertToKernelMemory(&memoryInfo, &kernelParams->memory.physicalPMA,
                           &physical, gop->mode);
-
-    jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE, kernelParams);
+    jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE, 0, kernelParams);
 
     __builtin_unreachable();
 }
