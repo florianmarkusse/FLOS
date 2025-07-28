@@ -9,7 +9,6 @@
 #include "shared/memory/management/management.h"
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
-#include "x86/idt.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/flags.h"
 

@@ -207,8 +207,6 @@ return (endCycles - currentCycles) / CALIBRATION_MICROSECONDS;
 }
 
 ArchParamsRequirements initArchitecture(Arena scratch) {
-    asm volatile("cli");
-
     U32 maxBasicCPUID = CPUID(0x0).eax;
     if (maxBasicCPUID < BASIC_MAX_REQUIRED_PARAMETER) {
         EXIT_WITH_MESSAGE {
@@ -384,6 +382,8 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                        (void_max_a *)&virtualMemorySizeMapper.freeList,
                        scratch);
 }
+
+static void fillParams(X86ArchParams *params) {}
 
 void fillArchParams(void *archParams) {
     X86ArchParams *x86ArchParams = (X86ArchParams *)archParams;

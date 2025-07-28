@@ -1,6 +1,5 @@
 #include "abstraction/interrupts.h"
-#include "x86/fault.h"
-#include "x86/idt.h"
+#include "x86/kernel/idt.h"
 
 void interruptUnexpectedError() { triggerFault(FAULT_UNEXPECTED_FAILURE); }
 

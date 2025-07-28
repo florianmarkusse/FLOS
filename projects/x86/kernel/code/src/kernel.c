@@ -3,7 +3,7 @@
 #include "abstraction/interrupts.h"
 #include "x86/configuration/cpu.h"
 #include "x86/efi-to-kernel/params.h"
-#include "x86/idt.h"
+#include "x86/kernel/idt.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/virtual.h"
 #include "x86/serial.h"

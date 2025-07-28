@@ -12,7 +12,6 @@
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
 #include "x86/fault.h"
-#include "x86/idt.h"
 #include "x86/memory/definitions.h"
 
 static string faultToString[CPU_FAULT_COUNT] = {CPU_FAULT_ENUM(ENUM_TO_STRING)};

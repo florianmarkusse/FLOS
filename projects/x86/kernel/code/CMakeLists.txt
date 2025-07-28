@@ -10,9 +10,13 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     add_project("x86/efi-to-kernel")
     add_project("freestanding")
     add_project("abstraction/kernel")
+    add_project("abstraction/log")
+    add_project("abstraction/text/converter")
     add_project("abstraction/jmp")
     add_project("abstraction/interrupts")
     add_project("abstraction/memory/manipulation")
+    add_project("abstraction/memory/virtual")
+    add_project("abstraction/thread")
     add_project("efi-to-kernel")
     include("${REPO_PROJECTS}/print-configuration.cmake")
 endif()
@@ -21,12 +25,16 @@ add_library(${PROJECT_NAME} OBJECT "src/kernel.c")
 
 add_includes_for_sublibrary()
 
+add_subdirectory(idt)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-jmp-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-kernel-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-interrupts-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE x86-i)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE x86-kernel-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE efi-to-kernel-i)
 

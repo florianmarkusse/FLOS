@@ -1,3 +1,4 @@
+- move idt loading to x86/kernel ?
 - fix weird GDT stuff and IST loading per CPU
 - get cache line size from cpu?
 - change memoryAllocator Arena to just be an array, should be easier to work with and clearer. No need for arena since it will only "allocate" a single struct
