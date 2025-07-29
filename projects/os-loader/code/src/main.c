@@ -51,8 +51,27 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         }
     }
     initKernelStructureLocations(&arena);
+    initRootVirtualMemoryInKernel();
 
-    ArchParamsRequirements archParamsRequirements = initArchitecture(arena);
+    GraphicsOutputProtocol *gop = nullptr;
+    Status status = globals.st->boot_services->locate_protocol(
+        &GRAPHICS_OUTPUT_PROTOCOL_GUID, nullptr, (void **)&gop);
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+        ERROR(STRING("Could not locate locate GOP\n"));
+    }
+
+    U64 highestLowerHalfAddress = findHighestMemoryAddress(
+        gop->mode->frameBufferBase + gop->mode->frameBufferSize, arena);
+    KFLUSH_AFTER {
+        INFO(STRING("Identity mapping all memory, highest address found: "));
+        INFO((void *)highestLowerHalfAddress, NEWLINE);
+    }
+
+    U64 firstFreeVirtual = mapMemory(0, 0, highestLowerHalfAddress,
+                                     STANDARD_PAGE_FLAGS | GLOBAL_PAGE_FLAGS);
+
+    initKernelMemoryManagement(firstFreeVirtual, VIRTUAL_MEMORY_FREE_END,
+                               arena);
 
     KFLUSH_AFTER { INFO(STRING("Going to fetch kernel bytes\n")); }
     U64 kernelBytes = getKernelBytes(arena);
@@ -95,24 +114,6 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)(KERNEL_CODE_START + kernelContent.len), NEWLINE);
     }
 
-    GraphicsOutputProtocol *gop = nullptr;
-    Status status = globals.st->boot_services->locate_protocol(
-        &GRAPHICS_OUTPUT_PROTOCOL_GUID, nullptr, (void **)&gop);
-    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
-        ERROR(STRING("Could not locate locate GOP\n"));
-    }
-
-    U64 highestLowerHalfAddress = findHighestMemoryAddress(
-        gop->mode->frameBufferBase + gop->mode->frameBufferSize, arena);
-    KFLUSH_AFTER {
-        INFO(STRING("Identity mapping all memory, highest address found: "));
-        INFO((void *)highestLowerHalfAddress, NEWLINE);
-    }
-    U64 firstFreeVirtual = mapMemory(0, 0, highestLowerHalfAddress,
-                                     STANDARD_PAGE_FLAGS | GLOBAL_PAGE_FLAGS);
-
-    initKernelMemoryManagement(firstFreeVirtual, VIRTUAL_MEMORY_FREE_END,
-                               arena);
     U64 virtualForKernel =
         (U64)allocVirtualMemory(MIN_VIRTUAL_MEMORY_REQUIRED, 1);
     U64 endVirtualForKernel = virtualForKernel + MIN_VIRTUAL_MEMORY_REQUIRED;
@@ -191,6 +192,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
 
+    ArchParamsRequirements archParamsRequirements = getArchParamsRequirements();
     U64 kernelParamsAlignment =
         MAX(alignof(PackedKernelParameters), archParamsRequirements.align);
     U64 archKernelParamsOffset =
@@ -232,7 +234,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                        .scanline = gop->mode->info->pixelsPerScanLine};
 
     KFLUSH_AFTER { INFO(STRING("Filling specific arch params\n")); }
-    fillArchParams(kernelParams->archParams);
+    fillArchParams(kernelParams->archParams, arena);
 
     RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
                               globals.st->configuration_table);

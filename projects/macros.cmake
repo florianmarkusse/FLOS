@@ -34,3 +34,18 @@ macro(add_includes_for_sublibrary)
         INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include
     )
 endmacro()
+
+macro(add_header_for_target project)
+    get_target_property(target_type ${PROJECT_NAME} TYPE)
+    if(${target_type} STREQUAL "INTERFACE_LIBRARY")
+        target_include_directories(
+            ${PROJECT_NAME}
+            INTERFACE "${REPO_PROJECTS}/${project}/code/include"
+        )
+    else()
+        target_include_directories(
+            ${PROJECT_NAME}
+            PUBLIC "${REPO_PROJECTS}/${project}/code/include"
+        )
+    endif()
+endmacro()

@@ -387,7 +387,19 @@ kernelMain(PackedKernelParameters *kernelParams) {
 
     KFLUSH_AFTER {
         KLOG(STRING("ITS WEDNESDAY MY DUDES\n"));
+        KLOG(STRING("ITS WEDNESDAY MY DUDES\n"));
         appendMemoryManagementStatus();
+    }
+
+    U64 test = 3;
+    if (test) {
+        test = 0;
+    }
+    U64 myDivide = 5 / test;
+    asm volatile("int $0x0");
+    KFLUSH_AFTER {
+        KLOG(STRING("After div 0\n"));
+        KLOG(myDivide);
     }
 
     // recursion(5);

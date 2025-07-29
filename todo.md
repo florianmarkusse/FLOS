@@ -1,5 +1,7 @@
 - move idt loading to x86/kernel ?
 - fix weird GDT stuff and IST loading per CPU
+- lots of add_project should be add_include instead...
+- rewrite cmake?
 - get cache line size from cpu?
 - change memoryAllocator Arena to just be an array, should be easier to work with and clearer. No need for arena since it will only "allocate" a single struct
 - create abstraction that fault handler calls to map memory in etc.

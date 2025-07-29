@@ -3,6 +3,6 @@ add_library(${PROJECT_NAME} OBJECT "src/idt.c")
 
 add_includes_for_sublibrary()
 
-target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-interrupts-i)
+add_header_for_target("abstraction/interrupts")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-i)

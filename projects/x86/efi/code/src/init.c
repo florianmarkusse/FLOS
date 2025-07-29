@@ -21,7 +21,6 @@
 #include "x86/efi-to-kernel/params.h"
 #include "x86/efi/gdt.h"
 #include "x86/gdt.h"
-#include "x86/idt.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/virtual.h"
 
@@ -48,10 +47,6 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
         }
     }
     KFLUSH_AFTER {
-        INFO(STRING("sizeof segmentdescriptor (should be 8 bytes): "));
-        INFO(sizeof(SegmentDescriptor), NEWLINE);
-        INFO(STRING("sizeof TSSDescriptor (should be 16 bytes): "));
-        INFO(sizeof(TSSDescriptor), NEWLINE);
         INFO(STRING("Total bytes required for GDT: "));
         INFO(requiredBytesForDescriptorTable, NEWLINE);
     }
@@ -117,10 +112,22 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
             sizeof(TaskStateSegment); // but limit is set to max TSS, so the CPU
                                       // understands that there is no io
                                       // permission bitmap.
-        TSS->ist1 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 0;
-        TSS->ist2 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 1;
-        TSS->ist3 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 2;
-        TSS->ist4 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 3;
+        // Stack grows down, so we already multiply by 1 to account for that.
+        TSS->ist1 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 1;
+        TSS->ist2 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 2;
+        TSS->ist3 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 3;
+        TSS->ist4 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 4;
+
+        KFLUSH_AFTER {
+            INFO(STRING("TSS ist1 stack: "));
+            INFO(TSS->ist1, NEWLINE);
+            INFO(STRING("TSS ist2 stack: "));
+            INFO(TSS->ist2, NEWLINE);
+            INFO(STRING("TSS ist3 stack: "));
+            INFO(TSS->ist3, NEWLINE);
+            INFO(STRING("TSS ist4 stack: "));
+            INFO(TSS->ist4, NEWLINE);
+        }
 
         tssDescriptors[i] =
             (TSSDescriptor){(SegmentDescriptor){
@@ -147,14 +154,6 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
 }
 
 void bootstrapProcessorWork(U16 cacheLineSizeBytes, Arena scratch) {
-    rootPageTable = getZeroedPageTable();
-
-    KFLUSH_AFTER {
-        INFO(STRING("root page table memory location: "));
-        /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-        INFO((void *)rootPageTable, NEWLINE);
-    }
-
     // NOTE: What the fuck does this do and why?
     disablePIC();
 
@@ -195,18 +194,77 @@ static U64 calibrateWait() {
         return (leaf15.ecx * (leaf15.ebx / leaf15.eax)) / 1000000;
     } else {
         CPUIDResult leaf16 = CPUID(0x16);
-        if (leaf16.eax > 1'000) {
+        if (leaf16.eax > 1000) {
             return leaf16.eax;
+        }
+    }
+
+    U64 currentCycles = currentCycleCounter(false, false);
+    globals.st->boot_services->stall(CALIBRATION_MICROSECONDS);
+    U64 endCycles = currentCycleCounter(false, false);
+    return (endCycles - currentCycles) / CALIBRATION_MICROSECONDS;
+}
+
+ArchParamsRequirements getArchParamsRequirements() {
+    return (ArchParamsRequirements){.bytes = sizeof(X86ArchParams),
+                                    .align = alignof(X86ArchParams)};
+}
+
+void initRootVirtualMemoryInKernel() {
+    rootPageTable = getZeroedPageTable();
+
+    KFLUSH_AFTER {
+        INFO(STRING("root page table memory location: "));
+        /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
+        INFO((void *)rootPageTable, NEWLINE);
     }
 }
 
-U64 currentCycles = currentCycleCounter(false, false);
-globals.st->boot_services->stall(CALIBRATION_MICROSECONDS);
-U64 endCycles = currentCycleCounter(false, false);
-return (endCycles - currentCycles) / CALIBRATION_MICROSECONDS;
+// NOTE: Should be enough until put into final kernel position.
+static constexpr auto INITIAL_VIRTUAL_MEMORY_REGIONS = 16;
+static constexpr auto INITIAL_VIRTUAL_MAPPING_SIZES = 128;
+
+void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
+                                Arena scratch) {
+    physicalMA = (RedBlackMMTreeWithFreeList){0};
+
+    virtualMA.tree = nullptr;
+    createDynamicArray(
+        INITIAL_VIRTUAL_MEMORY_REGIONS, sizeof(*virtualMA.nodes.buf),
+        alignof(*virtualMA.nodes.buf), (void_max_a *)&virtualMA.nodes, scratch);
+    createDynamicArray(INITIAL_VIRTUAL_MEMORY_REGIONS,
+                       sizeof(*virtualMA.freeList.buf),
+                       alignof(*virtualMA.freeList.buf),
+                       (void_max_a *)&virtualMA.freeList, scratch);
+
+    // Initial size > 2 so no bounds checking here.
+    MMNode *node = &virtualMA.nodes.buf[virtualMA.nodes.len];
+    virtualMA.nodes.len++;
+    node->memory = (Memory){.start = startingAddress,
+                            .bytes = LOWER_HALF_END - startingAddress};
+    (void)insertMMNode(&virtualMA.tree, node);
+
+    node = &virtualMA.nodes.buf[virtualMA.nodes.len];
+    virtualMA.nodes.len++;
+    node->memory = (Memory){.start = HIGHER_HALF_START,
+                            .bytes = endingAddress - HIGHER_HALF_START};
+    (void)insertMMNode(&virtualMA.tree, node);
+
+    virtualMemorySizeMapper.tree = nullptr;
+    createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,
+                       sizeof(*virtualMemorySizeMapper.nodes.buf),
+                       alignof(*virtualMemorySizeMapper.nodes.buf),
+                       (void_max_a *)&virtualMemorySizeMapper.nodes, scratch);
+    createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,
+                       sizeof(*virtualMemorySizeMapper.freeList.buf),
+                       alignof(*virtualMemorySizeMapper.freeList.buf),
+                       (void_max_a *)&virtualMemorySizeMapper.freeList,
+                       scratch);
 }
 
-ArchParamsRequirements initArchitecture(Arena scratch) {
+void fillArchParams(void *archParams, Arena scratch) {
+    X86ArchParams *x86ArchParams = (X86ArchParams *)archParams;
+
     U32 maxBasicCPUID = CPUID(0x0).eax;
     if (maxBasicCPUID < BASIC_MAX_REQUIRED_PARAMETER) {
         EXIT_WITH_MESSAGE {
@@ -317,8 +375,6 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
                                                      false, scratch);
     memset(XSAVEAddress, 0, XSAVESize);
     INFO(STRING("XSAVE space location: "));
-    INFO(XSAVEAddress, NEWLINE);
-    XSAVESpace = XSAVEAddress;
 
     U32 maxExtendedCPUID = CPUID(EXTENDED_MAX_VALUE_PARAMETER).eax;
     if (maxExtendedCPUID < EXTENDED_MAX_REQUIRED_PARAMETER) {
@@ -337,61 +393,10 @@ ArchParamsRequirements initArchitecture(Arena scratch) {
     KFLUSH_AFTER { INFO(STRING("Bootstrap processor work\n")); }
     bootstrapProcessorWork(cacheLineSizeBytes, scratch);
 
-    return (ArchParamsRequirements){.bytes = sizeof(X86ArchParams),
-                                    .align = alignof(X86ArchParams)};
-}
-
-// NOTE: Should be enough until put into final kernel position.
-static constexpr auto INITIAL_VIRTUAL_MEMORY_REGIONS = 16;
-static constexpr auto INITIAL_VIRTUAL_MAPPING_SIZES = 128;
-
-void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
-                                Arena scratch) {
-    physicalMA = (RedBlackMMTreeWithFreeList){0};
-
-    virtualMA.tree = nullptr;
-    createDynamicArray(
-        INITIAL_VIRTUAL_MEMORY_REGIONS, sizeof(*virtualMA.nodes.buf),
-        alignof(*virtualMA.nodes.buf), (void_max_a *)&virtualMA.nodes, scratch);
-    createDynamicArray(INITIAL_VIRTUAL_MEMORY_REGIONS,
-                       sizeof(*virtualMA.freeList.buf),
-                       alignof(*virtualMA.freeList.buf),
-                       (void_max_a *)&virtualMA.freeList, scratch);
-
-    // Initial size > 2 so no bounds checking here.
-    MMNode *node = &virtualMA.nodes.buf[virtualMA.nodes.len];
-    virtualMA.nodes.len++;
-    node->memory = (Memory){.start = startingAddress,
-                            .bytes = LOWER_HALF_END - startingAddress};
-    (void)insertMMNode(&virtualMA.tree, node);
-
-    node = &virtualMA.nodes.buf[virtualMA.nodes.len];
-    virtualMA.nodes.len++;
-    node->memory = (Memory){.start = HIGHER_HALF_START,
-                            .bytes = endingAddress - HIGHER_HALF_START};
-    (void)insertMMNode(&virtualMA.tree, node);
-
-    virtualMemorySizeMapper.tree = nullptr;
-    createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,
-                       sizeof(*virtualMemorySizeMapper.nodes.buf),
-                       alignof(*virtualMemorySizeMapper.nodes.buf),
-                       (void_max_a *)&virtualMemorySizeMapper.nodes, scratch);
-    createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,
-                       sizeof(*virtualMemorySizeMapper.freeList.buf),
-                       alignof(*virtualMemorySizeMapper.freeList.buf),
-                       (void_max_a *)&virtualMemorySizeMapper.freeList,
-                       scratch);
-}
-
-static void fillParams(X86ArchParams *params) {}
-
-void fillArchParams(void *archParams) {
-    X86ArchParams *x86ArchParams = (X86ArchParams *)archParams;
-
     KFLUSH_AFTER { INFO(STRING("Calibrating timer\n")); }
     x86ArchParams->tscFrequencyPerMicroSecond = calibrateWait();
 
-    x86ArchParams->XSAVELocation = XSAVESpace;
+    x86ArchParams->XSAVELocation = XSAVEAddress;
 
     x86ArchParams->rootPageMetaData.children =
         (struct PackedPageMetaDataNode *)rootPageMetaData.children;
