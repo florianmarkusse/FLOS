@@ -43,12 +43,12 @@ typedef struct {
     U64 r9;
     U64 r8;
 
+    U64 rbp;
     U64 rdi;
     U64 rsi;
-    U64 rbp;
-    U64 rbx;
     U64 rdx;
     U64 rcx;
+    U64 rbx;
     U64 rax;
 
     Fault interruptNumber;
@@ -57,9 +57,11 @@ typedef struct {
     U64 rip;
     U64 cs;
     U64 eflags;
-    // Never having these because we are not ever planning to switch privileges
-    //    U64 useresp;
-    //    U64 ss;
+
+    // Not switching privileges, but we are using ISTs, so the rsp and stack
+    // segment are pushed onto the stack on interrupt.
+    U64 rsp;
+    U64 ss;
 } regs;
 
 U64 currentNumberOfPageFaults = 0;
@@ -86,6 +88,11 @@ void faultHandler(regs *regs) {
             INFO(regs->errorCode, NEWLINE);
             INFO(STRING("rip: "));
             INFO((void *)regs->rip, NEWLINE);
+            INFO(STRING("rsp: "));
+            INFO((void *)regs->rsp, NEWLINE);
+
+            INFO(STRING("\n"));
+
             INFO(STRING("rax: "));
             INFO((void *)regs->rax, NEWLINE);
             INFO(STRING("rbx: "));
@@ -94,12 +101,12 @@ void faultHandler(regs *regs) {
             INFO((void *)regs->rcx, NEWLINE);
             INFO(STRING("rdx: "));
             INFO((void *)regs->rdx, NEWLINE);
-            INFO(STRING("rbp: "));
-            INFO((void *)regs->rbp, NEWLINE);
             INFO(STRING("rsi: "));
             INFO((void *)regs->rsi, NEWLINE);
             INFO(STRING("rdi: "));
             INFO((void *)regs->rdi, NEWLINE);
+            INFO(STRING("rbp: "));
+            INFO((void *)regs->rbp, NEWLINE);
             INFO(STRING("r8 : "));
             INFO((void *)regs->r8, NEWLINE);
             INFO(STRING("r9 : "));

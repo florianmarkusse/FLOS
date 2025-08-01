@@ -12,12 +12,12 @@
 
 .macro pushaq
     pushq %rax
+    pushq %rbx
     pushq %rcx
     pushq %rdx
-    pushq %rbx
-    pushq %rbp
     pushq %rsi
     pushq %rdi
+    pushq %rbp
     pushq %r8
     pushq %r9
     pushq %r10
@@ -37,12 +37,12 @@
     popq %r10
     popq %r9
     popq %r8
+    popq %rbp
     popq %rdi
     popq %rsi
-    popq %rbp
-    popq %rbx
     popq %rdx
     popq %rcx
+    popq %rbx
     popq %rax
 .endm
 
@@ -95,7 +95,120 @@ isr\isr_num:
     jmp isr_stub // And go to the isr_stub
 .endm
 
-isr_wrapper_no_error 0
+.macro interrupt_to_redzone_adjusted_stack error_code_bytes
+    pushq %rax                 // register "dirtied" in stack switch
+    pushq %rbx                 // register "dirtied" in stack switch
+    movq  %rsp, %rbx
+    movq  (40 + \error_code_bytes)(%rsp), %rax        // Original RSP
+    subq  $128, %rax            // red-zone adjusted
+
+    movq  %rax, %rsp            // Switch to original stack
+
+    pushq (48  + \error_code_bytes)(%rbx) // push stack segment
+    pushq (40  + \error_code_bytes)(%rbx) // push stack pointer
+    pushq (32  + \error_code_bytes)(%rbx) // push eflags
+    pushq (24  + \error_code_bytes)(%rbx) // push code segment
+    pushq (16  + \error_code_bytes)(%rbx) // push instruction pointer
+.endm
+
+.macro push_original_registers
+    pushq  8(%rbx) // original rax
+    pushq   (%rbx) // original rbx
+
+    pushq %rcx
+    pushq %rdx
+    pushq %rsi
+    pushq %rdi
+    pushq %rbp
+    pushq %r8
+    pushq %r9
+    pushq %r10
+    pushq %r11
+    pushq %r12
+    pushq %r13
+    pushq %r14
+    pushq %r15
+.endm
+
+.macro handle_fault_and_return
+    movq %rsp, %rdi
+    cld
+    call faultHandler
+
+    popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+    popq %r11
+    popq %r10
+    popq %r9
+    popq %r8
+    popq %rbp
+    popq %rdi
+    popq %rsi
+    popq %rdx
+    popq %rcx
+    popq %rbx
+    popq %rax
+
+    addq $16, %rsp // Pops the error number and interrupt number off the stack
+
+    iretq
+.endm
+
+
+# // Create an ISR wrapper for each table
+# // Arg 1: ISR number
+# .macro isr_wrapper_no_error isr_num
+#     .globl isr\isr_num
+# isr\isr_num:
+#     interrupt_to_redzone_adjusted_stack 0
+#
+#     pushq $0 // push error code of 0
+#     pushq $\isr_num
+#
+#     push_original_registers
+#
+#     sti
+#
+#     handle_fault_and_return
+# .endm
+#
+# .macro isr_wrapper_with_error isr_num
+#     .globl isr\isr_num
+# isr\isr_num:
+#     // Push the interrupt number
+#     pushq $\isr_num
+#     jmp isr_stub // And go to the isr_stub
+# .endm
+
+.globl isr0
+isr0:
+    interrupt_to_redzone_adjusted_stack 0
+
+    pushq $0 // error code
+    pushq $0 // interrupts number
+
+    push_original_registers
+
+    sti
+
+    handle_fault_and_return
+
+.globl isr14
+isr14:
+    interrupt_to_redzone_adjusted_stack 8
+
+    pushq 16(%rbx)  // error code
+    pushq $0xe      // interrupts number
+
+    push_original_registers
+
+    sti
+
+    handle_fault_and_return
+
+# isr_wrapper_no_error 0
 isr_wrapper_no_error 1
 isr_wrapper_no_error 2
 isr_wrapper_no_error 3
@@ -109,7 +222,7 @@ isr_wrapper_with_error 10
 isr_wrapper_with_error 11
 isr_wrapper_with_error 12
 isr_wrapper_with_error 13
-isr_wrapper_with_error 14
+# isr_wrapper_with_error 14
 isr_wrapper_no_error 15
 isr_wrapper_no_error 16
 isr_wrapper_with_error 17

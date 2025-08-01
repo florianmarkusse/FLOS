@@ -70,8 +70,10 @@
 - small enums
 - c2y updates: Are constexpr functions possible???
 
-IST sti usage Kernel design rationale
-IST1 No Double Fault = kernel panic, no nesting
-IST2 No NMI = critical, no nesting
-IST3 No Machine Check = critical, no nesting
-IST4 Yes (after prologue) Normal interrupts, allow nesting
+| IST  | sti | usage Kernel design rationale                     | Solution                                                                                                                                                                                 |
+| ---- | --- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| IST1 | No  | Double Fault = kernel panic, no nesting           | Report Error that caused it? & Exit                                                                                                                                                      |
+| IST2 | No  | NMI = critical, no nesting                        | Report & Exit                                                                                                                                                                            |
+| IST3 | No  | Machine Check = critical, no nesting              | Report & Exit                                                                                                                                                                            |
+| IST4 | Yes | (after prologue) Page fault?                      | Push registers, Check if inside guard page (stack-overflow?), Calculate 128 bytes down from RSP (Red-zone), then push all interesting vars to that new stack and call that fault handler |
+| IST5 | Yes | (after prologue) Normal interrupts, allow nesting | Push registers, Calculate 128 bytes down from RSP (Red-zone), then push all interesting vars to that new stack and call that fault handler                                               |
