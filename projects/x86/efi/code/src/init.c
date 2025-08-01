@@ -20,11 +20,11 @@
 #include "x86/configuration/features.h"
 #include "x86/efi-to-kernel/params.h"
 #include "x86/efi/gdt.h"
+#include "x86/fault.h"
 #include "x86/gdt.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/virtual.h"
 
-static constexpr auto INTERRUPT_STACK_SIZE = 1 * KiB;
 static constexpr auto MAX_BYTES_GDT = 64 * KiB;
 // the GDT can contain up to 8192 descriptors 8-byte = 655365 bytes = 64 KiB
 // - null              = 8 bytes
@@ -101,9 +101,11 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
 
     U8 *TSSes = (U8 *)allocateKernelStructure(bytesPerTSS * numberOfProcessors,
                                               bytesPerTSS, false, scratch);
+
+    // TODO: Add extra empty guard page in between each processor's ISTs?
     PhysicalBasePage *interruptStacks =
         (PhysicalBasePage *)allocateKernelStructure(
-            sizeof(PhysicalBasePage) * numberOfProcessors,
+            TOTAL_IST_STACKS_BYTES * numberOfProcessors,
             alignof(PhysicalBasePage), false, scratch);
 
     for (U64 i = 0; i < numberOfProcessors; i++) {
@@ -112,11 +114,13 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
             sizeof(TaskStateSegment); // but limit is set to max TSS, so the CPU
                                       // understands that there is no io
                                       // permission bitmap.
-        // Stack grows down, so we already multiply by 1 to account for that.
-        TSS->ist1 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 1;
-        TSS->ist2 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 2;
-        TSS->ist3 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 3;
-        TSS->ist4 = (U64)interruptStacks[i].data + INTERRUPT_STACK_SIZE * 4;
+        // Stack grows down
+        TSS->ist1 =
+            (U64)interruptStacks[i].data + ISTStackSize.INTERRUPT_TYPE[1];
+        TSS->ist2 = TSS->ist1 + ISTStackSize.INTERRUPT_TYPE[2];
+        TSS->ist3 = TSS->ist2 + ISTStackSize.INTERRUPT_TYPE[3];
+        TSS->ist4 = TSS->ist3 + ISTStackSize.INTERRUPT_TYPE[4];
+        TSS->ist5 = TSS->ist4 + ISTStackSize.INTERRUPT_TYPE[5];
 
         KFLUSH_AFTER {
             INFO(STRING("TSS ist1 stack: "));

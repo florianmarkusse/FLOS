@@ -2,7 +2,33 @@
 #define X86_FAULT_H
 
 #include "shared/enum.h"
+#include "shared/memory/sizes.h"
 #include "shared/types/numeric.h"
+
+// NOTE: if you add a value here
+typedef enum {
+    FAULT_PAGE_IST = 1,
+    NON_MASKABLE_INTERRUPT_IST = 2,
+    DOUBLE_FAULT_IST = 3,
+    MACHINE_CHECK_IST = 4,
+    MASKABLE_IST = 5,
+    NUM_IST_TYPES,
+} ISTs;
+
+// NOTE: Add it here !!! And below!
+// TODO: constexpr / compile-time calculation of the full size of this.
+static constexpr struct {
+    ISTs INTERRUPT_TYPE[NUM_IST_TYPES];
+} ISTStackSize = {.INTERRUPT_TYPE = {
+                      [FAULT_PAGE_IST] = 4 * KiB,
+                      [NON_MASKABLE_INTERRUPT_IST] = 1 * KiB,
+                      [DOUBLE_FAULT_IST] = 1 * KiB,
+                      [MACHINE_CHECK_IST] = 1 * KiB,
+                      [MASKABLE_IST] = 1 * KiB,
+                  }};
+
+// NOTE: And here!!
+static constexpr auto TOTAL_IST_STACKS_BYTES = 8 * KiB;
 
 #define CPU_FAULT_ENUM(VARIANT)                                                \
     VARIANT(FAULT_DIVIDE_ERROR, 0)                                             \
