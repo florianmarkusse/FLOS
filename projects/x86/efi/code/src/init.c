@@ -114,23 +114,26 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
             sizeof(TaskStateSegment); // but limit is set to max TSS, so the CPU
                                       // understands that there is no io
                                       // permission bitmap.
-        // Stack grows down
-        TSS->ist1 =
-            (U64)interruptStacks[i].data + ISTStackSize.INTERRUPT_TYPE[1];
-        TSS->ist2 = TSS->ist1 + ISTStackSize.INTERRUPT_TYPE[2];
-        TSS->ist3 = TSS->ist2 + ISTStackSize.INTERRUPT_TYPE[3];
-        TSS->ist4 = TSS->ist3 + ISTStackSize.INTERRUPT_TYPE[4];
-        TSS->ist5 = TSS->ist4 + ISTStackSize.INTERRUPT_TYPE[5];
 
         KFLUSH_AFTER {
-            INFO(STRING("TSS ist1 stack: "));
-            INFO(TSS->ist1, NEWLINE);
-            INFO(STRING("TSS ist2 stack: "));
-            INFO(TSS->ist2, NEWLINE);
-            INFO(STRING("TSS ist3 stack: "));
-            INFO(TSS->ist3, NEWLINE);
-            INFO(STRING("TSS ist4 stack: "));
-            INFO(TSS->ist4, NEWLINE);
+            U64 stackAddress = (U64)interruptStacks[i].data;
+            for (U64 j = 0; j < INTERRUPT_STACK_TABLE_COUNT; j++) {
+                // Stack grows down
+                stackAddress += IST_STACK_SIZES[j];
+                if (!isAlignedTo(stackAddress, KERNEL_STACK_ALIGNMENT)) {
+                    EXIT_WITH_MESSAGE {
+                        ERROR(STRING("IST stack needs to be aligned to "));
+                        ERROR(KERNEL_STACK_ALIGNMENT);
+                        ERROR(STRING(" bytes.\nCurrent stack value: "));
+                        ERROR(stackAddress, NEWLINE);
+                    }
+                }
+                TSS->ists[j] = stackAddress;
+                INFO(STRING("TSS ist["));
+                INFO(j);
+                INFO(STRING("]stack: "));
+                INFO((void *)TSS->ists[j], NEWLINE);
+            }
         }
 
         tssDescriptors[i] =

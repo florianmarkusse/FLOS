@@ -6,26 +6,24 @@
 #include "shared/types/numeric.h"
 
 // NOTE: if you add a value here
-typedef enum {
-    FAULT_PAGE_IST = 1,
-    NON_MASKABLE_INTERRUPT_IST = 2,
-    DOUBLE_FAULT_IST = 3,
-    MACHINE_CHECK_IST = 4,
-    MASKABLE_IST = 5,
-    NUM_IST_TYPES,
-} ISTs;
+#define INTERRUPT_STACK_TABLE_ENUM(VARIANT)                                    \
+    VARIANT(FAULT_PAGE_IST)                                                    \
+    VARIANT(NON_MASKABLE_INTERRUPT_IST)                                        \
+    VARIANT(DOUBLE_FAULT_IST)                                                  \
+    VARIANT(MACHINE_CHECK_IST)                                                 \
+    VARIANT(MASKABLE_IST)
+
+typedef enum : U8 { INTERRUPT_STACK_TABLE_ENUM(ENUM_STANDARD_VARIANT) } IST;
+
+static constexpr auto INTERRUPT_STACK_TABLE_COUNT =
+    INTERRUPT_STACK_TABLE_ENUM(PLUS_ONE);
 
 // NOTE: Add it here !!! And below!
 // TODO: constexpr / compile-time calculation of the full size of this.
-static constexpr struct {
-    ISTs INTERRUPT_TYPE[NUM_IST_TYPES];
-} ISTStackSize = {.INTERRUPT_TYPE = {
-                      [FAULT_PAGE_IST] = 4 * KiB,
-                      [NON_MASKABLE_INTERRUPT_IST] = 1 * KiB,
-                      [DOUBLE_FAULT_IST] = 1 * KiB,
-                      [MACHINE_CHECK_IST] = 1 * KiB,
-                      [MASKABLE_IST] = 1 * KiB,
-                  }};
+
+static constexpr U64 IST_STACK_SIZES[INTERRUPT_STACK_TABLE_COUNT] = {
+    4 * KiB, 1 * KiB, 1 * KiB, 1 * KiB, 1 * KiB,
+};
 
 // NOTE: And here!!
 static constexpr auto TOTAL_IST_STACKS_BYTES = 8 * KiB;

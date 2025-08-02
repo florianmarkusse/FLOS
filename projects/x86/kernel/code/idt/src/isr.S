@@ -85,8 +85,6 @@ isr\isr_num:
 
     push_original_registers
 
-    sti
-
     handle_fault_and_return
 .endm
 
@@ -99,8 +97,6 @@ isr\isr_num:
     pushq $\isr_num
 
     push_original_registers
-
-    sti
 
     handle_fault_and_return
 .endm

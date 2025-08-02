@@ -4,6 +4,7 @@
 #include "shared/macros.h"
 #include "shared/text/string.h"
 
+// TODO: Make this code generation instead of macro mess?
 #define ENUM_TO_STRING(NAME, ...) STRING(STRINGIFY(NAME)),
 #define ENUM_FROM_STRING(NAME, ...)                                            \
     if (stringEquals(string, STRING(STRINGIFY(NAME)))) {                       \

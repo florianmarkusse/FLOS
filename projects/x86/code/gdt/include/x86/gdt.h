@@ -46,13 +46,7 @@ typedef struct __attribute__((packed)) {
     U64 rsp2;
     U32 reserved_1;
     U32 reserved_2;
-    U64 ist1;
-    U64 ist2;
-    U64 ist3;
-    U64 ist4;
-    U64 ist5;
-    U64 ist6;
-    U64 ist7;
+    U64 ists[7];
     U32 reserved_3;
     U32 reserved_4;
     U16 reserved_5;

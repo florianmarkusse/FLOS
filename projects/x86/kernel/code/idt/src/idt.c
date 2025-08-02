@@ -300,7 +300,7 @@ static constexpr auto GATE_TYPE_COUNT = (0 GATE_TYPE_ENUM(PLUS_ONE));
 
 U8 gateFlags[GATE_TYPE_COUNT] = {0x8E, 0x8F};
 
-static void idt_set_gate(U8 num, U64 base, U8 ist) {
+static void idt_set_gate(U8 num, U64 base, IST ist) {
     idt[num].offset_1 = (base & 0xFFFF);
     idt[num].offset_2 = (base >> 16) & 0xFFFF;
     idt[num].offset_3 = (base >> 32) & 0xFFFFFFFF;
@@ -310,7 +310,9 @@ static void idt_set_gate(U8 num, U64 base, U8 ist) {
 
     idt[num].type_attributes = gateFlags[INTERRUPT_GATE];
 
-    idt[num].ist = ist;
+    // NOTE: ist is an enum from 0...6, so increment by 1 as 0 is the setting
+    // for no IST, just putting the IST straight onto the original stack.
+    idt[num].ist = ist + 1;
     idt[num].zero = 0;
 }
 
