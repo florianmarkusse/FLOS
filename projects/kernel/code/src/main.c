@@ -350,13 +350,6 @@ static void mappingTests() {
     KFLUSH_AFTER { INFO(STRING("\n")); }
 }
 
-static U64 recursion(U64 x) {
-    U8 thing[18000];
-    thing[0] = 5;
-
-    return thing[1] + x;
-}
-
 __attribute__((section("kernel-start"))) int
 kernelMain(PackedKernelParameters *kernelParams) {
     archInit(kernelParams->archParams);
@@ -366,6 +359,7 @@ kernelMain(PackedKernelParameters *kernelParams) {
     Arena arena = (Arena){.curFree = initMemory,
                           .beg = initMemory,
                           .end = initMemory + INIT_MEMORY};
+
     if (setjmp(arena.jmpBuf)) {
         KFLUSH_AFTER { KLOG(STRING("Ran out of init memory capacity\n")); }
         while (1) {
@@ -382,7 +376,6 @@ kernelMain(PackedKernelParameters *kernelParams) {
         (Memory){.start = (U64)kernelParams, .bytes = sizeof(*kernelParams)});
 
     enableInterrupts();
-
     // NOTE: from here, everything is initialized
 
     KFLUSH_AFTER {
@@ -390,19 +383,6 @@ kernelMain(PackedKernelParameters *kernelParams) {
         KLOG(STRING("ITS WEDNESDAY MY DUDES\n"));
         appendMemoryManagementStatus();
     }
-
-    // U64 test = 3;
-    // if (test) {
-    //     test = 0;
-    // }
-    // U64 myDivide = 5 / test;
-    // asm volatile("int $0x0");
-    // KFLUSH_AFTER {
-    //     KLOG(STRING("After div 0\n"));
-    //     KLOG(myDivide);
-    // }
-
-    // recursion(5);
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 

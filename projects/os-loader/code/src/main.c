@@ -163,13 +163,13 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     virtualForKernel =
         alignVirtual(virtualForKernel, stackAddress, KERNEL_STACK_SIZE);
     U64 stackGuardPageAddress = virtualForKernel - SMALLEST_VIRTUAL_PAGE;
+    addPageMapping((Memory){.start = stackGuardPageAddress,
+                            .bytes = SMALLEST_VIRTUAL_PAGE},
+                   0);
     KFLUSH_AFTER {
         INFO(STRING("mapped guard page address: \n"));
         INFO((void *)stackGuardPageAddress, NEWLINE);
     }
-    addPageMapping((Memory){.start = stackGuardPageAddress,
-                            .bytes = SMALLEST_VIRTUAL_PAGE},
-                   0);
 
     U64 stackVirtualStart = virtualForKernel;
     virtualForKernel =
