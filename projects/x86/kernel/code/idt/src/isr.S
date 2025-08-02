@@ -28,10 +28,7 @@ asm_lidt:
     pushq (16  + \error_code_bytes)(%rbx) // push instruction pointer
 .endm
 
-.macro push_original_registers
-    pushq  8(%rbx) // original rax
-    pushq   (%rbx) // original rbx
-
+.macro push_clean_registers
     pushq %rcx
     pushq %rdx
     pushq %rsi
@@ -45,6 +42,11 @@ asm_lidt:
     pushq %r13
     pushq %r14
     pushq %r15
+.endm
+
+.macro push_dirtied_registers
+    pushq  8(%rbx) // original rax
+    pushq   (%rbx) // original rbx
 .endm
 
 .macro handle_fault_and_return
@@ -83,7 +85,8 @@ isr\isr_num:
     pushq $0 // push error code of 0
     pushq $\isr_num
 
-    push_original_registers
+    push_dirtied_registers
+    push_clean_registers
 
     handle_fault_and_return
 .endm
@@ -96,10 +99,22 @@ isr\isr_num:
     pushq 16(%rbx)  // error code
     pushq $\isr_num
 
-    push_original_registers
+    push_dirtied_registers
+    push_clean_registers
 
     handle_fault_and_return
 .endm
+
+
+.globl isr14
+isr14:
+    pushq $14
+
+    pushq %rax
+    pushq %rbx
+    push_clean_registers
+
+    handle_fault_and_return
 
 
 isr_wrapper_no_error   0
@@ -116,7 +131,7 @@ isr_wrapper_with_error 10
 isr_wrapper_with_error 11
 isr_wrapper_with_error 12
 isr_wrapper_with_error 13
-isr_wrapper_with_error 14
+# 14 == page fault is special, uses own IST stack, no nesting
 isr_wrapper_no_error   15
 isr_wrapper_no_error   16
 isr_wrapper_with_error 17
