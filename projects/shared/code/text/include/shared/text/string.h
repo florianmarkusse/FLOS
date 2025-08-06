@@ -19,18 +19,6 @@ static constexpr string EMPTY_STRING = ((string){0, 0});
 #define STRING_PTRS(begin, end)                                                \
     ((string){(U8 *)(begin), (U64)((end) - (begin))})
 
-#define STRING_APPEND(string1, string2, perm)                                  \
-    ({                                                                         \
-        U8 *MACRO_VAR(appendingBuf) =                                          \
-            NEW(perm, U8, (string1).len + (string2).len);                      \
-        memcpy(MACRO_VAR(appendingBuf), (string1).buf, (string1).len);         \
-        memcpy(MACRO_VAR(appendingBuf) + (string1).len, (string2).buf,         \
-               (string2).len);                                                 \
-        string MACRO_VAR(appendedString) = STRING_LEN(                         \
-            MACRO_VAR(appendingBuf), (string1).len + (string2).len);           \
-        MACRO_VAR(appendedString);                                             \
-    })
-
 static inline bool stringEquals(string a, string b) {
     return a.len == b.len && (a.len == 0 || !memcmp(a.buf, b.buf, a.len));
 }

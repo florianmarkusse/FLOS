@@ -1,4 +1,3 @@
-- look into sizeof usage and see if we can replace it with typeof
 - look into alignof calls, and see if I can replace it with the variable?
 - look into sizeof calls, and see if I can replace iw with the variable?
 
