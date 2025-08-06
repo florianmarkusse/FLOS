@@ -77,7 +77,7 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
 
         if (!(*tableEntryAddress)) {
             *tableEntryAddress =
-                (U64)getZeroedPageTable() | STANDARD_PAGE_FLAGS;
+                (U64)getZeroedPageTable() | pageFlagsReadWrite();
 
             newMetaEntryAddress->metaData.entriesMapped++;
             newMetaEntryAddress->metaData.entriesMappedWithSmallerGranularity++;
@@ -95,7 +95,7 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
 }
 
 void mapPage(U64 virt, U64 physical, U64 mappingSize) {
-    mapPageWithFlags(virt, physical, mappingSize, STANDARD_PAGE_FLAGS);
+    mapPageWithFlags(virt, physical, mappingSize, pageFlagsReadWrite());
 }
 
 U64 getPhysicalAddressFrame(U64 virtualPage) {

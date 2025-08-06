@@ -67,8 +67,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)highestLowerHalfAddress, NEWLINE);
     }
 
-    U64 firstFreeVirtual = mapMemory(0, 0, highestLowerHalfAddress,
-                                     STANDARD_PAGE_FLAGS | GLOBAL_PAGE_FLAGS);
+    U64 firstFreeVirtual =
+        mapMemory(0, 0, highestLowerHalfAddress,
+                  pageFlagsReadWrite() | pageFlagsNoCacheEvict());
 
     initKernelMemoryManagement(firstFreeVirtual, VIRTUAL_MEMORY_FREE_END,
                                arena);
@@ -94,7 +95,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     KFLUSH_AFTER { INFO(STRING("Mapping kernel into location\n")); }
     if (mapMemory(KERNEL_CODE_START, (U64)kernelContent.buf, kernelContent.len,
-                  STANDARD_PAGE_FLAGS | GLOBAL_PAGE_FLAGS) <
+                  pageFlagsReadWrite() | pageFlagsNoCacheEvict()) <
         KERNEL_CODE_START) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING(
@@ -132,10 +133,11 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         alignVirtual(virtualForKernel, gop->mode->frameBufferBase,
                      gop->mode->frameBufferSize);
     U64 screenMemoryVirtualStart = virtualForKernel;
-    virtualForKernel = mapMemory(
-        virtualForKernel, gop->mode->frameBufferBase,
-        gop->mode->frameBufferSize,
-        STANDARD_PAGE_FLAGS | SCREEN_MEMORY_PAGE_FLAGS | GLOBAL_PAGE_FLAGS);
+    virtualForKernel =
+        mapMemory(virtualForKernel, gop->mode->frameBufferBase,
+                  gop->mode->frameBufferSize,
+                  pageFlagsReadWrite() | pageFlagsNoCacheEvict() |
+                      pageFlagsScreenMemory());
 
     KFLUSH_AFTER {
         INFO(STRING("The graphics buffer physical location:\nstart: "));
@@ -175,7 +177,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     U64 stackVirtualStart = virtualForKernel;
     virtualForKernel =
         mapMemory(virtualForKernel, stackAddress, KERNEL_STACK_SIZE,
-                  STANDARD_PAGE_FLAGS | GLOBAL_PAGE_FLAGS);
+                  pageFlagsReadWrite() | pageFlagsNoCacheEvict());
 
     KFLUSH_AFTER {
         INFO(STRING("The phyiscal stack:\ndown from: "));

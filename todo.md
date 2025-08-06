@@ -48,6 +48,10 @@
 - if you ever decide to use unit tests in the kernel, need to create an abstraction for test-framework so it can be used in both posix and freestanding environments
 - use countof replacement instead of macro
 - small enums
+- update function calls?? enum names too
+  - from createX to xCreate etc
+  - VERY_GOOD_TYPE_RESULT -> TYPE_RESULT_VERY_GOOD
+  - basically directory structure kind of subject -> action -> x , makes it easier
 - c2y updates: Are constexpr functions possible???
 
 - Find better way to get aligned memory from allocPhysicalMemory, not "just" finding the bytes + align as it causes nasty fracturing

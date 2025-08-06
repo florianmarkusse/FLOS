@@ -4,9 +4,10 @@
 #include "x86/memory/definitions.h"
 #include "x86/memory/pat.h"
 
-static constexpr auto STANDARD_PAGE_FLAGS =
-    VirtualPageMasks.PAGE_PRESENT | VirtualPageMasks.PAGE_WRITABLE;
-static constexpr auto GLOBAL_PAGE_FLAGS = VirtualPageMasks.PAGE_GLOBAL;
-static constexpr auto SCREEN_MEMORY_PAGE_FLAGS = PATMapping.MAP_3;
+U64 pageFlagsReadWrite() {
+    return VirtualPageMasks.PAGE_PRESENT | VirtualPageMasks.PAGE_WRITABLE;
+}
+U64 pageFlagsNoCacheEvict() { return VirtualPageMasks.PAGE_GLOBAL; }
+U64 pageFlagsScreenMemory() { return PATMapping.MAP_3; }
 
 #endif
