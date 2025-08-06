@@ -16,6 +16,7 @@ type QemuArgs struct {
 	OutputToFile bool
 	Verbose      bool
 	Debug        bool
+	Graphic      bool
 }
 
 var DefaultQemuArgs = QemuArgs{
@@ -24,6 +25,7 @@ var DefaultQemuArgs = QemuArgs{
 	OutputToFile: false,
 	Verbose:      false,
 	Debug:        false,
+	Graphic:      false,
 }
 
 func Run(args *QemuArgs) {
@@ -36,8 +38,12 @@ func Run(args *QemuArgs) {
 	if args.OutputToFile {
 		argument.AddArgument(&qemuOptions, fmt.Sprintf("-serial file:%s", FILE_OUTPUT))
 	} else {
-		argument.AddArgument(&qemuOptions, "-serial stdio")
+		argument.AddArgument(&qemuOptions, "-serial mon:stdio")
 	}
+	if !args.Graphic {
+		argument.AddArgument(&qemuOptions, "-nographic")
+	}
+
 	argument.AddArgument(&qemuOptions, "-smp 1")
 	argument.AddArgument(&qemuOptions, "-usb")
 	argument.AddArgument(&qemuOptions, "-vga std")

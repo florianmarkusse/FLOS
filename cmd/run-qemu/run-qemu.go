@@ -5,6 +5,7 @@ import (
 	"cmd/common/configuration"
 	"cmd/common/exit"
 	"cmd/common/flags"
+	"cmd/common/flags/graphic"
 	"cmd/common/flags/help"
 	"cmd/common/flags/qemuoutput"
 	"cmd/run-qemu/qemu"
@@ -40,6 +41,7 @@ func usage() {
 	qemuoutput.DisplayQemuOutput()
 	flags.DisplayArgumentInput(VERBOSE_SHORT_FLAG, VERBOSE_LONG_FLAG, "Enable verbose QEMU", fmt.Sprint(qemuArgs.Verbose))
 	flags.DisplayArgumentInput(DEBUG_SHORT_FLAG, DEBUG_LONG_FLAG, "Wait for gdb to connect to port 1234 before running", fmt.Sprint(qemuArgs.Debug))
+	graphic.DisplayGraphic()
 	help.DisplayHelp()
 	fmt.Printf("\n")
 	exit.DisplayExitCodes()
@@ -55,6 +57,7 @@ func usage() {
 
 func main() {
 	qemuoutput.AddQemuOutputAsFlag(&qemuArgs.OutputToFile)
+	graphic.AddGraphicAsFlag(&qemuArgs.Graphic)
 
 	flag.StringVar(&qemuArgs.OsLocation, OS_LOCATION_LONG_FLAG, qemuArgs.OsLocation, "")
 	flag.StringVar(&qemuArgs.OsLocation, OS_LOCATION_SHORT_FLAG, qemuArgs.OsLocation, "")
@@ -89,9 +92,10 @@ func main() {
 	}
 
 	configuration.DisplayConfiguration()
+	qemuoutput.DisplayQemuOutputConfiguration(qemuArgs.OutputToFile)
+	graphic.DisplayGraphicConfiguration(qemuArgs.Graphic)
 	configuration.DisplayStringArgument(OS_LOCATION_LONG_FLAG, qemuArgs.OsLocation)
 	configuration.DisplayStringArgument(EFI_LOCATION_LONG_FLAG, qemuArgs.UefiLocation)
-	qemuoutput.DisplayQemuOutputConfiguration(qemuArgs.OutputToFile)
 	configuration.DisplayBoolArgument(VERBOSE_LONG_FLAG, qemuArgs.Verbose)
 	configuration.DisplayBoolArgument(DEBUG_LONG_FLAG, qemuArgs.Debug)
 	fmt.Printf("\n")

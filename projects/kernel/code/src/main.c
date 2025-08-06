@@ -102,8 +102,8 @@ static U64 arrayWritingTest(U64 pageSize, U64 arrayEntries,
 
         cycles = endCycleCount - startCycleCount;
     } else {
-        buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT, sizeof alignof(U64),
-                                        pageSize);
+        buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT,
+                                        sizeof(alignof(U64)), pageSize);
 
         beforePageFaults = currentNumberOfPageFaults;
         U64 startCycleCount = currentCycleCounter(true, false);

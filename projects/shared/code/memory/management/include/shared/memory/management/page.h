@@ -12,7 +12,12 @@ typedef struct {
 
 extern VMMTreeWithFreeList virtualMemorySizeMapper;
 
-void handlePageFault(U64 faultingAddress);
+typedef enum {
+    PAGE_FAULT_RESULT_MAPPED,
+    PAGE_FAULT_RESULT_STACK_OVERFLOW
+} PageFaultResult;
+
+[[nodiscard]] PageFaultResult handlePageFault(U64 faultingAddress);
 
 void addPageMapping(Memory memory, U64 pageSize);
 void removePageMapping(U64 address);

@@ -8,11 +8,6 @@ add_library(
     "src/trigger.c"
 )
 
-set_source_files_properties(
-    "src/fault.c"
-    PROPERTIES COMPILE_FLAGS "-mno-vzeroupper"
-)
-
 add_includes_for_sublibrary()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-interrupts-i)

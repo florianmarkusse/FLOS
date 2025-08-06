@@ -1,9 +1,3 @@
-- create abstraction that fault handler calls to map memory in etc.
-- Create tree to map memory, unmapped / certain page sizes to use in fault handler
-- make os-loader when memory descriptors use dynamic memory to grow descriptor arena if need be
-- have allocMappableMemory take into account the pageSize that will be used to map in case of page fault
-- Find better way to get aligned memory from allocPhysicalMemory, not "just" finding the bytes + align as it causes nasty fracturing
-- no graphics what happens to the GOP??? Error handling in convert kernel memory not working?
 - Clean up virtualForKernel in os-loader
   - It aligns data up, and thus that padding can be freed
   - No checks on if we allocated enough virtual memory
@@ -63,6 +57,8 @@
 - use countof replacement instead of macro
 - small enums
 - c2y updates: Are constexpr functions possible???
+
+- Find better way to get aligned memory from allocPhysicalMemory, not "just" finding the bytes + align as it causes nasty fracturing
 
 - cmake stuff??
   - just rewrite it all?

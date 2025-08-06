@@ -1,6 +1,8 @@
 .section .text
 .code64
 
+.extern XSAVESpace
+
 // The C isr handler
 .extern faultHandler
 
@@ -42,6 +44,13 @@ asm_lidt:
     pushq %r13
     pushq %r14
     pushq %r15
+
+
+    # TODO: On upgrade to newer CPU, use xsaves and xrstors respectively
+    mov XSAVESpace(%rip), %rcx
+    mov $0xFFFFFFFF, %eax
+    mov $0xFFFFFFFF, %edx
+    xsaveopt (%rcx)
 .endm
 
 .macro push_dirtied_registers
@@ -52,7 +61,15 @@ asm_lidt:
 .macro handle_fault_and_return
     movq %rsp, %rdi
     cld
+    # NOTE: Careful, need to be 16-byte aligned! pushing 22 8-byte registers
+    # from a more-than 16-byte aligned stack, so it's okay
     call faultHandler
+
+    # TODO: On upgrade to newer CPU, use xsaves and xrstors respectively
+    mov XSAVESpace(%rip), %rcx
+    mov $0xFFFFFFFF, %eax
+    mov $0xFFFFFFFF, %edx
+    xrstor (%rcx)
 
     popq %r15
     popq %r14

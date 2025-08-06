@@ -59,12 +59,11 @@ void addPageMapping(Memory memory, U64 pageSize) {
     insertVMMNode(&virtualMemorySizeMapper.tree, newNode);
 }
 
-void handlePageFault(U64 faultingAddress) {
+PageFaultResult handlePageFault(U64 faultingAddress) {
     U64 pageSizeForFault = pageSizeFromVMM(faultingAddress);
 
     if (!pageSizeForFault) {
-        KFLUSH_AFTER { INFO(STRING("Stack overflow!!!\n")); }
-        hangThread();
+        return PAGE_FAULT_RESULT_STACK_OVERFLOW;
     }
 
     U64 startingMap = ALIGN_DOWN_VALUE(faultingAddress, pageSizeForFault);
@@ -81,4 +80,6 @@ void handlePageFault(U64 faultingAddress) {
         U8 *address = allocPhysicalMemory(pageSizeToUse, pageSizeToUse);
         mapPage(startingMap + (i * pageSizeToUse), (U64)address, pageSizeToUse);
     }
+
+    return PAGE_FAULT_RESULT_MAPPED;
 }
