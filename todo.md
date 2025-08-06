@@ -1,19 +1,11 @@
-- Clean up virtualForKernel in os-loader
-  - It aligns data up, and thus that padding can be freed
-  - No checks on if we allocated enough virtual memory
-  - No freeing of all the leftover memory
-- Find long-term solution for number of descriptors/nodes that are possible in a physical/virtual memory manager, not just a hardcoded/calculated number.
 - Create some type of "external" folder for x86 for things that are to be exported and use by using the abstraction indirection.
   - Which just uses functions that return simple values to use.
 - look into sizeof usage and see if we can replace it with typeof
-- per-cpu caches??
 - look into alignof calls, and see if I can replace it with the variable?
 - look into sizeof calls, and see if I can replace iw with the variable?
 
   - https://old.reddit.com/r/C_Programming/comments/1i74hii/quick_hash_tables_and_dynamic_arrays_in_c/m8l40fo/
 
-- Decide on how to implement pageSize setting when fetching mappable memory
-- do xsaveopt and xrstor in asm, not in C
 - Can we make AVAILABLE_PAGE_SIZES_MASK a function instead to return the mask from anabstraction and see if it gets inlined in -03 mode?
 - Look into optimizing struct layouts? pahole
 - Maybe also make some sizes smaller, e.g., standard arrays/strings can be U32 instead of U64? Look how the struct gets laid out if you add a string/array struct to another struct where there is extra "slop" in the struct inside the other struct?

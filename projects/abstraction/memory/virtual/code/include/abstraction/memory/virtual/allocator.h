@@ -6,7 +6,7 @@
 #include "shared/types/numeric.h"
 
 // NOTE: If ever adding a value to this enum, please check the usages of the
-// enum values, they are/may be used as config keys for an enum!
+// enum values, it is used below!
 #define VIRTUAL_ALLOCATION_TYPE_ENUM(VARIANT)                                  \
     VARIANT(VIRTUAL_PAGE_TABLE_ALLOCATION)                                     \
     VARIANT(META_DATA_PAGE_ALLOCATION)
@@ -23,6 +23,7 @@ typedef struct {
     U64 align;
 } StructReq;
 
+// NOTE: here as config keys!
 extern StructReq virtualStructReqs[VIRTUAL_ALLOCATION_TYPE_COUNT];
 
 void *getZeroedMemoryForVirtual(VirtualAllocationType type);
