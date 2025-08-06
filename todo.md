@@ -1,9 +1,3 @@
-- move idt loading to x86/kernel ?
-- fix weird GDT stuff and IST loading per CPU
-- lots of add_project should be add_include instead...
-- rewrite cmake?
-- get cache line size from cpu?
-- change memoryAllocator Arena to just be an array, should be easier to work with and clearer. No need for arena since it will only "allocate" a single struct
 - create abstraction that fault handler calls to map memory in etc.
 - Create tree to map memory, unmapped / certain page sizes to use in fault handler
 - make os-loader when memory descriptors use dynamic memory to grow descriptor arena if need be
@@ -69,6 +63,11 @@
 - use countof replacement instead of macro
 - small enums
 - c2y updates: Are constexpr functions possible???
+
+- cmake stuff??
+  - just rewrite it all?
+    or
+  - lots of add_project should be add_include instead...
 
 | IST  | sti | usage Kernel design rationale                     | Solution                                                                                                                                                                                 |
 | ---- | --- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

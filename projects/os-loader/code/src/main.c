@@ -159,13 +159,14 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     KFLUSH_AFTER { INFO(STRING("Mapping stack into location\n")); }
     // NOTE: Overflow precaution
-    virtualForKernel += MAX(KERNEL_STACK_SIZE, SMALLEST_VIRTUAL_PAGE);
+    virtualForKernel += KERNEL_STACK_SIZE;
     virtualForKernel =
         alignVirtual(virtualForKernel, stackAddress, KERNEL_STACK_SIZE);
-    U64 stackGuardPageAddress = virtualForKernel - SMALLEST_VIRTUAL_PAGE;
-    addPageMapping((Memory){.start = stackGuardPageAddress,
-                            .bytes = SMALLEST_VIRTUAL_PAGE},
-                   0);
+    U64 stackGuardPageAddress = virtualForKernel - KERNEL_STACK_SIZE;
+    addPageMapping(
+        (Memory){.start = stackGuardPageAddress, .bytes = KERNEL_STACK_SIZE},
+        0);
+
     KFLUSH_AFTER {
         INFO(STRING("mapped guard page address: \n"));
         INFO((void *)stackGuardPageAddress, NEWLINE);

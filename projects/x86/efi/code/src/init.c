@@ -101,16 +101,15 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
 
     U8 *TSSes = (U8 *)allocateKernelStructure(bytesPerTSS * numberOfProcessors,
                                               bytesPerTSS, false, scratch);
-
-    // TODO: Add extra empty guard page in between each processor's ISTs?
     PhysicalBasePage *interruptStacks =
         (PhysicalBasePage *)allocateKernelStructure(
             TOTAL_IST_STACKS_BYTES * numberOfProcessors,
             alignof(PhysicalBasePage), false, scratch);
 
     for (U64 i = 0; i < numberOfProcessors; i++) {
-        TaskStateSegment *TSS = (TaskStateSegment *)(TSSes + (bytesPerTSS * i));
-        TSS->IOMapBaseAddress =
+        TaskStateSegment *perCPUTSS =
+            (TaskStateSegment *)(TSSes + (bytesPerTSS * i));
+        perCPUTSS->IOMapBaseAddress =
             sizeof(TaskStateSegment); // but limit is set to max TSS, so the CPU
                                       // understands that there is no io
                                       // permission bitmap.
@@ -128,19 +127,19 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
                         ERROR(stackAddress, NEWLINE);
                     }
                 }
-                TSS->ists[j] = stackAddress;
+                perCPUTSS->ists[j] = stackAddress;
                 INFO(STRING("TSS ist["));
                 INFO(j);
                 INFO(STRING("]stack: "));
-                INFO((void *)TSS->ists[j], NEWLINE);
+                INFO((void *)perCPUTSS->ists[j], NEWLINE);
             }
         }
 
         tssDescriptors[i] =
             (TSSDescriptor){(SegmentDescriptor){
                                 .limit_15_0 = sizeof(TaskStateSegment) - 1,
-                                .base_15_0 = (U64)(TSS) & 0xFFFF,
-                                .base_23_16 = ((U64)(TSS) >> 16) & 0xFF,
+                                .base_15_0 = (U64)(perCPUTSS) & 0xFFFF,
+                                .base_23_16 = ((U64)(perCPUTSS) >> 16) & 0xFF,
                                 .type = 0x9, // 0b1001 = 64 bit TSS (available)
                                 .systemDescriptor = 0,
                                 .descriptorprivilegelevel = 0,
@@ -150,9 +149,9 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
                                 .use64Bit = 0,
                                 .defaultOperationSizeUpperBound = 0,
                                 .granularity = 0,
-                                .base_31_24 = ((U64)(TSS) >> 24) & 0xFF,
+                                .base_31_24 = ((U64)(perCPUTSS) >> 24) & 0xFF,
                             },
-                            .base_63_32 = ((U64)(TSS) >> 32) & 0xFFFFFFFF,
+                            .base_63_32 = ((U64)(perCPUTSS) >> 32) & 0xFFFFFFFF,
                             .reserved_1 = 0, .zero_4 = 0, .reserved_2 = 0};
     }
 
