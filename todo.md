@@ -1,9 +1,3 @@
-- look into alignof calls, and see if I can replace it with the variable?
-- look into sizeof calls, and see if I can replace iw with the variable?
-
-  - https://old.reddit.com/r/C_Programming/comments/1i74hii/quick_hash_tables_and_dynamic_arrays_in_c/m8l40fo/
-
-- Can we make AVAILABLE_PAGE_SIZES_MASK a function instead to return the mask from anabstraction and see if it gets inlined in -03 mode?
 - Look into optimizing struct layouts? pahole
 - Maybe also make some sizes smaller, e.g., standard arrays/strings can be U32 instead of U64? Look how the struct gets laid out if you add a string/array struct to another struct where there is extra "slop" in the struct inside the other struct?
 - redundant decls warning
