@@ -101,10 +101,11 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
 
     U8 *TSSes = (U8 *)allocateKernelStructure(bytesPerTSS * numberOfProcessors,
                                               bytesPerTSS, false, scratch);
-    PhysicalBasePage *interruptStacks =
-        (PhysicalBasePage *)allocateKernelStructure(
-            TOTAL_IST_STACKS_BYTES * numberOfProcessors,
-            alignof(PhysicalBasePage), false, scratch);
+    U64 istStackBytesAligned =
+        ALIGN_UP_VALUE(TOTAL_IST_STACKS_BYTES, (U64)KERNEL_STACK_ALIGNMENT);
+    U64 interruptStacksRegion =
+        allocateKernelStructure(istStackBytesAligned * numberOfProcessors,
+                                KERNEL_STACK_ALIGNMENT, false, scratch);
 
     for (U64 i = 0; i < numberOfProcessors; i++) {
         TaskStateSegment *perCPUTSS =
@@ -115,7 +116,8 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
                                       // permission bitmap.
 
         KFLUSH_AFTER {
-            U64 stackAddress = (U64)interruptStacks[i].data;
+            U64 stackAddress =
+                interruptStacksRegion + (TOTAL_IST_STACKS_BYTES * i);
             for (U64 j = 0; j < INTERRUPT_STACK_TABLE_COUNT; j++) {
                 // Stack grows down
                 stackAddress += IST_STACK_SIZES[j];

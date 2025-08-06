@@ -1,22 +1,18 @@
 #ifndef X86_MEMORY_DEFINITIONS_H
 #define X86_MEMORY_DEFINITIONS_H
 
-#include "shared/enum.h"
 #include "shared/types/numeric.h"
 
 static constexpr auto LOWER_HALF_END = 0x0000800000000000;
-
 static constexpr auto HIGHER_HALF_START = 0xFFFF800000000000;
 
 static constexpr struct {
     U64 ENTRIES;
 } PageTableFormat = {.ENTRIES = (1ULL << 9ULL)};
 
-#define MEMORY_PAGE_SIZES_ENUM(VARIANT)                                        \
-    VARIANT(X86_4KIB_PAGE, (1ULL << (12 + (9 * 0))))                           \
-    VARIANT(X86_2MIB_PAGE, (1ULL << (12 + (9 * 1))))                           \
-    VARIANT(X86_1GIB_PAGE, (1ULL << (12 + (9 * 2))))
-
+static constexpr auto X86_4KIB_PAGE = (1ULL << (12 + (9 * 0)));
+static constexpr auto X86_2MIB_PAGE = (1ULL << (12 + (9 * 1)));
+static constexpr auto X86_1GIB_PAGE = (1ULL << (12 + (9 * 2)));
 // NOTE: Does not really exist in the architecture this OS is targeting. More
 // used as a range an entry covers.
 static constexpr auto X86_512GIB_PAGE = (1ULL << (12 + (9 * 3)));
@@ -24,13 +20,9 @@ static constexpr auto X86_256TIB_PAGE = (1ULL << (12 + (9 * 4)));
 
 static constexpr auto MAX_PAGING_LEVELS = 4;
 
-typedef enum : U64 { MEMORY_PAGE_SIZES_ENUM(ENUM_VALUES_VARIANT) } PageSize;
-static constexpr auto MEMORY_PAGE_SIZES_COUNT =
-    (0 MEMORY_PAGE_SIZES_ENUM(PLUS_ONE));
-
-typedef struct {
-    U8 data[X86_4KIB_PAGE];
-} PhysicalBasePage __attribute__((aligned(X86_4KIB_PAGE)));
+// NOTE: the size of an entry in the root page table
+static constexpr auto PAGE_ROOT_ENTRY_MAX_SIZE =
+    (1ULL << (12 + (9 * (MAX_PAGING_LEVELS - 1))));
 
 static constexpr struct {
     U64 PAGE_PRESENT;         // The page is currently in memory
@@ -71,8 +63,8 @@ static constexpr struct {
                       .PAGE_NO_EXECUTE = (1ULL << 63),
                       .FRAME_OR_NEXT_PAGE_TABLE = 0x000FFFFFFFFF000};
 
-typedef struct {
+typedef struct __attribute__((aligned(X86_4KIB_PAGE))) {
     U64 pages[PageTableFormat.ENTRIES];
-} VirtualPageTable __attribute__((aligned(X86_4KIB_PAGE)));
+} VirtualPageTable;
 
 #endif

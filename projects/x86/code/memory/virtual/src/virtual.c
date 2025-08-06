@@ -24,8 +24,8 @@
 // };
 
 StructReq virtualStructReqs[VIRTUAL_ALLOCATION_TYPE_COUNT] = {
-    [VIRTUAL_PAGE_TABLE_ALLOCATION] = {.bytes = sizeof(PhysicalBasePage),
-                                       .align = alignof(PhysicalBasePage)},
+    [VIRTUAL_PAGE_TABLE_ALLOCATION] = {.bytes = X86_4KIB_PAGE,
+                                       .align = X86_4KIB_PAGE},
     [META_DATA_PAGE_ALLOCATION] = {.bytes = PageTableFormat.ENTRIES *
                                             sizeof(PageMetaDataNode),
                                    .align = alignof(PageMetaDataNode)}
@@ -51,14 +51,13 @@ static U16 calculateTableIndex(U64 virt, U64 pageSize) {
 // If it is not, not sure what the caller wanted to accomplish.
 void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
     ASSERT(rootPageTable);
-    ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
     ASSERT(!(RING_RANGE_VALUE(physical, mappingSize)));
 
     PageMetaDataNode *metaDataTable = &rootPageMetaData;
     VirtualPageTable *pageTable = rootPageTable;
 
     U16 index = 0;
-    for (U64 entrySize = X86_512GIB_PAGE; entrySize >= mappingSize;
+    for (U64 entrySize = PAGE_ROOT_ENTRY_MAX_SIZE; entrySize >= mappingSize;
          entrySize /= PageTableFormat.ENTRIES) {
         U16 newMetaIndex = index; // Lagging behind index by 1 iteration
         index = calculateTableIndex(virt, entrySize);
