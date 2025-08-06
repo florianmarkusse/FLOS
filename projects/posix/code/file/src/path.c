@@ -9,7 +9,7 @@
 
 static constexpr auto FULL_ACCESS = 0700;
 
-void createPath(string fileLocation, Arena scratch) {
+void createPath(String fileLocation, Arena scratch) {
     U64 currentIndex = 0;
     I64 slashIndex = firstOccurenceOfFrom(fileLocation, '/', currentIndex);
     if (slashIndex >= 0) {

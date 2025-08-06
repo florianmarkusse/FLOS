@@ -15,6 +15,6 @@ typedef enum {
 static constexpr auto HASH_COMPARISON_STATUS_COUNT =
     (0 HASH_COMPARISON_STATUS_ENUM(PLUS_ONE));
 
-extern string hashComparisonStatusToString[HASH_COMPARISON_STATUS_COUNT];
+extern String hashComparisonStatusToString[HASH_COMPARISON_STATUS_COUNT];
 
 #endif

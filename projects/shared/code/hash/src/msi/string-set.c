@@ -2,7 +2,7 @@
 #include "shared/hash/hashes.h"     // for hashStringDjb2
 #include "shared/hash/msi/common.h" // for indexLookup
 
-bool msi_insertString(string string, U64 hash, msi_string *index) {
+bool msi_insertString(String string, U64 hash, msi_string *index) {
     for (U32 i = (U32)hash;;) {
         i = indexLookup(hash, index->exp, i);
         if (index->buf[i].len == 0) {
@@ -15,7 +15,7 @@ bool msi_insertString(string string, U64 hash, msi_string *index) {
     }
 }
 
-bool msi_containsString(string string, U64 hash, msi_string *index) {
+bool msi_containsString(String string, U64 hash, msi_string *index) {
     for (U32 i = (U32)hash;;) {
         i = indexLookup(hash, index->exp, i);
         if (index->buf[i].len == 0) {
@@ -31,7 +31,7 @@ HashComparisonStatus msi_equalsStringSet(msi_string *set1, msi_string *set2) {
         return HASH_COMPARISON_DIFFERENT_SIZES;
     }
 
-    string element;
+    String element;
     FOR_EACH_MSI_STRING(element, set1) {
         if (!msi_containsString(element, hashStringSkeeto(element), set2)) {
             return HASH_COMPARISON_DIFFERENT_CONTENT;

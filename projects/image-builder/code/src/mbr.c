@@ -41,5 +41,5 @@ void writeMBR(U8 *fileBuffer) {
         protectiveMBR.partitions[0].sizeLBA = (U32)(totalImageSizeLBA - 1);
     }
 
-    memcpy(fileBuffer, &protectiveMBR, sizeof(MBR));
+    memcpy(fileBuffer, &protectiveMBR, sizeof(protectiveMBR));
 }

@@ -89,8 +89,8 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
             break;
         }
         case DELETE_AT_LEAST: {
-            MMNode *deleted = deleteAtLeastMMNode(
-                &tree, operations.buf[i].memory.bytes);
+            MMNode *deleted =
+                deleteAtLeastMMNode(&tree, operations.buf[i].memory.bytes);
             if (!deleted) {
                 for (U64 j = 0; j < expectedValues.len; j++) {
                     if (expectedValues.buf[j].bytes >=
@@ -138,7 +138,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
     testSuccess();
 }
 
-static void testSubTopic(string subTopic, TestCases testCases, Arena scratch) {
+static void testSubTopic(String subTopic, TestCases testCases, Arena scratch) {
     TEST_TOPIC(subTopic) {
         JumpBuffer failureHandler;
         for (U64 i = 0; i < testCases.len; i++) {

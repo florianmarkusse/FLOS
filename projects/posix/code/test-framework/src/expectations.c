@@ -4,8 +4,8 @@
 #include "posix/log.h"
 #include "shared/log.h"
 
-void appendExpectCodeWithString(U64 expected, string expectedString, U64 actual,
-                                string actualString) {
+void appendExpectCodeWithString(U64 expected, String expectedString, U64 actual,
+                                String actualString) {
     PLOG(stringWithMinSizeDefault(STRING("Expected"), 10));
     PLOG((STRING(": ")));
     PLOG(stringWithMinSizeDefault(U64ToStringDefault(expected), 4));
@@ -19,7 +19,7 @@ void appendExpectCodeWithString(U64 expected, string expectedString, U64 actual,
     PLOG(actualString, NEWLINE);
 }
 
-void appendExpectString(string expectedString, string actualString) {
+void appendExpectString(String expectedString, String actualString) {
     PLOG(stringWithMinSizeDefault(STRING("Expected string"), 20));
     PLOG((STRING(": ")));
     PLOG(expectedString, NEWLINE);

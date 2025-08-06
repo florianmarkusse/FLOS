@@ -5,28 +5,28 @@
 #include "shared/types/array-types.h"
 #include "shared/types/numeric.h"
 
-string stringWithMinSize(string data, U8 minSize, U8_a tmp);
-string stringWithMinSizeDefault(string data, U8 minSize);
+String stringWithMinSize(String data, U8 minSize, U8_a tmp);
+String stringWithMinSizeDefault(String data, U8 minSize);
 
-string stringToString(string data);
+String stringToString(String data);
 
-string charToString(char data, U8_a tmp);
-string charToStringDefault(char data);
+String charToString(char data, U8_a tmp);
+String charToStringDefault(char data);
 
-string boolToString(bool data);
+String boolToString(bool data);
 
-string ptrToString(void *data, U8_a tmp);
-string ptrToStringDefault(void *data);
+String ptrToString(void *data, U8_a tmp);
+String ptrToStringDefault(void *data);
 
-string U64ToString(U64 data, U8_a tmp);
-string U64ToStringDefault(U64 data);
+String U64ToString(U64 data, U8_a tmp);
+String U64ToStringDefault(U64 data);
 
-string I64ToString(I64 data, U8_a tmp);
-string I64ToStringDefault(I64 data);
+String I64ToString(I64 data, U8_a tmp);
+String I64ToStringDefault(I64 data);
 
 // clang-format off
 #define CONVERT_TO_STRING_BASE \
-        string: stringToString,                                                \
+        String: stringToString,                                                \
         char: charToStringDefault,                                             \
         bool: boolToString,                                                    \
         void *: ptrToStringDefault,                                            \

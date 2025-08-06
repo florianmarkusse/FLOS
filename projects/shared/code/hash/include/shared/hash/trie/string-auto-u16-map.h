@@ -7,7 +7,7 @@
 #include "shared/types/numeric.h"
 
 typedef struct {
-    string key;
+    String key;
     U16 value;
 } trie_stringAutoU16Data;
 
@@ -28,11 +28,11 @@ typedef struct {
     U16 entryIndex;
 } NewStringInsert;
 
-NewStringInsert trie_insertStringAutoU16Map(string key,
+NewStringInsert trie_insertStringAutoU16Map(String key,
                                             trie_stringAutoU16Map *set,
                                             Arena *perm);
 
-U16 trie_containsStringAutoU16Map(string key, trie_stringAutoU16Map *set);
+U16 trie_containsStringAutoU16Map(String key, trie_stringAutoU16Map *set);
 
 TRIE_ITERATOR_HEADER_FILE(trie_stringAutoU16Node, trie_stringAutoU16IterNode,
                           trie_stringAutoU16Iterator, trie_stringAutoU16Data,

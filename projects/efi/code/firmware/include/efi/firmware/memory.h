@@ -26,7 +26,7 @@
 typedef enum : U32 { EFI_MEMORY_TYPE_ENUM(ENUM_STANDARD_VARIANT) } MemoryType;
 
 static constexpr auto EFI_MEMORY_TYPE_COUNT = EFI_MEMORY_TYPE_ENUM(PLUS_ONE);
-static string efiMemoryStatusStrings[EFI_MEMORY_TYPE_COUNT] = {
+static String efiMemoryStatusStrings[EFI_MEMORY_TYPE_COUNT] = {
     EFI_MEMORY_TYPE_ENUM(ENUM_TO_STRING)};
 
 static constexpr U64 MEMORY_UC = 0x0000000000000001;

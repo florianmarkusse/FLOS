@@ -109,7 +109,7 @@ void appendZeroToFlushBuffer(U64 bytes, U8 flags) {
 }
 
 // NOTE: Ready for code generation
-bool appendToFlushBufferWithWriter(string data, U8 flags, WriteBuffer *buffer) {
+bool appendToFlushBufferWithWriter(String data, U8 flags, WriteBuffer *buffer) {
     for (U64 bytesWritten = 0; bytesWritten < data.len;) {
         // the minimum of size remaining and what is left in the buffer.
         U64 spaceInBuffer = (buffer->array.cap) - buffer->array.len;
@@ -129,11 +129,11 @@ bool appendToFlushBufferWithWriter(string data, U8 flags, WriteBuffer *buffer) {
     return handleFlags(flags, buffer);
 }
 
-void appendToFlushBuffer(string data, U8 flags) {
+void appendToFlushBuffer(String data, U8 flags) {
     appendToFlushBufferWithWriter(data, flags, &stdoutBuffer);
 }
 
-static string ansiColorToCode[COLOR_NUMS] = {
+static String ansiColorToCode[COLOR_NUMS] = {
     STRING("\x1b[31m"), STRING("\x1b[32m"), STRING("\x1b[33m"),
     STRING("\x1b[34m"), STRING("\x1b[35m"), STRING("\x1b[36m"),
     STRING("\x1b[0m"),

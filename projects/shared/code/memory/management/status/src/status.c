@@ -6,8 +6,7 @@
 #include "shared/memory/management/management.h"
 #include "shared/text/string.h"
 
-static void countAvailable(MMNode *current, U64 *available,
-                           U64 *nodes) {
+static void countAvailable(MMNode *current, U64 *available, U64 *nodes) {
     if (!current) {
         return;
     }
@@ -21,7 +20,7 @@ static void countAvailable(MMNode *current, U64 *available,
 }
 
 static void appendMemoryManagerStatus(RedBlackMMTreeWithFreeList *allocator,
-                                      string name) {
+                                      String name) {
     KLOG(name);
     AvailableMemoryState result = {0};
     countAvailable(allocator->tree, &result.memory, &result.nodes);

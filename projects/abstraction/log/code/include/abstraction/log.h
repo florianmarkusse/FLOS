@@ -11,8 +11,8 @@
 // implement if they want to do any sort of logging. Additionally, each
 // environment is free to enhance their logging in any way they see fit.
 
-void appendToBuffer(U8_a *buffer, string data);
-void appendToFlushBuffer(string data, U8 flags);
+void appendToBuffer(U8_a *buffer, String data);
+void appendToFlushBuffer(String data, U8 flags);
 void appendZeroToFlushBuffer(U64 bytes, U8 flags);
 bool flushStandardBuffer();
 bool flushBuffer(U8_max_a *buffer);

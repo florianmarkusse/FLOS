@@ -7,15 +7,15 @@
 #include "shared/text/string.h"                 // for string
 #include "shared/types/numeric.h"
 
-typedef MSI_SET(string) msi_string;
+typedef MSI_SET(String) msi_string;
 
-bool msi_insertString(string string, U64 hash, msi_string *index);
+bool msi_insertString(String string, U64 hash, msi_string *index);
 
 /**
  * Assumes you know what hash function was used in this hash set. If you use the
  * wrong hash, you get wrong answers!!!
  */
-bool msi_containsString(string string, U64 hash, msi_string *index);
+bool msi_containsString(String string, U64 hash, msi_string *index);
 
 /**
  * Check if the same string hasher is used to compare as the hash functions that

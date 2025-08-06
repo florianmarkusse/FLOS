@@ -184,17 +184,17 @@ int main(int argc, char **argv) {
             kernelFile = argv[i + 1];
         }
         if (!strcmp(flag, PHYSICAL_BOUNDARY_FLAG)) {
-            string physString = STRING_LEN(argv[i + 1], strlen(argv[i + 1]));
+            String physString = STRING_LEN(argv[i + 1], strlen(argv[i + 1]));
             physicalBoundary = parseU32(physString, 10);
         }
         if (!strcmp(flag, OPTIMAL_TRANSFER_FLAG)) {
-            string optimalTransferString =
+            String optimalTransferString =
                 STRING_LEN(argv[i + 1], strlen(argv[i + 1]));
             optimalTransferLengthGranularity =
                 parseU32(optimalTransferString, 10);
         }
         if (!strcmp(flag, LBA_FLAG)) {
-            string lbaString = STRING_LEN(argv[i + 1], strlen(argv[i + 1]));
+            String lbaString = STRING_LEN(argv[i + 1], strlen(argv[i + 1]));
             configuration.LBASizeBytes = parseU16(lbaString, 10);
         }
     }

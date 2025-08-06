@@ -46,7 +46,7 @@ void handleFlags(U8 flags) {
 // NOTE: Ready for code generation
 // TODO: buffer should be a variable to this function once we have actual
 // memory management set up instead of it being hardcoded.
-void appendToFlushBuffer(string data, U8 flags) {
+void appendToFlushBuffer(String data, U8 flags) {
     for (U64 bytesWritten = 0; bytesWritten < data.len;) {
         // the minimum of size remaining and what is left in the buffer.
         U64 spaceInBuffer = (flushBuf.cap) - flushBuf.len;

@@ -91,7 +91,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(kernelBytes, NEWLINE);
     }
 
-    string kernelContent = readKernelFromCurrentLoadedImage(kernelBytes, arena);
+    String kernelContent = readKernelFromCurrentLoadedImage(kernelBytes, arena);
 
     KFLUSH_AFTER { INFO(STRING("Mapping kernel into location\n")); }
     if (mapMemory(KERNEL_CODE_START, (U64)kernelContent.buf, kernelContent.len,

@@ -6,13 +6,13 @@
 #include "shared/macros.h"      // for MACRO_VAR
 #include "shared/text/string.h" // for string
 
-void testSuiteStart(string mainTopic);
+void testSuiteStart(String mainTopic);
 int testSuiteFinish();
 
-void testTopicStart(string testTopic);
+void testTopicStart(String testTopic);
 void testTopicFinish();
 
-void unitTestStart(string testName, JumpBuffer failureHandler);
+void unitTestStart(String testName, JumpBuffer failureHandler);
 
 void testSuccess();
 

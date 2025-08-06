@@ -4,6 +4,6 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/text/string.h"
 
-void createPath(string fileLocation, Arena scratch);
+void createPath(String fileLocation, Arena scratch);
 
 #endif

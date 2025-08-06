@@ -349,7 +349,7 @@ static void createFileEntryAfterWritingData(U8 name[FAT32_SHORT_NAME_LEN],
     createContiguousSpaceForNewEntry(size);
 }
 
-static Cluster createPath(string FAT32FilePath, Cluster startCluster) {
+static Cluster createPath(String FAT32FilePath, Cluster startCluster) {
     StringIter parentDirectories;
 
     TOKENIZE_STRING(FAT32FilePath, parentDirectories, PATH_DELIMITER, 0) {

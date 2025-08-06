@@ -14,7 +14,7 @@
 #include "x86/fault.h"
 #include "x86/memory/definitions.h"
 
-static string faultToString[CPU_FAULT_COUNT] = {CPU_FAULT_ENUM(ENUM_TO_STRING)};
+static String faultToString[CPU_FAULT_COUNT] = {CPU_FAULT_ENUM(ENUM_TO_STRING)};
 
 U8 *XSAVESpace;
 

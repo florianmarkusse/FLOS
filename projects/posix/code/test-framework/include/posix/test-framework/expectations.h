@@ -4,9 +4,9 @@
 #include "shared/text/string.h" // for string
 #include "shared/types/numeric.h"
 
-void appendExpectCodeWithString(U64 expected, string expectedString, U64 actual,
-                                string actualString);
-void appendExpectString(string expectedString, string actualString);
+void appendExpectCodeWithString(U64 expected, String expectedString, U64 actual,
+                                String actualString);
+void appendExpectString(String expectedString, String actualString);
 void appendExpectBool(bool expectedBool, bool actualBool);
 void appendExpectPtrDiff(U64 expectedNumber, U64 actualNumber);
 void appendExpectUint(U64 expectedNumber, U64 actualNumber);

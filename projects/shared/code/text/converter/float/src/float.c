@@ -6,7 +6,7 @@
 #include "shared/text/string.h"
 #include "shared/types/array-types.h"
 
-string F64ToString(F64 data, U8_a tmp) {
+String F64ToString(F64 data, U8_a tmp) {
     U64 tmpLen = 0;
     U32 prec = 1000000; // i.e. 6 decimals
 
@@ -29,7 +29,7 @@ string F64ToString(F64 data, U8_a tmp) {
     U8 buf2[64];
     U8_a tmp2 = (U8_a){.buf = buf2, .len = 64};
 
-    string part = U64ToString(integral, tmp2);
+    String part = U64ToString(integral, tmp2);
     memcpy(tmp.buf + tmpLen, part.buf, part.len);
     tmpLen += part.len;
 
@@ -50,6 +50,6 @@ string F64ToString(F64 data, U8_a tmp) {
     return STRING_LEN(tmp.buf, tmpLen);
 }
 
-string F64ToStringDefault(F64 data) {
+String F64ToStringDefault(F64 data) {
     return F64ToString(data, stringConverterBuffer);
 }

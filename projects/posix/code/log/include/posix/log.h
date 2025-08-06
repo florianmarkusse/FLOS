@@ -1,8 +1,8 @@
 #ifndef POSIX_LOG_H
 #define POSIX_LOG_H
 
-#include "shared/macros.h"
 #include "abstraction/text/converter/converter.h"
+#include "shared/macros.h"
 #include "shared/text/string.h"
 #include "shared/types/array-types.h"
 #include "shared/types/numeric.h"
@@ -24,7 +24,7 @@ typedef enum {
 
 typedef enum { STDOUT, STDERR } BufferType;
 
-bool appendToFlushBufferWithWriter(string data, U8 flags, WriteBuffer *buffer);
+bool appendToFlushBufferWithWriter(String data, U8 flags, WriteBuffer *buffer);
 bool appendZeroToFlushBufferWithWriter(U64 bytes, U8 flags,
                                        WriteBuffer *buffer);
 bool flushBufferWithWriter(WriteBuffer *buffer);

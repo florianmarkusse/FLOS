@@ -11,7 +11,7 @@
 #define CONVERT_TO_STRING_FLOAT
 #endif
 
-string noAppend();
+String noAppend();
 
 // clang-format off
 #define CONVERT_TO_STRING(data)                                                \

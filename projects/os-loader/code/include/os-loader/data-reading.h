@@ -11,7 +11,7 @@ typedef struct {
     U64 lbaStart;
 } DataPartitionFile;
 
-string readKernelFromCurrentLoadedImage(U64 bytes, Arena scratch);
+String readKernelFromCurrentLoadedImage(U64 bytes, Arena scratch);
 
 U64 getKernelBytes(Arena scratch);
 

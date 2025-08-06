@@ -10,7 +10,7 @@
 typedef struct {
     U64 successes;
     U64 failures;
-    string topic;
+    String topic;
 } TestTopic;
 
 static constexpr auto MAX_TEST_TOPICS = 1 << 6;
@@ -20,7 +20,7 @@ static U64 nextTestTopic = 0;
 
 static void *failureHandler;
 
-static void addTopic(string topic) {
+static void addTopic(String topic) {
     ASSERT(nextTestTopic < MAX_TEST_TOPICS);
     testTopics[nextTestTopic++] =
         (TestTopic){.failures = 0, .successes = 0, .topic = topic};
@@ -44,7 +44,7 @@ static void printTestScore(U64 successes, U64 failures) {
     }
 }
 
-void testSuiteStart(string mainTopic) {
+void testSuiteStart(String mainTopic) {
     PFLUSH_AFTER(STDOUT) {
         PLOG((STRING("Starting test suite for ")));
         PLOG(mainTopic);
@@ -80,7 +80,7 @@ int testSuiteFinish() {
     return globalFailures > 0;
 }
 
-void testTopicStart(string testTopic) {
+void testTopicStart(String testTopic) {
     addTopic(testTopic);
 
     PFLUSH_AFTER(STDOUT) {
@@ -98,7 +98,7 @@ void testTopicFinish() {
     nextTestTopic--;
 }
 
-void unitTestStart(string testName, JumpBuffer buffer) {
+void unitTestStart(String testName, JumpBuffer buffer) {
     failureHandler = buffer;
     PFLUSH_AFTER(STDOUT) {
         appendSpaces();

@@ -64,8 +64,8 @@ static void checkForPartitionGUID(Handle handle) {
 // bug on my hardware with reading blocks into addresses that are above 4GiB and
 // the aligned memory address can end up being at this level. So we add an
 // intermediate step in between.
-static string fetchKernelThroughBIOP(Handle handle, U64 bytes, Arena scratch) {
-    string result;
+static String fetchKernelThroughBIOP(Handle handle, U64 bytes, Arena scratch) {
+    String result;
     result.len = 0;
 
     BlockIoProtocol *biop;
@@ -92,7 +92,7 @@ static string fetchKernelThroughBIOP(Handle handle, U64 bytes, Arena scratch) {
                 allocateKernelStructure(bytes, 0, true, scratch);
 
             memcpy((void *)kernelAddress, blockAddress, bytes);
-            result = (string){.buf = (void *)kernelAddress, .len = bytes};
+            result = (String){.buf = (void *)kernelAddress, .len = bytes};
         }
     }
 
@@ -102,7 +102,7 @@ static string fetchKernelThroughBIOP(Handle handle, U64 bytes, Arena scratch) {
     return result;
 }
 
-string readKernelFromCurrentLoadedImage(U64 bytes, Arena scratch) {
+String readKernelFromCurrentLoadedImage(U64 bytes, Arena scratch) {
     Status status;
 
     LoadedImageProtocol *lip = nullptr;
@@ -123,7 +123,7 @@ string readKernelFromCurrentLoadedImage(U64 bytes, Arena scratch) {
         ERROR(STRING("Could not locate any Block IO Protocols.\n"));
     }
 
-    string data;
+    String data;
     data.len = 0;
 
     for (U64 i = 0; data.len == 0 && i < numberOfHandles; i++) {
@@ -192,7 +192,7 @@ U64 getKernelBytes(Arena scratch) {
         ERROR(STRING("Could not get file info\n"));
     }
 
-    string dataFile;
+    String dataFile;
     dataFile.len = file_info.fileSize;
     dataFile.buf = NEW(&scratch, U8, dataFile.len, 0, UEFI_PAGE_SIZE);
 

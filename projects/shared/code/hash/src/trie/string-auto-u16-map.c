@@ -4,7 +4,7 @@
 #include "shared/hash/trie/common-iterator.h" // for TRIE_ITERATOR_SOURCE...
 #include "shared/memory/allocator/macros.h"
 
-NewStringInsert trie_insertStringAutoU16Map(string key,
+NewStringInsert trie_insertStringAutoU16Map(String key,
                                             trie_stringAutoU16Map *set,
                                             Arena *perm) {
     trie_stringAutoU16Node **currentNode = &set->node;
@@ -28,7 +28,7 @@ NewStringInsert trie_insertStringAutoU16Map(string key,
                              .entryIndex = (set)->nodeCount};
 }
 
-U16 trie_containsStringAutoU16Map(string key, trie_stringAutoU16Map *set) {
+U16 trie_containsStringAutoU16Map(String key, trie_stringAutoU16Map *set) {
     trie_stringAutoU16Node **currentNode = &set->node;
     for (U64 hash = hashStringSkeeto(key); *currentNode != nullptr;
          hash <<= 2) {

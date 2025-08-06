@@ -5,8 +5,8 @@
 #include "shared/types/array-types.h"
 #include "shared/types/numeric.h"
 
-string F64ToString(F64 data, U8_a tmp);
-string F64ToStringDefault(F64 data);
+String F64ToString(F64 data, U8_a tmp);
+String F64ToStringDefault(F64 data);
 
 // clang-format off
 #define CONVERT_TO_STRING_FLOAT                                                \

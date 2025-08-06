@@ -5,7 +5,7 @@
 #include "shared/memory/allocator/macros.h"
 #include "shared/types/numeric.h"
 
-U16 trie_insertStringU16Map(string key, U16 value, trie_stringU16Map **set,
+U16 trie_insertStringU16Map(String key, U16 value, trie_stringU16Map **set,
                             Arena *perm) {
     ASSERT(key.len > 0);
     ASSERT(value != 0);
