@@ -18,7 +18,7 @@ void freeIdentityMemory(Memory memory) { freePhysicalMemory(memory); }
 void *allocateMappableMemory(U64 bytes, U64 align, U64 mappingSize) {
     ASSERT(isPowerOf2(align));
     ASSERT(isPowerOf2(mappingSize));
-    ASSERT(mappingSize >= SMALLEST_VIRTUAL_PAGE);
+    ASSERT(mappingSize >= pageSizesSmallest());
     ASSERT(isAlignedTo(bytes, align));
     ASSERT(isAlignedTo(bytes, mappingSize));
 
@@ -31,8 +31,8 @@ void *allocateMappableMemory(U64 bytes, U64 align, U64 mappingSize) {
 static constexpr auto MAX_PAGE_FLUSHES = 64;
 
 void freeMappableMemory(Memory memory) {
-    ASSERT(isAlignedTo(memory.start, SMALLEST_VIRTUAL_PAGE));
-    ASSERT(isAlignedTo(memory.bytes, SMALLEST_VIRTUAL_PAGE));
+    ASSERT(isAlignedTo(memory.start, pageSizesSmallest()));
+    ASSERT(isAlignedTo(memory.bytes, pageSizesSmallest()));
 
     U64 virtualAddresses[MAX_PAGE_FLUSHES];
     U64 virtualAddressesLen = 0;
