@@ -23,17 +23,17 @@
 //     STRING("Write Back (WB)"),        STRING("Uncached (UC-)"),
 // };
 
+VirtualPageTable *rootPageTable;
+PageMetaDataNode rootPageMetaData = {0};
+
 StructReq virtualStructReqs[VIRTUAL_ALLOCATION_TYPE_COUNT] = {
     [VIRTUAL_PAGE_TABLE_ALLOCATION] = {.bytes = X86_4KIB_PAGE,
                                        .align = X86_4KIB_PAGE},
     [META_DATA_PAGE_ALLOCATION] = {.bytes = PageTableFormat.ENTRIES *
-                                            sizeof(PageMetaDataNode),
-                                   .align = alignof(PageMetaDataNode)}
+                                            sizeof(rootPageMetaData),
+                                   .align = alignof(rootPageMetaData)}
 
 };
-
-VirtualPageTable *rootPageTable;
-PageMetaDataNode rootPageMetaData = {0};
 
 VirtualPageTable *getZeroedPageTable() {
     return getZeroedMemoryForVirtual(VIRTUAL_PAGE_TABLE_ALLOCATION);

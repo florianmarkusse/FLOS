@@ -111,9 +111,9 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
         TaskStateSegment *perCPUTSS =
             (TaskStateSegment *)(TSSes + (bytesPerTSS * i));
         perCPUTSS->IOMapBaseAddress =
-            sizeof(TaskStateSegment); // but limit is set to max TSS, so the CPU
-                                      // understands that there is no io
-                                      // permission bitmap.
+            sizeof(*perCPUTSS); // but limit is set to max TSS, so the CPU
+                                // understands that there is no io
+                                // permission bitmap.
 
         KFLUSH_AFTER {
             U64 stackAddress =
@@ -139,7 +139,7 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
 
         tssDescriptors[i] =
             (TSSDescriptor){(SegmentDescriptor){
-                                .limit_15_0 = sizeof(TaskStateSegment) - 1,
+                                .limit_15_0 = sizeof(*perCPUTSS) - 1,
                                 .base_15_0 = (U64)(perCPUTSS) & 0xFFFF,
                                 .base_23_16 = ((U64)(perCPUTSS) >> 16) & 0xFF,
                                 .type = 0x9, // 0b1001 = 64 bit TSS (available)

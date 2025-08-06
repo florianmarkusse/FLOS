@@ -256,7 +256,7 @@ static void writeDirectoryEntry(DirEntryShortName *clusterBuffer,
     dir.lowClusterNumber = cluster.low;
     setName(&dir, name);
 
-    memcpy(clusterBuffer, &dir, sizeof(DirEntryShortName));
+    memcpy(clusterBuffer, &dir, sizeof(*clusterBuffer));
 }
 
 static void writeDOTEntries(DirEntryShortName *clusterBuffer,
@@ -305,7 +305,7 @@ static Cluster createOrGetDirectory(U8 name[FAT32_SHORT_NAME_LEN],
         }
         if (compareFAT32ShortName(entry->name, ZERO_NAME)) {
             Cluster createdCluster =
-                createContiguousSpaceForNewEntry(sizeof(DirEntryShortName));
+                createContiguousSpaceForNewEntry(sizeof(*entry));
             writeDirectoryEntry(entry, createdCluster, name);
             writeDOTEntries((DirEntryShortName *)getDataCluster(createdCluster),
                             createdCluster, parentCluster);
@@ -340,7 +340,7 @@ static void writeFileEntry(DirEntryShortName *clusterBuffer,
     setName(&file, name);
     file.fileSize = size;
 
-    memcpy(clusterBuffer, &file, sizeof(DirEntryShortName));
+    memcpy(clusterBuffer, &file, sizeof(*clusterBuffer));
 }
 
 static void createFileEntryAfterWritingData(U8 name[FAT32_SHORT_NAME_LEN],
@@ -458,19 +458,19 @@ bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U64 efiSizeBytes,
     // Reserved Sectors
     // Primary Sectors
     // Sector 0
-    memcpy(reservedSectors, &parameterBlock, sizeof(BIOSParameterBlock));
+    memcpy(reservedSectors, &parameterBlock, sizeof(parameterBlock));
 
     // Sector 1
     reservedSectors += parameterBlock.bytesPerSector;
-    memcpy(reservedSectors, &FSInfo, sizeof(FileSystemInformation));
+    memcpy(reservedSectors, &FSInfo, sizeof(FSInfo));
 
     // Backup Sectors
     // Sector 6
     reservedSectors += parameterBlock.bytesPerSector * 5;
-    memcpy(reservedSectors, &parameterBlock, sizeof(BIOSParameterBlock));
+    memcpy(reservedSectors, &parameterBlock, sizeof(parameterBlock));
     // Sector 7
     reservedSectors += parameterBlock.bytesPerSector;
-    memcpy(reservedSectors, &FSInfo, sizeof(FileSystemInformation));
+    memcpy(reservedSectors, &FSInfo, sizeof(FSInfo));
 
     return true;
 }
