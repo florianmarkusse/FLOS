@@ -138,8 +138,8 @@ static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
     }
 
     U64 largerPageSize;
-    if (pageSize == LARGEST_VIRTUAL_PAGE) {
-        largerPageSize = LARGEST_VIRTUAL_PAGE;
+    if (pageSize == pageSizesLargest()) {
+        largerPageSize = pageSizesLargest();
     } else {
         largerPageSize = increasePageSize(pageSize);
     }
@@ -189,7 +189,7 @@ static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
             return bestDescriptor.alignedAddress;
         }
 
-        if (pageSize == SMALLEST_VIRTUAL_PAGE) {
+        if (pageSize == pageSizesSmallest()) {
             break;
         }
     }

@@ -11,13 +11,11 @@
 // ...
 // 0xFFFFFFFFFFFFFFFF
 
+#include "abstraction/memory/virtual/converter.h"
 #include "shared/memory/sizes.h"
-#include "x86/memory/definitions.h"
 
 static constexpr auto KERNEL_STACK_SIZE = 2 * MiB;
 static constexpr auto KERNEL_STACK_ALIGNMENT =
     16; // NOTE: Sys-V ABI requires 16-byte aligned stack.
-
-static_assert(KERNEL_STACK_SIZE >= SMALLEST_VIRTUAL_PAGE);
 
 #endif

@@ -28,19 +28,6 @@ typedef enum : U64 { MEMORY_PAGE_SIZES_ENUM(ENUM_VALUES_VARIANT) } PageSize;
 static constexpr auto MEMORY_PAGE_SIZES_COUNT =
     (0 MEMORY_PAGE_SIZES_ENUM(PLUS_ONE));
 
-// NOTE: Goes from smallest to largest!!!
-extern PageSize availablePageSizes[MEMORY_PAGE_SIZES_COUNT];
-
-// TODO: Can we make this a function instead to return the mask from an
-// abstraction and see if it gets inlined in -03 mode?
-static constexpr U64 AVAILABLE_PAGE_SIZES_MASK =
-    (X86_4KIB_PAGE | X86_2MIB_PAGE | X86_1GIB_PAGE);
-static constexpr U64 SMALLEST_VIRTUAL_PAGE =
-    1ULL << __builtin_ctzll(AVAILABLE_PAGE_SIZES_MASK);
-static constexpr U64 LARGEST_VIRTUAL_PAGE =
-    1ULL << (((sizeof(U64) * BITS_PER_BYTE) - 1) -
-             __builtin_clzll(AVAILABLE_PAGE_SIZES_MASK));
-
 typedef struct {
     U8 data[X86_4KIB_PAGE];
 } PhysicalBasePage __attribute__((aligned(X86_4KIB_PAGE)));

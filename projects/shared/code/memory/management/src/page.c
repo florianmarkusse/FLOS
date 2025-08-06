@@ -18,7 +18,7 @@ static U64 pageSizeFromVMM(U64 faultingAddress) {
         return result->mappingSize;
     }
 
-    return SMALLEST_VIRTUAL_PAGE;
+    return pageSizesSmallest();
 }
 
 // TODO: Ready for code generation

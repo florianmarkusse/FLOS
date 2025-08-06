@@ -131,7 +131,6 @@ static void initMemoryAllocator(PackedTreeWithFreeList *packedMemoryAllocator,
 }
 
 static constexpr auto ALLOCATOR_MAX_BUFFER_SIZE = 1 * GiB;
-static constexpr auto ALLOCATOR_PAGE_SIZE = SMALLEST_VIRTUAL_PAGE;
 
 static void identityArrayToMappable(void_max_a *array, U64 alignBytes,
                                     U64 elementSizeBytes, U64 additionalMaps) {
@@ -140,9 +139,9 @@ static void identityArrayToMappable(void_max_a *array, U64 alignBytes,
 
     U64 bytesUsed = array->len * elementSizeBytes;
     U64 mapsToDo =
-        CEILING_DIV_VALUE(bytesUsed, (U64)ALLOCATOR_PAGE_SIZE) + additionalMaps;
+        CEILING_DIV_VALUE(bytesUsed, (U64)pageSizesSmallest()) + additionalMaps;
     for (U64 i = 0; i < mapsToDo; i++) {
-        handlePageFault((U64)virtualBuffer + (i * ALLOCATOR_PAGE_SIZE));
+        (void)handlePageFault((U64)virtualBuffer + (i * pageSizesSmallest()));
     }
 
     memcpy(virtualBuffer, array->buf, array->len * elementSizeBytes);

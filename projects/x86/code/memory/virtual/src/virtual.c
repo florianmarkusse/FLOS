@@ -2,6 +2,7 @@
 
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/allocator.h"
+#include "abstraction/memory/virtual/converter.h"
 #include "shared/assert.h"
 #include "shared/maths.h"
 #include "shared/memory/converter.h"
@@ -89,7 +90,7 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
         pageTable =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
             (VirtualPageTable *)ALIGN_DOWN_VALUE(*tableEntryAddress,
-                                                 SMALLEST_VIRTUAL_PAGE);
+                                                 pageSizesSmallest());
         metaDataTable = newMetaEntryAddress->children;
     }
 }
@@ -153,7 +154,7 @@ Memory unmapPage(U64 virt) {
 
     U8 len = 1;
     U16 index = 0;
-    for (U64 entrySize = X86_512GIB_PAGE; entrySize >= SMALLEST_VIRTUAL_PAGE;
+    for (U64 entrySize = X86_512GIB_PAGE; entrySize >= pageSizesSmallest();
          entrySize /= PageTableFormat.ENTRIES) {
         U16 newMetaIndex = index; // Lagging behind index by 1 iteration
         index = calculateTableIndex(virt, entrySize);
@@ -161,7 +162,7 @@ Memory unmapPage(U64 virt) {
         indices[len] = index;
         U64 tableEntry = pageTables[len - 1]->pages[index];
 
-        if (!tableEntry || entrySize == SMALLEST_VIRTUAL_PAGE) {
+        if (!tableEntry || entrySize == pageSizesSmallest()) {
             if (tableEntry) {
                 updateMappingData(pageTables, indices + 1, newMeta, indices,
                                   len);
@@ -182,7 +183,7 @@ Memory unmapPage(U64 virt) {
         pageTables[len] =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
             (VirtualPageTable *)ALIGN_DOWN_VALUE(tableEntry,
-                                                 SMALLEST_VIRTUAL_PAGE);
+                                                 pageSizesSmallest());
         newMeta[len] = newMeta[len - 1][newMetaIndex].children;
         len++;
     }
