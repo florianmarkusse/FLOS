@@ -7,9 +7,16 @@ set(ADDED_PROJECT_TARGETS
 function(add_project project)
     if(NOT "${project}" IN_LIST ADDED_PROJECT_TARGETS)
         update_added_projects(${project})
+        string(
+            REGEX REPLACE
+            "^.*build/"
+            "build/"
+            RELATIVE_BUILD_PATH
+            "${BUILD_OUTPUT_PATH}"
+        )
         add_subdirectory(
             "${REPO_PROJECTS}/${project}/code"
-            "${REPO_PROJECTS}/${project}/code/${BUILD_OUTPUT_PATH}"
+            "${REPO_PROJECTS}/${project}/code/${RELATIVE_BUILD_PATH}"
         )
     endif()
 endfunction()
