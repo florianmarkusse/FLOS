@@ -127,7 +127,7 @@ static constexpr U32 OPTIONAL_POINTER = 0x00000001;
  * includes a wide variety of different possible resets.
  */
 
-typedef enum ResetType {
+typedef enum ResetType : U32 {
     RESET_COLD,
     RESET_WARM,
     RESET_SHUTDOWN,
@@ -245,7 +245,7 @@ static constexpr auto EVENT_GROUP_RESET_SYSTEM =
            .ms3 = 0x485a,
            .ms4 = {0xa8, 0xda, 0xa3, 0xdd, 0x79, 0x12, 0xcb, 0x6b}};
 
-typedef enum TimerDelay {
+typedef enum TimerDelay : U32 {
     TIMER_CANCEL,
     TIMER_PERIODIC,
     TIMER_RELATIVE,
@@ -266,7 +266,7 @@ static constexpr auto TPL_HIGH_LEVEL = 31;
  * modifications can be done once you exit boot services.
  */
 
-typedef enum AllocateType {
+typedef enum AllocateType : U32 {
     ALLOCATE_ANY_PAGES,
     ALLOCATE_MAX_ADDRESS,
     ALLOCATE_ADDRESS,
@@ -282,11 +282,11 @@ typedef enum AllocateType {
  * be registered dynamically at runtime, and can support hotplugging.
  */
 
-typedef enum InterfaceType {
+typedef enum InterfaceType : U32 {
     NATIVE_INTERFACE,
 } InterfaceType;
 
-typedef enum LocateSearchType {
+typedef enum LocateSearchType : U32 {
     ALL_HANDLES,
     BY_REGISTER_NOTIFY,
     BY_PROTOCOL,

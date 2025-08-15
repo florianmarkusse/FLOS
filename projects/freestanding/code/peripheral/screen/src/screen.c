@@ -1,8 +1,8 @@
 #include "freestanding/peripheral/screen.h"
 
 #include "freestanding/memory/manipulation.h"
-#include "shared/assert.h"      // for ASSERT
-#include "shared/maths.h" // for RING_PLUS, RING_INCREMENT, RING_MINUS
+#include "shared/assert.h" // for ASSERT
+#include "shared/maths.h"  // for RING_PLUS, RING_INCREMENT, RING_MINUS
 #include "shared/memory/allocator/macros.h"
 #include "shared/types/array-types.h" // for U8_a, uint8_max_a, U8_d_a
 
@@ -10,11 +10,11 @@
 // U32 buffer
 typedef struct {
     U32 *screen;
+    U32 *backingBuffer;
     U64 size;
     U32 width;
     U32 height;
     U32 scanline;
-    U32 *backingBuffer;
 } Window;
 
 // The header contains all the data for each glyph. After that comes numGlyph *
@@ -544,11 +544,11 @@ void initScreen(PackedWindow *window, Arena *perm) {
         NEW(perm, U32, CEILING_DIV_VALUE(window->size, (U32)BYTES_PER_PIXEL));
 
     dim.screen = window->screen;
+    dim.backingBuffer = doubleBuffer;
     dim.size = window->size;
     dim.width = window->width;
     dim.height = window->height;
     dim.scanline = window->scanline;
-    dim.backingBuffer = doubleBuffer;
 
     glyphsPerLine =
         (U16)(dim.width - HORIZONTAL_PIXEL_MARGIN * 2) / (font->width);

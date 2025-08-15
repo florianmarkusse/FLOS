@@ -17,7 +17,7 @@ typedef struct {
     U8 Reserved;
 } BltPixel;
 
-typedef enum {
+typedef enum : U32 {
     EfiBltVideoFill,
     EfiBltVideoToBltBuffer,
     EfiBltBufferToVideo,
@@ -32,7 +32,7 @@ typedef struct {
     U32 reservedMask;
 } PixelBitmask;
 
-typedef enum {
+typedef enum : U32 {
     PixelRedGreenBlueReserved8BitPerColor,
     PixelBlueGreenRedReserved8BitPerColor,
     PixelBitMask,
@@ -59,14 +59,14 @@ typedef struct {
 } GraphicsOutputProtocolMode;
 
 typedef struct GraphicsOutputProtocol {
-    Status(*queryMode)(GraphicsOutputProtocol *this_, U32 modeNumber,
-                               USize *sizeOfInfo,
-                               GraphicsOutputModeInformation **info);
-    Status(*setMode)(GraphicsOutputProtocol *this_, U32 modeNumber);
-    Status(*blt)(GraphicsOutputProtocol *this_, BltPixel *bltBuffer,
-                         BltOperation bltOperation, USize sourceX,
-                         USize sourceY, USize destinationX, USize destinationY,
-                         USize width, USize height, USize delta);
+    Status (*queryMode)(GraphicsOutputProtocol *this_, U32 modeNumber,
+                        USize *sizeOfInfo,
+                        GraphicsOutputModeInformation **info);
+    Status (*setMode)(GraphicsOutputProtocol *this_, U32 modeNumber);
+    Status (*blt)(GraphicsOutputProtocol *this_, BltPixel *bltBuffer,
+                  BltOperation bltOperation, USize sourceX, USize sourceY,
+                  USize destinationX, USize destinationY, USize width,
+                  USize height, USize delta);
     GraphicsOutputProtocolMode *mode;
 } GraphicsOutputProtocol;
 

@@ -18,14 +18,14 @@ struct trie_stringAutoU16Node {
 };
 
 typedef struct {
+    trie_stringAutoU16Node *node;
     // Used as the auto-incrementing key
     U16 nodeCount;
-    trie_stringAutoU16Node *node;
 } trie_stringAutoU16Map;
 
 typedef struct {
-    bool wasInserted;
     U16 entryIndex;
+    bool wasInserted;
 } NewStringInsert;
 
 NewStringInsert trie_insertStringAutoU16Map(String key,

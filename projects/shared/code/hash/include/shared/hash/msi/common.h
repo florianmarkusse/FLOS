@@ -44,8 +44,8 @@
 #define MSI_SET(T)                                                             \
     struct {                                                                   \
         T *buf;                                                                \
-        U8 exp;                                                                \
         U64 len;                                                               \
+        U8 exp;                                                                \
     }
 
 typedef MSI_SET(U8) SetSlice;

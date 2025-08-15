@@ -23,8 +23,8 @@
 
 JumpBuffer errorHandler;
 typedef struct {
-    int fileDescriptor;
     U64 size;
+    int fileDescriptor;
 } File;
 
 static File efiFileInfo;
