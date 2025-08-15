@@ -35,6 +35,14 @@ cmd/hardware.elf --file /dev/sdb1
 dependencies/include-what-you-use/fix_includes.py --reorder --nocomments < projects/image-builder/code/stderr.txt
 ```
 
+## Using pahole
+
+Ensure you have built with debug mode on!
+
+```
+find code/build -type f -name *.c.o -exec pahole -a -d -R -S {} \; > ~/Desktop/FLOS/pahole.txt
+```
+
 ### UEFI improvements once upgraded to new firmware !!
 
 1. Use `PartitionInformationProtocol`

@@ -51,6 +51,8 @@ echo -e "${BOLD}Installing ${YELLOW}python3${NO_COLOR}"
 sudo apt install -y python3
 echo -e "${BOLD}Installing ${YELLOW}qemu${NO_COLOR}"
 sudo apt install -y qemu
+echo -e "${BOLD}Installing ${YELLOW}pahole${NO_COLOR}"
+sudo apt install -y pahole
 echo -e "${BOLD}Installing ${YELLOW}qemu-system-x86${NO_COLOR}"
 sudo apt install -y qemu-system-x86
 echo -e "${BOLD}Installing ${YELLOW}ovmf${NO_COLOR}"
