@@ -15,7 +15,7 @@
         iterNodeName *next;                                                    \
         /* NOLINTNEXTLINE */                                                   \
         T *set;                                                                \
-        unsigned char index;                                                   \
+        U8 index;                                                              \
     }
 
 #define TRIE_ITERATOR(iterNodeType, iteratorName)                              \

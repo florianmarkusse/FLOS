@@ -44,7 +44,7 @@
 #define MSI_SET(T)                                                             \
     struct {                                                                   \
         T *buf;                                                                \
-        U64 len;                                                               \
+        U32 len;                                                               \
         U8 exp;                                                                \
     }
 
