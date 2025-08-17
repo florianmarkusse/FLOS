@@ -60,7 +60,7 @@ static Timing runMappingTest(U64 arrayEntries, bool is2MiBPage,
     }
 
     if (isBaseline) {
-        for (U64 i = 0; i < arrayEntries; i++) {
+        for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
             buffer[i] = i;
         }
     }
@@ -68,14 +68,14 @@ static Timing runMappingTest(U64 arrayEntries, bool is2MiBPage,
     U64 startNanos = currentTimeNanos();
     U64 startCycleCount = currentCycleCounter(true, false);
 
-    for (U64 i = 0; i < arrayEntries; i++) {
+    for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
         buffer[i] = i;
     }
 
     U64 endCycleCount = currentCycleCounter(false, true);
     U64 endNanos = currentTimeNanos();
 
-    for (U64 i = 0; i < arrayEntries; i++) {
+    for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
         if (buffer[i] != i) {
             KFLUSH_AFTER {
                 INFO(STRING("arithmetic error at i="));
@@ -122,7 +122,7 @@ static void partialMappedWritingTest(bool is2MiBPage) {
     biskiSeed(&state, PRNG_SEED);
 
     Timing bestSoFar = {.cycles = 0, .millis = 0};
-    for (U64 i = 0; i < TEST_ITERATIONS; i++) {
+    for (typeof(TEST_ITERATIONS) i = 0; i < TEST_ITERATIONS; i++) {
         Timing timing = runMappingTest(
             RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES), is2MiBPage,
             false);
@@ -142,7 +142,7 @@ static void partialMappedBaselineWritingTest(bool is2MiBPage) {
     biskiSeed(&state, PRNG_SEED);
 
     Timing bestSoFar = {.cycles = 0, .millis = 0};
-    for (U64 i = 0; i < TEST_ITERATIONS; i++) {
+    for (typeof(TEST_ITERATIONS) i = 0; i < TEST_ITERATIONS; i++) {
         Timing timing = runMappingTest(
             RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES), is2MiBPage,
             true);
@@ -159,7 +159,7 @@ static void partialMappedBaselineWritingTest(bool is2MiBPage) {
 
 static void fullMappedWritingTest(bool is2MiBPage) {
     Timing bestSoFar = {.cycles = 0, .millis = 0};
-    for (U64 i = 0; i < TEST_ITERATIONS; i++) {
+    for (typeof(TEST_ITERATIONS) i = 0; i < TEST_ITERATIONS; i++) {
         Timing timing = runMappingTest(MAX_TEST_ENTRIES, is2MiBPage, false);
 
         bestSoFar.cycles += timing.cycles;
@@ -174,7 +174,7 @@ static void fullMappedWritingTest(bool is2MiBPage) {
 
 static void fullMappedBaselineWritingTest(bool is2MiBPage) {
     Timing bestSoFar = {.cycles = 0, .millis = 0};
-    for (U64 i = 0; i < TEST_ITERATIONS; i++) {
+    for (typeof(TEST_ITERATIONS) i = 0; i < TEST_ITERATIONS; i++) {
         Timing timing = runMappingTest(MAX_TEST_ENTRIES, is2MiBPage, true);
 
         bestSoFar.cycles += timing.cycles;
@@ -212,7 +212,7 @@ static void partialMappingTest() {
 static void fullReallocWritingTest() {
     KFLUSH_AFTER { INFO(STRING("Starting full realloc writing test...\n")); }
     Timing bestSoFar = {.cycles = 0, .millis = 0};
-    for (U64 i = 0; i < TEST_ITERATIONS; i++) {
+    for (typeof(TEST_ITERATIONS) i = 0; i < TEST_ITERATIONS; i++) {
         U64_max_a array = createDynamicArray();
 
         U64 startNanos = currentTimeNanos();
@@ -256,7 +256,7 @@ static void partialReallocWritingTest() {
 
     BiskiState state;
     biskiSeed(&state, PRNG_SEED);
-    for (U64 i = 0; i < TEST_ITERATIONS; i++) {
+    for (typeof(TEST_ITERATIONS) i = 0; i < TEST_ITERATIONS; i++) {
         U64_max_a array = createDynamicArray();
         U64 arrayEntries =
             RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
@@ -264,14 +264,14 @@ static void partialReallocWritingTest() {
         U64 startNanos = currentTimeNanos();
         U64 startCycleCount = currentCycleCounter(true, false);
 
-        for (U64 i = 0; i < arrayEntries; i++) {
+        for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
             U64_MAX_A_APPEND(array, i);
         }
 
         U64 endCycleCount = currentCycleCounter(false, true);
         U64 endNanos = currentTimeNanos();
 
-        for (U64 i = 0; i < arrayEntries; i++) {
+        for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
             if (array.buf[i] != i) {
                 KFLUSH_AFTER {
                     INFO(STRING("arithmetic error at i="));
@@ -303,7 +303,7 @@ static void fullReallocTest() {
 }
 
 int main() {
-    for (U64 i = 0; i < 2; i++) {
+    for (U32 i = 0; i < 2; i++) {
         fullMappingTest();
         partialMappingTest();
 

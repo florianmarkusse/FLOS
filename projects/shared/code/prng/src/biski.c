@@ -30,7 +30,7 @@ static U64 splitmix64_next(U64 *seed_state_ptr) {
  * @param state Pointer to the BiskiState structure to be warmed up.
  */
 static void biski64_warmup(BiskiState *state) {
-    for (int i = 0; i < 16; ++i) {
+    for (U32 i = 0; i < 16; ++i) {
         biskiNext(state); // Assumes this function advances the state
     }
 }

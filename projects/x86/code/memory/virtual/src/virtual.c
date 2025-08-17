@@ -57,8 +57,8 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
     VirtualPageTable *pageTable = rootPageTable;
 
     U16 index = 0;
-    for (U64 entrySize = PAGE_ROOT_ENTRY_MAX_SIZE; entrySize >= mappingSize;
-         entrySize /= PageTableFormat.ENTRIES) {
+    for (typeof(mappingSize) entrySize = PAGE_ROOT_ENTRY_MAX_SIZE;
+         entrySize >= mappingSize; entrySize /= PageTableFormat.ENTRIES) {
         U16 newMetaIndex = index; // Lagging behind index by 1 iteration
         index = calculateTableIndex(virt, entrySize);
 

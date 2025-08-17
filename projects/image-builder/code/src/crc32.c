@@ -50,7 +50,7 @@ static U32 crc32Table[256] =
 U32 calculateCRC32(void *data, U32 size) {
     U32 crc = 0xFFFFFFFF;
 
-    for (U32 i = 0; i < size; i++) {
+    for (typeof(size) i = 0; i < size; i++) {
         crc = (crc32Table[((crc) ^ (((U8 *)data)[i])) & 0xff] ^ ((crc) >> 8));
     }
 

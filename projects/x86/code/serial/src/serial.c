@@ -12,10 +12,10 @@ void outb(U16 port, U8 value) {
 }
 
 static constexpr auto LINE_STATUS_REGISTER_OFFSET = 5;
-static constexpr auto TRANSMITTER_HOLDING_REGISTER_EMPTY = 0b10'0000;
+static constexpr auto TRANSMITTER_HOLDING_REGISTER_EMPTY = 0b100000;
 
 void flushToSerial(U8_max_a buffer) {
-    for (U64 i = 0; i < buffer.len; i++) {
+    for (typeof(buffer.len) i = 0; i < buffer.len; i++) {
         while (!((inb(COM1 + LINE_STATUS_REGISTER_OFFSET) &
                   TRANSMITTER_HOLDING_REGISTER_EMPTY))) {
         }

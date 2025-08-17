@@ -97,23 +97,22 @@ static void switchToScreenDisplay() {
 }
 
 static void drawTerminalBox() {
-    for (U32 y = 0; y < dim.height; y++) {
-        for (U32 x = 0; x < dim.scanline; x++) {
+    for (typeof(dim.height) y = 0; y < dim.height; y++) {
+        for (typeof(dim.scanline) x = 0; x < dim.scanline; x++) {
             dim.backingBuffer[y * dim.scanline + x] = 0x00000000;
         }
     }
 
-    for (U32 x = 0; x < dim.scanline; x++) {
+    for (typeof(dim.scanline) x = 0; x < dim.scanline; x++) {
         dim.backingBuffer[x] = HAXOR_GREEN;
     }
-    for (U32 y = 0; y < dim.height; y++) {
+    for (typeof(dim.height) y = 0; y < dim.height; y++) {
         dim.backingBuffer[y * dim.scanline] = HAXOR_GREEN;
     }
-    for (U32 y = 0; y < dim.height; y++) {
+    for (typeof(dim.height) y = 0; y < dim.height; y++) {
         dim.backingBuffer[y * dim.scanline + (dim.width - 1)] = HAXOR_GREEN;
     }
-
-    for (U32 x = 0; x < dim.scanline; x++) {
+    for (typeof(dim.scanline) x = 0; x < dim.scanline; x++) {
         dim.backingBuffer[(dim.scanline * (dim.height - 1)) + x] = HAXOR_GREEN;
     }
 
@@ -123,7 +122,7 @@ static void drawTerminalBox() {
 static void drawGlyph(U8 ch, U32 topRightGlyphOffset) {
     U8 *glyphStart = &(font->glyphs[ch * font->bytesperglyph]);
     U32 glyphOffset = topRightGlyphOffset;
-    for (U32 y = 0; y < font->height; y++) {
+    for (typeof(font->height) y = 0; y < font->height; y++) {
         // TODO: use SIMD instructions?
         U32 line = glyphOffset;
         U32 mask = 1 << (font->width - 1);
@@ -135,7 +134,7 @@ static void drawGlyph(U8 ch, U32 topRightGlyphOffset) {
         // 000001100000 0000
         // 000011110000 0000
         ASSERT(font->width <= sizeof(glyphLine) * BITS_PER_BYTE);
-        for (U32 x = 0; x < font->width; x++) {
+        for (typeof(font->width) x = 0; x < font->width; x++) {
             dim.backingBuffer[line] =
                 (((glyphLine) & (mask)) != 0) * HAXOR_WHITE;
             mask >>= 1;
@@ -147,7 +146,7 @@ static void drawGlyph(U8 ch, U32 topRightGlyphOffset) {
 }
 
 static void zeroOutGlyphs(U32 topRightGlyphOffset, U16 numberOfGlyphs) {
-    for (U32 i = 0; i < font->height; i++) {
+    for (typeof(font->height) i = 0; i < font->height; i++) {
         memset(&dim.backingBuffer[topRightGlyphOffset], 0,
                numberOfGlyphs * font->width * BYTES_PER_PIXEL);
         topRightGlyphOffset += dim.scanline;
@@ -163,7 +162,7 @@ static void drawLines(U32 startIndex, U16 screenLinesToDraw,
     U16 currentGlyphLen = 0;
     bool toNext = false;
 
-    for (U32 i = screenLines[startIndex]; i < charCount; i++) {
+    for (typeof(charCount) i = screenLines[startIndex]; i < charCount; i++) {
         U8 ch = buf[RING_RANGE_VALUE(i, FILE_BUF_LEN)];
 
         if (toNext) {
@@ -267,7 +266,7 @@ static FillResult fillScreenLines(U32 dryStartIndex, U32 startIndex,
     screenLinesCopy[currentScreenLineIndex] = dryStartIndex;
     logicalLineLens[currentScreenLineIndex] = currentLogicalLineLen;
 
-    U32 i = dryStartIndex;
+    typeof(endIndexExclusive) i = dryStartIndex;
     for (; i < endIndexExclusive; i++) {
         U8 ch = buf[RING_RANGE_VALUE(i, FILE_BUF_LEN)];
 
@@ -469,7 +468,8 @@ static void toTail() {
                       ringGlyphsPerColumn);
     }
 
-    for (U16 i = 0; i <= fillResult.realScreenLinesWritten; i++) {
+    for (typeof(fillResult.realScreenLinesWritten) i = 0;
+         i <= fillResult.realScreenLinesWritten; i++) {
         screenLines[RING_PLUS(oldestScreenLineIndex + oldScreenLines, i,
                               ringGlyphsPerColumn)] =
             screenLinesCopy[RING_PLUS(startIndex, i, ringGlyphsPerColumn)];
@@ -504,7 +504,7 @@ bool flushToScreen(U8_max_a buffer) {
 
     // TODO: I think we can memcpy this all, and then
     // TODO: SIMD up in this birch.
-    for (U32 i = startIndex; i < buffer.len; i++) {
+    for (typeof(buffer.len) i = startIndex; i < buffer.len; i++) {
         buf[nextCharInBuf] = buffer.buf[i];
 
         if (logicalNewline) {
@@ -608,7 +608,7 @@ void rewind(U16 numberOfScreenLines) {
     oldestScreenLineIndex = RING_MINUS(
         oldestScreenLineIndex, newScreenLinesOnTop, ringGlyphsPerColumn);
 
-    for (U16 i = 0; i < newScreenLinesOnTop; i++) {
+    for (typeof(newScreenLinesOnTop) i = 0; i < newScreenLinesOnTop; i++) {
         screenLines[RING_PLUS(oldestScreenLineIndex, i, ringGlyphsPerColumn)] =
             screenLinesCopy[RING_PLUS(startIndex, i, ringGlyphsPerColumn)];
     }
@@ -658,7 +658,8 @@ void prowind(U16 numberOfScreenLines) {
         RING_PLUS(oldestScreenLineIndex, fillResult.realScreenLinesWritten,
                   ringGlyphsPerColumn);
 
-    for (U16 i = 0; i <= fillResult.realScreenLinesWritten; i++) {
+    for (typeof(fillResult.realScreenLinesWritten) i = 0;
+         i <= fillResult.realScreenLinesWritten; i++) {
         screenLines[RING_PLUS(oldestScreenLineIndex + oldScreenLines, i,
                               ringGlyphsPerColumn)] =
             screenLinesCopy[RING_PLUS(startIndex, i, ringGlyphsPerColumn)];

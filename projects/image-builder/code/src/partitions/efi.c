@@ -279,8 +279,8 @@ static Cluster createContiguousSpaceForNewEntry(U32 bytes) {
     U32 exclusiveLastCluster =
         CURRENT_FREE_DATA_CLUSTER_INDEX.full + requiredNewClusters;
     U32 lastCluster = exclusiveLastCluster - 1;
-    for (U32 i = CURRENT_FREE_DATA_CLUSTER_INDEX.full; i < exclusiveLastCluster;
-         i++) {
+    for (typeof(exclusiveLastCluster) i = CURRENT_FREE_DATA_CLUSTER_INDEX.full;
+         i < exclusiveLastCluster; i++) {
         if (i == lastCluster) {
             PRIMARY_FAT[i] = END_OF_CHAIN_MARKER;
         } else {
@@ -445,7 +445,7 @@ bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U32 efiSizeBytes,
     }
 
     U32 *mirrorLocation = PRIMARY_FAT + FAT_SIZE_BYTES;
-    for (U8 i = 0; i < parameterBlock.FATs - 1; i++) {
+    for (typeof(parameterBlock.FATs) i = 0; i < parameterBlock.FATs - 1; i++) {
         memcpy(mirrorLocation, PRIMARY_FAT, FAT_SIZE_BYTES);
         mirrorLocation += FAT_SIZE_BYTES;
     }

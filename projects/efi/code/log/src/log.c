@@ -16,7 +16,7 @@ U8_max_a flushBuf = (U8_max_a){
 
 static U16 convertedChar[2] = {0, '\0'};
 bool flushBuffer(U8_max_a *buffer) {
-    for (U32 i = 0; i < buffer->len; i++) {
+    for (typeof(buffer->len) i = 0; i < buffer->len; i++) {
         if (buffer->buf[i] == '\n') {
             globals.st->con_out->output_string(globals.st->con_out, u"\r\n");
         } else {
@@ -50,7 +50,7 @@ void handleFlags(U8 flags) {
 // TODO: buffer should be a variable to this function once we have actual
 // memory management set up instead of it being hardcoded.
 void appendToFlushBuffer(String data, U8 flags) {
-    for (U32 bytesWritten = 0; bytesWritten < data.len;) {
+    for (typeof(data.len) bytesWritten = 0; bytesWritten < data.len;) {
         // the minimum of size remaining and what is left in the buffer.
         U32 spaceInBuffer = (flushBuf.cap) - flushBuf.len;
         U32 dataToWrite = data.len - bytesWritten;
@@ -69,7 +69,7 @@ void appendToFlushBuffer(String data, U8 flags) {
 
 // NOTE: Ready for code generation
 void appendZeroToFlushBuffer(U32 bytes, U8 flags) {
-    for (U32 bytesWritten = 0; bytesWritten < bytes;) {
+    for (typeof(bytes) bytesWritten = 0; bytesWritten < bytes;) {
         // the minimum of size remaining and what is left in the buffer.
         U32 spaceInBuffer = (flushBuf.cap) - flushBuf.len;
         U32 dataToWrite = bytes - bytesWritten;

@@ -65,9 +65,9 @@ U64 alignVirtual(U64 virtualAddress, U64 physicalAddress, U64 bytes) {
 }
 
 U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
-    for (U64 bytesMapped = 0, mappingSize; bytesMapped < bytes;
+    for (typeof(bytes) bytesMapped = 0, mappingSize; bytesMapped < bytes;
          virt += mappingSize, physical += mappingSize,
-             bytesMapped += mappingSize) {
+                       bytesMapped += mappingSize) {
         mappingSize = pageSizeLeastLargerThan(physical, bytes - bytesMapped);
 
         mapPageWithFlags(virt, physical, mappingSize, flags);
@@ -105,7 +105,8 @@ void convertToKernelMemory(
 
             U64 descriptorEnd = curEnd;
             while (curStart < descriptorEnd) {
-                for (U64 i = 0; i < kernelStructureLocations.len; i++) {
+                for (typeof(kernelStructureLocations.len) i = 0;
+                     i < kernelStructureLocations.len; i++) {
                     U64 kernelStart = kernelStructureLocations.buf[i].start;
 
                     if (kernelStart >= curStart && kernelStart < curEnd) {
@@ -125,7 +126,8 @@ void convertToKernelMemory(
                 curEnd = descriptorEnd;
             }
 
-            for (U32 i = 0; i < availableMemory.len; i++) {
+            for (typeof(availableMemory.len) i = 0; i < availableMemory.len;
+                 i++) {
                 MMNode *node = getMMNode(&RedBlackMMtreeWithFreeList->freeList,
                                          &RedBlackMMtreeWithFreeList->nodes);
                 if (!node) {

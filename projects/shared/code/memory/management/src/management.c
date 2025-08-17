@@ -140,7 +140,7 @@ static void identityArrayToMappable(void_max_a *array, U64 alignBytes,
     U64 bytesUsed = array->len * elementSizeBytes;
     U32 mapsToDo =
         (U32)CEILING_DIV_VALUE(bytesUsed, pageSizesSmallest()) + additionalMaps;
-    for (U32 i = 0; i < mapsToDo; i++) {
+    for (typeof(mapsToDo) i = 0; i < mapsToDo; i++) {
         (void)handlePageFault((U64)virtualBuffer + (i * pageSizesSmallest()));
     }
 
@@ -158,7 +158,8 @@ static void VMMTreeToMappable(VMMTreeWithFreeList *memoryAllocator) {
                             sizeof(*memoryAllocator->nodes.buf), 0);
     U64 newNodesLocation = (U64)memoryAllocator->nodes.buf;
     U64 nodesBias = newNodesLocation - originalBufferLocation;
-    for (U32 i = 0; i < memoryAllocator->nodes.len; i++) {
+    for (typeof(memoryAllocator->nodes.len) i = 0;
+         i < memoryAllocator->nodes.len; i++) {
         RedBlackNodeBasic **children =
             memoryAllocator->nodes.buf[i].basic.children;
 
@@ -179,7 +180,8 @@ static void VMMTreeToMappable(VMMTreeWithFreeList *memoryAllocator) {
             (VMMNode *)((U8 *)memoryAllocator->tree + nodesBias);
     }
 
-    for (U32 i = 0; i < memoryAllocator->freeList.len; i++) {
+    for (typeof(memoryAllocator->freeList.len) i = 0;
+         i < memoryAllocator->freeList.len; i++) {
         memoryAllocator->freeList.buf[i] =
             (VMMNode *)((U8 *)memoryAllocator->freeList.buf[i] + nodesBias);
     }
@@ -200,7 +202,8 @@ static void MMTreeToMappable(RedBlackMMTreeWithFreeList *memoryAllocator,
                             additionalMapsForNodesBuffer);
     U64 newNodesLocation = (U64)memoryAllocator->nodes.buf;
     U64 nodesBias = newNodesLocation - originalBufferLocation;
-    for (U32 i = 0; i < memoryAllocator->nodes.len; i++) {
+    for (typeof(memoryAllocator->nodes.len) i = 0;
+         i < memoryAllocator->nodes.len; i++) {
         MMNode **children = memoryAllocator->nodes.buf[i].children;
 
         if (children[RB_TREE_LEFT]) {
@@ -218,7 +221,8 @@ static void MMTreeToMappable(RedBlackMMTreeWithFreeList *memoryAllocator,
             (MMNode *)((U8 *)memoryAllocator->tree + nodesBias);
     }
 
-    for (U32 i = 0; i < memoryAllocator->freeList.len; i++) {
+    for (typeof(memoryAllocator->freeList.len) i = 0;
+         i < memoryAllocator->freeList.len; i++) {
         memoryAllocator->freeList.buf[i] =
             (MMNode *)((U8 *)memoryAllocator->freeList.buf[i] + nodesBias);
     }

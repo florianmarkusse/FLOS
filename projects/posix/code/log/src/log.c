@@ -25,7 +25,7 @@ static WriteBuffer stderrBuffer =
                   .fileDescriptor = STDERR_FILENO};
 
 bool flushBufferWithFileDescriptor(int fileDescriptor, U8 *buffer, U32 size) {
-    for (U32 bytesWritten = 0; bytesWritten < size;) {
+    for (typeof(size) bytesWritten = 0; bytesWritten < size;) {
         I64 partialBytesWritten =
             write(fileDescriptor, buffer + bytesWritten, size - bytesWritten);
         if (partialBytesWritten < 0) {
@@ -86,7 +86,7 @@ bool handleFlags(U8 flags, WriteBuffer *buffer) {
 // NOTE: Ready for code generation
 bool appendZeroToFlushBufferWithWriter(U32 bytes, U8 flags,
                                        WriteBuffer *buffer) {
-    for (U32 bytesWritten = 0; bytesWritten < bytes;) {
+    for (typeof(bytes) bytesWritten = 0; bytesWritten < bytes;) {
         // the minimum of size remaining and what is left in the buffer.
         U32 spaceInBuffer = (buffer->array.cap) - buffer->array.len;
         U32 dataToWrite = bytes - bytesWritten;
@@ -110,7 +110,7 @@ void appendZeroToFlushBuffer(U32 bytes, U8 flags) {
 
 // NOTE: Ready for code generation
 bool appendToFlushBufferWithWriter(String data, U8 flags, WriteBuffer *buffer) {
-    for (U32 bytesWritten = 0; bytesWritten < data.len;) {
+    for (typeof(data.len) bytesWritten = 0; bytesWritten < data.len;) {
         // the minimum of size remaining and what is left in the buffer.
         U32 spaceInBuffer = (buffer->array.cap) - buffer->array.len;
         U32 dataToWrite = data.len - bytesWritten;

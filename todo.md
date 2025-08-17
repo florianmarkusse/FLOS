@@ -1,7 +1,4 @@
-- Look into optimizing struct layouts? pahole
-- Maybe also make some sizes smaller, e.g., standard arrays/strings can be U32 instead of U64? Look how the struct gets laid out if you add a string/array struct to another struct where there is extra "slop" in the struct inside the other struct?
 - for loop with typeof ?
-- run tests
 - redundant decls warning
 - fix string.h, can have a string.c with functions normally!
 - look into divisiona and see where can used shift instead for power of 2 div
@@ -41,6 +38,9 @@
   - VERY_GOOD_TYPE_RESULT -> TYPE_RESULT_VERY_GOOD
   - basically directory structure kind of subject -> action -> x , makes it easier
 - c2y updates: Are constexpr functions possible???
+
+- run tests
+  failing because includes... should be in a base layer
 
 - Find better way to get aligned memory from allocPhysicalMemory, not "just" finding the bytes + align as it causes nasty fracturing
 

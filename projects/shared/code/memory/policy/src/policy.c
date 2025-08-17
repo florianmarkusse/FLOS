@@ -67,7 +67,7 @@ void freeMappableMemory(Memory memory) {
     }
 
     if (virtualAddressesLen < MAX_PAGE_FLUSHES) {
-        for (U32 i = 0; i < virtualAddressesLen; i++) {
+        for (typeof(virtualAddressesLen) i = 0; i < virtualAddressesLen; i++) {
             flushPageCacheEntry(virtualAddresses[i]);
         }
     } else {

@@ -81,7 +81,7 @@ static U64 arrayWritingTest(U64 pageSize, U64 arrayEntries,
             .buf = buffer, .len = 0, .cap = START_ENTRIES_COUNT};
 
         U64 startCycleCount = currentCycleCounter(true, false);
-        for (U64 i = 0; i < arrayEntries; i++) {
+        for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
             if (dynamicArray.len >= dynamicArray.cap) {
                 U64 currentBytes = dynamicArray.cap * sizeof(U64);
                 U64 *temp = allocateIdentityMemory(currentBytes * GROWTH_RATE,
@@ -108,7 +108,7 @@ static U64 arrayWritingTest(U64 pageSize, U64 arrayEntries,
         beforePageFaults = currentNumberOfPageFaults;
         U64 startCycleCount = currentCycleCounter(true, false);
 
-        for (U64 i = 0; i < arrayEntries; i++) {
+        for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
             buffer[i] = i;
         }
 
@@ -118,7 +118,7 @@ static U64 arrayWritingTest(U64 pageSize, U64 arrayEntries,
         cycles = endCycleCount - startCycleCount;
     }
 
-    for (U64 i = 0; i < arrayEntries; i++) {
+    for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
         if (buffer[i] != i) {
             KFLUSH_AFTER {
                 INFO(STRING("arithmetic error at i="));
@@ -169,7 +169,8 @@ static bool partialMappingTest(U64 pageSize) {
     BiskiState state;
     biskiSeed(&state, PRNG_SEED);
 
-    for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
+    for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
+         iteration++) {
         U64 entriesToWrite =
             RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
         U64 cycles = arrayWritingTest(
@@ -197,7 +198,8 @@ static bool fullMappingTest(U64 pageSize) {
         INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(pageSize), 10));
     }
 
-    for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
+    for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
+         iteration++) {
         U64 cycles = arrayWritingTest(
             pageSize, MAX_TEST_ENTRIES, MAPPABLE_MEMORY,
             CEILING_DIV_VALUE((MAX_TEST_ENTRIES * sizeof(U64)), pageSize));
@@ -223,7 +225,8 @@ static void identityTests() {
 
     U64 sum = 0;
 
-    for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
+    for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
+         iteration++) {
         U64 cycles = arrayWritingTest(alignof(U64), MAX_TEST_ENTRIES,
                                       IDENTITY_MEMORY, 0);
         if (!cycles) {
@@ -244,7 +247,8 @@ static void identityTests() {
     BiskiState state;
     biskiSeed(&state, PRNG_SEED);
 
-    for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
+    for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
+         iteration++) {
         U64 entriesToWrite =
             RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
         U64 cycles =
@@ -271,7 +275,8 @@ static void baselineTest() {
 
     U64 sum = 0;
 
-    for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
+    for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
+         iteration++) {
         U64 *buffer = allocateIdentityMemory(MAX_TEST_ENTRIES * sizeof(U64),
                                              alignof(U64));
 
@@ -301,7 +306,8 @@ static void baselineTest() {
     BiskiState state;
     biskiSeed(&state, PRNG_SEED);
 
-    for (U64 iteration = 0; iteration < TEST_ITERATIONS; iteration++) {
+    for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
+         iteration++) {
         U64 *buffer = allocateIdentityMemory(MAX_TEST_ENTRIES * sizeof(U64),
                                              alignof(U64));
         U64 entriesToWrite =
@@ -309,7 +315,7 @@ static void baselineTest() {
 
         U64 startCycleCount = currentCycleCounter(true, false);
 
-        for (U64 i = 0; i < entriesToWrite; i++) {
+        for (typeof(entriesToWrite) i = 0; i < entriesToWrite; i++) {
             buffer[i] = i;
         }
         U64 endCycleCount = currentCycleCounter(false, true);
@@ -386,7 +392,7 @@ kernelMain(PackedKernelParameters *kernelParams) {
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 
-    for (U64 i = 0; i < 2; i++) {
+    for (U32 i = 0; i < 2; i++) {
         BiskiState state;
         biskiSeed(&state, PRNG_SEED);
 
@@ -398,7 +404,7 @@ kernelMain(PackedKernelParameters *kernelParams) {
             INFO(STRING("Max array entries used: "));
             INFO((U64)MAX_TEST_ENTRIES, NEWLINE);
             INFO(STRING("Random array entries used: "));
-            for (U64 i = 0; i < TEST_ITERATIONS; i++) {
+            for (typeof(TEST_ITERATIONS) i = 0; i < TEST_ITERATIONS; i++) {
                 INFO(
                     (U64)RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES));
                 INFO(STRING(" "));

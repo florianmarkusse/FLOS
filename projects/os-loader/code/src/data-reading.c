@@ -126,7 +126,8 @@ String readKernelFromCurrentLoadedImage(U32 bytes, Arena scratch) {
     String data;
     data.len = 0;
 
-    for (U64 i = 0; data.len == 0 && i < numberOfHandles; i++) {
+    for (typeof(numberOfHandles) i = 0; data.len == 0 && i < numberOfHandles;
+         i++) {
         data = fetchKernelThroughBIOP(handleBuffer[i], bytes, scratch);
     }
     if (data.len == 0) {
@@ -222,7 +223,8 @@ U32 getKernelBytes(Arena scratch) {
         TOKENIZE_STRING(lines.string, tokens, '=', 0) {
             if (second) {
                 U32 bytes = 0;
-                for (U32 i = 0; i < tokens.string.len; i++) {
+                for (typeof(tokens.string.len) i = 0; i < tokens.string.len;
+                     i++) {
                     bytes = bytes * 10 + (tokens.string.buf[i] - '0');
                 }
 

@@ -16,7 +16,7 @@ typedef struct {
 static constexpr auto MAX_TEST_TOPICS = 1 << 6;
 
 static TestTopic testTopics[MAX_TEST_TOPICS];
-static U64 nextTestTopic = 0;
+static U32 nextTestTopic = 0;
 
 static void *failureHandler;
 
@@ -27,7 +27,7 @@ static void addTopic(String topic) {
 }
 
 static void appendSpaces() {
-    for (U64 i = 0; i < nextTestTopic - 1; i++) {
+    for (typeof(nextTestTopic) i = 0; i < nextTestTopic - 1; i++) {
         PLOG((STRING("  ")));
     }
 }
@@ -108,7 +108,7 @@ void unitTestStart(String testName, JumpBuffer buffer) {
 }
 
 void testSuccess() {
-    for (U64 i = 0; i < nextTestTopic; i++) {
+    for (typeof(nextTestTopic) i = 0; i < nextTestTopic; i++) {
         testTopics[i].successes++;
     }
 
@@ -121,7 +121,7 @@ void testSuccess() {
 }
 
 void testFailure() {
-    for (U64 i = 0; i < nextTestTopic; i++) {
+    for (typeof(nextTestTopic) i = 0; i < nextTestTopic; i++) {
         testTopics[i].failures++;
     }
 

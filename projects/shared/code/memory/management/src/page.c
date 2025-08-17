@@ -76,7 +76,7 @@ PageFaultResult handlePageFault(U64 faultingAddress) {
     // flushPage calls to all cores.
 
     U32 mapsToDo = (U32)divideByPowerOf2(pageSizeForFault, pageSizeToUse);
-    for (U32 i = 0; i < mapsToDo; i++) {
+    for (typeof(mapsToDo) i = 0; i < mapsToDo; i++) {
         U8 *address = allocPhysicalMemory(pageSizeToUse, pageSizeToUse);
         mapPage(startingMap + (i * pageSizeToUse), (U64)address, pageSizeToUse);
     }
