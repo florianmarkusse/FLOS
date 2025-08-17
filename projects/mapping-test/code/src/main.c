@@ -218,20 +218,20 @@ static void fullReallocWritingTest() {
         U64 startNanos = currentTimeNanos();
         U64 startCycleCount = currentCycleCounter(true, false);
 
-        for (U64 i = 0; i < MAX_TEST_ENTRIES; i++) {
+        for (typeof_unqual(MAX_TEST_ENTRIES) i = 0; i < MAX_TEST_ENTRIES; i++) {
             U64_MAX_A_APPEND(array, i);
         }
 
         U64 endCycleCount = currentCycleCounter(false, true);
         U64 endNanos = currentTimeNanos();
 
-        for (U64 i = 0; i < MAX_TEST_ENTRIES; i++) {
+        for (typeof_unqual(MAX_TEST_ENTRIES) i = 0; i < MAX_TEST_ENTRIES; i++) {
             if (array.buf[i] != i) {
                 KFLUSH_AFTER {
                     INFO(STRING("arithmetic error at i="));
-                    INFO(i);
+                    INFO((U32)i);
                     INFO(STRING(", expected="));
-                    INFO(i);
+                    INFO((U32)i);
                     INFO(STRING(", actual="));
                     INFO(array.buf[i], NEWLINE);
                 }

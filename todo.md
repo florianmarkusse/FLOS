@@ -1,4 +1,3 @@
-- for loop with typeof ?
 - redundant decls warning
 - fix string.h, can have a string.c with functions normally!
 - look into divisiona and see where can used shift instead for power of 2 div

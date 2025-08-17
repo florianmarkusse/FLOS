@@ -17,8 +17,9 @@ void insertMMNodeAndAddToFreelist(MMNode **root, MMNode *newNode,
                                   MMNodePtr_max_a *freeList) {
     InsertResult insertResult = insertMMNode(root, newNode);
 
-    for (U32 i = 0; (i < RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT) &&
-                    insertResult.freed[i];
+    for (typeof_unqual(RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT) i = 0;
+         (i < RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT) &&
+         insertResult.freed[i];
          i++) {
         freeList->buf[freeList->len] = insertResult.freed[i];
         freeList->len++;

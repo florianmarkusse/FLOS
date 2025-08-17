@@ -282,7 +282,7 @@ static void baselineTest() {
 
         U64 startCycleCount = currentCycleCounter(true, false);
 
-        for (U64 i = 0; i < MAX_TEST_ENTRIES; i++) {
+        for (typeof_unqual(MAX_TEST_ENTRIES) i = 0; i < MAX_TEST_ENTRIES; i++) {
             buffer[i] = i;
         }
         U64 endCycleCount = currentCycleCounter(false, true);

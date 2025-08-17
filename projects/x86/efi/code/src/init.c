@@ -118,7 +118,8 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
         KFLUSH_AFTER {
             U64 stackAddress =
                 interruptStacksRegion + (TOTAL_IST_STACKS_BYTES * i);
-            for (U32 j = 0; j < INTERRUPT_STACK_TABLE_COUNT; j++) {
+            for (typeof_unqual(INTERRUPT_STACK_TABLE_COUNT) j = 0;
+                 j < INTERRUPT_STACK_TABLE_COUNT; j++) {
                 // Stack grows down
                 stackAddress += IST_STACK_SIZES[j];
                 if (!isAlignedTo(stackAddress, KERNEL_STACK_ALIGNMENT)) {

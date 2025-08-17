@@ -39,7 +39,8 @@ RSDPResult getRSDP(USize tableEntries, ConfigurationTable *tables) {
     for (typeof(tableEntries) i = 0; i < tableEntries; i++) {
         ConfigurationTable *cur_table = &tables[i];
 
-        for (U32 i = 0; i < POSSIBLE_RSDPS_LEN; i++) {
+        for (typeof_unqual(POSSIBLE_RSDPS_LEN) i = 0; i < POSSIBLE_RSDPS_LEN;
+             i++) {
             if (memcmp(&cur_table->vendor_guid, &possibleRsdps[i].guid,
                        sizeof(UUID)) != 0) {
                 continue;
