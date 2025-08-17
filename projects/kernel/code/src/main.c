@@ -1,6 +1,7 @@
 #include "abstraction/interrupts.h" // for setupIDT
 #include "abstraction/kernel.h"
 #include "abstraction/log.h" // for LOG, LOG_CHOOSER_IMPL_1, rewind, pro...
+#include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/map.h"
 #include "abstraction/thread.h"
 #include "abstraction/time.h"

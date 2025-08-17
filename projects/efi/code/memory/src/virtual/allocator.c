@@ -1,6 +1,7 @@
 #include "abstraction/memory/virtual/allocator.h"
 
 #include "abstraction/log.h"
+#include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/map.h"
 
 #include "efi/error.h"

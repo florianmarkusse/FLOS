@@ -1,5 +1,5 @@
 project(shared-text LANGUAGES C ASM)
-add_library(${PROJECT_NAME} OBJECT "src/parser.c")
+add_library(${PROJECT_NAME} OBJECT "src/parser.c" "src/string.c")
 
 add_includes_for_sublibrary()
 

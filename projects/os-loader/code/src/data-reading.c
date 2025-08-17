@@ -1,6 +1,7 @@
 #include "os-loader/data-reading.h"
 
 #include "abstraction/log.h"
+#include "abstraction/memory/manipulation.h"
 #include "efi-to-kernel/generated/kernel-magic.h"
 #include "efi-to-kernel/memory/definitions.h"
 #include "efi/error.h"
@@ -82,10 +83,8 @@ static String fetchKernelThroughBIOP(Handle handle, U32 bytes, Arena scratch) {
         U64 *blockAddress =
             (U64 *)NEW(&scratch, U8, alignedBytes, 0, biop->media->blockSize);
 
-        status =
-            biop->readBlocks(biop, biop->media->mediaID, 0,
-                             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-                             alignedBytes, (void *)blockAddress);
+        status = biop->readBlocks(biop, biop->media->mediaID, 0, alignedBytes,
+                                  (void *)blockAddress);
         if (!(EFI_ERROR(status)) && !memcmp(KERNEL_MAGIC, (void *)blockAddress,
                                             COUNTOF(KERNEL_MAGIC))) {
             U64 kernelAddress =
@@ -213,6 +212,16 @@ U32 getKernelBytes(Arena scratch) {
 
     globals.st->boot_services->close_protocol(
         globals.h, &LOADED_IMAGE_PROTOCOL_GUID, globals.h, nullptr);
+
+    I64 firstE = firstOccurenceOf(dataFile, 'E');
+    I64 secondE = firstOccurenceOf(dataFile, 'E', .from = (U32)(firstE + 1));
+
+    KFLUSH_AFTER {
+        INFO(STRING("first e location: "));
+        INFO(firstE, NEWLINE);
+        INFO(STRING("second e location: "));
+        INFO(secondE, NEWLINE);
+    }
 
     // Assumes the below file structure:
     // KERNEL_SIZE_BYTES=132456

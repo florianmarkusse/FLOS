@@ -1,5 +1,3 @@
-- redundant decls warning
-- fix string.h, can have a string.c with functions normally!
 - look into divisiona and see where can used shift instead for power of 2 div
 - clean up red-black tree mess somehow? This should be possible to abstract!
 - how to hide extern variables from showing up everywhere
