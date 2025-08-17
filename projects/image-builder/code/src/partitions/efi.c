@@ -266,7 +266,7 @@ static void writeDOTEntries(DirEntryShortName *clusterBuffer,
                         StandardDirectory.DOTDOT);
 }
 
-static Cluster createContiguousSpaceForNewEntry(U64 bytes) {
+static Cluster createContiguousSpaceForNewEntry(U32 bytes) {
     ASSERT(bytes > 0);
 
     U32 requiredNewClusters =
@@ -367,12 +367,11 @@ static Cluster createPath(String FAT32FilePath, Cluster startCluster) {
          MACRO_VAR(i) = 1,                                                     \
               createFileEntryAfterWritingData(                                 \
                   (fileName), parentCluster,                                   \
-                  (U32)(((U64) &                                               \
-                         ((bufferVariable).buf[(bufferVariable).len])) -       \
-                        ((U64)((bufferVariable).buf)))))
+                  (U32)((&((bufferVariable).buf[(bufferVariable).len])) -      \
+                        (((bufferVariable).buf)))))
 
-bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U64 efiSizeBytes,
-                             U64 kernelSizeBytes) {
+bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U32 efiSizeBytes,
+                             U32 kernelSizeBytes) {
     parameterBlock.hiddenSectors = configuration.EFISystemPartitionStartLBA;
 
     // We write the file data first and later fill the reserved sectors. The
@@ -410,7 +409,7 @@ bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U64 efiSizeBytes,
     CREATE_FAT32_FILE((U8 *)"BOOTX64 EFI", efiBootCluster, buffer) {
         while (buffer.len < efiSizeBytes) {
             I64 partialBytesRead = read(efifd, &buffer.buf[buffer.len],
-                                        (U64)(efiSizeBytes - buffer.len));
+                                        (efiSizeBytes - buffer.len));
             if (partialBytesRead < 0) {
                 ASSERT(false);
                 PFLUSH_AFTER(STDERR) {
@@ -420,12 +419,12 @@ bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U64 efiSizeBytes,
                     PERROR(errno, NEWLINE);
                     PERROR(STRING("Error message: "));
                     char *errorString = strerror(errno);
-                    PERROR(STRING_LEN(errorString, strlen(errorString)),
+                    PERROR(STRING_LEN(errorString, (U32)strlen(errorString)),
                            NEWLINE);
                 }
                 return false;
             }
-            buffer.len += (U64)partialBytesRead;
+            buffer.len += partialBytesRead;
         }
     }
 

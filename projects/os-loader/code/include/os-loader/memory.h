@@ -18,12 +18,9 @@ void allocateSpaceForKernelMemory(
     RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList, Arena scratch);
 
 void convertToKernelMemory(
-    MemoryInfo *memoryInfo,
-    PackedMMTreeWithFreeList *physicalMemoryTree,
+    MemoryInfo *memoryInfo, PackedMMTreeWithFreeList *physicalMemoryTree,
     RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList,
     GraphicsOutputProtocolMode *mode);
-
-void findKernelMemory(U64 alignment, U64 numberOfThreads);
 
 U64 alignVirtual(U64 virtualAddress, U64 physicalAddress, U64 bytes);
 

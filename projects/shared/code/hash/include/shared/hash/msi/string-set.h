@@ -24,7 +24,7 @@ bool msi_containsString(String string, U64 hash, msi_string *index);
 HashComparisonStatus msi_equalsStringSet(msi_string *set1, msi_string *set2);
 
 #define FOR_EACH_MSI_STRING(element, msiSet)                                   \
-    for (U64 MACRO_VAR(index) = 0; MACRO_VAR(index) < (1 << (msiSet)->exp);    \
+    for (U32 MACRO_VAR(index) = 0; MACRO_VAR(index) < (1 << (msiSet)->exp);    \
          ++MACRO_VAR(index))                                                   \
         if (((element) = (msiSet)->buf[MACRO_VAR(index)]).len != 0)
 

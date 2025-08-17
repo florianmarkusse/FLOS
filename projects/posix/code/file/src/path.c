@@ -10,7 +10,7 @@
 static constexpr auto FULL_ACCESS = 0700;
 
 void createPath(String fileLocation, Arena scratch) {
-    U64 currentIndex = 0;
+    U32 currentIndex = 0;
     I64 slashIndex = firstOccurenceOfFrom(fileLocation, '/', currentIndex);
     if (slashIndex >= 0) {
         U8 *dirPath = NEW(&scratch, U8, fileLocation.len + 1);
@@ -23,7 +23,7 @@ void createPath(String fileLocation, Arena scratch) {
             mkdir((char *)dirPath, FULL_ACCESS); // Create the directory
             dirPath[slashIndex] = '/';
 
-            currentIndex = (U64)(slashIndex + 1);
+            currentIndex = (U32)(slashIndex + 1);
             slashIndex = firstOccurenceOfFrom(fileLocation, '/', currentIndex);
         }
     }

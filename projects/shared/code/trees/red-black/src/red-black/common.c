@@ -17,13 +17,13 @@ void rotateAround(RedBlackNode *rotationParent, RedBlackNode *rotationNode,
     rotationParent->children[parentToChildDirection] = rotationChild;
 }
 
-U64 findAdjacentInSteps(RedBlackNode *node, CommonVisitedNode *visitedNodes,
+U32 findAdjacentInSteps(RedBlackNode *node, CommonVisitedNode *visitedNodes,
                         RedBlackDirection direction) {
     if (!node->children[direction]) {
         return 0;
     }
 
-    U64 traversals = 0;
+    U32 traversals = 0;
 
     visitedNodes[traversals].node = node;
     visitedNodes[traversals].direction = direction;

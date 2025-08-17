@@ -7,7 +7,7 @@ void appendMemoryManagementStatus();
 
 typedef struct {
     U64 memory;
-    U64 nodes;
+    U32 nodes;
 } AvailableMemoryState;
 
 AvailableMemoryState getAvailablePhysicalMemory();

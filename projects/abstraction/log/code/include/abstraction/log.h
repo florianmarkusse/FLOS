@@ -13,7 +13,7 @@
 
 void appendToBuffer(U8_a *buffer, String data);
 void appendToFlushBuffer(String data, U8 flags);
-void appendZeroToFlushBuffer(U64 bytes, U8 flags);
+void appendZeroToFlushBuffer(U32 bytes, U8 flags);
 bool flushStandardBuffer();
 bool flushBuffer(U8_max_a *buffer);
 
@@ -38,7 +38,7 @@ bool flushBuffer(U8_max_a *buffer);
 #define ERROR(data, ...) KLOG(data, ##__VA_ARGS__)
 
 #define KFLUSH_AFTER                                                           \
-    for (U64 MACRO_VAR(i) = 0; MACRO_VAR(i) < 1;                               \
+    for (U32 MACRO_VAR(i) = 0; MACRO_VAR(i) < 1;                               \
          MACRO_VAR(i) = flushStandardBuffer())
 
 #endif

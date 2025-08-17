@@ -35,7 +35,7 @@ void freeMappableMemory(Memory memory) {
     ASSERT(isAlignedTo(memory.bytes, pageSizesSmallest()));
 
     U64 virtualAddresses[MAX_PAGE_FLUSHES];
-    U64 virtualAddressesLen = 0;
+    U32 virtualAddressesLen = 0;
 
     Memory toFreePhysical = {0};
     Memory mapped;
@@ -67,7 +67,7 @@ void freeMappableMemory(Memory memory) {
     }
 
     if (virtualAddressesLen < MAX_PAGE_FLUSHES) {
-        for (U64 i = 0; i < virtualAddressesLen; i++) {
+        for (U32 i = 0; i < virtualAddressesLen; i++) {
             flushPageCacheEntry(virtualAddresses[i]);
         }
     } else {

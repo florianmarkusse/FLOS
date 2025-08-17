@@ -7,7 +7,7 @@
 
 static inline U64 hashStringSkeeto(String string) {
     U64 h = 0x100;
-    for (U64 i = 0; i < string.len; i++) {
+    for (U32 i = 0; i < string.len; i++) {
         h ^= string.buf[i];
         h *= 1111111111111111111u;
     }

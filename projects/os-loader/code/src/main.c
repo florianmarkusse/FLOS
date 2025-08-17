@@ -75,7 +75,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                                arena);
 
     KFLUSH_AFTER { INFO(STRING("Going to fetch kernel bytes\n")); }
-    U64 kernelBytes = getKernelBytes(arena);
+    U32 kernelBytes = getKernelBytes(arena);
     if (kernelBytes > KERNEL_CODE_MAX_SIZE) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING(

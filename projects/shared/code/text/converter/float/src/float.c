@@ -7,7 +7,7 @@
 #include "shared/types/array-types.h"
 
 String F64ToString(F64 data, U8_a tmp) {
-    U64 tmpLen = 0;
+    U32 tmpLen = 0;
     U32 prec = 1000000; // i.e. 6 decimals
 
     if (data < 0) {

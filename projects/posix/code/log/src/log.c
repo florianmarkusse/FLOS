@@ -24,8 +24,8 @@ static WriteBuffer stderrBuffer =
                             .len = 0},
                   .fileDescriptor = STDERR_FILENO};
 
-bool flushBufferWithFileDescriptor(int fileDescriptor, U8 *buffer, U64 size) {
-    for (U64 bytesWritten = 0; bytesWritten < size;) {
+bool flushBufferWithFileDescriptor(int fileDescriptor, U8 *buffer, U32 size) {
+    for (U32 bytesWritten = 0; bytesWritten < size;) {
         I64 partialBytesWritten =
             write(fileDescriptor, buffer + bytesWritten, size - bytesWritten);
         if (partialBytesWritten < 0) {
@@ -84,13 +84,13 @@ bool handleFlags(U8 flags, WriteBuffer *buffer) {
 }
 
 // NOTE: Ready for code generation
-bool appendZeroToFlushBufferWithWriter(U64 bytes, U8 flags,
+bool appendZeroToFlushBufferWithWriter(U32 bytes, U8 flags,
                                        WriteBuffer *buffer) {
-    for (U64 bytesWritten = 0; bytesWritten < bytes;) {
+    for (U32 bytesWritten = 0; bytesWritten < bytes;) {
         // the minimum of size remaining and what is left in the buffer.
-        U64 spaceInBuffer = (buffer->array.cap) - buffer->array.len;
-        U64 dataToWrite = bytes - bytesWritten;
-        U64 bytesToWrite = MIN(spaceInBuffer, dataToWrite);
+        U32 spaceInBuffer = (buffer->array.cap) - buffer->array.len;
+        U32 dataToWrite = bytes - bytesWritten;
+        U32 bytesToWrite = MIN(spaceInBuffer, dataToWrite);
         memset(buffer->array.buf + buffer->array.len, 0, bytesToWrite);
         buffer->array.len += bytesToWrite;
         bytesWritten += bytesToWrite;
@@ -104,17 +104,17 @@ bool appendZeroToFlushBufferWithWriter(U64 bytes, U8 flags,
     return handleFlags(flags, buffer);
 }
 
-void appendZeroToFlushBuffer(U64 bytes, U8 flags) {
+void appendZeroToFlushBuffer(U32 bytes, U8 flags) {
     appendZeroToFlushBufferWithWriter(bytes, flags, &stdoutBuffer);
 }
 
 // NOTE: Ready for code generation
 bool appendToFlushBufferWithWriter(String data, U8 flags, WriteBuffer *buffer) {
-    for (U64 bytesWritten = 0; bytesWritten < data.len;) {
+    for (U32 bytesWritten = 0; bytesWritten < data.len;) {
         // the minimum of size remaining and what is left in the buffer.
-        U64 spaceInBuffer = (buffer->array.cap) - buffer->array.len;
-        U64 dataToWrite = data.len - bytesWritten;
-        U64 bytesToWrite = MIN(spaceInBuffer, dataToWrite);
+        U32 spaceInBuffer = (buffer->array.cap) - buffer->array.len;
+        U32 dataToWrite = data.len - bytesWritten;
+        U32 bytesToWrite = MIN(spaceInBuffer, dataToWrite);
         memcpy(buffer->array.buf + buffer->array.len, data.buf + bytesWritten,
                bytesToWrite);
         buffer->array.len += bytesToWrite;

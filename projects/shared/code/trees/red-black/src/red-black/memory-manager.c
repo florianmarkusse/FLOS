@@ -28,7 +28,7 @@ static constexpr auto ROOT_NODE_ADDRESS_LEN = 1;
 
 static void propagateInsertUpwards(U64 newMostBytesInSubtree,
                                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                                   U64 len) {
+                                   U32 len) {
     while (len > ROOT_NODE_ADDRESS_LEN) {
         MMNode *node = visitedNodes[len - 1].node;
         if (node->mostBytesInSubtree >= newMostBytesInSubtree) {
@@ -41,7 +41,7 @@ static void propagateInsertUpwards(U64 newMostBytesInSubtree,
 
 static void propagateDeleteUpwards(U64 deletedBytes,
                                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                                   U64 len, U64 end) {
+                                   U32 len, U32 end) {
     while (len > end) {
         MMNode *node = visitedNodes[len - 1].node;
         recalculateMostBytes(node);
@@ -59,9 +59,9 @@ static void setMostBytesAfterRotation(MMNode *prevRotationNode,
     recalculateMostBytes(prevRotationNode);
 }
 
-static U64 rebalanceInsert(RedBlackDirection direction,
+static U32 rebalanceInsert(RedBlackDirection direction,
                            VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                           U64 len) {
+                           U32 len) {
     MMNode *grandParent = visitedNodes[len - 3].node;
     MMNode *parent = visitedNodes[len - 2].node;
     MMNode *node = visitedNodes[len - 1].node;
@@ -112,9 +112,9 @@ static U64 rebalanceInsert(RedBlackDirection direction,
 // a black node from the other direction subtree means that we stil need to
 // address that problem. On the other hand, coloring a node black in the
 // direction subtree immediately solves the deficiency in the whole tree.
-static U64 rebalanceDelete(RedBlackDirection direction,
+static U32 rebalanceDelete(RedBlackDirection direction,
                            VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                           U64 len) {
+                           U32 len) {
     MMNode *node = visitedNodes[len - 1].node;
     MMNode *childOtherDirection = node->children[!direction];
     // Ensure the other child is colored black, we "push" the problem a level
@@ -147,8 +147,7 @@ static U64 rebalanceDelete(RedBlackDirection direction,
         childOtherDirection = node->children[!direction];
     }
 
-    MMNode *innerChildOtherDirection =
-        childOtherDirection->children[direction];
+    MMNode *innerChildOtherDirection = childOtherDirection->children[direction];
     MMNode *outerChildOtherDirection =
         childOtherDirection->children[!direction];
     // Bubble up the problem by 1 level.
@@ -211,10 +210,9 @@ static U64 rebalanceDelete(RedBlackDirection direction,
     return 0;
 }
 
-static MMNode *
-deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len,
-                 MMNode *toDelete) {
-    U64 stepsToSuccessor = findAdjacentInSteps(
+static MMNode *deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                                U32 len, MMNode *toDelete) {
+    U32 stepsToSuccessor = findAdjacentInSteps(
         (RedBlackNode *)toDelete, (CommonVisitedNode *)&visitedNodes[len],
         RB_TREE_RIGHT);
     // If there is no right child, we can delete by having the parent of
@@ -229,7 +227,7 @@ deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len,
     // node and delete the successor node instead (now containing the values of
     // the to delete node).
     else {
-        U64 upperNodeIndex = len + 1;
+        U32 upperNodeIndex = len + 1;
         len += stepsToSuccessor;
         toDelete = visitedNodes[len - 1]
                        .node->children[visitedNodes[len - 1].direction];
@@ -275,10 +273,8 @@ deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len,
     return toDelete;
 }
 
-static void
-propogateInsertIfRequired(MMNode *current,
-                          VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                          U64 len) {
+static void propogateInsertIfRequired(
+    MMNode *current, VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len) {
     if (current->memory.bytes > current->mostBytesInSubtree) {
         current->mostBytesInSubtree = current->memory.bytes;
         propagateInsertUpwards(current->memory.bytes, visitedNodes, len);
@@ -286,24 +282,24 @@ propogateInsertIfRequired(MMNode *current,
 }
 
 static MMNode *bridgeMerge(MMNode *current, U64 adjacentBytes,
-                                   U64 adjacentSteps,
-                                   VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                                   U64 len) {
+                           U32 adjacentSteps,
+                           VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                           U32 len) {
     current->memory.bytes += adjacentBytes;
     propogateInsertIfRequired(current, visitedNodes, len);
-    U64 newLen = len + adjacentSteps;
+    U32 newLen = len + adjacentSteps;
     return deleteNodeInPath(
         visitedNodes, newLen,
         visitedNodes[newLen - 1]
             .node->children[visitedNodes[newLen - 1].direction]);
 }
 
-static MMNode *
-beforeRegionMerge(MMNode *current, MMNode *createdNode,
-                  VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U64 len) {
+static MMNode *beforeRegionMerge(MMNode *current, MMNode *createdNode,
+                                 VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                                 U32 len) {
     current->memory.bytes += createdNode->memory.bytes;
 
-    U64 predecessorSteps = findAdjacentInSteps(
+    U32 predecessorSteps = findAdjacentInSteps(
         (RedBlackNode *)current, (CommonVisitedNode *)&visitedNodes[len],
         RB_TREE_LEFT);
     if (predecessorSteps) {
@@ -325,13 +321,13 @@ beforeRegionMerge(MMNode *current, MMNode *createdNode,
     return nullptr;
 }
 
-static MMNode *
-afterRegionMerge(MMNode *current, MMNode *createdNode,
-                 U64 createdEnd, VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                 U64 len) {
+static MMNode *afterRegionMerge(MMNode *current, MMNode *createdNode,
+                                U64 createdEnd,
+                                VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                                U32 len) {
     current->memory.bytes += createdNode->memory.bytes;
 
-    U64 successorSteps = findAdjacentInSteps(
+    U32 successorSteps = findAdjacentInSteps(
         (RedBlackNode *)current, (CommonVisitedNode *)&visitedNodes[len],
         RB_TREE_RIGHT);
     if (successorSteps) {
@@ -350,8 +346,7 @@ afterRegionMerge(MMNode *current, MMNode *createdNode,
     return nullptr;
 }
 
-InsertResult insertMMNode(MMNode **tree,
-                                  MMNode *createdNode) {
+InsertResult insertMMNode(MMNode **tree, MMNode *createdNode) {
     InsertResult result = {0};
 
     createdNode->children[RB_TREE_LEFT] = nullptr;
@@ -369,7 +364,7 @@ InsertResult insertMMNode(MMNode **tree,
 
     visitedNodes[0].node = (MMNode *)tree;
     visitedNodes[0].direction = RB_TREE_LEFT;
-    U64 len = 1;
+    U32 len = 1;
 
     MMNode *current = *tree;
     U64 createdEnd = createdNode->memory.start + createdNode->memory.bytes;
@@ -395,8 +390,7 @@ InsertResult insertMMNode(MMNode **tree,
             createdNode->memory.start, current->memory.start);
         len++;
 
-        MMNode *next =
-            current->children[visitedNodes[len - 1].direction];
+        MMNode *next = current->children[visitedNodes[len - 1].direction];
         if (!next) {
             break;
         }
@@ -433,10 +427,10 @@ MMNode *deleteAtLeastMMNode(MMNode **tree, U64 bytes) {
 
     visitedNodes[0].node = (MMNode *)tree;
     visitedNodes[0].direction = RB_TREE_LEFT;
-    U64 len = 1;
+    U32 len = 1;
 
     U64 bestSoFar = (*tree)->mostBytesInSubtree;
-    U64 bestWithVisitedNodesLen = 0;
+    U32 bestWithVisitedNodesLen = 0;
 
     for (MMNode *potential = *tree; potential;) {
         if (potential->memory.bytes >= bytes &&

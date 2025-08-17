@@ -139,7 +139,7 @@ static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
 
     U64 largerPageSize;
     if (pageSize == pageSizesLargest()) {
-        largerPageSize = pageSizesLargest();
+        largerPageSize = pageSize;
     } else {
         largerPageSize = increasePageSize(pageSize);
     }
@@ -221,7 +221,7 @@ U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure) {
     return address;
 }
 
-void createDynamicArray(U64 elements, U64 elementSizeBytes,
+void createDynamicArray(U32 elements, U64 elementSizeBytes,
                         U64 elementAlignBytes, void_max_a *result,
                         Arena scratch) {
     U64 bytes = elementSizeBytes * elements;

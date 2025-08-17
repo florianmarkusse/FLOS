@@ -1,5 +1,7 @@
 - Look into optimizing struct layouts? pahole
 - Maybe also make some sizes smaller, e.g., standard arrays/strings can be U32 instead of U64? Look how the struct gets laid out if you add a string/array struct to another struct where there is extra "slop" in the struct inside the other struct?
+- for loop with typeof ?
+- run tests
 - redundant decls warning
 - fix string.h, can have a string.c with functions normally!
 - look into divisiona and see where can used shift instead for power of 2 div

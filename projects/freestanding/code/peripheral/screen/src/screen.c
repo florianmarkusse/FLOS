@@ -77,17 +77,17 @@ static U16 ringGlyphsPerColumn;
 static constexpr auto MAX_SCROLLBACK_LINES = (1ULL << 13ULL);
 static constexpr auto FILE_BUF_LEN = (1ULL << 16ULL);
 
-static U64 *logicalLineLens;
-static U64 logicalLines[MAX_SCROLLBACK_LINES];
+static U32 *logicalLineLens;
+static U32 logicalLines[MAX_SCROLLBACK_LINES];
 static U32 logicalLineToWrite;
 static bool logicalNewline;
-static U64 *screenLines;
+static U32 *screenLines;
 static U16 oldestScreenLineIndex;
-static U64 *screenLinesCopy;
+static U32 *screenLinesCopy;
 
 static bool lastScreenlineOpen;
 static bool isTailing = true;
-static U64 charCount;
+static U32 charCount;
 static U32 nextCharInBuf;
 static U8 *buf;
 
@@ -120,12 +120,12 @@ static void drawTerminalBox() {
     switchToScreenDisplay();
 }
 
-static void drawGlyph(U8 ch, U64 topRightGlyphOffset) {
+static void drawGlyph(U8 ch, U32 topRightGlyphOffset) {
     U8 *glyphStart = &(font->glyphs[ch * font->bytesperglyph]);
-    U64 glyphOffset = topRightGlyphOffset;
+    U32 glyphOffset = topRightGlyphOffset;
     for (U32 y = 0; y < font->height; y++) {
         // TODO: use SIMD instructions?
-        U64 line = glyphOffset;
+        U32 line = glyphOffset;
         U32 mask = 1 << (font->width - 1);
         U8 glyphLine = *glyphStart;
         // NOTE: The important part is that the glyphLine captures the
@@ -155,7 +155,7 @@ static void zeroOutGlyphs(U32 topRightGlyphOffset, U16 numberOfGlyphs) {
 }
 
 static void drawLines(U32 startIndex, U16 screenLinesToDraw,
-                      U64 currentLogicalLineLen, U16 rowNumber) {
+                      U32 currentLogicalLineLen, U16 rowNumber) {
     U16 currentScreenLines = 0;
 
     U32 topRightGlyphOffset =
@@ -163,7 +163,7 @@ static void drawLines(U32 startIndex, U16 screenLinesToDraw,
     U16 currentGlyphLen = 0;
     bool toNext = false;
 
-    for (U64 i = screenLines[startIndex]; i < charCount; i++) {
+    for (U32 i = screenLines[startIndex]; i < charCount; i++) {
         U8 ch = buf[RING_RANGE_VALUE(i, FILE_BUF_LEN)];
 
         if (toNext) {
@@ -250,14 +250,14 @@ typedef struct {
     bool lastLineDone;
 } FillResult;
 
-static FillResult fillScreenLines(U64 dryStartIndex, U64 startIndex,
-                                  U64 endIndexExclusive,
+static FillResult fillScreenLines(U32 dryStartIndex, U32 startIndex,
+                                  U32 endIndexExclusive,
                                   U16 maxNewScreenLinesToFill) {
     U16 currentScreenLineIndex = 0;
     U16 screenLinesInWindow = dryStartIndex >= startIndex;
 
     U16 currentGlyphLen = 0;
-    U64 currentLogicalLineLen = 0;
+    U32 currentLogicalLineLen = 0;
 
     bool toNext = false;
     // The parsing process is as follows:
@@ -267,7 +267,7 @@ static FillResult fillScreenLines(U64 dryStartIndex, U64 startIndex,
     screenLinesCopy[currentScreenLineIndex] = dryStartIndex;
     logicalLineLens[currentScreenLineIndex] = currentLogicalLineLen;
 
-    U64 i = dryStartIndex;
+    U32 i = dryStartIndex;
     for (; i < endIndexExclusive; i++) {
         U8 ch = buf[RING_RANGE_VALUE(i, FILE_BUF_LEN)];
 
@@ -367,12 +367,12 @@ static FillResult fillScreenLines(U64 dryStartIndex, U64 startIndex,
 // A screenLine of 0 length still counts as a line.
 // For the observent, all our screenlines have a length > 0 except when they are
 // uninitialized, which is what the second operand of the addition handles
-static U64 toScreenLines(U64 number) {
+static U32 toScreenLines(U32 number) {
     return ((number > 0) * ((number + (glyphsPerLine - 1)) / glyphsPerLine)) +
            (number == 0);
 }
 
-static U32 I8IndexToLogicalLine(U64 I8Index) {
+static U32 I8IndexToLogicalLine(U32 I8Index) {
     if (I8Index >= logicalLines[logicalLineToWrite]) {
         return logicalLineToWrite;
     }
@@ -395,7 +395,7 @@ static U32 I8IndexToLogicalLine(U64 I8Index) {
     return left;
 }
 
-static U64 oldestCharToParseGivenScreenLines(U64 endCharExclusive,
+static U32 oldestCharToParseGivenScreenLines(U32 endCharExclusive,
                                              U16 screenLinesToProcess) {
     U32 oldestLogicalLineIndex =
         RING_INCREMENT(logicalLineToWrite, MAX_SCROLLBACK_LINES);
@@ -411,7 +411,7 @@ static U64 oldestCharToParseGivenScreenLines(U64 endCharExclusive,
             RING_DECREMENT(logicalLineIndex, MAX_SCROLLBACK_LINES);
     }
 
-    U64 screenLinesProcessed =
+    U32 screenLinesProcessed =
         toScreenLines(endCharExclusive - logicalLines[logicalLineIndex]);
 
     while (screenLinesProcessed < screenLinesToProcess &&
@@ -425,7 +425,7 @@ static U64 oldestCharToParseGivenScreenLines(U64 endCharExclusive,
             RING_DECREMENT(logicalLineIndex, MAX_SCROLLBACK_LINES);
     }
 
-    U64 oldestCharToProcess = logicalLines[logicalLineIndex];
+    U32 oldestCharToProcess = logicalLines[logicalLineIndex];
 
     if (endCharExclusive - oldestCharToProcess > maxCharsToProcess) {
         oldestCharToProcess = endCharExclusive - maxCharsToProcess;
@@ -438,14 +438,14 @@ static void toTail() {
     U16 finalScreenLineEntry =
         RING_PLUS(oldestScreenLineIndex, glyphsPerColumn - lastScreenlineOpen,
                   ringGlyphsPerColumn);
-    U64 firstCharOutsideWindow = screenLines[finalScreenLineEntry];
+    U32 firstCharOutsideWindow = screenLines[finalScreenLineEntry];
     while (firstCharOutsideWindow <= screenLines[oldestScreenLineIndex] &&
            finalScreenLineEntry != oldestScreenLineIndex) {
         finalScreenLineEntry =
             RING_DECREMENT(finalScreenLineEntry, ringGlyphsPerColumn);
         firstCharOutsideWindow = screenLines[finalScreenLineEntry];
     }
-    U64 oldestCharToProcess =
+    U32 oldestCharToProcess =
         MAX(oldestCharToParseGivenScreenLines(charCount, glyphsPerColumn),
             logicalLines[I8IndexToLogicalLine(firstCharOutsideWindow)]);
 
@@ -497,14 +497,14 @@ static void toTail() {
 }
 
 bool flushToScreen(U8_max_a buffer) {
-    U64 startIndex = 0;
+    U32 startIndex = 0;
     if (buffer.len > FILE_BUF_LEN) {
         startIndex = buffer.len - FILE_BUF_LEN;
     }
 
     // TODO: I think we can memcpy this all, and then
     // TODO: SIMD up in this birch.
-    for (U64 i = startIndex; i < buffer.len; i++) {
+    for (U32 i = startIndex; i < buffer.len; i++) {
         buf[nextCharInBuf] = buffer.buf[i];
 
         if (logicalNewline) {
@@ -540,8 +540,8 @@ bool flushToScreen(U8_max_a buffer) {
 void initScreen(PackedWindow *window, Arena *perm) {
     buf = NEW(perm, U8, FILE_BUF_LEN);
     // Need correct alignment
-    U32 *doubleBuffer =
-        NEW(perm, U32, CEILING_DIV_VALUE(window->size, (U32)BYTES_PER_PIXEL));
+    U32 *doubleBuffer = NEW(
+        perm, U32, (U32)CEILING_DIV_VALUE(window->size, (U32)BYTES_PER_PIXEL));
 
     dim.screen = window->screen;
     dim.backingBuffer = doubleBuffer;
@@ -562,9 +562,9 @@ void initScreen(PackedWindow *window, Arena *perm) {
         // implementation.
         ringGlyphsPerColumn <<= 1;
     }
-    screenLines = NEW(perm, U64, ringGlyphsPerColumn, ZERO_MEMORY);
-    logicalLineLens = NEW(perm, U64, ringGlyphsPerColumn, ZERO_MEMORY);
-    screenLinesCopy = NEW(perm, U64, ringGlyphsPerColumn, ZERO_MEMORY);
+    screenLines = NEW(perm, U32, ringGlyphsPerColumn, ZERO_MEMORY);
+    logicalLineLens = NEW(perm, U32, ringGlyphsPerColumn, ZERO_MEMORY);
+    screenLinesCopy = NEW(perm, U32, ringGlyphsPerColumn, ZERO_MEMORY);
 
     maxGlyphsOnScreen = glyphsPerLine * glyphsPerColumn;
     maxCharsToProcess = 2 * maxGlyphsOnScreen;
@@ -588,8 +588,8 @@ void rewind(U16 numberOfScreenLines) {
         return;
     }
 
-    U64 currentOldestCharInWindow = screenLines[oldestScreenLineIndex];
-    U64 oldestCharToProcess = oldestCharToParseGivenScreenLines(
+    U32 currentOldestCharInWindow = screenLines[oldestScreenLineIndex];
+    U32 oldestCharToProcess = oldestCharToParseGivenScreenLines(
         currentOldestCharInWindow, numberOfScreenLines);
 
     if (oldestCharToProcess == currentOldestCharInWindow) {
@@ -635,14 +635,14 @@ void prowind(U16 numberOfScreenLines) {
         return;
     }
 
-    U64 firstCharOutsideWindow = screenLines[RING_PLUS(
+    U32 firstCharOutsideWindow = screenLines[RING_PLUS(
         oldestScreenLineIndex, glyphsPerColumn, ringGlyphsPerColumn)];
 
     if (charCount == firstCharOutsideWindow) {
         return;
     }
 
-    U64 oldestCharToProcess =
+    U32 oldestCharToProcess =
         oldestCharToParseGivenScreenLines(firstCharOutsideWindow, 0);
 
     FillResult fillResult =

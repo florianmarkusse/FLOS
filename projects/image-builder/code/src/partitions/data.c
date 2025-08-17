@@ -10,14 +10,14 @@
 #include "shared/text/string.h"
 #include "shared/types/numeric.h"
 
-bool writeDataPartition(U8 *fileBuffer, int kernelfd, U64 kernelSizeBytes) {
+bool writeDataPartition(U8 *fileBuffer, int kernelfd, U32 kernelSizeBytes) {
     fileBuffer +=
         configuration.dataPartitionStartLBA * configuration.LBASizeBytes;
 
     for (U8 *exclusiveEnd = fileBuffer + kernelSizeBytes;
          fileBuffer < exclusiveEnd;) {
         I64 partialBytesRead =
-            read(kernelfd, fileBuffer, (U64)(exclusiveEnd - fileBuffer));
+            read(kernelfd, fileBuffer, (U32)(exclusiveEnd - fileBuffer));
         if (partialBytesRead < 0) {
             ASSERT(false);
             PFLUSH_AFTER(STDERR) {
@@ -27,7 +27,8 @@ bool writeDataPartition(U8 *fileBuffer, int kernelfd, U64 kernelSizeBytes) {
                 PERROR(errno, NEWLINE);
                 PERROR(STRING("Error message: "));
                 char *errorString = strerror(errno);
-                PERROR(STRING_LEN(errorString, strlen(errorString)), NEWLINE);
+                PERROR(STRING_LEN(errorString, (U32)strlen(errorString)),
+                       NEWLINE);
             }
             return false;
         } else {

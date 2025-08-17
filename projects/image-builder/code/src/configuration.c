@@ -13,7 +13,7 @@ Configuration configuration = {.imageName = (U8 *)"FLOS_UEFI_IMAGE.hdd",
                                .LBASizeBytes = 512,
                                .alignmentLBA = 1};
 
-void setConfiguration(U64 efiApplicationSizeBytes, U64 kernelSizeBytes,
+void setConfiguration(U32 efiApplicationSizeBytes, U32 kernelSizeBytes,
                       U32 alignmentSizeBytes) {
     if (alignmentSizeBytes > configuration.LBASizeBytes) {
         configuration.alignmentLBA =
@@ -55,7 +55,7 @@ void setConfiguration(U64 efiApplicationSizeBytes, U64 kernelSizeBytes,
 
         INFO(STRING("Image name: "));
         INFO(STRING_LEN(configuration.imageName,
-                        strlen((char *)configuration.imageName)),
+                        (U32)strlen((char *)configuration.imageName)),
              NEWLINE);
 
         INFO(STRING("LBA size bytes: "));

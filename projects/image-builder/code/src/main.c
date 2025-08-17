@@ -23,7 +23,7 @@
 
 JumpBuffer errorHandler;
 typedef struct {
-    U64 size;
+    U32 size; // Files should be less than 4GiB...
     int fileDescriptor;
 } File;
 
@@ -36,11 +36,12 @@ File openFile(char *name) {
     if (!result.fileDescriptor) {
         PFLUSH_AFTER(STDERR) {
             PERROR(STRING("Could not fopen file "));
-            PERROR(STRING_LEN(name, strlen(name)), NEWLINE);
+            PERROR(STRING_LEN(name, (U32)strlen(name)), NEWLINE);
             PLOG(STRING("Error code: "));
             PLOG(errno, NEWLINE);
             PLOG(STRING("Error message: "));
-            PLOG(STRING_LEN(strerror(errno), strlen(strerror(errno))), NEWLINE);
+            PLOG(STRING_LEN(strerror(errno), (U32)strlen(strerror(errno))),
+                 NEWLINE);
         }
         longjmp(errorHandler, 1);
     }
@@ -49,15 +50,16 @@ File openFile(char *name) {
     if (fstat(result.fileDescriptor, &buf)) {
         PFLUSH_AFTER(STDERR) {
             PERROR(STRING("Could not fstat file "));
-            PERROR(STRING_LEN(name, strlen(name)), NEWLINE);
+            PERROR(STRING_LEN(name, (U32)strlen(name)), NEWLINE);
             PLOG(STRING("Error code: "));
             PLOG(errno, NEWLINE);
             PLOG(STRING("Error message: "));
-            PLOG(STRING_LEN(strerror(errno), strlen(strerror(errno))), NEWLINE);
+            PLOG(STRING_LEN(strerror(errno), (U32)strlen(strerror(errno))),
+                 NEWLINE);
         }
         longjmp(errorHandler, 1);
     }
-    result.size = (U64)buf.st_size;
+    result.size = (U32)buf.st_size;
 
     return result;
 }
@@ -74,7 +76,7 @@ int createUEFIImage() {
             PERROR(errno, NEWLINE);
             PERROR(STRING("Error message: "));
             U8 *errorString = (U8 *)strerror(errno);
-            PERROR(STRING_LEN(errorString, strlen((char *)errorString)),
+            PERROR(STRING_LEN(errorString, (U32)strlen((char *)errorString)),
                    NEWLINE);
         }
         longjmp(errorHandler, 1);
@@ -88,7 +90,7 @@ int createUEFIImage() {
             PERROR(errno, NEWLINE);
             PERROR(STRING("Error message: "));
             char *errorString = strerror(errno);
-            PERROR(STRING_LEN(errorString, strlen(errorString)), NEWLINE);
+            PERROR(STRING_LEN(errorString, (U32)strlen(errorString)), NEWLINE);
         }
         longjmp(errorHandler, 1);
         return 1;
@@ -104,7 +106,7 @@ int createUEFIImage() {
             PERROR(errno, NEWLINE);
             PERROR(STRING("Error message: "));
             char *errorString = strerror(errno);
-            PERROR(STRING_LEN(errorString, strlen(errorString)), NEWLINE);
+            PERROR(STRING_LEN(errorString, (U32)strlen(errorString)), NEWLINE);
         }
         longjmp(errorHandler, 1);
         return 1;
@@ -145,7 +147,7 @@ int main(int argc, char **argv) {
             PFLUSH_AFTER(STDERR) {
                 PERROR(STRING("Could not stat file: "));
                 PERROR(STRING_LEN(configuration.imageName,
-                                  strlen((char *)configuration.imageName)),
+                                  (U32)strlen((char *)configuration.imageName)),
                        NEWLINE);
                 PERROR(STRING("Aborting error handler!\n"));
                 PERROR(STRING("Perform manual checks to decide what to do with "
@@ -157,16 +159,18 @@ int main(int argc, char **argv) {
         if (programStartTime > imageModifiedTime) {
             PFLUSH_AFTER(STDERR) {
                 PERROR(STRING("File: "));
-                PERROR(STRING_LEN(configuration.imageName,
-                                  strlen((char *)configuration.imageName)));
+                PERROR(
+                    STRING_LEN(configuration.imageName,
+                               (U32)strlen((char *)configuration.imageName)));
                 PERROR(STRING(
                     " was not modified by the program, no cleanup done.\n"));
             }
         } else {
             PFLUSH_AFTER(STDERR) {
                 PERROR(STRING("File: "));
-                PERROR(STRING_LEN(configuration.imageName,
-                                  strlen((char *)configuration.imageName)));
+                PERROR(
+                    STRING_LEN(configuration.imageName,
+                               (U32)strlen((char *)configuration.imageName)));
                 PERROR(STRING(" was modified by the program removing...\n"));
             }
             unlink((char *)configuration.imageName);
@@ -175,7 +179,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    for (int i = 1; i < argc; i += 2) {
+    for (U32 i = 1; i < (U32)argc; i += 2) {
         char *flag = argv[i];
         if (!strcmp(flag, EFI_FILE_FLAG)) {
             efiFile = argv[i + 1];
@@ -184,17 +188,19 @@ int main(int argc, char **argv) {
             kernelFile = argv[i + 1];
         }
         if (!strcmp(flag, PHYSICAL_BOUNDARY_FLAG)) {
-            String physString = STRING_LEN(argv[i + 1], strlen(argv[i + 1]));
+            String physString =
+                STRING_LEN(argv[i + 1], (U32)strlen(argv[i + 1]));
             physicalBoundary = parseU32(physString, 10);
         }
         if (!strcmp(flag, OPTIMAL_TRANSFER_FLAG)) {
             String optimalTransferString =
-                STRING_LEN(argv[i + 1], strlen(argv[i + 1]));
+                STRING_LEN(argv[i + 1], (U32)strlen(argv[i + 1]));
             optimalTransferLengthGranularity =
                 parseU32(optimalTransferString, 10);
         }
         if (!strcmp(flag, LBA_FLAG)) {
-            String lbaString = STRING_LEN(argv[i + 1], strlen(argv[i + 1]));
+            String lbaString =
+                STRING_LEN(argv[i + 1], (U32)strlen(argv[i + 1]));
             configuration.LBASizeBytes = parseU16(lbaString, 10);
         }
     }
@@ -202,7 +208,7 @@ int main(int argc, char **argv) {
     if (!kernelFile || !efiFile) {
         PFLUSH_AFTER(STDERR) {
             PERROR(STRING("Usage:\n\t"));
-            PERROR(STRING_LEN(argv[0], strlen(argv[0])), NEWLINE);
+            PERROR(STRING_LEN(argv[0], (U32)strlen(argv[0])), NEWLINE);
 
             PERROR(STRING("\t"));
             PERROR(STRING_LEN(EFI_FILE_FLAG, strlen(EFI_FILE_FLAG)));

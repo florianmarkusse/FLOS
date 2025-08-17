@@ -34,9 +34,9 @@ static constexpr auto MAX_BYTES_GDT = 64 * KiB;
 // - x tss descriptors = 16 * x bytes !!! should be aligned to 16 bytes for
 // performance reasons.
 // So, we align the GDT to 16 bytes, so everything is at least self-aligned.
-static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
+static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
                                Arena scratch) {
-    U64 requiredBytesForDescriptorTable =
+    U32 requiredBytesForDescriptorTable =
         CODE_SEGMENTS_BYTES + numberOfProcessors * sizeof(TSSDescriptor);
     if (requiredBytesForDescriptorTable > MAX_BYTES_GDT) {
         EXIT_WITH_MESSAGE {
@@ -92,7 +92,7 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
     // Task State Segment is packed, but the CPU sometimes writes to the Task
     // State Segment itself, so ensure that the structures are laid out to avoid
     // false sharing.
-    U64 bytesPerTSS =
+    U32 bytesPerTSS =
         ALIGN_UP_VALUE(sizeof(TaskStateSegment), cacheLineSizeBytes);
     KFLUSH_AFTER {
         INFO(STRING("Size in bytes per TSS: "));
@@ -107,7 +107,7 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
         allocateKernelStructure(istStackBytesAligned * numberOfProcessors,
                                 KERNEL_STACK_ALIGNMENT, false, scratch);
 
-    for (U64 i = 0; i < numberOfProcessors; i++) {
+    for (typeof(numberOfProcessors) i = 0; i < numberOfProcessors; i++) {
         TaskStateSegment *perCPUTSS =
             (TaskStateSegment *)(TSSes + (bytesPerTSS * i));
         perCPUTSS->IOMapBaseAddress =
@@ -118,7 +118,7 @@ static void prepareDescriptors(U64 numberOfProcessors, U16 cacheLineSizeBytes,
         KFLUSH_AFTER {
             U64 stackAddress =
                 interruptStacksRegion + (TOTAL_IST_STACKS_BYTES * i);
-            for (U64 j = 0; j < INTERRUPT_STACK_TABLE_COUNT; j++) {
+            for (U32 j = 0; j < INTERRUPT_STACK_TABLE_COUNT; j++) {
                 // Stack grows down
                 stackAddress += IST_STACK_SIZES[j];
                 if (!isAlignedTo(stackAddress, KERNEL_STACK_ALIGNMENT)) {

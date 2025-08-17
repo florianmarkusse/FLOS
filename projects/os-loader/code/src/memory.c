@@ -33,11 +33,11 @@ static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
 void allocateSpaceForKernelMemory(
     RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList, Arena scratch) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
-    U64 numberOfDescriptors =
-        memoryInfo.memoryMapSize / memoryInfo.descriptorSize;
+    U32 numberOfDescriptors =
+        (U32)(memoryInfo.memoryMapSize / memoryInfo.descriptorSize);
     // NOTE: just to hold the initial descriptors before moved into final kernel
     // state.
-    U64 expectedNumberOfDescriptors = numberOfDescriptors * 2;
+    U32 expectedNumberOfDescriptors = numberOfDescriptors * 2;
 
     createDynamicArray(expectedNumberOfDescriptors,
                        sizeof(*redBlackMMTreeWithFreeList->nodes.buf),
@@ -125,7 +125,7 @@ void convertToKernelMemory(
                 curEnd = descriptorEnd;
             }
 
-            for (U64 i = 0; i < availableMemory.len; i++) {
+            for (U32 i = 0; i < availableMemory.len; i++) {
                 MMNode *node = getMMNode(&RedBlackMMtreeWithFreeList->freeList,
                                          &RedBlackMMtreeWithFreeList->nodes);
                 if (!node) {

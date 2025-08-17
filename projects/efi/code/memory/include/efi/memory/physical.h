@@ -8,6 +8,8 @@
 #include "shared/types/array-types.h"
 #include "shared/types/numeric.h"
 
+static constexpr U64 UEFI_PAGE_SIZE = 1 << 12;
+
 typedef struct {
     USize memoryMapSize;
     MemoryDescriptor *memoryMap;
@@ -28,7 +30,7 @@ U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
                             bool tryEncompassingVirtual, Arena scratch);
 U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure);
 
-void createDynamicArray(U64 elements, U64 elementSizeBytes,
+void createDynamicArray(U32 elements, U64 elementSizeBytes,
                         U64 elementAlignBytes, void_max_a *result,
                         Arena scratch);
 

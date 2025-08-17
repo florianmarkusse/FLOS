@@ -34,7 +34,7 @@ static MBR protectiveMBR = {
 };
 
 void writeMBR(U8 *fileBuffer) {
-    U64 totalImageSizeLBA = configuration.totalImageSizeLBA;
+    U32 totalImageSizeLBA = configuration.totalImageSizeLBA;
     if (totalImageSizeLBA > U32_MAX) {
         protectiveMBR.partitions[0].sizeLBA = U32_MAX;
     } else {

@@ -6,7 +6,7 @@
 #include "shared/memory/management/management.h"
 #include "shared/text/string.h"
 
-static void countAvailable(MMNode *current, U64 *available, U64 *nodes) {
+static void countAvailable(MMNode *current, U64 *available, U32 *nodes) {
     if (!current) {
         return;
     }

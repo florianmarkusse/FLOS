@@ -64,7 +64,7 @@ static void checkForPartitionGUID(Handle handle) {
 // bug on my hardware with reading blocks into addresses that are above 4GiB and
 // the aligned memory address can end up being at this level. So we add an
 // intermediate step in between.
-static String fetchKernelThroughBIOP(Handle handle, U64 bytes, Arena scratch) {
+static String fetchKernelThroughBIOP(Handle handle, U32 bytes, Arena scratch) {
     String result;
     result.len = 0;
 
@@ -77,7 +77,7 @@ static String fetchKernelThroughBIOP(Handle handle, U64 bytes, Arena scratch) {
     }
 
     if (biop->media->blockSize > 0 && biop->media->logicalPartition) {
-        U64 alignedBytes = ALIGN_UP_VALUE(bytes, biop->media->blockSize);
+        U32 alignedBytes = ALIGN_UP_VALUE(bytes, biop->media->blockSize);
 
         U64 *blockAddress =
             (U64 *)NEW(&scratch, U8, alignedBytes, 0, biop->media->blockSize);
@@ -102,7 +102,7 @@ static String fetchKernelThroughBIOP(Handle handle, U64 bytes, Arena scratch) {
     return result;
 }
 
-String readKernelFromCurrentLoadedImage(U64 bytes, Arena scratch) {
+String readKernelFromCurrentLoadedImage(U32 bytes, Arena scratch) {
     Status status;
 
     LoadedImageProtocol *lip = nullptr;
@@ -155,7 +155,7 @@ String readKernelFromCurrentLoadedImage(U64 bytes, Arena scratch) {
     return data;
 }
 
-U64 getKernelBytes(Arena scratch) {
+U32 getKernelBytes(Arena scratch) {
     LoadedImageProtocol *lip = 0;
     Status status = globals.st->boot_services->open_protocol(
         globals.h, &LOADED_IMAGE_PROTOCOL_GUID, (void **)&lip, globals.h,
@@ -185,23 +185,23 @@ U64 getKernelBytes(Arena scratch) {
         ERROR(STRING("Could not Open File\n"));
     }
 
-    FileInfo file_info;
-    USize file_info_size = sizeof(file_info);
-    status = file->getInfo(file, &FILE_INFO_ID, &file_info_size, &file_info);
+    FileInfo fileInfo;
+    U64 fileInfoSize = sizeof(fileInfo);
+    status = file->getInfo(file, &FILE_INFO_ID, &fileInfoSize, &fileInfo);
     EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not get file info\n"));
     }
 
     String dataFile;
-    dataFile.len = file_info.fileSize;
-    dataFile.buf = NEW(&scratch, U8, dataFile.len, 0, UEFI_PAGE_SIZE);
-
-    status = file->read(file, &dataFile.len, dataFile.buf);
-    if (EFI_ERROR(status) || dataFile.len != file_info.fileSize) {
+    dataFile.buf = NEW(&scratch, U8, fileInfo.fileSize, 0, UEFI_PAGE_SIZE);
+    U64 bufferLen = fileInfo.fileSize;
+    status = file->read(file, &bufferLen, dataFile.buf);
+    if (EFI_ERROR(status) || bufferLen != fileInfo.fileSize) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING("Could not read file into buffer\n"));
         }
     }
+    dataFile.len = (U32)bufferLen;
 
     root->close(root);
     file->close(file);
@@ -221,8 +221,8 @@ U64 getKernelBytes(Arena scratch) {
         bool second = false;
         TOKENIZE_STRING(lines.string, tokens, '=', 0) {
             if (second) {
-                U64 bytes = 0;
-                for (U64 i = 0; i < tokens.string.len; i++) {
+                U32 bytes = 0;
+                for (U32 i = 0; i < tokens.string.len; i++) {
                     bytes = bytes * 10 + (tokens.string.buf[i] - '0');
                 }
 

@@ -27,7 +27,7 @@ typedef struct {
     U16 LBASizeBytes;
     U32 alignmentLBA;
     U32 totalImageSizeLBA;
-    U64 totalImageSizeBytes;
+    U32 totalImageSizeBytes;
     U32 GPTPartitionTableSizeLBA;
     U32 EFISystemPartitionStartLBA;
     U32 EFISystemPartitionSizeLBA;
@@ -37,7 +37,7 @@ typedef struct {
 
 extern Configuration configuration;
 
-void setConfiguration(U64 efiApplicationSizeBytes, U64 kernelSizeBytes,
+void setConfiguration(U32 efiApplicationSizeBytes, U32 kernelSizeBytes,
                       U32 alignmentSizeBytes);
 
 #endif

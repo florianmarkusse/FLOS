@@ -1,5 +1,5 @@
 project(posix-test-framework LANGUAGES C)
-add_library(${PROJECT_NAME} OBJECT "src/test.c" "src/expectations.c")
+add_library(${PROJECT_NAME} OBJECT "src/test.c")
 
 add_includes_for_sublibrary()
 

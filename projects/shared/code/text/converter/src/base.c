@@ -27,9 +27,9 @@ String ptrToString(void *data, U8_a tmp) {
     tmp.buf[0] = '0';
     tmp.buf[1] = 'x';
 
-    U64 counter = 2;
+    U32 counter = 2;
     U64 u = (U64)data;
-    for (U64 i = 2 * sizeof(u); i-- > 0;) {
+    for (U32 i = 2 * sizeof(u); i-- > 0;) {
         tmp.buf[counter] = hexString[(u >> (4 * i)) & 15];
         counter++;
     }

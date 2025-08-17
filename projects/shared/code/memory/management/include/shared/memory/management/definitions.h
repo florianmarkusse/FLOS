@@ -4,8 +4,6 @@
 #include "shared/types/array.h"
 #include "shared/types/numeric.h"
 
-static constexpr U64 UEFI_PAGE_SIZE = 1 << 12;
-
 typedef struct {
     U64 start;
     U64 bytes;

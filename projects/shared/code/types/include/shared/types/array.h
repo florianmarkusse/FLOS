@@ -6,21 +6,21 @@
 #define ARRAY(T)                                                               \
     struct {                                                                   \
         T *buf;                                                                \
-        U64 len;                                                               \
+        U32 len;                                                               \
     }
 
 #define PACKED_MAX_LENGTH_ARRAY(T)                                             \
     struct __attribute__((packed)) {                                           \
         T *buf;                                                                \
-        U64 len;                                                               \
-        U64 cap;                                                               \
+        U32 len;                                                               \
+        U32 cap;                                                               \
     }
 
 #define MAX_LENGTH_ARRAY(T)                                                    \
     struct {                                                                   \
         T *buf;                                                                \
-        U64 len;                                                               \
-        U64 cap;                                                               \
+        U32 len;                                                               \
+        U32 cap;                                                               \
     }
 
 #endif

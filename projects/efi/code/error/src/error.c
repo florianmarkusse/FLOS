@@ -16,8 +16,8 @@ void waitKeyThenReset() {
 
 void drawStatusRectangle(GraphicsOutputProtocolMode *mode, U32 color) {
     U32 *screen = ((U32 *)mode->frameBufferBase);
-    for (U64 x = 0; x < 10; x++) {
-        for (U64 y = 0; y < 10; y++) {
+    for (U32 x = 0; x < 10; x++) {
+        for (U32 y = 0; y < 10; y++) {
             screen[y * mode->info->pixelsPerScanLine + x] = color;
         }
     }

@@ -30,7 +30,7 @@ void rotateAround(RedBlackNode *rotationParent, RedBlackNode *rotationNode,
                   RedBlackDirection rotationDirection,
                   RedBlackDirection parentToChildDirection);
 
-U64 findAdjacentInSteps(RedBlackNode *node, CommonVisitedNode *visitedNodes,
+U32 findAdjacentInSteps(RedBlackNode *node, CommonVisitedNode *visitedNodes,
                         RedBlackDirection direction);
 
 #endif
