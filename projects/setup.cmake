@@ -4,8 +4,12 @@ set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -march=native -m64 -Wall -Wpedantic -Wextra -Wconversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-initializer-overrides -Wno-gnu-alignof-expression -Wno-gnu-statement-expression-from-macro-expansion -Wno-gnu-zero-variadic-macro-arguments -Wno-language-extension-token -Wno-gnu-pointer-arith -Wdouble-promotion -Wvla"
+    "${CMAKE_C_FLAGS} -march=native -m64 -Wall -Wpedantic -Wextra -Wconversion -Wno-incompatible-pointer-types-discards-qualifiers -Wno-gnu-alignof-expression -Wno-gnu-statement-expression-from-macro-expansion -Wno-gnu-zero-variadic-macro-arguments -Wno-language-extension-token -Wno-gnu-pointer-arith -Wdouble-promotion -Wvla"
 )
+# In here because with default named struct arguments macros, you will get a
+# warning when you override one of these values, which is the whole point of
+# making them overridable.
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-initializer-overrides")
 
 option(FLOAT_OPERATIONS "Turn on/off floating-point operations" ON)
 if(${FLOAT_OPERATIONS})
