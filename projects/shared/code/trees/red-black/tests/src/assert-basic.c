@@ -39,7 +39,8 @@ appendExpectedValuesAndTreeValues(U64_max_a expectedValues,
 static void assertIsBSTWitExpectedValues(RedBlackNodeBasic *node, U64 nodes,
                                          U64_max_a expectedValues,
                                          Arena scratch) {
-    RedBlackNodeBasic **_buffer = NEW(&scratch, RedBlackNodeBasic *, nodes);
+    RedBlackNodeBasic **_buffer =
+        NEW(&scratch, RedBlackNodeBasic *, .count = nodes);
     RedBlackNodeBasicPtr_a inOrderValues = {.buf = _buffer, .len = 0};
 
     inOrderTraversalFillValues(node, &inOrderValues);

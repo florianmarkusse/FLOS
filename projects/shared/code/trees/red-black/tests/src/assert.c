@@ -115,7 +115,7 @@ static bool redParentHasRedChild(RedBlackNode *node,
 
 void assertNoRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
                                 RedBlackTreeType treeType, Arena scratch) {
-    RedBlackNode **buffer = NEW(&scratch, RedBlackNode *, nodes);
+    RedBlackNode **buffer = NEW(&scratch, RedBlackNode *, .count = nodes);
     U64 len = 0;
 
     buffer[len] = tree;
@@ -164,7 +164,7 @@ static void collectBlackHeightsForEachPath(RedBlackNode *node,
 void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
                                             RedBlackTreeType treeType,
                                             Arena scratch) {
-    RedBlackNode **buffer = NEW(&scratch, RedBlackNode *, nodes);
+    RedBlackNode **buffer = NEW(&scratch, RedBlackNode *, .count = nodes);
     U64 len = 0;
 
     buffer[len] = tree;
@@ -174,7 +174,7 @@ void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
         RedBlackNode *node = buffer[len - 1];
         len--;
 
-        U64 *_blackHeightsBuffer = NEW(&scratch, U64, nodes);
+        U64 *_blackHeightsBuffer = NEW(&scratch, U64, .count = nodes);
         U64_a blackHeights = {.buf = _blackHeightsBuffer, .len = 0};
 
         collectBlackHeightsForEachPath(node, &blackHeights, 0, treeType);

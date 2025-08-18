@@ -538,10 +538,11 @@ bool flushToScreen(U8_max_a buffer) {
 }
 
 void initScreen(PackedWindow *window, Arena *perm) {
-    buf = NEW(perm, U8, FILE_BUF_LEN);
+    buf = NEW(perm, U8, .count = FILE_BUF_LEN);
     // Need correct alignment
     U32 *doubleBuffer = NEW(
-        perm, U32, (U32)CEILING_DIV_VALUE(window->size, (U32)BYTES_PER_PIXEL));
+        perm, U32,
+        .count = (U32)CEILING_DIV_VALUE(window->size, (U32)BYTES_PER_PIXEL));
 
     dim.screen = window->screen;
     dim.backingBuffer = doubleBuffer;
@@ -562,9 +563,12 @@ void initScreen(PackedWindow *window, Arena *perm) {
         // implementation.
         ringGlyphsPerColumn <<= 1;
     }
-    screenLines = NEW(perm, U32, ringGlyphsPerColumn, ZERO_MEMORY);
-    logicalLineLens = NEW(perm, U32, ringGlyphsPerColumn, ZERO_MEMORY);
-    screenLinesCopy = NEW(perm, U32, ringGlyphsPerColumn, ZERO_MEMORY);
+    screenLines =
+        NEW(perm, U32, .count = ringGlyphsPerColumn, .flags = ZERO_MEMORY);
+    logicalLineLens =
+        NEW(perm, U32, .count = ringGlyphsPerColumn, .flags = ZERO_MEMORY);
+    screenLinesCopy =
+        NEW(perm, U32, .count = ringGlyphsPerColumn, .flags = ZERO_MEMORY);
 
     maxGlyphsOnScreen = glyphsPerLine * glyphsPerColumn;
     maxCharsToProcess = 2 * maxGlyphsOnScreen;

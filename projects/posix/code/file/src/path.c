@@ -13,7 +13,7 @@ void createPath(String fileLocation, Arena scratch) {
     U32 currentIndex = 0;
     I64 slashIndex = firstOccurenceOf(fileLocation, '/', .from = currentIndex);
     if (slashIndex >= 0) {
-        U8 *dirPath = NEW(&scratch, U8, fileLocation.len + 1);
+        U8 *dirPath = NEW(&scratch, U8, .count = fileLocation.len + 1);
         memcpy(dirPath, fileLocation.buf, fileLocation.len);
         dirPath[fileLocation.len] = '\0';
 

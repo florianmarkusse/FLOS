@@ -41,7 +41,7 @@ static void inOrderTraversalFillValues(MMNode *node, MMNodePtr_a *values) {
 static void assertIsBSTWitExpectedValues(MMNode *node, U32 nodes,
                                          Memory_max_a expectedValues,
                                          Arena scratch) {
-    MMNode **_buffer = NEW(&scratch, MMNode *, nodes);
+    MMNode **_buffer = NEW(&scratch, MMNode *, .count = nodes);
     MMNodePtr_a inOrderValues = {.buf = _buffer, .len = 0};
 
     inOrderTraversalFillValues(node, &inOrderValues);

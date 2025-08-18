@@ -15,7 +15,7 @@ U16 trie_insertStringU16Map(String key, U16 value, trie_stringU16Map **set,
         }
         set = &(*set)->child[hash >> 62];
     }
-    *set = NEW(perm, trie_stringU16Map, 1, ZERO_MEMORY);
+    *set = NEW(perm, trie_stringU16Map, .flags = ZERO_MEMORY);
     (*set)->data.key = key;
     (*set)->data.value = value;
     return true;

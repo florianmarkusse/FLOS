@@ -80,8 +80,8 @@ static String fetchKernelThroughBIOP(Handle handle, U32 bytes, Arena scratch) {
     if (biop->media->blockSize > 0 && biop->media->logicalPartition) {
         U32 alignedBytes = ALIGN_UP_VALUE(bytes, biop->media->blockSize);
 
-        U64 *blockAddress =
-            (U64 *)NEW(&scratch, U8, alignedBytes, 0, biop->media->blockSize);
+        U64 *blockAddress = (U64 *)NEW(&scratch, U8, .count = alignedBytes,
+                                       .align = biop->media->blockSize);
 
         status = biop->readBlocks(biop, biop->media->mediaID, 0, alignedBytes,
                                   (void *)blockAddress);
@@ -193,7 +193,8 @@ U32 getKernelBytes(Arena scratch) {
     }
 
     String dataFile;
-    dataFile.buf = NEW(&scratch, U8, fileInfo.fileSize, 0, UEFI_PAGE_SIZE);
+    dataFile.buf =
+        NEW(&scratch, U8, .count = fileInfo.fileSize, .align = UEFI_PAGE_SIZE);
     U64 bufferLen = fileInfo.fileSize;
     status = file->read(file, &bufferLen, dataFile.buf);
     if (EFI_ERROR(status) || bufferLen != fileInfo.fileSize) {

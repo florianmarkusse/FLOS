@@ -60,7 +60,7 @@ Memory_max_a kernelStructureLocations;
 
 void initKernelStructureLocations(Arena *perm) {
     kernelStructureLocations = (Memory_max_a){
-        .buf = NEW(perm, Memory, MAX_KERNEL_STRUCTURES),
+        .buf = NEW(perm, Memory, .count = MAX_KERNEL_STRUCTURES),
         .len = 0,
         .cap = MAX_KERNEL_STRUCTURES,
     };
@@ -81,7 +81,7 @@ static void addAddressToKernelStructure(U64 address, U64 bytes) {
 MemoryInfo getMemoryInfo(Arena *perm) {
     MemoryInfo memoryInfo = prepareMemoryInfo();
     memoryInfo.memoryMap = (MemoryDescriptor *)NEW(
-        perm, U8, memoryInfo.memoryMapSize, 0, UEFI_PAGE_SIZE);
+        perm, U8, .count = memoryInfo.memoryMapSize, .align = UEFI_PAGE_SIZE);
     fillMemoryInfo(&memoryInfo);
     return memoryInfo;
 }

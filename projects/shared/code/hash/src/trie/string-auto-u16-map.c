@@ -20,7 +20,7 @@ NewStringInsert trie_insertStringAutoU16Map(String key,
         ASSERT(false);
         longjmp(perm->jmpBuf, 1);
     }
-    *currentNode = NEW(perm, trie_stringAutoU16Node, 1, ZERO_MEMORY);
+    *currentNode = NEW(perm, trie_stringAutoU16Node, .flags = ZERO_MEMORY);
     (*currentNode)->data.key = key;
     set->nodeCount++;
     (*currentNode)->data.value = set->nodeCount;

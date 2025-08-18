@@ -75,7 +75,7 @@ static void addValueToExpected(Memory_max_a *expectedValues, Memory toAdd,
 static void testTree(TreeOperation_a operations, Arena scratch) {
     MMNode *tree = nullptr;
     Memory_max_a expectedValues =
-        (Memory_max_a){.buf = NEW(&scratch, Memory, MAX_NODES_IN_TREE),
+        (Memory_max_a){.buf = NEW(&scratch, Memory, .count = MAX_NODES_IN_TREE),
                        .len = 0,
                        .cap = MAX_NODES_IN_TREE};
     for (U64 i = 0; i < operations.len; i++) {

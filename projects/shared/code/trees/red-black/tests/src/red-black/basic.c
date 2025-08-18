@@ -245,7 +245,7 @@ static TestCases mixedTestCases = {.buf = mixed, .len = MIXED_TEST_CASES_LEN};
 static void testTree(TreeOperation_a operations, Arena scratch) {
     RedBlackNodeBasic *tree = nullptr;
     U64_max_a expectedValues =
-        (U64_max_a){.buf = NEW(&scratch, U64, MAX_NODES_IN_TREE),
+        (U64_max_a){.buf = NEW(&scratch, U64, .count = MAX_NODES_IN_TREE),
                     .len = 0,
                     .cap = MAX_NODES_IN_TREE};
     for (U64 i = 0; i < operations.len; i++) {
