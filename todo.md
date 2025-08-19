@@ -1,5 +1,3 @@
-- can we use default named args macro better? also in NEW and LOGGER?
-- attribute alloc_align mallcc
 - look into divisiona and see where can used shift instead for power of 2 div
 - clean up red-black tree mess somehow? This should be possible to abstract!
 - how to hide extern variables from showing up everywhere
