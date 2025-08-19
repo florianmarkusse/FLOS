@@ -1,6 +1,12 @@
 #include "shared/maths.h"
 #include "shared/types/numeric.h"
 
+U64 alignUp(U64 value, U64 align) {
+    return (value + align - 1) & (~(align - 1));
+}
+
+U64 alignDown(U64 value, U64 align) { return (value) & (~(align - 1)); }
+
 U64 ceilingPowerOf2(U64 x) {
     if (x <= 1) {
         return 1;

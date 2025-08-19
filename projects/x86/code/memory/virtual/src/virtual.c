@@ -88,8 +88,8 @@ void mapPage_(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
 
         pageTable =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-            (VirtualPageTable *)ALIGN_DOWN_VALUE(*tableEntryAddress,
-                                                 pageSizesSmallest());
+            (VirtualPageTable *)alignDown(*tableEntryAddress,
+                                          pageSizesSmallest());
         metaDataTable = newMetaEntryAddress->children;
     }
 }
@@ -177,8 +177,7 @@ Memory unmapPage(U64 virt) {
 
         pageTables[len] =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-            (VirtualPageTable *)ALIGN_DOWN_VALUE(tableEntry,
-                                                 pageSizesSmallest());
+            (VirtualPageTable *)alignDown(tableEntry, pageSizesSmallest());
         newMeta[len] = newMeta[len - 1][newMetaIndex].children;
         len++;
     }

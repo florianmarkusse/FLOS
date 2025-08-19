@@ -201,14 +201,14 @@ U32 calculateEFIPartitionSize(U32 EFIApplicationSizeLBA) {
                 (EFIApplicationSizeLBA + SectorSize.DATA_FILE +
                  SectorSize.DISK_FILE));
     DATA_CLUSTERS_COUNT =
-        ALIGN_UP_VALUE(requiredDataClusters, configuration.alignmentLBA);
+        (U32)alignUp(requiredDataClusters, configuration.alignmentLBA);
 
     U32 requiredFATSizeSectors = CEILING_DIV_VALUE(
         DATA_CLUSTERS_COUNT, (configuration.LBASizeBytes / (U32)sizeof(U32)));
     U32 reservedAndFATSizeSectors =
-        ALIGN_UP_VALUE(parameterBlock.reservedSectors +
-                           (requiredFATSizeSectors * parameterBlock.FATs),
-                       configuration.alignmentLBA);
+        (U32)alignUp(parameterBlock.reservedSectors +
+                         (requiredFATSizeSectors * parameterBlock.FATs),
+                     configuration.alignmentLBA);
 
     parameterBlock.FATSize32Sectors =
         (reservedAndFATSizeSectors - parameterBlock.reservedSectors) /

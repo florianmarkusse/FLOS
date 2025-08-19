@@ -153,7 +153,7 @@ static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
                 continue;
             }
 
-            U64 alignedAddress = ALIGN_UP_VALUE(desc->physicalStart, pageSize);
+            U64 alignedAddress = alignUp(desc->physicalStart, pageSize);
             U64 originalSize = desc->numberOfPages * UEFI_PAGE_SIZE;
             if (alignedAddress >= desc->physicalStart + originalSize) {
                 continue;

@@ -78,7 +78,7 @@ static String fetchKernelThroughBIOP(Handle handle, U32 bytes, Arena scratch) {
     }
 
     if (biop->media->blockSize > 0 && biop->media->logicalPartition) {
-        U32 alignedBytes = ALIGN_UP_VALUE(bytes, biop->media->blockSize);
+        U32 alignedBytes = (U32)alignUp(bytes, biop->media->blockSize);
 
         U64 *blockAddress = (U64 *)NEW(&scratch, U8, .count = alignedBytes,
                                        .align = biop->media->blockSize);

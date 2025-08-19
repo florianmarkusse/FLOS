@@ -93,7 +93,7 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
     // State Segment itself, so ensure that the structures are laid out to avoid
     // false sharing.
     U32 bytesPerTSS =
-        ALIGN_UP_VALUE(sizeof(TaskStateSegment), cacheLineSizeBytes);
+        (U32)alignUp(sizeof(TaskStateSegment), cacheLineSizeBytes);
     KFLUSH_AFTER {
         INFO(STRING("Size in bytes per TSS: "));
         INFO(bytesPerTSS, .flags = NEWLINE);
@@ -102,7 +102,7 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
     U8 *TSSes = (U8 *)allocateKernelStructure(bytesPerTSS * numberOfProcessors,
                                               bytesPerTSS, false, scratch);
     U64 istStackBytesAligned =
-        ALIGN_UP_VALUE(TOTAL_IST_STACKS_BYTES, (U64)KERNEL_STACK_ALIGNMENT);
+        alignUp(TOTAL_IST_STACKS_BYTES, (U64)KERNEL_STACK_ALIGNMENT);
     U64 interruptStacksRegion =
         (U64)allocateKernelStructure(istStackBytesAligned * numberOfProcessors,
                                      KERNEL_STACK_ALIGNMENT, false, scratch);

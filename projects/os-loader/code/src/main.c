@@ -199,7 +199,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     U64 kernelParamsAlignment =
         MAX(alignof(PackedKernelParameters), archParamsRequirements.align);
     U64 archKernelParamsOffset =
-        ALIGN_UP_VALUE(sizeof(PackedKernelParameters), kernelParamsAlignment);
+        alignUp(sizeof(PackedKernelParameters), kernelParamsAlignment);
     U64 kernelParamsSize =
         archKernelParamsOffset + archParamsRequirements.bytes;
 

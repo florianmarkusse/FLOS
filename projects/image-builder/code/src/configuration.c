@@ -27,14 +27,14 @@ void setConfiguration(U32 efiApplicationSizeBytes, U32 kernelSizeBytes,
     currentLBA += SectionsInLBASize.PROTECTIVE_MBR +
                   SectionsInLBASize.GPT_HEADER +
                   configuration.GPTPartitionTableSizeLBA;
-    currentLBA = ALIGN_UP_VALUE(currentLBA, configuration.alignmentLBA);
+    currentLBA = (U32)alignUp(currentLBA, configuration.alignmentLBA);
 
     // EFI Partition
     configuration.EFISystemPartitionStartLBA = currentLBA;
     U32 unalignedLBA = calculateEFIPartitionSize((U32)CEILING_DIV_VALUE(
         efiApplicationSizeBytes, (U32)configuration.LBASizeBytes));
     configuration.EFISystemPartitionSizeLBA =
-        ALIGN_UP_VALUE(unalignedLBA, configuration.alignmentLBA);
+        (U32)alignUp(unalignedLBA, configuration.alignmentLBA);
     currentLBA += configuration.EFISystemPartitionSizeLBA;
 
     // Data Partition

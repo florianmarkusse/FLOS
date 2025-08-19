@@ -54,7 +54,7 @@ void allocateSpaceForKernelMemory(
 U64 alignVirtual(U64 virtualAddress, U64 physicalAddress, U64 bytes) {
     U64 alignment = pageSizeEncompassing(bytes);
 
-    U64 result = ALIGN_UP_VALUE(virtualAddress, alignment);
+    U64 result = alignUp(virtualAddress, alignment);
     // NOTE: if the physical address is somehow not as aligned as the virtual
     // one. So, we can map 1 4KiB page and then the remaining as 2MiB page, for
     // example, instead of the virtual and physical address being out of

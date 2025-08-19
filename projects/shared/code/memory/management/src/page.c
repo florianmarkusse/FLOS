@@ -66,7 +66,7 @@ PageFaultResult handlePageFault(U64 faultingAddress) {
         return PAGE_FAULT_RESULT_STACK_OVERFLOW;
     }
 
-    U64 startingMap = ALIGN_DOWN_VALUE(faultingAddress, pageSizeForFault);
+    U64 startingMap = alignDown(faultingAddress, pageSizeForFault);
     U64 pageSizeToUse = pageSizeFitting(pageSizeForFault);
 
     // NOTE: when starting to use SMP, I should first check if this memory
@@ -78,8 +78,7 @@ PageFaultResult handlePageFault(U64 faultingAddress) {
     U32 mapsToDo = (U32)divideByPowerOf2(pageSizeForFault, pageSizeToUse);
     for (typeof(mapsToDo) i = 0; i < mapsToDo; i++) {
         U8 *address = allocPhysicalMemory(pageSizeToUse, pageSizeToUse);
-        mapPage(startingMap + (i * pageSizeToUse), (U64)address,
-                   pageSizeToUse);
+        mapPage(startingMap + (i * pageSizeToUse), (U64)address, pageSizeToUse);
     }
 
     return PAGE_FAULT_RESULT_MAPPED;

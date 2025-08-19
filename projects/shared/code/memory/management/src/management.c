@@ -104,7 +104,7 @@ static void *allocAlignedMemory(U64 bytes, U64 align,
                                 RedBlackMMTreeWithFreeList *allocator) {
     MMNode *availableMemory =
         getMemoryAllocation(allocator, alignedToTotal(bytes, align));
-    U64 result = ALIGN_UP_VALUE(availableMemory->memory.start, align);
+    U64 result = alignUp(availableMemory->memory.start, align);
     handleRemovedAllocator(
         availableMemory, (Memory){.start = result, .bytes = bytes}, allocator);
     return (void *)result;
