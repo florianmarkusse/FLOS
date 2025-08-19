@@ -21,22 +21,22 @@ static void countAvailable(MMNode *current, U64 *available, U32 *nodes) {
 
 static void appendMemoryManagerStatus(RedBlackMMTreeWithFreeList *allocator,
                                       String name) {
-    KLOG(name);
+    INFO(name);
     AvailableMemoryState result = {0};
     countAvailable(allocator->tree, &result.memory, &result.nodes);
-    KLOG(STRING(" mem: "));
-    KLOG(stringWithMinSizeDefault(CONVERT_TO_STRING(result.memory), 16));
-    KLOG(STRING(" nodes: "));
-    KLOG(stringWithMinSizeDefault(CONVERT_TO_STRING(result.nodes), 3));
-    KLOG(STRING("freelist size: "));
-    KLOG(stringWithMinSizeDefault(CONVERT_TO_STRING(allocator->freeList.len),
+    INFO(STRING(" mem: "));
+    INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(result.memory), 16));
+    INFO(STRING(" nodes: "));
+    INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(result.nodes), 3));
+    INFO(STRING("freelist size: "));
+    INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(allocator->freeList.len),
                                   3));
-    KLOG(STRING("nodes buf: "));
-    KLOG((void *)allocator->nodes.buf);
-    KLOG(STRING(" len: "));
-    KLOG(stringWithMinSizeDefault(CONVERT_TO_STRING(allocator->nodes.len), 3));
-    KLOG(STRING(" cap: "));
-    KLOG(allocator->nodes.cap, NEWLINE);
+    INFO(STRING("nodes buf: "));
+    INFO((void *)allocator->nodes.buf);
+    INFO(STRING(" len: "));
+    INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(allocator->nodes.len), 3));
+    INFO(STRING(" cap: "));
+    INFO(allocator->nodes.cap, .flags = NEWLINE);
 }
 
 void appendPhysicalMemoryManagerStatus() {

@@ -54,10 +54,10 @@ String splitString(String s, U8 token, U32 from) {
     return (String){.buf = getCharPtr(s, from), .len = s.len - from};
 }
 
-I64 firstOccurenceOf_(String s, U8 ch, OccurrenceStart occurrence) {
+I64 firstOccurenceOf_(String s, U8 ch, U32 from) {
     ASSERT(from >= 0 && from < s.len);
 
-    for (typeof(s.len) i = occurrence.from; i < s.len; i++) {
+    for (typeof(s.len) i = from; i < s.len; i++) {
         if (s.buf[i] == ch) {
             return (I64)i;
         }

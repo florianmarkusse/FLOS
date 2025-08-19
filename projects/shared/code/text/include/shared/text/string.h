@@ -1,6 +1,7 @@
 #ifndef SHARED_TEXT_STRING_H
 #define SHARED_TEXT_STRING_H
 
+#include "shared/macros.h"
 #include "shared/types/numeric.h"
 
 typedef struct {
@@ -37,9 +38,13 @@ typedef struct {
 typedef struct {
     U32 from;
 } OccurrenceStart;
-I64 firstOccurenceOf_(String s, U8 ch, OccurrenceStart occurrence);
+I64 firstOccurenceOf_(String s, U8 ch, U32 from);
 #define firstOccurenceOf(string, ch, ...)                                      \
-    firstOccurenceOf_(string, ch, (OccurrenceStart){.from = 0, __VA_ARGS__});
+    ({                                                                         \
+        OccurrenceStart MACRO_VAR(occurrenceStart) =                           \
+            (OccurrenceStart){.from = 0, __VA_ARGS__};                         \
+        firstOccurenceOf_(string, ch, MACRO_VAR(occurrenceStart).from);        \
+    })
 
 I64 lastOccurenceOf(String s, U8 ch);
 

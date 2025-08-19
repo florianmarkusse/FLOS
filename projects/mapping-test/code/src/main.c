@@ -83,7 +83,7 @@ static Timing runMappingTest(U64 arrayEntries, bool is2MiBPage,
                 INFO(STRING(", expected="));
                 INFO(i);
                 INFO(STRING(", actual="));
-                INFO(buffer[i], NEWLINE);
+                INFO(buffer[i], .flags = NEWLINE);
             }
         }
     }
@@ -97,9 +97,9 @@ static Timing runMappingTest(U64 arrayEntries, bool is2MiBPage,
 static void printOutcomeRealloc(Timing result) {
     KFLUSH_AFTER {
         INFO(STRING("Average clockcycles: "));
-        INFO(result.cycles, NEWLINE);
+        INFO(result.cycles, .flags = NEWLINE);
         INFO(STRING("Average time ms: "));
-        INFO(result.millis, NEWLINE);
+        INFO(result.millis, .flags = NEWLINE);
     }
 }
 
@@ -111,9 +111,9 @@ static void printOutcomeMapped(Timing result, bool is2MiBPage) {
             INFO(STRING("Page Size: 4096\n"));
         }
         INFO(STRING("Average clockcycles: "));
-        INFO(result.cycles, NEWLINE);
+        INFO(result.cycles, .flags = NEWLINE);
         INFO(STRING("Average time ms: "));
-        INFO(result.millis, NEWLINE);
+        INFO(result.millis, .flags = NEWLINE);
     }
 }
 
@@ -233,7 +233,7 @@ static void fullReallocWritingTest() {
                     INFO(STRING(", expected="));
                     INFO((U32)i);
                     INFO(STRING(", actual="));
-                    INFO(array.buf[i], NEWLINE);
+                    INFO(array.buf[i], .flags = NEWLINE);
                 }
             }
         }
@@ -279,7 +279,7 @@ static void partialReallocWritingTest() {
                     INFO(STRING(", expected="));
                     INFO(i);
                     INFO(STRING(", actual="));
-                    INFO(array.buf[i], NEWLINE);
+                    INFO(array.buf[i], .flags = NEWLINE);
                 }
             }
         }

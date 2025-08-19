@@ -260,7 +260,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                     INFO(STRING("Tree contains too many nodes to fit in array. "
                                 "Increase max size or decrease expected nodes "
                                 "in Red-Black tree. Current maximum size: "));
-                    INFO(MAX_NODES_IN_TREE, NEWLINE);
+                    INFO(MAX_NODES_IN_TREE, .flags = NEWLINE);
                     appendRedBlackTreeWithBadNode((RedBlackNode *)tree, nullptr,
                                                   RED_BLACK_BASIC);
                 }
@@ -277,9 +277,9 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                     INFO(STRING("Deleted value does not equal the value that "
                                 "should have been deleted!\nExpected to be "
                                 "deleted value: "));
-                    INFO(operations.buf[i].value, NEWLINE);
+                    INFO(operations.buf[i].value, .flags = NEWLINE);
                     INFO(STRING("Actual deleted value: "));
-                    INFO(deleted->value, NEWLINE);
+                    INFO(deleted->value, .flags = NEWLINE);
                 }
             }
 
@@ -308,7 +308,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                             INFO(operations.buf[i].value);
                             INFO(STRING(
                                 ", should have deleted node with value: "));
-                            INFO(expectedValues.buf[i], NEWLINE);
+                            INFO(expectedValues.buf[i], .flags = NEWLINE);
                         }
                     }
                 }
@@ -318,9 +318,9 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                     INFO(STRING("Deleted value not equal the value that "
                                 "should have been deleted!\nExpected to be "
                                 "deleted value: "));
-                    INFO(operations.buf[i].value, NEWLINE);
+                    INFO(operations.buf[i].value, .flags = NEWLINE);
                     INFO(STRING("Actual deleted value: "));
-                    INFO(deleted->value, NEWLINE);
+                    INFO(deleted->value, .flags = NEWLINE);
                 }
             } else {
                 U64 indexToRemove = 0;

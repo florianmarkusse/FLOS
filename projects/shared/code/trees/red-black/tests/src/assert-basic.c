@@ -67,7 +67,7 @@ static void assertIsBSTWitExpectedValues(RedBlackNodeBasic *node, U64 nodes,
         if (!found) {
             TEST_FAILURE {
                 INFO(STRING("The Red-Black Tree does not contain the value "));
-                INFO(expectedValues.buf[i], NEWLINE);
+                INFO(expectedValues.buf[i], .flags = NEWLINE);
                 appendExpectedValuesAndTreeValues(expectedValues,
                                                   inOrderValues);
                 appendRedBlackTreeWithBadNode((RedBlackNode *)node, nullptr,

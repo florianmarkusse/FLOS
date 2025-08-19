@@ -56,33 +56,33 @@ void setConfiguration(U32 efiApplicationSizeBytes, U32 kernelSizeBytes,
         INFO(STRING("Image name: "));
         INFO(STRING_LEN(configuration.imageName,
                         (U32)strlen((char *)configuration.imageName)),
-             NEWLINE);
+             .flags = NEWLINE);
 
         INFO(STRING("LBA size bytes: "));
-        INFO(configuration.LBASizeBytes, NEWLINE);
+        INFO(configuration.LBASizeBytes, .flags = NEWLINE);
 
         INFO(STRING("Alignment in LBA: "));
-        INFO(configuration.alignmentLBA, NEWLINE);
+        INFO(configuration.alignmentLBA, .flags = NEWLINE);
 
         INFO(STRING("total image size LBA: "));
-        INFO(configuration.totalImageSizeLBA, NEWLINE);
+        INFO(configuration.totalImageSizeLBA, .flags = NEWLINE);
 
         INFO(STRING("total image size bytes: "));
-        INFO(configuration.totalImageSizeBytes, NEWLINE);
+        INFO(configuration.totalImageSizeBytes, .flags = NEWLINE);
 
         INFO(STRING("GPT partition table size LBA: "));
-        INFO(configuration.GPTPartitionTableSizeLBA, NEWLINE);
+        INFO(configuration.GPTPartitionTableSizeLBA, .flags = NEWLINE);
 
         INFO(STRING("EFI partition start LBA: "));
-        INFO(configuration.EFISystemPartitionStartLBA, NEWLINE);
+        INFO(configuration.EFISystemPartitionStartLBA, .flags = NEWLINE);
 
         INFO(STRING("EFI partition size LBA: "));
-        INFO(configuration.EFISystemPartitionSizeLBA, NEWLINE);
+        INFO(configuration.EFISystemPartitionSizeLBA, .flags = NEWLINE);
 
         INFO(STRING("Data partition start LBA: "));
-        INFO(configuration.dataPartitionStartLBA, NEWLINE);
+        INFO(configuration.dataPartitionStartLBA, .flags = NEWLINE);
 
         INFO(STRING("Data partition size LBA: "));
-        INFO(configuration.dataPartitionSizeLBA, NEWLINE);
+        INFO(configuration.dataPartitionSizeLBA, .flags = NEWLINE);
     }
 }

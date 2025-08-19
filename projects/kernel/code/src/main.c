@@ -38,15 +38,15 @@ static void appendMemoryDeltaType(AvailableMemoryState startMemory,
             "Difference in available memory detected!\n[BEGIN  ] memory: "));
         INFO(startMemory.memory);
         INFO(STRING(" nodes: "));
-        INFO(startMemory.nodes, NEWLINE);
+        INFO(startMemory.nodes, .flags = NEWLINE);
         INFO(STRING("[CURRENT] memory: "));
         INFO(endMemory.memory);
         INFO(STRING(" nodes: "));
-        INFO(endMemory.nodes, NEWLINE);
+        INFO(endMemory.nodes, .flags = NEWLINE);
         INFO(STRING("[DELTA  ] memory: "));
         INFO((I64)endMemory.memory - (I64)startMemory.memory);
         INFO(STRING(" nodes: "));
-        INFO((I64)endMemory.nodes - (I64)startMemory.nodes, NEWLINE);
+        INFO((I64)endMemory.nodes - (I64)startMemory.nodes, .flags = NEWLINE);
     }
 }
 
@@ -127,7 +127,7 @@ static U64 arrayWritingTest(U64 pageSize, U64 arrayEntries,
                 INFO(STRING(", expected="));
                 INFO(i);
                 INFO(STRING(", actual="));
-                INFO(buffer[i], NEWLINE);
+                INFO(buffer[i], .flags = NEWLINE);
             }
             return 0;
         }
@@ -146,9 +146,9 @@ static U64 arrayWritingTest(U64 pageSize, U64 arrayEntries,
             KFLUSH_AFTER {
                 INFO(STRING("Incorrect number of page faults.\n"));
                 INFO(STRING("Expected: "));
-                INFO(expectedAfterPageFaults, NEWLINE);
+                INFO(expectedAfterPageFaults, .flags = NEWLINE);
                 INFO(STRING("Actual: "));
-                INFO(afterPageFaults, NEWLINE);
+                INFO(afterPageFaults, .flags = NEWLINE);
             }
             return 0;
         }
@@ -185,7 +185,7 @@ static bool partialMappingTest(U64 pageSize) {
 
     KFLUSH_AFTER {
         INFO(STRING("\taverage clockcycles: "));
-        INFO(sum / TEST_ITERATIONS, NEWLINE);
+        INFO(sum / TEST_ITERATIONS, .flags = NEWLINE);
     }
 
     return true;
@@ -212,7 +212,7 @@ static bool fullMappingTest(U64 pageSize) {
 
     KFLUSH_AFTER {
         INFO(STRING("\taverage clockcycles: "));
-        INFO(sum / TEST_ITERATIONS, NEWLINE);
+        INFO(sum / TEST_ITERATIONS, .flags = NEWLINE);
     }
 
     return true;
@@ -238,7 +238,7 @@ static void identityTests() {
 
     KFLUSH_AFTER {
         INFO(STRING("\t\t\t\t\t\taverage clockcycles: "));
-        INFO(sum / TEST_ITERATIONS, NEWLINE);
+        INFO(sum / TEST_ITERATIONS, .flags = NEWLINE);
     }
 
     KFLUSH_AFTER { INFO(STRING("\nStarting partial writing test...\n")); }
@@ -262,7 +262,7 @@ static void identityTests() {
 
     KFLUSH_AFTER {
         INFO(STRING("\t\t\t\t\t\taverage clockcycles: "));
-        INFO(sum / TEST_ITERATIONS, NEWLINE);
+        INFO(sum / TEST_ITERATIONS, .flags = NEWLINE);
     }
 
     KFLUSH_AFTER { INFO(STRING("\n")); }
@@ -297,7 +297,7 @@ static void baselineTest() {
 
     KFLUSH_AFTER {
         INFO(STRING("\t\t\t\t\t\taverage clockcycles: "));
-        INFO(sum / TEST_ITERATIONS, NEWLINE);
+        INFO(sum / TEST_ITERATIONS, .flags = NEWLINE);
     }
 
     KFLUSH_AFTER { INFO(STRING("partial writing test...\n")); }
@@ -330,7 +330,7 @@ static void baselineTest() {
 
     KFLUSH_AFTER {
         INFO(STRING("\t\t\t\t\t\taverage clockcycles: "));
-        INFO(sum / TEST_ITERATIONS, NEWLINE);
+        INFO(sum / TEST_ITERATIONS, .flags = NEWLINE);
     }
 }
 
@@ -399,11 +399,11 @@ kernelMain(PackedKernelParameters *kernelParams) {
 
         KFLUSH_AFTER {
             INFO(STRING("Iterations per test: "));
-            INFO(TEST_ITERATIONS, NEWLINE);
+            INFO(TEST_ITERATIONS, .flags = NEWLINE);
             INFO(STRING("Max memory per test: "));
-            INFO((U64)TEST_MEMORY_AMOUNT, NEWLINE);
+            INFO((U64)TEST_MEMORY_AMOUNT, .flags = NEWLINE);
             INFO(STRING("Max array entries used: "));
-            INFO((U64)MAX_TEST_ENTRIES, NEWLINE);
+            INFO((U64)MAX_TEST_ENTRIES, .flags = NEWLINE);
             INFO(STRING("Random array entries used: "));
             for (typeof(TEST_ITERATIONS) i = 0; i < TEST_ITERATIONS; i++) {
                 INFO(
@@ -462,7 +462,7 @@ kernelMain(PackedKernelParameters *kernelParams) {
 //
 //         LOG(STRING_LEN(header->signature,
 //         ACPI_DESCRIPTION_TABLE_SIGNATURE_LEN),
-//             NEWLINE);
+//             .flags = NEWLINE);
 //
 //         ACPITable tableType =
 //             ACPITablesToEnum(STRING_LEN(header->signature, 4));
@@ -471,7 +471,8 @@ kernelMain(PackedKernelParameters *kernelParams) {
 //         case MULTIPLE_APIC_DESCRIPTION_TABLE: {
 //             MADT *madt = (MADT *)header;
 //
-//             LOG(STRING("printing the structures of the MADT:"), NEWLINE);
+//             LOG(STRING("printing the structures of the MADT:"), .flags =
+//             NEWLINE);
 //
 //             InterruptControllerStructure *interruptStructures =
 //                 madt->interruptStructures;
@@ -481,7 +482,7 @@ kernelMain(PackedKernelParameters *kernelParams) {
 //                 LOG(STRING("Type: "));
 //                 LOG(interruptStructures->type);
 //                 LOG(STRING("Length: "));
-//                 LOG(interruptStructures->totalLength, NEWLINE);
+//                 LOG(interruptStructures->totalLength, .flags = NEWLINE);
 //
 //                 interruptStructures = (InterruptControllerStructure
 //                                            *)((I8 *)interruptStructures +
@@ -492,7 +493,7 @@ kernelMain(PackedKernelParameters *kernelParams) {
 //         }
 //         default: {
 //             LOG(STRING("Did not implement anything for this yet"),
-//             NEWLINE);
+//             .flags = NEWLINE);
 //         }
 //         }
 //

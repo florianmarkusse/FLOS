@@ -57,7 +57,7 @@ static void addValueToExpected(Memory_max_a *expectedValues, Memory toAdd,
                 INFO(STRING("Tree contains too many nodes to fit in array. "
                             "Increase max size or decrease expected nodes "
                             "in Red-Black tree. Current maximum size: "));
-                INFO(MAX_NODES_IN_TREE, NEWLINE);
+                INFO(MAX_NODES_IN_TREE, .flags = NEWLINE);
                 appendRedBlackTreeWithBadNode((RedBlackNode *)tree, nullptr,
                                               RED_BLACK_MEMORY_MANAGER);
             }
@@ -100,7 +100,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                             INFO(operations.buf[i].memory.bytes);
                             INFO(STRING(
                                 ", should have deleted node with value: "));
-                            INFO(expectedValues.buf[i].bytes, NEWLINE);
+                            INFO(expectedValues.buf[i].bytes, .flags = NEWLINE);
                         }
                     }
                 }
@@ -110,9 +110,9 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                     INFO(STRING("Deleted value not equal the value that should "
                                 "have been deleted !\nExpected to be "
                                 "deleted value: "));
-                    INFO(operations.buf[i].memory.bytes, NEWLINE);
+                    INFO(operations.buf[i].memory.bytes, .flags = NEWLINE);
                     INFO(STRING("Actual deleted value: "));
-                    INFO(deleted->memory.bytes, NEWLINE);
+                    INFO(deleted->memory.bytes, .flags = NEWLINE);
                 }
             } else {
                 U64 indexToRemove = 0;

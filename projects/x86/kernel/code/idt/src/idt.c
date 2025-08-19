@@ -581,7 +581,7 @@ void setupInterrupts() {
     asm_lidt(&idtp);
 }
 
-__attribute__((noreturn)) void triggerFault(Fault fault) {
+void triggerFault(Fault fault) {
     switch (fault) {
     case FAULT_DIVIDE_ERROR:
         asm volatile("int $0x00" :::);

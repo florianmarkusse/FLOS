@@ -1,6 +1,6 @@
 #include "abstraction/jmp.h"
 
-__attribute__((naked, returns_twice)) int setjmp(JumpBuffer buf) {
+int setjmp(JumpBuffer buf) {
     asm volatile("movq (%rsp), %rax;"
                  "movq %rax,  0(%rdi);" // rip
                  "lea 8(%rsp), %rax;"
@@ -15,7 +15,7 @@ __attribute__((naked, returns_twice)) int setjmp(JumpBuffer buf) {
                  "ret;");
 }
 
-__attribute__((naked, noreturn)) void longjmp(JumpBuffer buf, int ret) {
+void longjmp(JumpBuffer buf, int ret) {
     asm volatile("movq 56(%rdi), %r15;"
                  "movq 48(%rdi), %r14;"
                  "movq 40(%rdi), %r13;"

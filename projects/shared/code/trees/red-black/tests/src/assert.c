@@ -68,7 +68,7 @@ static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
 
 void appendRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode,
                                    RedBlackTreeType treeType) {
-    INFO(STRING("Red-Black Tree Structure:"), NEWLINE);
+    INFO(STRING("Red-Black Tree Structure:"), .flags = NEWLINE);
     printTreeIndented(root, 0, STRING("Root---"), badNode, treeType);
 }
 

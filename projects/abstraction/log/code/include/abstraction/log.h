@@ -23,15 +23,17 @@ bool flushBuffer(U8_max_a *buffer);
 #define KLOG_DATA(data, flags)                                                 \
     appendToFlushBuffer(CONVERT_TO_STRING(data), flags)
 
-#define KLOG_1(data) KLOG_DATA(data, 0)
-#define KLOG_2(data, flags) KLOG_DATA(data, flags)
+typedef struct {
+    U8 flags;
+} LoggingParams;
 
-#define KLOG_CHOOSER_IMPL_1(arg1) KLOG_1(arg1)
-#define KLOG_CHOOSER_IMPL_2(arg1, arg2) KLOG_2(arg1, arg2)
-#define KLOG_CHOOSER_IMPL(_1, _2, N, ...) KLOG_CHOOSER_IMPL_##N
-#define KLOG_CHOOSER(...) KLOG_CHOOSER_IMPL(__VA_ARGS__, 2, 1)
-
-#define KLOG(...) KLOG_CHOOSER(__VA_ARGS__)(__VA_ARGS__)
+#define KLOG(data, ...)                                                        \
+    ({                                                                         \
+        LoggingParams MACRO_VAR(loggingParams) =                               \
+            (LoggingParams){.flags = 0, __VA_ARGS__};                          \
+        appendToFlushBuffer(CONVERT_TO_STRING(data),                           \
+                            MACRO_VAR(loggingParams).flags);                   \
+    })
 
 #define INFO(data, ...) KLOG(data, ##__VA_ARGS__)
 

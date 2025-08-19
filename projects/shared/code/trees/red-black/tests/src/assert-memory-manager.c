@@ -15,14 +15,14 @@ static void appendExpectedValuesAndTreeValues(Memory_max_a expectedValues,
         INFO(STRING("start: "));
         INFO(expectedValues.buf[i].start);
         INFO(STRING(" bytes: "));
-        INFO(expectedValues.buf[i].bytes, NEWLINE);
+        INFO(expectedValues.buf[i].bytes, .flags = NEWLINE);
     }
     INFO(STRING("Red-Black Tree values:\n"));
     for (U32 i = 0; i < inOrderValues.len; i++) {
         INFO(STRING("start: "));
         INFO(inOrderValues.buf[i]->memory.start);
         INFO(STRING(" bytes: "));
-        INFO(inOrderValues.buf[i]->memory.bytes, NEWLINE);
+        INFO(inOrderValues.buf[i]->memory.bytes, .flags = NEWLINE);
     }
     INFO(STRING("\n"));
 }
@@ -69,7 +69,7 @@ static void assertIsBSTWitExpectedValues(MMNode *node, U32 nodes,
         if (!found) {
             TEST_FAILURE {
                 INFO(STRING("The Red-Black Tree does not contain the value "));
-                INFO(expectedValues.buf[i].start, NEWLINE);
+                INFO(expectedValues.buf[i].start, .flags = NEWLINE);
                 appendExpectedValuesAndTreeValues(expectedValues,
                                                   inOrderValues);
                 appendRedBlackTreeWithBadNode((RedBlackNode *)node, nullptr,

@@ -51,53 +51,53 @@ typedef struct {
 
 U64 currentNumberOfPageFaults = 0;
 
-__attribute__((noreturn)) static void kernelPanic(Registers *regs) {
+static void kernelPanic(Registers *regs) {
     KFLUSH_AFTER {
         INFO(STRING("We are in an interrupt!!!\n"));
         INFO(STRING("regs:\n"));
         INFO(STRING("interrupt number: "));
-        INFO(regs->interruptNumber, NEWLINE);
+        INFO(regs->interruptNumber, .flags = NEWLINE);
         INFO(STRING("interrupt: "));
-        INFO(faultToString[regs->interruptNumber], NEWLINE);
+        INFO(faultToString[regs->interruptNumber], .flags = NEWLINE);
         INFO(STRING("error code: "));
-        INFO(regs->errorCode, NEWLINE);
+        INFO(regs->errorCode, .flags = NEWLINE);
         INFO(STRING("rip: "));
-        INFO((void *)regs->rip, NEWLINE);
+        INFO((void *)regs->rip, .flags = NEWLINE);
         INFO(STRING("rsp: "));
-        INFO((void *)regs->rsp, NEWLINE);
+        INFO((void *)regs->rsp, .flags = NEWLINE);
 
         INFO(STRING("\n"));
 
         INFO(STRING("rax: "));
-        INFO((void *)regs->rax, NEWLINE);
+        INFO((void *)regs->rax, .flags = NEWLINE);
         INFO(STRING("rbx: "));
-        INFO((void *)regs->rbx, NEWLINE);
+        INFO((void *)regs->rbx, .flags = NEWLINE);
         INFO(STRING("rcx: "));
-        INFO((void *)regs->rcx, NEWLINE);
+        INFO((void *)regs->rcx, .flags = NEWLINE);
         INFO(STRING("rdx: "));
-        INFO((void *)regs->rdx, NEWLINE);
+        INFO((void *)regs->rdx, .flags = NEWLINE);
         INFO(STRING("rsi: "));
-        INFO((void *)regs->rsi, NEWLINE);
+        INFO((void *)regs->rsi, .flags = NEWLINE);
         INFO(STRING("rdi: "));
-        INFO((void *)regs->rdi, NEWLINE);
+        INFO((void *)regs->rdi, .flags = NEWLINE);
         INFO(STRING("rbp: "));
-        INFO((void *)regs->rbp, NEWLINE);
+        INFO((void *)regs->rbp, .flags = NEWLINE);
         INFO(STRING("r8 : "));
-        INFO((void *)regs->r8, NEWLINE);
+        INFO((void *)regs->r8, .flags = NEWLINE);
         INFO(STRING("r9 : "));
-        INFO((void *)regs->r9, NEWLINE);
+        INFO((void *)regs->r9, .flags = NEWLINE);
         INFO(STRING("r10: "));
-        INFO((void *)regs->r10, NEWLINE);
+        INFO((void *)regs->r10, .flags = NEWLINE);
         INFO(STRING("r11: "));
-        INFO((void *)regs->r11, NEWLINE);
+        INFO((void *)regs->r11, .flags = NEWLINE);
         INFO(STRING("r12: "));
-        INFO((void *)regs->r12, NEWLINE);
+        INFO((void *)regs->r12, .flags = NEWLINE);
         INFO(STRING("r13: "));
-        INFO((void *)regs->r13, NEWLINE);
+        INFO((void *)regs->r13, .flags = NEWLINE);
         INFO(STRING("r14: "));
-        INFO((void *)regs->r14, NEWLINE);
+        INFO((void *)regs->r14, .flags = NEWLINE);
         INFO(STRING("r15: "));
-        INFO((void *)regs->r15, NEWLINE);
+        INFO((void *)regs->r15, .flags = NEWLINE);
     }
 
     hangThread();

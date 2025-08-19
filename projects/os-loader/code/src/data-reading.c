@@ -34,11 +34,11 @@ static void checkForPartitionGUID(Handle handle) {
 
     KFLUSH_AFTER {
         INFO(STRING("resvision: "));
-        INFO(partitionInfo->revision, NEWLINE);
+        INFO(partitionInfo->revision, .flags = NEWLINE);
         INFO(STRING("Type: "));
-        INFO(partitionInfo->type, NEWLINE);
+        INFO(partitionInfo->type, .flags = NEWLINE);
         INFO(STRING("System: "));
-        INFO(partitionInfo->system, NEWLINE);
+        INFO(partitionInfo->system, .flags = NEWLINE);
     }
 
     if (partitionInfo->type == PARTITION_TYPE_MBR) {
@@ -133,7 +133,7 @@ String readKernelFromCurrentLoadedImage(U32 bytes, Arena scratch) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING("Could not load kernel from any available block "
                          "protocol!\nNumber of handles: "));
-            ERROR(numberOfHandles, NEWLINE);
+            ERROR(numberOfHandles, .flags = NEWLINE);
         }
     }
 
@@ -219,9 +219,9 @@ U32 getKernelBytes(Arena scratch) {
 
     KFLUSH_AFTER {
         INFO(STRING("first e location: "));
-        INFO(firstE, NEWLINE);
+        INFO(firstE, .flags = NEWLINE);
         INFO(STRING("second e location: "));
-        INFO(secondE, NEWLINE);
+        INFO(secondE, .flags = NEWLINE);
     }
 
     // Assumes the below file structure:

@@ -64,7 +64,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         gop->mode->frameBufferBase + gop->mode->frameBufferSize, arena);
     KFLUSH_AFTER {
         INFO(STRING("Identity mapping all memory, highest address found: "));
-        INFO((void *)highestLowerHalfAddress, NEWLINE);
+        INFO((void *)highestLowerHalfAddress, .flags = NEWLINE);
     }
 
     U64 firstFreeVirtual =
@@ -80,15 +80,15 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING(
                 "the kernel is too large!\nMaximum allowed kernel size: "));
-            ERROR(KERNEL_CODE_MAX_SIZE, NEWLINE);
+            ERROR(KERNEL_CODE_MAX_SIZE, .flags = NEWLINE);
             ERROR(STRING("Current kernel size: "));
-            ERROR(kernelBytes, NEWLINE);
+            ERROR(kernelBytes, .flags = NEWLINE);
         }
     }
     KFLUSH_AFTER {
         INFO(STRING("Loading kernel into memory\n"));
         INFO(STRING("Bytes: "));
-        INFO(kernelBytes, NEWLINE);
+        INFO(kernelBytes, .flags = NEWLINE);
     }
 
     String kernelContent = readKernelFromCurrentLoadedImage(kernelBytes, arena);
@@ -105,14 +105,14 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     KFLUSH_AFTER {
         INFO(STRING("The phyiscal kernel:\nstart: "));
-        INFO((void *)kernelContent.buf, NEWLINE);
+        INFO((void *)kernelContent.buf, .flags = NEWLINE);
         INFO(STRING("stop:  "));
-        INFO((void *)(kernelContent.buf + kernelContent.len), NEWLINE);
+        INFO((void *)(kernelContent.buf + kernelContent.len), .flags = NEWLINE);
 
         INFO(STRING("The virtual kernel:\nstart: "));
-        INFO((void *)KERNEL_CODE_START, NEWLINE);
+        INFO((void *)KERNEL_CODE_START, .flags = NEWLINE);
         INFO(STRING("stop:  "));
-        INFO((void *)(KERNEL_CODE_START + kernelContent.len), NEWLINE);
+        INFO((void *)(KERNEL_CODE_START + kernelContent.len), .flags = NEWLINE);
     }
 
     U64 virtualForKernel =
@@ -123,7 +123,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(STRING("Got "));
         INFO(MIN_VIRTUAL_MEMORY_REQUIRED);
         INFO(STRING(" virtual memory to use in kernel. Address starts at "));
-        INFO((void *)virtualForKernel, NEWLINE);
+        INFO((void *)virtualForKernel, .flags = NEWLINE);
     }
 
     // NOTE: Virtual memory active from this point!
@@ -141,18 +141,18 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     KFLUSH_AFTER {
         INFO(STRING("The graphics buffer physical location:\nstart: "));
-        INFO((void *)gop->mode->frameBufferBase, NEWLINE);
+        INFO((void *)gop->mode->frameBufferBase, .flags = NEWLINE);
         INFO(STRING("stop:  "));
         INFO((void *)(gop->mode->frameBufferBase + gop->mode->frameBufferSize),
-             NEWLINE);
+             .flags = NEWLINE);
 
         INFO(STRING("The graphics buffer virtual location:\nstart: "));
-        INFO((void *)screenMemoryVirtualStart, NEWLINE);
+        INFO((void *)screenMemoryVirtualStart, .flags = NEWLINE);
         INFO(STRING("stop:  "));
         INFO((void *)(screenMemoryVirtualStart + gop->mode->frameBufferSize),
-             NEWLINE);
+             .flags = NEWLINE);
         INFO(STRING("virt free memory is now at:     "));
-        INFO((void *)virtualForKernel, NEWLINE);
+        INFO((void *)virtualForKernel, .flags = NEWLINE);
     }
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }
@@ -171,7 +171,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     KFLUSH_AFTER {
         INFO(STRING("mapped guard page address: \n"));
-        INFO((void *)stackGuardPageAddress, NEWLINE);
+        INFO((void *)stackGuardPageAddress, .flags = NEWLINE);
     }
 
     U64 stackVirtualStart = virtualForKernel;
@@ -181,16 +181,16 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     KFLUSH_AFTER {
         INFO(STRING("The phyiscal stack:\ndown from: "));
-        INFO((void *)stackAddress + KERNEL_STACK_SIZE, NEWLINE);
+        INFO((void *)stackAddress + KERNEL_STACK_SIZE, .flags = NEWLINE);
         INFO(STRING("until:     "));
-        INFO((void *)stackAddress, NEWLINE);
+        INFO((void *)stackAddress, .flags = NEWLINE);
 
         INFO(STRING("The virtual stack:\ndown from: "));
-        INFO((void *)stackVirtualStart + KERNEL_STACK_SIZE, NEWLINE);
+        INFO((void *)stackVirtualStart + KERNEL_STACK_SIZE, .flags = NEWLINE);
         INFO(STRING("until:     "));
-        INFO((void *)stackVirtualStart, NEWLINE);
+        INFO((void *)stackVirtualStart, .flags = NEWLINE);
         INFO(STRING("virt free memory is now at:     "));
-        INFO((void *)virtualForKernel, NEWLINE);
+        INFO((void *)virtualForKernel, .flags = NEWLINE);
     }
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
@@ -212,19 +212,19 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     KFLUSH_AFTER {
         INFO(STRING("phyiscal kernel params\n"));
         INFO(STRING("The common phyiscal kernel params:\nstart: "));
-        INFO((void *)kernelParams, NEWLINE);
+        INFO((void *)kernelParams, .flags = NEWLINE);
         INFO(STRING("The arch-specific phyiscal kernel params:\nstart: "));
-        INFO((void *)archParams, NEWLINE);
+        INFO((void *)archParams, .flags = NEWLINE);
         INFO(STRING("stop:  "));
-        INFO(kernelParamsEnd, NEWLINE);
+        INFO(kernelParamsEnd, .flags = NEWLINE);
 
         INFO(STRING("The virtual kernel params (identity mapped):\n"));
         INFO(STRING("The common kernel params:\nstart: "));
-        INFO((void *)kernelParams, NEWLINE);
+        INFO((void *)kernelParams, .flags = NEWLINE);
         INFO(STRING("The arch-specific virtual kernel params:\nstart: "));
-        INFO((void *)archParams, NEWLINE);
+        INFO((void *)archParams, .flags = NEWLINE);
         INFO(STRING("stop:  "));
-        INFO(kernelParamsEnd, NEWLINE);
+        INFO(kernelParamsEnd, .flags = NEWLINE);
     }
 
     kernelParams->archParams =

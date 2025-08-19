@@ -43,12 +43,12 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
             INFO(STRING("The GDT is too big!\nSize: "));
             INFO(requiredBytesForDescriptorTable);
             INFO(STRING(" while maximum allowed is: "));
-            INFO(MAX_BYTES_GDT, NEWLINE);
+            INFO(MAX_BYTES_GDT, .flags = NEWLINE);
         }
     }
     KFLUSH_AFTER {
         INFO(STRING("Total bytes required for GDT: "));
-        INFO(requiredBytesForDescriptorTable, NEWLINE);
+        INFO(requiredBytesForDescriptorTable, .flags = NEWLINE);
     }
 
     SegmentDescriptor *GDT = (SegmentDescriptor *)allocateKernelStructure(
@@ -96,7 +96,7 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
         ALIGN_UP_VALUE(sizeof(TaskStateSegment), cacheLineSizeBytes);
     KFLUSH_AFTER {
         INFO(STRING("Size in bytes per TSS: "));
-        INFO(bytesPerTSS, NEWLINE);
+        INFO(bytesPerTSS, .flags = NEWLINE);
     }
 
     U8 *TSSes = (U8 *)allocateKernelStructure(bytesPerTSS * numberOfProcessors,
@@ -127,14 +127,14 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
                         ERROR(STRING("IST stack needs to be aligned to "));
                         ERROR(KERNEL_STACK_ALIGNMENT);
                         ERROR(STRING(" bytes.\nCurrent stack value: "));
-                        ERROR(stackAddress, NEWLINE);
+                        ERROR(stackAddress, .flags = NEWLINE);
                     }
                 }
                 perCPUTSS->ists[j] = stackAddress;
                 INFO(STRING("TSS ist["));
                 INFO(j);
                 INFO(STRING("]stack: "));
-                INFO((void *)perCPUTSS->ists[j], NEWLINE);
+                INFO((void *)perCPUTSS->ists[j], .flags = NEWLINE);
             }
         }
 
@@ -225,7 +225,7 @@ void initRootVirtualMemoryInKernel() {
     KFLUSH_AFTER {
         INFO(STRING("root page table memory location: "));
         /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-        INFO((void *)rootPageTable, NEWLINE);
+        INFO((void *)rootPageTable, .flags = NEWLINE);
     }
 }
 
@@ -278,7 +278,7 @@ void fillArchParams(void *archParams, Arena scratch) {
     if (maxBasicCPUID < BASIC_MAX_REQUIRED_PARAMETER) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING("CPU does not support required CPUID of "));
-            ERROR(BASIC_MAX_REQUIRED_PARAMETER, NEWLINE);
+            ERROR(BASIC_MAX_REQUIRED_PARAMETER, .flags = NEWLINE);
         }
     }
 
@@ -293,7 +293,7 @@ void fillArchParams(void *archParams, Arena scratch) {
     U16 cacheLineSizeBytes = (processorInfoAndFeatureBits.ebx >> 8 & 0xFF) * 8;
     KFLUSH_AFTER {
         INFO(STRING("Cache line size is: \n"));
-        INFO(cacheLineSizeBytes, NEWLINE);
+        INFO(cacheLineSizeBytes, .flags = NEWLINE);
     }
 
     U32 BSPID = processorInfoAndFeatureBits.ebx >> 24;
@@ -377,7 +377,7 @@ void fillArchParams(void *archParams, Arena scratch) {
         INFO(STRING(
             "Maximum required size in bytes for storing state components "
             "with current components: "));
-        INFO(XSAVESize, NEWLINE);
+        INFO(XSAVESize, .flags = NEWLINE);
     }
 
     U8 *XSAVEAddress = (U8 *)allocateKernelStructure(XSAVESize, XSAVE_ALIGNMENT,
@@ -389,7 +389,7 @@ void fillArchParams(void *archParams, Arena scratch) {
     if (maxExtendedCPUID < EXTENDED_MAX_REQUIRED_PARAMETER) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING("CPU does not support extended CPUID of "));
-            ERROR(EXTENDED_MAX_REQUIRED_PARAMETER, NEWLINE);
+            ERROR(EXTENDED_MAX_REQUIRED_PARAMETER, .flags = NEWLINE);
         }
     }
 
