@@ -44,12 +44,14 @@ static PageMetaDataNode *getZeroedMetaDataTable() {
 }
 
 static U16 calculateTableIndex(U64 virt, U64 pageSize) {
-    return RING_RANGE_VALUE((virt / pageSize), PageTableFormat.ENTRIES);
+    return RING_RANGE_VALUE(divideByPowerOf2(virt, pageSize),
+                            PageTableFormat.ENTRIES);
 }
 
 void mapPage_(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
     ASSERT(rootPageTable);
     ASSERT(!(RING_RANGE_VALUE(physical, mappingSize)));
+    ASSERT(isPowerOf2(mappingSize));
 
     PageMetaDataNode *metaDataTable = &rootPageMetaData;
     VirtualPageTable *pageTable = rootPageTable;
@@ -65,7 +67,7 @@ void mapPage_(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
 
         if (entrySize == mappingSize) {
             U64 value = physical | flags;
-            if (mappingSize == X86_2MIB_PAGE || mappingSize == X86_1GIB_PAGE) {
+            if (mappingSize & (X86_2MIB_PAGE | X86_1GIB_PAGE)) {
                 value |= VirtualPageMasks.PAGE_EXTENDED_SIZE;
             }
             *tableEntryAddress = value;
