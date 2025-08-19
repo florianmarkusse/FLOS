@@ -203,8 +203,8 @@ U32 calculateEFIPartitionSize(U32 EFIApplicationSizeLBA) {
     DATA_CLUSTERS_COUNT =
         (U32)alignUp(requiredDataClusters, configuration.alignmentLBA);
 
-    U32 requiredFATSizeSectors = CEILING_DIV_VALUE(
-        DATA_CLUSTERS_COUNT, (configuration.LBASizeBytes / (U32)sizeof(U32)));
+    U32 requiredFATSizeSectors = (U32)ceilingDivide(
+        DATA_CLUSTERS_COUNT, (configuration.LBASizeBytes / sizeof(U32)));
     U32 reservedAndFATSizeSectors =
         (U32)alignUp(parameterBlock.reservedSectors +
                          (requiredFATSizeSectors * parameterBlock.FATs),
@@ -270,7 +270,7 @@ static Cluster createContiguousSpaceForNewEntry(U32 bytes) {
     ASSERT(bytes > 0);
 
     U32 requiredNewClusters =
-        (U32)CEILING_DIV_VALUE(bytes, (U32)parameterBlock.bytesPerSector);
+        (U32)ceilingDivide(bytes, parameterBlock.bytesPerSector);
     ASSERT(requiredNewClusters <
            (DATA_CLUSTERS_COUNT - CURRENT_FREE_DATA_CLUSTER_INDEX.full));
 

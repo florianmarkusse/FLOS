@@ -176,7 +176,7 @@ static bool partialMappingTest(U64 pageSize) {
             RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
         U64 cycles = arrayWritingTest(
             pageSize, entriesToWrite, MAPPABLE_MEMORY,
-            CEILING_DIV_VALUE((entriesToWrite * sizeof(U64)), pageSize));
+            ceilingDivide((entriesToWrite * sizeof(U64)), pageSize));
         if (!cycles) {
             return false;
         }
@@ -203,7 +203,7 @@ static bool fullMappingTest(U64 pageSize) {
          iteration++) {
         U64 cycles = arrayWritingTest(
             pageSize, MAX_TEST_ENTRIES, MAPPABLE_MEMORY,
-            CEILING_DIV_VALUE((MAX_TEST_ENTRIES * sizeof(U64)), pageSize));
+            ceilingDivide((MAX_TEST_ENTRIES * sizeof(U64)), pageSize));
         if (!cycles) {
             return false;
         }

@@ -140,7 +140,7 @@ static void identityArrayToMappable(void_max_a *array, U64 alignBytes,
 
     U64 bytesUsed = array->len * elementSizeBytes;
     U32 mapsToDo =
-        (U32)CEILING_DIV_VALUE(bytesUsed, pageSizesSmallest()) + additionalMaps;
+        (U32)ceilingDivide(bytesUsed, pageSizesSmallest()) + additionalMaps;
     for (typeof(mapsToDo) i = 0; i < mapsToDo; i++) {
         (void)handlePageFault((U64)virtualBuffer + (i * pageSizesSmallest()));
     }

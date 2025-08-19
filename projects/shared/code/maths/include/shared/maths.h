@@ -23,20 +23,7 @@
 // These operations are only defined for powers of 2 !!!
 U64 alignUp(U64 value, U64 align);
 U64 alignDown(U64 value, U64 align);
-
-// These operations are only defined for powers of 2 !!!
-#define CEILING_DIV_EXP(val, exponent)                                         \
-    (((val) + ((TYPED_CONSTANT(val, 1) << (exponent)) - 1)) >> (exponent))
-#define CEILING_DIV_VALUE(val, divisor)                                        \
-    ({                                                                         \
-        typeof(divisor) _d = (divisor);                                        \
-        typeof(val) _v = (val);                                                \
-        int shift = _Generic((divisor),                                        \
-            U32: __builtin_ctz(_d),                                            \
-            U64: __builtin_ctzll(_d));                                         \
-        ((_v + _d - 1) >> shift);                                              \
-    })
-
+U64 ceilingDivide(U64 value, U64 divisor);
 #define RING_RANGE_EXP(val, exponent)                                          \
     ((val) & ((TYPED_CONSTANT(val, 1) << (exponent)) - 1))
 #define RING_RANGE_VALUE(val, ringSize) (((val)) & ((ringSize) - 1))

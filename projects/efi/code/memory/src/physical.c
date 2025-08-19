@@ -32,7 +32,7 @@ static MemoryInfo prepareMemoryInfo() {
 
 static void allocatePages(AllocateType allocateType, U64 bytes, U64 *address) {
     Status status = globals.st->boot_services->allocate_pages(
-        allocateType, LOADER_DATA, CEILING_DIV_VALUE(bytes, UEFI_PAGE_SIZE),
+        allocateType, LOADER_DATA, ceilingDivide(bytes, UEFI_PAGE_SIZE),
         address);
 
     if (!(*address)) {
@@ -180,7 +180,7 @@ static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
             if (bestDescriptor.padding) {
                 Status status = globals.st->boot_services->free_pages(
                     bestDescriptor.address,
-                    CEILING_DIV_VALUE(bestDescriptor.padding, UEFI_PAGE_SIZE));
+                    ceilingDivide(bestDescriptor.padding, UEFI_PAGE_SIZE));
                 EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
                     ERROR(STRING("Freeing padded memory failed!\n"));
                 }

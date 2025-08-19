@@ -39,17 +39,17 @@ typedef struct __attribute__((packed)) {
     U32 version;
     U32 headersize;
     U32 flags;
-    U32 numglyph;
-    U32 bytesperglyph;
-    U32 height;
-    U32 width;
+    U32 numGlyphs;
+    U32 bytesPerGlyph;
+    U32 height; // height in pixels
+    U32 width;  // width in pixels
     U8 glyphs[];
-} psf2_t;
+} PSFFont;
 
 static U8 glyphsBinary[] = {
 #embed "freestanding/resources/font.psf"
 };
-static psf2_t *font = (psf2_t *)&glyphsBinary;
+static PSFFont *font = (PSFFont *)&glyphsBinary;
 
 static constexpr auto BYTES_PER_PIXEL = 4;
 static constexpr auto VERTICAL_PIXEL_MARGIN = 20;
@@ -67,7 +67,7 @@ static U16 glyphsPerLine;
 static U16 glyphsPerColumn;
 static U32 maxGlyphsOnScreen;
 static U32 maxCharsToProcess;
-static U32 bytesPerLine;
+static U32 bytesPerGlyphLine;
 static U32 glyphStartOffset;
 static U32 glyphStartVerticalOffset;
 
@@ -120,7 +120,7 @@ static void drawTerminalBox() {
 }
 
 static void drawGlyph(U8 ch, U32 topRightGlyphOffset) {
-    U8 *glyphStart = &(font->glyphs[ch * font->bytesperglyph]);
+    U8 *glyphStart = &(font->glyphs[ch * font->bytesPerGlyph]);
     U32 glyphOffset = topRightGlyphOffset;
     for (typeof(font->height) y = 0; y < font->height; y++) {
         // TODO: use SIMD instructions?
@@ -140,7 +140,7 @@ static void drawGlyph(U8 ch, U32 topRightGlyphOffset) {
             mask >>= 1;
             line++;
         }
-        glyphStart += bytesPerLine;
+        glyphStart += bytesPerGlyphLine;
         glyphOffset += dim.scanline;
     }
 }
@@ -541,8 +541,7 @@ void initScreen(PackedWindow *window, Arena *perm) {
     buf = NEW(perm, U8, .count = FILE_BUF_LEN);
     // Need correct alignment
     U32 *doubleBuffer = NEW(
-        perm, U32,
-        .count = (U32)CEILING_DIV_VALUE(window->size, (U32)BYTES_PER_PIXEL));
+        perm, U32, .count = (U32)ceilingDivide(window->size, BYTES_PER_PIXEL));
 
     dim.screen = window->screen;
     dim.backingBuffer = doubleBuffer;
@@ -574,7 +573,7 @@ void initScreen(PackedWindow *window, Arena *perm) {
     maxCharsToProcess = 2 * maxGlyphsOnScreen;
     glyphStartVerticalOffset = dim.scanline * VERTICAL_PIXEL_MARGIN;
     glyphStartOffset = glyphStartVerticalOffset + HORIZONTAL_PIXEL_MARGIN;
-    bytesPerLine = CEILING_DIV_VALUE(font->width, (U32)8);
+    bytesPerGlyphLine = (U32)ceilingDivide(font->width, BITS_PER_BYTE);
 
     ASSERT(maxCharsToProcess <= FILE_BUF_LEN);
 

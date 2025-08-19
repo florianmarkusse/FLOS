@@ -7,6 +7,11 @@ U64 alignUp(U64 value, U64 align) {
 
 U64 alignDown(U64 value, U64 align) { return (value) & (~(align - 1)); }
 
+U64 ceilingDivide(U64 value, U64 divisor) {
+    int shift = __builtin_ctzll(divisor);
+    return (value + divisor - 1) >> shift;
+}
+
 U64 ceilingPowerOf2(U64 x) {
     if (x <= 1) {
         return 1;
