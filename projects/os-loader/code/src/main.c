@@ -156,7 +156,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }
-    U64 stackAddress = allocateKernelStructure(
+    U64 stackAddress = (U64)allocateKernelStructure(
         KERNEL_STACK_SIZE, KERNEL_STACK_ALIGNMENT, true, arena);
 
     KFLUSH_AFTER { INFO(STRING("Mapping stack into location\n")); }

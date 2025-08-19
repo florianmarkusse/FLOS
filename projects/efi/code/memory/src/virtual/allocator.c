@@ -15,7 +15,7 @@ void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
             ERROR(STRING("Requested alignment larger than possible!"));
         }
     }
-    void *result = (void *)allocateBytesInUefiPages(structReq.bytes, true);
+    void *result = allocateBytesInUefiPages(structReq.bytes, true);
     memset(result, 0, structReq.bytes);
     return result;
 }

@@ -26,8 +26,9 @@ extern Memory_max_a kernelStructureLocations;
 void initKernelStructureLocations(Arena *perm);
 
 U64 findHighestMemoryAddress(U64 currentHighestAddress, Arena scratch);
-U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
-                            bool tryEncompassingVirtual, Arena scratch);
+__attribute__((malloc, alloc_align(2))) void *
+allocateKernelStructure(U64 bytes, U64 minimumAlignment,
+                        bool tryEncompassingVirtual, Arena scratch);
 __attribute__((malloc, aligned(UEFI_PAGE_SIZE))) void *
 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure);
 

@@ -104,8 +104,8 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
     U64 istStackBytesAligned =
         ALIGN_UP_VALUE(TOTAL_IST_STACKS_BYTES, (U64)KERNEL_STACK_ALIGNMENT);
     U64 interruptStacksRegion =
-        allocateKernelStructure(istStackBytesAligned * numberOfProcessors,
-                                KERNEL_STACK_ALIGNMENT, false, scratch);
+        (U64)allocateKernelStructure(istStackBytesAligned * numberOfProcessors,
+                                     KERNEL_STACK_ALIGNMENT, false, scratch);
 
     for (typeof(numberOfProcessors) i = 0; i < numberOfProcessors; i++) {
         TaskStateSegment *perCPUTSS =
