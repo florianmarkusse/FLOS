@@ -47,9 +47,7 @@ static U16 calculateTableIndex(U64 virt, U64 pageSize) {
     return RING_RANGE_VALUE((virt / pageSize), PageTableFormat.ENTRIES);
 }
 
-// The caller should take care that the physical address is correctly aligned.
-// If it is not, not sure what the caller wanted to accomplish.
-void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
+void mapPage_(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
     ASSERT(rootPageTable);
     ASSERT(!(RING_RANGE_VALUE(physical, mappingSize)));
 
@@ -92,10 +90,6 @@ void mapPageWithFlags(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
                                                  pageSizesSmallest());
         metaDataTable = newMetaEntryAddress->children;
     }
-}
-
-void mapPage(U64 virt, U64 physical, U64 mappingSize) {
-    mapPageWithFlags(virt, physical, mappingSize, pageFlagsReadWrite());
 }
 
 U64 getPhysicalAddressFrame(U64 virtualPage) {
