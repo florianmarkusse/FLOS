@@ -210,7 +210,7 @@ U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
     return result;
 }
 
-U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure) {
+void *allocateBytesInUefiPages(U64 bytes, bool isKernelStructure) {
     U64 address = 0;
 
     allocatePages(ALLOCATE_ANY_PAGES, bytes, &address);
@@ -218,7 +218,7 @@ U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure) {
     if (isKernelStructure) {
         addAddressToKernelStructure(address, bytes);
     }
-    return address;
+    return (void *)address;
 }
 
 void createDynamicArray(U32 elements, U64 elementSizeBytes,

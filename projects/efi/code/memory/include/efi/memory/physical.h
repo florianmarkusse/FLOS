@@ -28,7 +28,8 @@ void initKernelStructureLocations(Arena *perm);
 U64 findHighestMemoryAddress(U64 currentHighestAddress, Arena scratch);
 U64 allocateKernelStructure(U64 bytes, U64 minimumAlignment,
                             bool tryEncompassingVirtual, Arena scratch);
-U64 allocateBytesInUefiPages(U64 bytes, bool isKernelStructure);
+__attribute__((malloc, aligned(UEFI_PAGE_SIZE))) void *
+allocateBytesInUefiPages(U64 bytes, bool isKernelStructure);
 
 void createDynamicArray(U32 elements, U64 elementSizeBytes,
                         U64 elementAlignBytes, void_max_a *result,
