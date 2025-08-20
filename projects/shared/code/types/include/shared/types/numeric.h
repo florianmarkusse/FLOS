@@ -39,6 +39,13 @@ typedef __UINT64_TYPE__ U64;
 typedef __INTPTR_TYPE__ ISize;
 typedef __UINTPTR_TYPE__ USize;
 
+typedef U64 U64_pow2;
+typedef U32 U32_pow2;
+typedef U16 U16_pow2;
+typedef U8 U8_pow2;
+
+typedef U8 Exponent;
+
 static constexpr I8 I8_MIN = -128;
 static constexpr I16 I16_MIN = -32767 - 1;
 static constexpr I32 I32_MIN = -2147483647 - 1;

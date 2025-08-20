@@ -64,7 +64,7 @@ static constexpr auto START_ENTRIES_COUNT = 8;
 
 typedef enum { IDENTITY_MEMORY, MAPPABLE_MEMORY } MemoryWritableType;
 
-static U64 arrayWritingTest(U64 pageSize, U64 arrayEntries,
+static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
                             MemoryWritableType memoryWritableType,
                             U64 expectedPageFaults) {
     AvailableMemoryState startPhysicalMemory = getAvailablePhysicalMemory();
@@ -159,7 +159,7 @@ static U64 arrayWritingTest(U64 pageSize, U64 arrayEntries,
     return cycles;
 }
 
-static bool partialMappingTest(U64 pageSize) {
+static bool partialMappingTest(U64_pow2 pageSize) {
     U64 sum = 0;
 
     KFLUSH_AFTER {
@@ -173,7 +173,7 @@ static bool partialMappingTest(U64 pageSize) {
     for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
          iteration++) {
         U64 entriesToWrite =
-            RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
+            ringBufferIndex(biskiNext(&state), MAX_TEST_ENTRIES);
         U64 cycles = arrayWritingTest(
             pageSize, entriesToWrite, MAPPABLE_MEMORY,
             ceilingDivide((entriesToWrite * sizeof(U64)), pageSize));
@@ -191,7 +191,7 @@ static bool partialMappingTest(U64 pageSize) {
     return true;
 }
 
-static bool fullMappingTest(U64 pageSize) {
+static bool fullMappingTest(U64_pow2 pageSize) {
     U64 sum = 0;
 
     KFLUSH_AFTER {
@@ -251,7 +251,7 @@ static void identityTests() {
     for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
          iteration++) {
         U64 entriesToWrite =
-            RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
+            ringBufferIndex(biskiNext(&state), MAX_TEST_ENTRIES);
         U64 cycles =
             arrayWritingTest(alignof(U64), entriesToWrite, IDENTITY_MEMORY, 0);
         if (!cycles) {
@@ -312,7 +312,7 @@ static void baselineTest() {
         U64 *buffer = allocateIdentityMemory(MAX_TEST_ENTRIES * sizeof(U64),
                                              alignof(U64));
         U64 entriesToWrite =
-            RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
+            ringBufferIndex(biskiNext(&state), MAX_TEST_ENTRIES);
 
         U64 startCycleCount = currentCycleCounter(true, false);
 
@@ -340,7 +340,7 @@ static void mappingTests() {
         INFO(STRING("Starting full mapping test...\n"));
     }
 
-    for (U64 pageSize = 4 * KiB; pageSize <= (2 * MiB); pageSize <<= 1) {
+    for (U64_pow2 pageSize = 4 * KiB; pageSize <= (2 * MiB); pageSize *= 2) {
         if (!fullMappingTest(pageSize)) {
             return;
         }
@@ -406,8 +406,7 @@ kernelMain(PackedKernelParameters *kernelParams) {
             INFO((U64)MAX_TEST_ENTRIES, .flags = NEWLINE);
             INFO(STRING("Random array entries used: "));
             for (typeof(TEST_ITERATIONS) i = 0; i < TEST_ITERATIONS; i++) {
-                INFO(
-                    (U64)RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES));
+                INFO((U64)ringBufferIndex(biskiNext(&state), MAX_TEST_ENTRIES));
                 INFO(STRING(" "));
             }
             INFO(STRING("\n"));

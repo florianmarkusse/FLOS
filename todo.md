@@ -1,3 +1,5 @@
+- create Pow2 and exponent typedefs - and use these in functions where required to make it easier on brain
+- also add -pow2 to each function that needs pow2
 - look into divisiona and see where can used shift instead for power of 2 div
 - clean up red-black tree mess somehow? This should be possible to abstract!
 - how to hide extern variables from showing up everywhere

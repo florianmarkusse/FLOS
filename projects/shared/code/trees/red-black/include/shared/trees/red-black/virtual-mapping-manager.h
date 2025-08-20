@@ -7,7 +7,7 @@
 typedef struct {
     RedBlackNodeBasic basic;
     U64 bytes;
-    U64 mappingSize;
+    U64_pow2 mappingSize;
 } VMMNode;
 
 typedef MAX_LENGTH_ARRAY(VMMNode) RedBlackVMM_max_a;

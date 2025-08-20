@@ -20,7 +20,7 @@ static constexpr auto VIRTUAL_ALLOCATION_TYPE_COUNT =
 
 typedef struct {
     U64 bytes;
-    U64 align;
+    U64_pow2 align;
 } StructReq;
 
 // NOTE: here as config keys!

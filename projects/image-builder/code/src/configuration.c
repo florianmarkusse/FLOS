@@ -14,7 +14,7 @@ Configuration configuration = {.imageName = (U8 *)"FLOS_UEFI_IMAGE.hdd",
                                .alignmentLBA = 1};
 
 void setConfiguration(U32 efiApplicationSizeBytes, U32 kernelSizeBytes,
-                      U32 alignmentSizeBytes) {
+                      U32_pow2 alignmentSizeBytes) {
     if (alignmentSizeBytes > configuration.LBASizeBytes) {
         configuration.alignmentLBA =
             alignmentSizeBytes / configuration.LBASizeBytes;

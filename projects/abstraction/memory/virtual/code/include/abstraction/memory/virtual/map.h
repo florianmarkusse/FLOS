@@ -10,9 +10,9 @@ typedef struct {
     U64 flags;
 } MappingParams;
 
-void mapPage_(U64 virt, U64 physical, U64 mappingSize, U64 flags);
+void mapPage_(U64 virt, U64 physical, U64_pow2 mappingSize, U64 flags);
 
-#define mapPage(virt, physical, mappingSize, ...)                           \
+#define mapPage(virt, physical, mappingSize, ...)                              \
     ({                                                                         \
         MappingParams MACRO_VAR(mappingParams) =                               \
             (MappingParams){.flags = pageFlagsReadWrite(), __VA_ARGS__};       \

@@ -52,20 +52,21 @@ void allocateSpaceForKernelMemory(
 }
 
 U64 alignVirtual(U64 virtualAddress, U64 physicalAddress, U64 bytes) {
-    U64 alignment = pageSizeEncompassing(bytes);
+    U64_pow2 alignment = pageSizeEncompassing(bytes);
 
     U64 result = alignUp(virtualAddress, alignment);
     // NOTE: if the physical address is somehow not as aligned as the virtual
     // one. So, we can map 1 4KiB page and then the remaining as 2MiB page, for
     // example, instead of the virtual and physical address being out of
     // alignment and only being able to do 4KiB mappings.
-    result |= RING_RANGE_VALUE(physicalAddress, alignment);
+    result |= ringBufferIndex(physicalAddress, alignment);
 
     return result;
 }
 
 U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
-    for (typeof(bytes) bytesMapped = 0, mappingSize; bytesMapped < bytes;
+    U64_pow2 mappingSize;
+    for (typeof(bytes) bytesMapped = 0; bytesMapped < bytes;
          virt += mappingSize, physical += mappingSize,
                        bytesMapped += mappingSize) {
         mappingSize = pageSizeLeastLargerThan(physical, bytes - bytesMapped);

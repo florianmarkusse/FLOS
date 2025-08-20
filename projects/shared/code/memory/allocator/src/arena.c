@@ -5,7 +5,7 @@
 #include "shared/memory/allocator/macros.h"
 #include "shared/types/numeric.h"
 
-void *alloc(Arena *a, U64 size, U64 align, U64 count, U8 flags) {
+void *alloc(Arena *a, U64 size, U64_pow2 align, U64 count, U8 flags) {
     ASSERT((align & (align - 1)) == 0);
 
     U64 avail = (U64)(a->end - a->curFree);

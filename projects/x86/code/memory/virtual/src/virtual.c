@@ -43,14 +43,14 @@ static PageMetaDataNode *getZeroedMetaDataTable() {
     return getZeroedMemoryForVirtual(META_DATA_PAGE_ALLOCATION);
 }
 
-static U16 calculateTableIndex(U64 virt, U64 pageSize) {
-    return RING_RANGE_VALUE(divideByPowerOf2(virt, pageSize),
-                            PageTableFormat.ENTRIES);
+static U16 calculateTableIndex(U64 virt, U64_pow2 pageSize) {
+    return (U16)ringBufferIndex(divideByPowerOf2(virt, pageSize),
+                                PageTableFormat.ENTRIES);
 }
 
-void mapPage_(U64 virt, U64 physical, U64 mappingSize, U64 flags) {
+void mapPage_(U64 virt, U64 physical, U64_pow2 mappingSize, U64 flags) {
     ASSERT(rootPageTable);
-    ASSERT(!(RING_RANGE_VALUE(physical, mappingSize)));
+    ASSERT(!(ringBufferIndex(physical, mappingSize)));
     ASSERT(isPowerOf2(mappingSize));
 
     PageMetaDataNode *metaDataTable = &rootPageMetaData;
@@ -149,7 +149,7 @@ Memory unmapPage(U64 virt) {
 
     U8 len = 1;
     U16 index = 0;
-    for (U64 entrySize = X86_512GIB_PAGE; entrySize >= pageSizesSmallest();
+    for (U64_pow2 entrySize = X86_512GIB_PAGE; entrySize >= pageSizesSmallest();
          entrySize /= PageTableFormat.ENTRIES) {
         U16 newMetaIndex = index; // Lagging behind index by 1 iteration
         index = calculateTableIndex(virt, entrySize);

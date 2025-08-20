@@ -19,7 +19,7 @@ typedef enum {
 
 [[nodiscard]] PageFaultResult handlePageFault(U64 faultingAddress);
 
-void addPageMapping(Memory memory, U64 pageSize);
+void addPageMapping(Memory memory, U64_pow2 pageSize);
 void removePageMapping(U64 address);
 
 #endif

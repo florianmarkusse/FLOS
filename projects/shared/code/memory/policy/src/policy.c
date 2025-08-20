@@ -8,7 +8,7 @@
 #include "shared/memory/management/management.h"
 #include "shared/memory/management/page.h"
 
-void *allocateIdentityMemory(U64 bytes, U64 align) {
+void *allocateIdentityMemory(U64 bytes, U64_pow2 align) {
     return allocPhysicalMemory(bytes, align);
 }
 
@@ -16,7 +16,7 @@ void freeIdentityMemory(Memory memory) { freePhysicalMemory(memory); }
 
 // NOTE: in subsequent iteration, we should only allow power of 2's for
 // requests, minimum of virtual page size
-void *allocateMappableMemory(U64 bytes, U64 align, U64 mappingSize) {
+void *allocateMappableMemory(U64 bytes, U64_pow2 align, U64_pow2 mappingSize) {
     ASSERT(isPowerOf2(align));
     ASSERT(isPowerOf2(mappingSize));
     ASSERT(mappingSize >= pageSizesSmallest());

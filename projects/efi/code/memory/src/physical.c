@@ -110,13 +110,14 @@ typedef struct {
 } AlignedMemory;
 
 static void setIfBetterDescriptor(AlignedMemory *current,
-                                  AlignedMemory proposed, U64 largerPageSize) {
+                                  AlignedMemory proposed,
+                                  U64_pow2 largerPageSize) {
     if (current->address == U64_MAX) {
         *current = proposed;
         return;
     } else {
-        if (!RING_RANGE_VALUE(current->alignedAddress, largerPageSize)) {
-            if (RING_RANGE_VALUE(proposed.alignedAddress, largerPageSize)) {
+        if (!ringBufferIndex(current->alignedAddress, largerPageSize)) {
+            if (ringBufferIndex(proposed.alignedAddress, largerPageSize)) {
                 *current = proposed;
                 return;
             }
@@ -130,14 +131,14 @@ static void setIfBetterDescriptor(AlignedMemory *current,
 }
 
 static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
-                             U64 minimumAlignment,
+                             U64_pow2 minimumAlignment,
                              bool tryEncompassingVirtual) {
-    U64 pageSize = pageSizeEncompassing(minimumAlignment);
+    U64_pow2 pageSize = pageSizeEncompassing(minimumAlignment);
     if (tryEncompassingVirtual) {
         pageSize = MAX(pageSize, pageSizeEncompassing(bytes));
     }
 
-    U64 largerPageSize;
+    U64_pow2 largerPageSize;
     if (pageSize == pageSizesLargest()) {
         largerPageSize = pageSize;
     } else {
@@ -199,7 +200,7 @@ static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
     __builtin_unreachable();
 }
 
-void *allocateKernelStructure(U64 bytes, U64 minimumAlignment,
+void *allocateKernelStructure(U64 bytes, U64_pow2 minimumAlignment,
                               bool tryEncompassingVirtual, Arena scratch) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
 
@@ -222,7 +223,7 @@ void *allocateBytesInUefiPages(U64 bytes, bool isKernelStructure) {
 }
 
 void createDynamicArray(U32 elements, U64 elementSizeBytes,
-                        U64 elementAlignBytes, void_max_a *result,
+                        U64_pow2 elementAlignBytes, void_max_a *result,
                         Arena scratch) {
     U64 bytes = elementSizeBytes * elements;
     void *buffer =

@@ -9,7 +9,7 @@
  * Written assuming that arena bumps up! Otherwise the middle case statement
  * where we only do a times 1 alloc does not hold.
  */
-void msi_newSet(void *setSlice, U64 size, U64 align, Arena *a) {
+void msi_newSet(void *setSlice, U64 size, U64_pow2 align, Arena *a) {
     SetSlice *replica = (SetSlice *)setSlice;
     ASSERT(replica->exp > 0);
 

@@ -1,18 +1,38 @@
 #include "shared/maths.h"
 #include "shared/types/numeric.h"
 
-U64 alignUp(U64 value, U64 align) {
+U64 alignUp(U64 value, U64_pow2 align) {
     return (value + align - 1) & (~(align - 1));
 }
 
-U64 alignDown(U64 value, U64 align) { return (value) & (~(align - 1)); }
+U64 alignDown(U64 value, U64_pow2 align) { return (value) & (~(align - 1)); }
 
-U64 ceilingDivide(U64 value, U64 divisor) {
+U64 ceilingDivide(U64 value, U64_pow2 divisor) {
     int shift = __builtin_ctzll(divisor);
     return (value + divisor - 1) >> shift;
 }
 
-U64 ceilingPowerOf2(U64 x) {
+U64 ringBufferIndex(U64 value, U64_pow2 ringBUfferSize) {
+    return value & (ringBUfferSize - 1);
+}
+
+U64 ringBufferIncrement(U64 value, U64_pow2 ringBUfferSize) {
+    return ringBufferIndex(value + 1, ringBUfferSize);
+}
+
+U64 ringBufferPlus(U64 value, U64 amount, U64_pow2 ringBUfferSize) {
+    return ringBufferIndex(value + amount, ringBUfferSize);
+}
+
+U64 ringBufferDecrement(U64 value, U64_pow2 ringBUfferSize) {
+    return ringBufferIndex(value - 1, ringBUfferSize);
+}
+
+U64 ringBufferMinus(U64 value, U64 amount, U64_pow2 ringBUfferSize) {
+    return ringBufferIndex(value - amount, ringBUfferSize);
+}
+
+U64_pow2 ceilingPowerOf2(U64 x) {
     if (x <= 1) {
         return 1;
     }
@@ -22,7 +42,7 @@ U64 ceilingPowerOf2(U64 x) {
 
 bool isPowerOf2(U64 x) { return (x & (x - 1)) == 0; }
 
-U64 power(U64 base, U64 exponent) {
+U64 power(U64 base, Exponent exponent) {
     U64 result = 1;
 
     while (exponent > 0) {
@@ -45,8 +65,8 @@ U64 power(U64 base, U64 exponent) {
     return result;
 }
 
-U64 divideByPowerOf2(U64 value, U64 divisor) {
+U64 divideByPowerOf2(U64 value, U64_pow2 divisor) {
     return value >> (__builtin_ctzll(divisor));
 }
 
-bool isAlignedTo(U64 x, U64 align) { return (x & (align - 1)) == 0; }
+bool isAlignedTo(U64 x, U64_pow2 align) { return (x & (align - 1)) == 0; }

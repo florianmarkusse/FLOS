@@ -20,10 +20,10 @@ MMNode *getMMNode(MMNodePtr_max_a *freeList, MMNode_max_a *nodes);
 
 void initMemoryManagers(PackedKernelMemory *kernelMemory);
 
-void *allocVirtualMemory(U64 size, U64 align);
+void *allocVirtualMemory(U64 size, U64_pow2 align);
 void freeVirtualMemory(Memory memory);
 
-void *allocPhysicalMemory(U64 bytes, U64 align);
+void *allocPhysicalMemory(U64 bytes, U64_pow2 align);
 void freePhysicalMemory(Memory memory);
 
 #endif

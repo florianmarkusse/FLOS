@@ -14,7 +14,7 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
 
 typedef struct {
     U64 bytes;
-    U64 align;
+    U64_pow2 align;
 } ArchParamsRequirements;
 ArchParamsRequirements getArchParamsRequirements();
 

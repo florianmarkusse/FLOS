@@ -8,7 +8,7 @@ U64 pageFlagsNoCacheEvict();
 U64 pageFlagsScreenMemory();
 
 U64 pageSizesAvailableMask();
-U64 pageSizesSmallest();
-U64 pageSizesLargest();
+U64_pow2 pageSizesSmallest();
+U64_pow2 pageSizesLargest();
 
 #endif

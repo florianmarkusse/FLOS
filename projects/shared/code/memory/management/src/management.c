@@ -71,7 +71,9 @@ void freeVirtualMemory(Memory memory) { insertMemory(memory, &virtualMA); }
 
 void freePhysicalMemory(Memory memory) { insertMemory(memory, &physicalMA); }
 
-static U64 alignedToTotal(U64 bytes, U64 align) { return bytes + align - 1; }
+static U64 alignedToTotal(U64 bytes, U64_pow2 align) {
+    return bytes + align - 1;
+}
 
 static void handleRemovedAllocator(MMNode *availableMemory, Memory memoryUsed,
                                    RedBlackMMTreeWithFreeList *allocator) {
@@ -100,7 +102,7 @@ static void handleRemovedAllocator(MMNode *availableMemory, Memory memoryUsed,
     }
 }
 
-static void *allocAlignedMemory(U64 bytes, U64 align,
+static void *allocAlignedMemory(U64 bytes, U64_pow2 align,
                                 RedBlackMMTreeWithFreeList *allocator) {
     MMNode *availableMemory =
         getMemoryAllocation(allocator, alignedToTotal(bytes, align));
@@ -110,11 +112,11 @@ static void *allocAlignedMemory(U64 bytes, U64 align,
     return (void *)result;
 }
 
-void *allocVirtualMemory(U64 bytes, U64 align) {
+void *allocVirtualMemory(U64 bytes, U64_pow2 align) {
     return allocAlignedMemory(bytes, align, &virtualMA);
 }
 
-void *allocPhysicalMemory(U64 bytes, U64 align) {
+void *allocPhysicalMemory(U64 bytes, U64_pow2 align) {
     return allocAlignedMemory(bytes, align, &physicalMA);
 }
 
@@ -133,7 +135,7 @@ static void initMemoryAllocator(PackedTreeWithFreeList *packedMemoryAllocator,
 
 static constexpr auto ALLOCATOR_MAX_BUFFER_SIZE = 1 * GiB;
 
-static void identityArrayToMappable(void_max_a *array, U64 alignBytes,
+static void identityArrayToMappable(void_max_a *array, U64_pow2 alignBytes,
                                     U64 elementSizeBytes, U32 additionalMaps) {
     void *virtualBuffer =
         allocVirtualMemory(ALLOCATOR_MAX_BUFFER_SIZE, alignBytes);

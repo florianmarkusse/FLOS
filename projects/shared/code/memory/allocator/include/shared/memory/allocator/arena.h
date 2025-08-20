@@ -13,13 +13,13 @@ typedef struct {
 } Arena;
 
 typedef struct {
-    U64 align;
+    U64_pow2 align;
     U64 count;
     U8 flags;
 } AllocParams;
 
 __attribute__((malloc, alloc_align(3))) void *
-alloc(Arena *a, U64 size, U64 align, U64 count, U8 flags);
+alloc(Arena *a, U64 size, U64_pow2 align, U64 count, U8 flags);
 
 #define NEW(a, t, ...)                                                         \
     ({                                                                         \

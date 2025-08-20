@@ -123,9 +123,9 @@ static void partialMappedWritingTest(bool is2MiBPage) {
 
     Timing bestSoFar = {.cycles = 0, .millis = 0};
     for (typeof(TEST_ITERATIONS) i = 0; i < TEST_ITERATIONS; i++) {
-        Timing timing = runMappingTest(
-            RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES), is2MiBPage,
-            false);
+        Timing timing =
+            runMappingTest(ringBufferIndex(biskiNext(&state), MAX_TEST_ENTRIES),
+                           is2MiBPage, false);
 
         bestSoFar.cycles += timing.cycles;
         bestSoFar.millis += timing.millis;
@@ -143,9 +143,9 @@ static void partialMappedBaselineWritingTest(bool is2MiBPage) {
 
     Timing bestSoFar = {.cycles = 0, .millis = 0};
     for (typeof(TEST_ITERATIONS) i = 0; i < TEST_ITERATIONS; i++) {
-        Timing timing = runMappingTest(
-            RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES), is2MiBPage,
-            true);
+        Timing timing =
+            runMappingTest(ringBufferIndex(biskiNext(&state), MAX_TEST_ENTRIES),
+                           is2MiBPage, true);
 
         bestSoFar.cycles += timing.cycles;
         bestSoFar.millis += timing.millis;
@@ -258,8 +258,7 @@ static void partialReallocWritingTest() {
     biskiSeed(&state, PRNG_SEED);
     for (typeof(TEST_ITERATIONS) i = 0; i < TEST_ITERATIONS; i++) {
         U64_max_a array = createDynamicArray();
-        U64 arrayEntries =
-            RING_RANGE_VALUE(biskiNext(&state), MAX_TEST_ENTRIES);
+        U64 arrayEntries = ringBufferIndex(biskiNext(&state), MAX_TEST_ENTRIES);
 
         U64 startNanos = currentTimeNanos();
         U64 startCycleCount = currentCycleCounter(true, false);
