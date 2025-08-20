@@ -71,16 +71,16 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         mapMemory(0, 0, highestLowerHalfAddress,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict());
 
-    initKernelMemoryManagement(firstFreeVirtual, VIRTUAL_MEMORY_FREE_END,
+    initKernelMemoryManagement(firstFreeVirtual, kernelVirtualMemoryEnd(),
                                arena);
 
     KFLUSH_AFTER { INFO(STRING("Going to fetch kernel bytes\n")); }
     U32 kernelBytes = getKernelBytes(arena);
-    if (kernelBytes > KERNEL_CODE_MAX_SIZE) {
+    if (kernelBytes > kernelCodeSizeMax()) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING(
                 "the kernel is too large!\nMaximum allowed kernel size: "));
-            ERROR(KERNEL_CODE_MAX_SIZE, .flags = NEWLINE);
+            ERROR(kernelCodeSizeMax(), .flags = NEWLINE);
             ERROR(STRING("Current kernel size: "));
             ERROR(kernelBytes, .flags = NEWLINE);
         }
@@ -94,9 +94,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     String kernelContent = readKernelFromCurrentLoadedImage(kernelBytes, arena);
 
     KFLUSH_AFTER { INFO(STRING("Mapping kernel into location\n")); }
-    if (mapMemory(KERNEL_CODE_START, (U64)kernelContent.buf, kernelContent.len,
+    if (mapMemory(kernelCodeStart(), (U64)kernelContent.buf, kernelContent.len,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict()) <
-        KERNEL_CODE_START) {
+        kernelCodeStart()) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING(
                 "Kernel mapping overflowed out of the address space!\n"));
@@ -110,9 +110,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)(kernelContent.buf + kernelContent.len), .flags = NEWLINE);
 
         INFO(STRING("The virtual kernel:\nstart: "));
-        INFO((void *)KERNEL_CODE_START, .flags = NEWLINE);
+        INFO((void *)kernelCodeStart(), .flags = NEWLINE);
         INFO(STRING("stop:  "));
-        INFO((void *)(KERNEL_CODE_START + kernelContent.len), .flags = NEWLINE);
+        INFO((void *)(kernelCodeStart() + kernelContent.len), .flags = NEWLINE);
     }
 
     U64 virtualForKernel =

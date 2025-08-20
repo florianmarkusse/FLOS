@@ -24,10 +24,8 @@ void jumpIntoKernel(U64 newStackPointer, U16 processorID,
                     PackedKernelParameters *kernelParameters);
 U64 initScreenMemory(U64 physicalScreenAddress, U64 bytes);
 
-#ifdef X86
-#include "x86/efi-to-kernel/definitions.h"
-#else
-#error ABSTRACTION_EFI_H
-#endif
+U64 kernelCodeStart();
+U64 kernelCodeSizeMax();
+U64 kernelVirtualMemoryEnd();
 
 #endif

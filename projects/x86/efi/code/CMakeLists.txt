@@ -27,6 +27,7 @@ add_library(
     "src/jump.c"
     "src/gdt.c"
     "src/jmp.c"
+    "src/kernel.c"
 )
 
 add_includes_for_sublibrary()

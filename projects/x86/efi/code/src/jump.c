@@ -1,6 +1,5 @@
 #include "abstraction/efi.h"
 
-#include "efi-to-kernel/memory/definitions.h"
 #include "shared/types/numeric.h"
 #include "x86/efi/gdt.h"
 #include "x86/gdt.h"
@@ -26,7 +25,7 @@ static void toKernel(U64 newStackPointer,
                  "jmp *%2;"
                  :
                  : "r"(alignedStackPointer), "r"(kernelParams),
-                   "r"(KERNEL_CODE_START)
+                   "r"(kernelCodeStart())
                  : "memory");
 
     __builtin_unreachable();
