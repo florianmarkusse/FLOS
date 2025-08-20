@@ -20,7 +20,6 @@
 
 #define ABS(x) (((x) < 0) ? (-(x)) : (x))
 
-// These operations are only defined for powers of 2 !!!
 U64 alignUp(U64 value, U64_pow2 align);
 U64 alignDown(U64 value, U64_pow2 align);
 U64 ceilingDivide(U64 value, U64_pow2 divisor);
