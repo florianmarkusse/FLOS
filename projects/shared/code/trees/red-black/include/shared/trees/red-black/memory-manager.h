@@ -6,6 +6,8 @@
 #include "shared/types/array-types.h"
 #include "shared/types/numeric.h"
 
+// This is not just a red-black tree, but also an interval tree. So,
+// inserts/deletes need some additional housekeeping to stay cnsistent.
 typedef struct MMNode MMNode;
 struct MMNode {
     MMNode *
@@ -32,9 +34,7 @@ typedef struct {
 //  - a bridge merge with 2 other nodes: return 2 freed nodes
 //  - a single merge with 1 other node: return 1 freed node
 //  - no merges with other nodes: return 0 freed nodes
-[[nodiscard]] InsertResult insertMMNode(MMNode **tree,
-                                                MMNode *createdNode);
-[[nodiscard]] MMNode *deleteAtLeastMMNode(MMNode **tree,
-                                                          U64 bytes);
+[[nodiscard]] InsertResult insertMMNode(MMNode **tree, MMNode *createdNode);
+[[nodiscard]] MMNode *deleteAtLeastMMNode(MMNode **tree, U64 bytes);
 
 #endif

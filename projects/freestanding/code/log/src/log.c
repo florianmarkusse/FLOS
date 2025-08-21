@@ -43,17 +43,26 @@ void handleFlags(U8 flags) {
     }
 }
 
-// NOTE: Ready for code generation
-// TODO: buffer should be a variable to this function once we have actual
-// memory management set up instead of it being hardcoded.
-void appendToFlushBuffer(String data, U8 flags) {
-    for (typeof(data.len) bytesWritten = 0; bytesWritten < data.len;) {
+typedef void (*AppendFunction)(void *destination, const void *source,
+                               U64 bytes);
+
+static void appendMemcpy(void *destination, const void *source, U64 bytes) {
+    memcpy(destination, source, bytes);
+}
+
+static void appendMemset(void *destination, const void *source, U64 bytes) {
+    (void)source;
+    memset(destination, 0, bytes);
+}
+
+static void appendData(void *data, U32 len, U8 flags, AppendFunction appender) {
+    for (typeof(len) bytesWritten = 0; bytesWritten < len;) {
         // the minimum of size remaining and what is left in the buffer.
         U32 spaceInBuffer = (flushBuf.cap) - flushBuf.len;
-        U32 dataToWrite = data.len - bytesWritten;
+        U32 dataToWrite = len - bytesWritten;
         U32 bytesToWrite = MIN(spaceInBuffer, dataToWrite);
-        memcpy(flushBuf.buf + flushBuf.len, data.buf + bytesWritten,
-               bytesToWrite);
+        appender(flushBuf.buf + flushBuf.len, data + bytesWritten,
+                 bytesToWrite);
         flushBuf.len += bytesToWrite;
         bytesWritten += bytesToWrite;
         if (flushBuf.cap == flushBuf.len) {
@@ -64,20 +73,10 @@ void appendToFlushBuffer(String data, U8 flags) {
     handleFlags(flags);
 }
 
-// NOTE: Ready for code generation
-void appendZeroToFlushBuffer(U32 bytes, U8 flags) {
-    for (typeof(bytes) bytesWritten = 0; bytesWritten < bytes;) {
-        // the minimum of size remaining and what is left in the buffer.
-        U32 spaceInBuffer = (flushBuf.cap) - flushBuf.len;
-        U32 dataToWrite = bytes - bytesWritten;
-        U32 bytesToWrite = MIN(spaceInBuffer, dataToWrite);
-        memset(flushBuf.buf + flushBuf.len, 0, bytesToWrite);
-        flushBuf.len += bytesToWrite;
-        bytesWritten += bytesToWrite;
-        if (flushBuf.cap == flushBuf.len) {
-            flushBuffer(&flushBuf);
-        }
-    }
+void appendToFlushBuffer(String data, U8 flags) {
+    appendData(data.buf, data.len, flags, appendMemcpy);
+}
 
-    handleFlags(flags);
+void appendZeroToFlushBuffer(U32 bytes, U8 flags) {
+    appendData(nullptr, bytes, flags, appendMemset);
 }
