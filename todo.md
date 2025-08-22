@@ -25,6 +25,7 @@
 - Reploe X_VALUE with X_EXP when it is not compile-time known value? I.e. pageSizes array should be bitshifts I think, check GODBOLT!!
 - Remove NOLINTNEXTLINE?
 - go over abstraction folders and find out if you can change the ifdefs into just function calls
+- Look into U8* usage, as it can alias everything? -> switch to void*??
 - Fix posix tests in physical memory
 - if you ever decide to use unit tests in the kernel, need to create an abstraction for test-framework so it can be used in both posix and freestanding environments
 - use countof replacement instead of macro

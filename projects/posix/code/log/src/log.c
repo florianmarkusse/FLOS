@@ -13,6 +13,7 @@
 #include "shared/types/numeric.h"
 
 static constexpr auto FLUSH_BUFFER_SIZE = (2 * MiB);
+
 static WriteBuffer stdoutBuffer =
     (WriteBuffer){.array = {.buf = (U8[FLUSH_BUFFER_SIZE]){0},
                             .cap = FLUSH_BUFFER_SIZE,
@@ -24,113 +25,61 @@ static WriteBuffer stderrBuffer =
                             .len = 0},
                   .fileDescriptor = STDERR_FILENO};
 
-bool flushBufferWithFileDescriptor(int fileDescriptor, U8 *buffer, U32 size) {
-    for (typeof(size) bytesWritten = 0; bytesWritten < size;) {
+WriteBuffer *getWriteBuffer(BufferType bufferType) {
+    if (bufferType == STDOUT) {
+        return &stdoutBuffer;
+    }
+    return &stderrBuffer;
+}
+
+typedef struct {
+    int fileDescriptor;
+} PosixFlushContext;
+
+void flushBuffer(U8_a *buffer, void *flushContext) {
+    PosixFlushContext *posixFlushContext = (PosixFlushContext *)flushContext;
+    for (typeof(buffer->len) bytesWritten = 0; bytesWritten < buffer->len;) {
         I64 partialBytesWritten =
-            write(fileDescriptor, buffer + bytesWritten, size - bytesWritten);
+            write(posixFlushContext->fileDescriptor, buffer + bytesWritten,
+                  buffer->len - bytesWritten);
         if (partialBytesWritten < 0) {
             ASSERT(false);
-            return false;
         } else {
             bytesWritten += (U64)partialBytesWritten;
         }
     }
-
-    return true;
 }
 
-// We are going to flush to:
-// - The in-memory standin file buffer
-bool flushBufferWithWriter(WriteBuffer *buffer) {
-    bool result = flushBufferWithFileDescriptor(
-        buffer->fileDescriptor, buffer->array.buf, buffer->array.len);
-    buffer->array.len = 0;
-    return result;
+void flushBufferWithWriter(BufferType bufferType) {
+    WriteBuffer *writeBuffer = getWriteBuffer(bufferType);
+    flushBuffer((U8_a *)(&writeBuffer->array), &writeBuffer->fileDescriptor);
+    writeBuffer->array.len = 0;
 }
 
-bool flushBuffer(U8_max_a *buffer) {
-    WriteBuffer writer =
-        (WriteBuffer){.fileDescriptor = STDOUT_FILENO, .array = *buffer};
-    bool result = flushBufferWithWriter(&writer);
-    // We are copying the buffer by doing *buffer so wil l manually set lenght
-    // to
-    // 0
-    if (result) {
-        buffer->len = 0;
-    }
-    return result;
+void flushStandardBuffer() { flushBufferWithWriter(STDOUT); }
+
+static void appendData(void *data, U32 len, U8 flags, WriteBuffer *buffer,
+                       AppendFunction appender) {
+    appendDataCommon(data, len, flags, &buffer->array, appender, flushBuffer,
+                     &buffer->fileDescriptor);
 }
 
-bool flushStandardBuffer() { return flushBufferWithWriter(&stdoutBuffer); }
-
-bool handleFlags(U8 flags, WriteBuffer *buffer) {
-    if (flags & NEWLINE) {
-        if (buffer->array.len >= buffer->array.cap) {
-            if (!flushBufferWithWriter(buffer)) {
-                return false;
-            }
-        }
-        buffer->array.buf[buffer->array.len] = '\n';
-        buffer->array.len++;
-    }
-
-    if (flags & FLUSH) {
-        if (!flushBufferWithWriter(buffer)) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-// NOTE: Ready for code generation
-bool appendZeroToFlushBufferWithWriter(U32 bytes, U8 flags,
-                                       WriteBuffer *buffer) {
-    for (typeof(bytes) bytesWritten = 0; bytesWritten < bytes;) {
-        // the minimum of size remaining and what is left in the buffer.
-        U32 spaceInBuffer = (buffer->array.cap) - buffer->array.len;
-        U32 dataToWrite = bytes - bytesWritten;
-        U32 bytesToWrite = MIN(spaceInBuffer, dataToWrite);
-        memset(buffer->array.buf + buffer->array.len, 0, bytesToWrite);
-        buffer->array.len += bytesToWrite;
-        bytesWritten += bytesToWrite;
-        if (buffer->array.cap == buffer->array.len) {
-            if (!flushBufferWithWriter(buffer)) {
-                return false;
-            }
-        }
-    }
-
-    return handleFlags(flags, buffer);
+void appendZeroToFlushBufferWithWriter(U32 bytes, U8 flags,
+                                       WriteBuffer *writeBuffer) {
+    appendData(nullptr, bytes, flags, writeBuffer, appendMemset);
 }
 
 void appendZeroToFlushBuffer(U32 bytes, U8 flags) {
-    appendZeroToFlushBufferWithWriter(bytes, flags, &stdoutBuffer);
+    appendZeroToFlushBufferWithWriter(bytes, flags, getWriteBuffer(STDOUT));
 }
 
-// NOTE: Ready for code generation
-bool appendToFlushBufferWithWriter(String data, U8 flags, WriteBuffer *buffer) {
-    for (typeof(data.len) bytesWritten = 0; bytesWritten < data.len;) {
-        // the minimum of size remaining and what is left in the buffer.
-        U32 spaceInBuffer = (buffer->array.cap) - buffer->array.len;
-        U32 dataToWrite = data.len - bytesWritten;
-        U32 bytesToWrite = MIN(spaceInBuffer, dataToWrite);
-        memcpy(buffer->array.buf + buffer->array.len, data.buf + bytesWritten,
-               bytesToWrite);
-        buffer->array.len += bytesToWrite;
-        bytesWritten += bytesToWrite;
-        if (buffer->array.cap == buffer->array.len) {
-            if (!flushBufferWithWriter(buffer)) {
-                return false;
-            }
-        }
-    }
-
-    return handleFlags(flags, buffer);
+void appendToFlushBufferWithWriter(String data, U8 flags,
+                                   WriteBuffer *writeBuffer) {
+    appendData(data.buf, data.len, flags, writeBuffer, appendMemcpy);
 }
 
 void appendToFlushBuffer(String data, U8 flags) {
-    appendToFlushBufferWithWriter(data, flags, &stdoutBuffer);
+    appendToFlushBufferWithWriter(data, flags, getWriteBuffer(STDOUT));
 }
 
 static String ansiColorToCode[COLOR_NUMS] = {
@@ -139,24 +88,17 @@ static String ansiColorToCode[COLOR_NUMS] = {
     STRING("\x1b[0m"),
 };
 
-bool appendColor(AnsiColor color, BufferType bufferType) {
+void appendColor(AnsiColor color, BufferType bufferType) {
     WriteBuffer *buffer = getWriteBuffer(bufferType);
-    return appendToFlushBufferWithWriter(
+    appendToFlushBufferWithWriter(
         isatty(buffer->fileDescriptor) ? ansiColorToCode[color] : EMPTY_STRING,
         0, buffer);
 }
 
-bool appendColorReset(BufferType bufferType) {
+void appendColorReset(BufferType bufferType) {
     WriteBuffer *buffer = getWriteBuffer(bufferType);
-    return appendToFlushBufferWithWriter(isatty(buffer->fileDescriptor)
-                                             ? ansiColorToCode[COLOR_RESET]
-                                             : EMPTY_STRING,
-                                         0, buffer);
-}
-
-WriteBuffer *getWriteBuffer(BufferType bufferType) {
-    if (bufferType == STDOUT) {
-        return &stdoutBuffer;
-    }
-    return &stderrBuffer;
+    appendToFlushBufferWithWriter(isatty(buffer->fileDescriptor)
+                                      ? ansiColorToCode[COLOR_RESET]
+                                      : EMPTY_STRING,
+                                  0, buffer);
 }

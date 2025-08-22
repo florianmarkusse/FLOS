@@ -14,8 +14,8 @@
 void appendToBuffer(U8_a *buffer, String data);
 void appendToFlushBuffer(String data, U8 flags);
 void appendZeroToFlushBuffer(U32 bytes, U8 flags);
-bool flushStandardBuffer();
-bool flushBuffer(U8_max_a *buffer);
+void flushStandardBuffer();
+void flushBuffer(U8_a *buffer, void *flushContext);
 
 #define KLOG_APPEND(buffer, data)                                              \
     appendToBuffer(buffer, CONVERT_TO_STRING(data))
@@ -41,6 +41,6 @@ typedef struct {
 
 #define KFLUSH_AFTER                                                           \
     for (U32 MACRO_VAR(i) = 0; MACRO_VAR(i) < 1;                               \
-         MACRO_VAR(i) = flushStandardBuffer())
+         MACRO_VAR(i) = (flushStandardBuffer(), 1))
 
 #endif

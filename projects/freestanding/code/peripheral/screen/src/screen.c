@@ -496,7 +496,7 @@ static void toTail() {
     switchToScreenDisplay();
 }
 
-bool flushToScreen(U8_max_a buffer) {
+bool flushToScreen(U8_a buffer) {
     U32 startIndex = 0;
     if (buffer.len > FILE_BUF_LEN) {
         startIndex = buffer.len - FILE_BUF_LEN;

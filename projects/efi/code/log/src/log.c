@@ -4,7 +4,6 @@
 #include "efi/firmware/simple-text-output.h"
 #include "efi/globals.h"
 #include "shared/log.h"
-#include "shared/maths.h"
 #include "shared/memory/sizes.h"
 #include "shared/text/string.h"
 #include "shared/types/array-types.h" // for U8_a, uint8_max_a, U8_d_a
@@ -15,7 +14,9 @@ U8_max_a flushBuf = (U8_max_a){
     .buf = (U8[FLUSH_BUFFER_SIZE]){0}, .len = 0, .cap = FLUSH_BUFFER_SIZE};
 
 static U16 convertedChar[2] = {0, '\0'};
-bool flushBuffer(U8_max_a *buffer) {
+void flushBuffer(U8_a *buffer, void *flushContext) {
+    (void)flushContext;
+
     for (typeof(buffer->len) i = 0; i < buffer->len; i++) {
         if (buffer->buf[i] == '\n') {
             globals.st->con_out->output_string(globals.st->con_out, u"\r\n");
@@ -27,60 +28,19 @@ bool flushBuffer(U8_max_a *buffer) {
     }
 
     buffer->len = 0;
-    return true;
 }
 
-bool flushStandardBuffer() { return flushBuffer(&flushBuf); }
+void flushStandardBuffer() { flushBuffer((U8_a *)&flushBuf, nullptr); }
 
-void handleFlags(U8 flags) {
-    if (flags & NEWLINE) {
-        if (flushBuf.len >= flushBuf.cap) {
-            flushBuffer(&flushBuf);
-        }
-        flushBuf.buf[flushBuf.len] = '\n';
-        flushBuf.len++;
-    }
-
-    if (flags & FLUSH) {
-        flushBuffer(&flushBuf);
-    }
+static void appendData(void *data, U32 len, U8 flags, U8_max_a *buffer,
+                       AppendFunction appender) {
+    appendDataCommon(data, len, flags, buffer, appender, flushBuffer, nullptr);
 }
 
-// NOTE: Ready for code generation
-// TODO: buffer should be a variable to this function once we have actual
-// memory management set up instead of it being hardcoded.
 void appendToFlushBuffer(String data, U8 flags) {
-    for (typeof(data.len) bytesWritten = 0; bytesWritten < data.len;) {
-        // the minimum of size remaining and what is left in the buffer.
-        U32 spaceInBuffer = (flushBuf.cap) - flushBuf.len;
-        U32 dataToWrite = data.len - bytesWritten;
-        U32 bytesToWrite = MIN(spaceInBuffer, dataToWrite);
-        memcpy(flushBuf.buf + flushBuf.len, data.buf + bytesWritten,
-               bytesToWrite);
-        flushBuf.len += bytesToWrite;
-        bytesWritten += bytesToWrite;
-        if (flushBuf.cap == flushBuf.len) {
-            flushBuffer(&flushBuf);
-        }
-    }
-
-    handleFlags(flags);
+    appendData(data.buf, data.len, flags, &flushBuf, appendMemcpy);
 }
 
-// NOTE: Ready for code generation
 void appendZeroToFlushBuffer(U32 bytes, U8 flags) {
-    for (typeof(bytes) bytesWritten = 0; bytesWritten < bytes;) {
-        // the minimum of size remaining and what is left in the buffer.
-        U32 spaceInBuffer = (flushBuf.cap) - flushBuf.len;
-        U32 dataToWrite = bytes - bytesWritten;
-        U32 bytesToWrite = MIN(spaceInBuffer, dataToWrite);
-        memset(flushBuf.buf + flushBuf.len, 0, bytesToWrite);
-        flushBuf.len += bytesToWrite;
-        bytesWritten += bytesToWrite;
-        if (flushBuf.cap == flushBuf.len) {
-            flushBuffer(&flushBuf);
-        }
-    }
-
-    handleFlags(flags);
+    appendData(nullptr, bytes, flags, &flushBuf, appendMemset);
 }
