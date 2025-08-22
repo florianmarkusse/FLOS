@@ -58,28 +58,27 @@ void flushBufferWithWriter(BufferType bufferType) {
 
 void flushStandardBuffer() { flushBufferWithWriter(STDOUT); }
 
-static void appendData(void *data, U32 len, U8 flags, WriteBuffer *buffer,
-                       AppendFunction appender) {
-    appendDataCommon(data, len, flags, &buffer->array, appender, flushBuffer,
-                     &buffer->fileDescriptor);
+U8_max_a *getFlushBuffer() { return &stdoutBuffer.array; }
+FlushFunction getFlushFunction() { return flushBuffer; }
+void *getFlushContext() { return &stdoutBuffer.fileDescriptor; }
+
+static void appendDataToFlushBufferWithWriter(void *data, U32 len, U8 flags,
+                                              WriteBuffer *writeBuffer,
+                                              AppendFunction appender) {
+    appendDataToFlushBuffer(data, len, flags, &writeBuffer->array, appender,
+                            &writeBuffer->fileDescriptor);
 }
 
 void appendZeroToFlushBufferWithWriter(U32 bytes, U8 flags,
                                        WriteBuffer *writeBuffer) {
-    appendData(nullptr, bytes, flags, writeBuffer, appendMemset);
-}
-
-void appendZeroToFlushBuffer(U32 bytes, U8 flags) {
-    appendZeroToFlushBufferWithWriter(bytes, flags, getWriteBuffer(STDOUT));
+    appendDataToFlushBufferWithWriter(nullptr, bytes, flags, writeBuffer,
+                                      appendMemset);
 }
 
 void appendToFlushBufferWithWriter(String data, U8 flags,
                                    WriteBuffer *writeBuffer) {
-    appendData(data.buf, data.len, flags, writeBuffer, appendMemcpy);
-}
-
-void appendToFlushBuffer(String data, U8 flags) {
-    appendToFlushBufferWithWriter(data, flags, getWriteBuffer(STDOUT));
+    appendDataToFlushBufferWithWriter(data.buf, data.len, flags, writeBuffer,
+                                      appendMemcpy);
 }
 
 static String ansiColorToCode[COLOR_NUMS] = {

@@ -18,9 +18,9 @@ void appendMemset(void *destination, const void *source, U64 bytes) {
     memset(destination, 0, bytes);
 }
 
-void appendDataCommon(void *data, U32 len, U8 flags, U8_max_a *buffer,
-                      AppendFunction appender, FlushFunction flusher,
-                      void *flushContext) {
+static void appendDataCommon(void *data, U32 len, U8 flags, U8_max_a *buffer,
+                             AppendFunction appender, FlushFunction flusher,
+                             void *flushContext) {
     for (U32 bytesWritten = 0; bytesWritten < len;) {
         U32 spaceInBuffer = buffer->cap - buffer->len;
         U32 dataToWrite = len - bytesWritten;
@@ -47,4 +47,19 @@ void appendDataCommon(void *data, U32 len, U8 flags, U8_max_a *buffer,
     if (flags & FLUSH) {
         flusher((U8_a *)buffer, flushContext);
     }
+}
+
+void appendDataToFlushBuffer(void *data, U32 len, U8 flags, U8_max_a *buffer,
+                             AppendFunction appender, void *flushContext) {
+    appendDataCommon(data, len, flags, buffer, appender, getFlushFunction(),
+                     flushContext);
+}
+
+void appendToFlushBuffer(String data, U8 flags) {
+    appendDataToFlushBuffer(data.buf, data.len, flags, getFlushBuffer(),
+                            appendMemcpy, getFlushContext());
+}
+void appendZeroToFlushBuffer(U32 bytes, U8 flags) {
+    appendDataToFlushBuffer(nullptr, bytes, flags, getFlushBuffer(),
+                            appendMemset, getFlushContext());
 }

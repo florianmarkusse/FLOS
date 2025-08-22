@@ -32,15 +32,6 @@ void flushBuffer(U8_a *buffer, void *flushContext) {
 
 void flushStandardBuffer() { flushBuffer((U8_a *)&flushBuf, nullptr); }
 
-static void appendData(void *data, U32 len, U8 flags, U8_max_a *buffer,
-                       AppendFunction appender) {
-    appendDataCommon(data, len, flags, buffer, appender, flushBuffer, nullptr);
-}
-
-void appendToFlushBuffer(String data, U8 flags) {
-    appendData(data.buf, data.len, flags, &flushBuf, appendMemcpy);
-}
-
-void appendZeroToFlushBuffer(U32 bytes, U8 flags) {
-    appendData(nullptr, bytes, flags, &flushBuf, appendMemset);
-}
+U8_max_a *getFlushBuffer() { return &flushBuf; }
+FlushFunction getFlushFunction() { return flushBuffer; }
+void *getFlushContext() { return nullptr; }

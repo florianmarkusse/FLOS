@@ -6,6 +6,7 @@
 
 #include "efi/error.h"
 #include "efi/memory/physical.h"
+#include "shared/log.h"
 #include "shared/types/numeric.h"
 
 void *getZeroedMemoryForVirtual(VirtualAllocationType type) {

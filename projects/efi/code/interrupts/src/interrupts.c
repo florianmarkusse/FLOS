@@ -1,6 +1,7 @@
 #include "abstraction/interrupts.h"
 #include "abstraction/log.h"
 #include "efi/error.h"
+#include "shared/log.h"
 #include "shared/text/string.h"
 
 void interruptNoMorePhysicalMemory() {
