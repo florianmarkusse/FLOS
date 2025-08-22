@@ -416,11 +416,11 @@ bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U32 efiSizeBytes,
                     PERROR((STRING("Failed to read bytes from efi file to "
                                    "write to ESP!\n")));
                     PERROR(STRING("Error code: "));
-                    PERROR(errno, NEWLINE);
+                    PERROR(errno, .flags = NEWLINE);
                     PERROR(STRING("Error message: "));
                     char *errorString = strerror(errno);
                     PERROR(STRING_LEN(errorString, (U32)strlen(errorString)),
-                           NEWLINE);
+                           .flags = NEWLINE);
                 }
                 return false;
             }

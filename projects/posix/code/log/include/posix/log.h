@@ -1,6 +1,7 @@
 #ifndef POSIX_LOG_H
 #define POSIX_LOG_H
 
+#include "abstraction/log.h"
 #include "abstraction/text/converter/converter.h"
 #include "shared/macros.h"
 #include "shared/text/string.h"
@@ -35,34 +36,25 @@ bool appendColorReset(BufferType bufferType);
 
 WriteBuffer *getWriteBuffer(BufferType bufferType);
 
-#define PLOG_DATA(data, flags, buffer)                                         \
-    appendToFlushBufferWithWriter(CONVERT_TO_STRING(data), flags, buffer)
+typedef struct {
+    WriteBuffer *buffer;
+    U8 flags;
+} PosixLoggingParams;
 
-#define PLOG_DATA_BUFFER_TYPE(data, flags, bufferType)                         \
-    PLOG_DATA(data, flags, getWriteBuffer(bufferType))
+#define PLOG_DATA(data, ...)                                                   \
+    ({                                                                         \
+        PosixLoggingParams MACRO_VAR(posixLoggingParams) =                     \
+            (PosixLoggingParams){                                              \
+                .buffer = getWriteBuffer(STDOUT), .flags = 0, __VA_ARGS__};    \
+        appendToFlushBufferWithWriter(CONVERT_TO_STRING(data),                 \
+                                      MACRO_VAR(posixLoggingParams).flags,     \
+                                      MACRO_VAR(posixLoggingParams).buffer);   \
+    })
 
-#define PLOG_3(data, flags, bufferType)                                        \
-    PLOG_DATA_BUFFER_TYPE(data, flags, bufferType)
-#define PLOG_2(data, flags) PLOG_DATA_BUFFER_TYPE(data, flags, STDOUT)
-#define PLOG_1(data) PLOG_DATA_BUFFER_TYPE(data, 0, STDOUT)
-#define PLOG_CHOOSER_IMPL(_1, _2, _3, N, ...) PLOG_##N
-#define PLOG_CHOOSER(...) PLOG_CHOOSER_IMPL(__VA_ARGS__, 3, 2, 1)
-
-#define PLOG(...) PLOG_CHOOSER(__VA_ARGS__)(__VA_ARGS__)
-
-#define PINFO_2(data, flags) PLOG(data, flags, STDOUT)
-#define PINFO_1(data) PLOG(data, 0, STDOUT)
-#define PINFO_CHOOSER_IMPL(_1, _2, N, ...) PINFO_##N
-#define PINFO_CHOOSER(...) PINFO_CHOOSER_IMPL(__VA_ARGS__, 2, 1)
-
-#define PINFO(...) PINFO_CHOOSER(__VA_ARGS__)(__VA_ARGS__)
-
-#define PERROR_2(data, flags) PLOG(data, flags, STDERR)
-#define PERROR_1(data) PLOG(data, 0, STDERR)
-#define PERROR_CHOOSER_IMPL(_1, _2, N, ...) PERROR_##N
-#define PERROR_CHOOSER(...) PERROR_CHOOSER_IMPL(__VA_ARGS__, 2, 1)
-
-#define PERROR(...) PERROR_CHOOSER(__VA_ARGS__)(__VA_ARGS__)
+#define PLOG(data, ...) PLOG_DATA(data, ##__VA_ARGS__)
+#define PINFO(data, ...) PLOG_DATA(data, ##__VA_ARGS__)
+#define PERROR(data, ...)                                                      \
+    PLOG_DATA(data, .buffer = getWriteBuffer(STDERR), ##__VA_ARGS__)
 
 #define PFLUSH_TO(bufferType) flushBufferWithWriter(getWriteBuffer(bufferType))
 

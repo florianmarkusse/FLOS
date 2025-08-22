@@ -24,8 +24,9 @@ void appendTestFailureFinish();
 #define TEST_FAILURE                                                           \
     for (auto MACRO_VAR(i) = (testFailure(), appendTestFailureStart(), 0);     \
          MACRO_VAR(i) < 1;                                                     \
-         MACRO_VAR(i) = (appendTestFailureFinish(),                            \
-                         PLOG(STRING("\n\n"), FLUSH), toCleanupHandler(), 1))
+         MACRO_VAR(i) =                                                        \
+             (appendTestFailureFinish(), PLOG(STRING("\n\n"), .flags = FLUSH), \
+              toCleanupHandler(), 1))
 
 #define TEST(testString, failureHandler)                                       \
     for (auto MACRO_VAR(i) = (unitTestStart(testString, failureHandler), 0);   \

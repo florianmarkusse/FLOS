@@ -24,11 +24,11 @@ bool writeDataPartition(U8 *fileBuffer, int kernelfd, U32 kernelSizeBytes) {
                 PERROR((STRING("Failed to read bytes from kernel file to "
                                "write to data partition!\n")));
                 PERROR(STRING("Error code: "));
-                PERROR(errno, NEWLINE);
+                PERROR(errno, .flags = NEWLINE);
                 PERROR(STRING("Error message: "));
                 char *errorString = strerror(errno);
                 PERROR(STRING_LEN(errorString, (U32)strlen(errorString)),
-                       NEWLINE);
+                       .flags = NEWLINE);
             }
             return false;
         } else {

@@ -25,14 +25,14 @@ bool flushBuffer(U8_max_a *buffer);
 
 typedef struct {
     U8 flags;
-} LoggingParams;
+} StandardLoggingParams;
 
 #define KLOG(data, ...)                                                        \
     ({                                                                         \
-        LoggingParams MACRO_VAR(loggingParams) =                               \
-            (LoggingParams){.flags = 0, __VA_ARGS__};                          \
+        StandardLoggingParams MACRO_VAR(standardLoggingParams) =               \
+            (StandardLoggingParams){.flags = 0, __VA_ARGS__};                  \
         appendToFlushBuffer(CONVERT_TO_STRING(data),                           \
-                            MACRO_VAR(loggingParams).flags);                   \
+                            MACRO_VAR(standardLoggingParams).flags);           \
     })
 
 #define INFO(data, ...) KLOG(data, ##__VA_ARGS__)

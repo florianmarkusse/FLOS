@@ -37,11 +37,11 @@ File openFile(char *name) {
         PFLUSH_AFTER(STDERR) {
             PERROR(STRING("Could not fopen file "));
             PERROR(STRING_LEN(name, (U32)strlen(name)), NEWLINE);
-            PLOG(STRING("Error code: "));
-            PLOG(errno, NEWLINE);
-            PLOG(STRING("Error message: "));
-            PLOG(STRING_LEN(strerror(errno), (U32)strlen(strerror(errno))),
-                 NEWLINE);
+            PERROR(STRING("Error code: "));
+            PERROR(errno, .flags = NEWLINE);
+            PERROR(STRING("Error message: "));
+            PERROR(STRING_LEN(strerror(errno), (U32)strlen(strerror(errno))),
+                   .flags = NEWLINE);
         }
         longjmp(errorHandler, 1);
     }
@@ -50,12 +50,12 @@ File openFile(char *name) {
     if (fstat(result.fileDescriptor, &buf)) {
         PFLUSH_AFTER(STDERR) {
             PERROR(STRING("Could not fstat file "));
-            PERROR(STRING_LEN(name, (U32)strlen(name)), NEWLINE);
-            PLOG(STRING("Error code: "));
-            PLOG(errno, NEWLINE);
-            PLOG(STRING("Error message: "));
-            PLOG(STRING_LEN(strerror(errno), (U32)strlen(strerror(errno))),
-                 NEWLINE);
+            PERROR(STRING_LEN(name, (U32)strlen(name)), .flags = NEWLINE);
+            PERROR(STRING("Error code: "));
+            PERROR(errno, .flags = NEWLINE);
+            PERROR(STRING("Error message: "));
+            PERROR(STRING_LEN(strerror(errno), (U32)strlen(strerror(errno))),
+                   .flags = NEWLINE);
         }
         longjmp(errorHandler, 1);
     }
@@ -73,11 +73,11 @@ int createUEFIImage() {
         PFLUSH_AFTER(STDERR) {
             PERROR((STRING("Failed to open file for writing!\n")));
             PERROR(STRING("Error code: "));
-            PERROR(errno, NEWLINE);
+            PERROR(errno, .flags = NEWLINE);
             PERROR(STRING("Error message: "));
             U8 *errorString = (U8 *)strerror(errno);
             PERROR(STRING_LEN(errorString, (U32)strlen((char *)errorString)),
-                   NEWLINE);
+                   .flags = NEWLINE);
         }
         longjmp(errorHandler, 1);
     }
@@ -87,10 +87,11 @@ int createUEFIImage() {
         PFLUSH_AFTER(STDERR) {
             PERROR((STRING("Failed to truncate file!\n")));
             PERROR(STRING("Error code: "));
-            PERROR(errno, NEWLINE);
+            PERROR(errno, .flags = NEWLINE);
             PERROR(STRING("Error message: "));
             char *errorString = strerror(errno);
-            PERROR(STRING_LEN(errorString, (U32)strlen(errorString)), NEWLINE);
+            PERROR(STRING_LEN(errorString, (U32)strlen(errorString)),
+                   .flags = NEWLINE);
         }
         longjmp(errorHandler, 1);
         return 1;
@@ -103,10 +104,11 @@ int createUEFIImage() {
         PFLUSH_AFTER(STDERR) {
             PERROR((STRING("Failed to mmap file!\n")));
             PERROR(STRING("Error code: "));
-            PERROR(errno, NEWLINE);
+            PERROR(errno, .flags = NEWLINE);
             PERROR(STRING("Error message: "));
             char *errorString = strerror(errno);
-            PERROR(STRING_LEN(errorString, (U32)strlen(errorString)), NEWLINE);
+            PERROR(STRING_LEN(errorString, (U32)strlen(errorString)),
+                   .flags = NEWLINE);
         }
         longjmp(errorHandler, 1);
         return 1;
@@ -148,7 +150,7 @@ int main(int argc, char **argv) {
                 PERROR(STRING("Could not stat file: "));
                 PERROR(STRING_LEN(configuration.imageName,
                                   (U32)strlen((char *)configuration.imageName)),
-                       NEWLINE);
+                       .flags = NEWLINE);
                 PERROR(STRING("Aborting error handler!\n"));
                 PERROR(STRING("Perform manual checks to decide what to do with "
                               "the file.\n"));
@@ -208,7 +210,7 @@ int main(int argc, char **argv) {
     if (!kernelFile || !efiFile) {
         PFLUSH_AFTER(STDERR) {
             PERROR(STRING("Usage:\n\t"));
-            PERROR(STRING_LEN(argv[0], (U32)strlen(argv[0])), NEWLINE);
+            PERROR(STRING_LEN(argv[0], (U32)strlen(argv[0])), .flags = NEWLINE);
 
             PERROR(STRING("\t"));
             PERROR(STRING_LEN(EFI_FILE_FLAG, strlen(EFI_FILE_FLAG)));

@@ -8,5 +8,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE posix-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-jmp-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-text-converter-i)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-log-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-i)
