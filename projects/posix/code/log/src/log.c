@@ -40,7 +40,7 @@ void flushBuffer(U8_a *buffer, void *flushContext) {
     PosixFlushContext *posixFlushContext = (PosixFlushContext *)flushContext;
     for (typeof(buffer->len) bytesWritten = 0; bytesWritten < buffer->len;) {
         I64 partialBytesWritten =
-            write(posixFlushContext->fileDescriptor, buffer + bytesWritten,
+            write(posixFlushContext->fileDescriptor, buffer->buf + bytesWritten,
                   buffer->len - bytesWritten);
         if (partialBytesWritten < 0) {
             ASSERT(false);

@@ -1,14 +1,9 @@
 #include "shared/trees/red-black/basic.h"
 #include "shared/maths.h"
 
-typedef struct {
-    RedBlackNodeBasic *node;
-    RedBlackDirection direction;
-} VisitedNode;
-
-static U32 rebalanceInsert(RedBlackDirection direction,
-                           VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                           U32 len) {
+U32 rebalanceInsert(RedBlackDirection direction,
+                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                    RotationUpdater rotationUpdater) {
     RedBlackNodeBasic *grandParent = visitedNodes[len - 3].node;
     RedBlackNodeBasic *parent = visitedNodes[len - 2].node;
     RedBlackNodeBasic *node = visitedNodes[len - 1].node;
@@ -30,6 +25,9 @@ static U32 rebalanceInsert(RedBlackDirection direction,
     if (visitedNodes[len - 2].direction == !direction) {
         rotateAround((RedBlackNode *)grandParent, (RedBlackNode *)parent,
                      (RedBlackNode *)node, direction, direction);
+        if (rotationUpdater) {
+            rotationUpdater(parent, node);
+        }
 
         node = node->children[direction];
         parent = grandParent->children[direction];
@@ -46,6 +44,9 @@ static U32 rebalanceInsert(RedBlackDirection direction,
     rotateAround((RedBlackNode *)visitedNodes[len - 4].node,
                  (RedBlackNode *)grandParent, (RedBlackNode *)parent,
                  !direction, visitedNodes[len - 4].direction);
+    if (rotationUpdater) {
+        rotationUpdater(grandParent, parent);
+    }
 
     return 0;
 }
@@ -111,8 +112,8 @@ void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
 
     // Check for violations
     while (len >= 4 && visitedNodes[len - 2].node->color == RB_TREE_RED) {
-        len =
-            rebalanceInsert(visitedNodes[len - 3].direction, visitedNodes, len);
+        len = rebalanceInsert(visitedNodes[len - 3].direction, visitedNodes,
+                              len, nullptr);
     }
 
     (*tree)->color = RB_TREE_BLACK;

@@ -53,3 +53,5 @@
 | IST3 | No  | Double Fault = kernel panic, no nesting           | Report Error that caused it? & Exit                                                                                                                                                      |
 | IST4 | No  | Machine Check = critical, no nesting              | Report & Exit                                                                                                                                                                            |
 | IST5 | Yes | (after prologue) Normal interrupts, allow nesting | Push registers, Calculate 128 bytes down from RSP (Red-zone), then push all interesting vars to that new stack and call that fault handler                                               |
+
+gdb --args /home/florian/Desktop/FLOS/projects/image-builder/code/build/X86/clang-19/ld.lld-19/POSIX/with-floats/no-serial/DEBUG/image-builder --phys 512 --efi FLOS_EFI.efi --kernel FLOS_KERNEL.bin

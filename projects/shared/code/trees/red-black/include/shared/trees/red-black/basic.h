@@ -17,10 +17,21 @@ struct RedBlackNodeBasic {
     RedBlackColor color;
 };
 
+typedef struct {
+    RedBlackNodeBasic *node;
+    RedBlackDirection direction;
+} VisitedNode;
+
+typedef void (*RotationUpdater)(void *rotationNode, void *rotationChild);
+
 typedef ARRAY(RedBlackNodeBasic *) RedBlackNodeBasicPtr_a;
 
 typedef MAX_LENGTH_ARRAY(RedBlackNodeBasic) RedBlackNodeBasic_max_a;
 typedef MAX_LENGTH_ARRAY(RedBlackNodeBasic *) RedBlackNodeBasicPtr_max_a;
+
+U32 rebalanceInsert(RedBlackDirection direction,
+                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                    RotationUpdater rotationUpdater);
 
 void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
                              RedBlackNodeBasic *createdNode);
