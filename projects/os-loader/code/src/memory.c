@@ -129,8 +129,11 @@ void convertToKernelMemory(
 
             for (typeof(availableMemory.len) i = 0; i < availableMemory.len;
                  i++) {
-                MMNode *node = getMMNode(&RedBlackMMtreeWithFreeList->freeList,
-                                         &RedBlackMMtreeWithFreeList->nodes);
+                MMNode *node = getNodeFromTreeWithFreeList(
+                    (voidPtr_max_a *)&RedBlackMMtreeWithFreeList->freeList,
+                    (void_max_a *)&RedBlackMMtreeWithFreeList->nodes,
+                    sizeof(*RedBlackMMtreeWithFreeList->nodes.buf));
+
                 if (!node) {
                     drawStatusRectangle(mode, RED_COLOR);
                     hangThread();

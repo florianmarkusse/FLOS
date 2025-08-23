@@ -16,7 +16,6 @@ extern RedBlackMMTreeWithFreeList physicalMA;
 
 void insertMMNodeAndAddToFreelist(MMNode **root, MMNode *newNode,
                                   MMNodePtr_max_a *freeList);
-MMNode *getMMNode(MMNodePtr_max_a *freeList, MMNode_max_a *nodes);
 
 void initMemoryManagers(PackedKernelMemory *kernelMemory);
 

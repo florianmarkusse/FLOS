@@ -26,25 +26,11 @@ void insertMMNodeAndAddToFreelist(MMNode **root, MMNode *newNode,
     }
 }
 
-// TODO: Ready for code generation
-MMNode *getMMNode(MMNodePtr_max_a *freeList, MMNode_max_a *nodes) {
-    if (freeList->len > 0) {
-        MMNode *result = freeList->buf[freeList->len - 1];
-        freeList->len--;
-        return result;
-    }
-
-    if (nodes->len < nodes->cap) {
-        MMNode *result = &nodes->buf[nodes->len];
-        nodes->len++;
-        return result;
-    }
-
-    return nullptr;
-}
-
 static void insertMemory(Memory memory, RedBlackMMTreeWithFreeList *allocator) {
-    MMNode *newNode = getMMNode(&allocator->freeList, &allocator->nodes);
+    MMNode *newNode = getNodeFromTreeWithFreeList(
+        (voidPtr_max_a *)&allocator->freeList, (void_max_a *)&allocator->nodes,
+        sizeof(*allocator->nodes.buf));
+
     if (!newNode) {
         interruptUnexpectedError();
     }

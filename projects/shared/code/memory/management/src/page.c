@@ -21,24 +21,6 @@ static U64_pow2 pageSizeFromVMM(U64 faultingAddress) {
     return pageSizesSmallest();
 }
 
-// TODO: Ready for code generation
-static VMMNode *getVMM(RedBlackVMMPtr_max_a *freeList,
-                       RedBlackVMM_max_a *nodes) {
-    if (freeList->len > 0) {
-        VMMNode *result = freeList->buf[freeList->len - 1];
-        freeList->len--;
-        return result;
-    }
-
-    if (nodes->len < nodes->cap) {
-        VMMNode *result = &nodes->buf[nodes->len];
-        nodes->len++;
-        return result;
-    }
-
-    return nullptr;
-}
-
 void removePageMapping(U64 address) {
     VMMNode *deleted = deleteVMMNode(&virtualMemorySizeMapper.tree, address);
     virtualMemorySizeMapper.freeList.buf[virtualMemorySizeMapper.freeList.len] =
@@ -47,8 +29,11 @@ void removePageMapping(U64 address) {
 }
 
 void addPageMapping(Memory memory, U64_pow2 pageSize) {
-    VMMNode *newNode = getVMM(&virtualMemorySizeMapper.freeList,
-                              &virtualMemorySizeMapper.nodes);
+    VMMNode *newNode = getNodeFromTreeWithFreeList(
+        (voidPtr_max_a *)&virtualMemorySizeMapper.freeList,
+        (void_max_a *)&virtualMemorySizeMapper.nodes,
+        sizeof(*virtualMemorySizeMapper.nodes.buf));
+
     if (!newNode) {
         interruptUnexpectedError();
     }

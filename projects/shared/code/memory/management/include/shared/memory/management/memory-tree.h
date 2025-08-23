@@ -9,4 +9,7 @@ typedef struct {
     voidPtr_max_a freeList;
 } TreeWithFreeList;
 
+void *getNodeFromTreeWithFreeList(voidPtr_max_a *freeList, void_max_a *nodes,
+                                  U32 elementSize);
+
 #endif

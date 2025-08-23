@@ -59,8 +59,6 @@ static U64_pow2 largestAlignedPage(U64 address) {
     return decreasePageSize(result);
 }
 
-// NOTE: ready for code generation
-// Only difference is multiplication / division
 U64_pow2 pageSizeLeastLargerThan(U64 address, U64 bytes) {
     U64_pow2 maxPageSize = largestAlignedPage(address);
     U64_pow2 alignedBytes = pageAligned(bytes);
