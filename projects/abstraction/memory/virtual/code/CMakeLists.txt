@@ -18,7 +18,9 @@ elseif(${ENVIRONMENT} STREQUAL "FREESTANDING")
     add_project("freestanding")
     abstraction_add_sources(freestanding-memory-virtual)
 elseif(${ENVIRONMENT} STREQUAL "POSIX")
-    # Should not need an implementation
+    # NOTE: Should not need an implementation but need to compile tests for now
+    add_project("freestanding")
+    abstraction_add_sources(freestanding-memory-virtual)
 else()
     message(FATAL_ERROR "Could not find matching lib for ${PROJECT_NAME}")
 endif()

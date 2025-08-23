@@ -17,7 +17,7 @@ static RedBlackColor getColor(RedBlackNode *node, RedBlackTreeType treeType) {
     }
 }
 
-static void printTreeIndented(RedBlackNode *node, int depth, string prefix,
+static void printTreeIndented(RedBlackNode *node, int depth, String prefix,
                               RedBlackNode *badNode,
                               RedBlackTreeType treeType) {
     if (!node) {
@@ -174,8 +174,9 @@ void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
         RedBlackNode *node = buffer[len - 1];
         len--;
 
-        U64 *_blackHeightsBuffer = NEW(&scratch, U64, .count = nodes);
-        U64_a blackHeights = {.buf = _blackHeightsBuffer, .len = 0};
+        // Stops at leaf nodes, so nodes + 1 is max lenght
+        U64_a blackHeights = {.buf = NEW(&scratch, U64, .count = nodes + 1),
+                              .len = 0};
 
         collectBlackHeightsForEachPath(node, &blackHeights, 0, treeType);
 
@@ -186,7 +187,8 @@ void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
                     INFO(STRING("Found differing black heights!\n"));
                     appendRedBlackTreeWithBadNode(tree, node, treeType);
 
-                    INFO(STRING("Black heights calculated (left-to-right):"));
+                    INFO(STRING("Black heights calculated (leftmost leaf node "
+                                "to rightmost leaf node):"));
                     for (U64 j = 0; j < blackHeights.len; j++) {
                         INFO(blackHeights.buf[j]);
                         INFO(STRING(" "));

@@ -1,6 +1,7 @@
 #include "shared/trees/red-black/tests/red-black/memory-manager.h"
 
 #include "abstraction/log.h"
+#include "abstraction/memory/manipulation.h"
 #include "posix/test-framework/test.h"
 #include "shared/log.h"
 #include "shared/macros.h"

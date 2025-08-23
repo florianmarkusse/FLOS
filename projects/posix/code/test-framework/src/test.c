@@ -125,12 +125,10 @@ void testFailure() {
         testTopics[i].failures++;
     }
 
-    PFLUSH_AFTER(STDOUT) {
-        appendColor(COLOR_RED, STDOUT);
-        PLOG(stringWithMinSizeDefault(STRING("Failure"), 20));
-        appendColorReset(STDOUT);
-        PLOG((STRING("\n")));
-    }
+    appendColor(COLOR_RED, STDOUT);
+    PLOG(stringWithMinSizeDefault(STRING("Failure"), 20));
+    appendColorReset(STDOUT);
+    PLOG((STRING("\n")));
 }
 
 void toCleanupHandler() { longjmp(failureHandler, 1); }

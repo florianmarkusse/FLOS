@@ -2,6 +2,7 @@
 #include "shared/maths.h"
 #include "shared/memory/allocator/macros.h"
 #include "shared/memory/sizes.h"
+#include "shared/trees/red-black/basic.h"
 #include "shared/types/array.h"
 
 typedef struct {
@@ -54,162 +55,13 @@ propagateDeleteUpwards(U64 deletedBytes,
     }
 }
 
-static void setMostBytesAfterRotation(MMNode *prevRotationNode,
-                                      MMNode *prevRotationChild) {
-    prevRotationChild->mostBytesInSubtree =
-        prevRotationNode->mostBytesInSubtree;
-    recalculateMostBytes(prevRotationNode);
-}
-
-static U32 rebalanceInsert(RedBlackDirection direction,
-                           MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                           U32 len) {
-    MMNode *grandParent = visitedNodes[len - 3].node;
-    MMNode *parent = visitedNodes[len - 2].node;
-    MMNode *node = visitedNodes[len - 1].node;
-
-    MMNode *uncle = grandParent->children[!direction];
-    if (uncle && uncle->color == RB_TREE_RED) {
-        uncle->color = RB_TREE_BLACK;
-        parent->color = RB_TREE_BLACK;
-        grandParent->color = RB_TREE_RED;
-
-        return len - 2;
-    }
-
-    //      x             x
-    //     /             /
-    //    y       ==>   z
-    //     \           /
-    //      z         y
-    if (visitedNodes[len - 2].direction == !direction) {
-        rotateAround((RedBlackNode *)grandParent, (RedBlackNode *)parent,
-                     (RedBlackNode *)node, direction, direction);
-        setMostBytesAfterRotation(parent, node);
-
-        node = node->children[direction];
-        parent = grandParent->children[direction];
-    }
-
-    //      x           y
-    //     /           / \
-    //    y      ==>  z   x
-    //   /
-    //  z
-    parent->color = RB_TREE_BLACK;
-    grandParent->color = RB_TREE_RED;
-
-    rotateAround((RedBlackNode *)visitedNodes[len - 4].node,
-                 (RedBlackNode *)grandParent, (RedBlackNode *)parent,
-                 !direction, visitedNodes[len - 4].direction);
-    setMostBytesAfterRotation(grandParent, parent);
-
-    return 0;
-}
-
-// We have 2 subtrees hanbing from visitedNodes - 1, the subtree of direction
-// and the subtree of !direction (other direction). the subtree of direction has
-// 1 less black height than the other subtree. The potential tree above these
-// subtrees is now also missing a black node. Fixing the deficiency by removing
-// a black node from the other direction subtree means that we stil need to
-// address that problem. On the other hand, coloring a node black in the
-// direction subtree immediately solves the deficiency in the whole tree.
-static U32 rebalanceDelete(RedBlackDirection direction,
-                           MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                           U32 len) {
-    MMNode *node = visitedNodes[len - 1].node;
-    MMNode *childOtherDirection = node->children[!direction];
-    // Ensure the other child is colored black, we "push" the problem a level
-    // down in the process.
-    //                       x(B)              y(B)
-    //                        \               / \
-    // LEFT_DIRECTION          y(R)   ==>   x(R)a(B)
-    //                        / \            \
-    //                      z(B)a(B)        z(B)
-    //
-    //                        x(B)            y(B)
-    //                        /               / \
-    // RIGHT_DIRECTION     y(R)       ==>   a(B)x(R)
-    //                     / \                  /
-    //                   a(B)z(B)             z(B)
-    if (childOtherDirection->color == RB_TREE_RED) {
-        childOtherDirection->color = RB_TREE_BLACK;
-        node->color = RB_TREE_RED;
-
-        rotateAround((RedBlackNode *)visitedNodes[len - 2].node,
-                     (RedBlackNode *)node, (RedBlackNode *)childOtherDirection,
-                     direction, visitedNodes[len - 2].direction);
-        setMostBytesAfterRotation(node, childOtherDirection);
-
-        visitedNodes[len - 1].node = childOtherDirection;
-        visitedNodes[len].node = node;
-        visitedNodes[len].direction = direction;
-        len++;
-
-        childOtherDirection = node->children[!direction];
-    }
-
-    MMNode *innerChildOtherDirection = childOtherDirection->children[direction];
-    MMNode *outerChildOtherDirection =
-        childOtherDirection->children[!direction];
-    // Bubble up the problem by 1 level.
-    if (((!innerChildOtherDirection) ||
-         innerChildOtherDirection->color == RB_TREE_BLACK) &&
-        ((!outerChildOtherDirection) ||
-         outerChildOtherDirection->color == RB_TREE_BLACK)) {
-        childOtherDirection->color = RB_TREE_RED;
-
-        return len - 1;
-    }
-
-    //                      x                 x
-    //                       \                 \
-    // LEFT_DIRECTION         y(B)   ===>     z(B)
-    //                       /                   \
-    //                     z(R)                  y(R)
-    //
-    //                      x                     x
-    //                     /                     /
-    // RIGHT_DIRECTION   y(B)        ===>      z(B)
-    //                     \                   /
-    //                     z(R)             y(R)
-    if ((!outerChildOtherDirection) ||
-        outerChildOtherDirection->color == RB_TREE_BLACK) {
-        childOtherDirection->color = RB_TREE_RED;
-        innerChildOtherDirection->color = RB_TREE_BLACK;
-
-        rotateAround((RedBlackNode *)node, (RedBlackNode *)childOtherDirection,
-                     (RedBlackNode *)innerChildOtherDirection, !direction,
-                     !direction);
-        setMostBytesAfterRotation(childOtherDirection,
-                                  innerChildOtherDirection);
-
-        MMNode *temp = childOtherDirection;
-        childOtherDirection = innerChildOtherDirection;
-        outerChildOtherDirection = temp;
-    }
-
-    //                         x                          y
-    //                        / \                        / \
-    // LEFT_DIRECTION       a(B)y(B)        ===>       x(B)z(B)
-    //                            \                    /
-    //                           z(R)                a(B)
-    //
-    //                         x                          y
-    //                        / \                        / \
-    // RIGHT_DIRECTION      y(B)a(B)        ===>       z(B)x(B)
-    //                      /                               \
-    //                    z(R)                              a(B)
-    childOtherDirection->color = node->color;
-    node->color = RB_TREE_BLACK;
-    outerChildOtherDirection->color = RB_TREE_BLACK;
-
-    rotateAround((RedBlackNode *)visitedNodes[len - 2].node,
-                 (RedBlackNode *)node, (RedBlackNode *)childOtherDirection,
-                 direction, visitedNodes[len - 2].direction);
-    setMostBytesAfterRotation(node, childOtherDirection);
-
-    return 0;
+static void setMostBytesAfterRotation(void *prevRotationNode,
+                                      void *prevRotationChild) {
+    MMNode *previousRotationNode = prevRotationNode;
+    MMNode *previousRotationChild = prevRotationChild;
+    previousRotationChild->mostBytesInSubtree =
+        previousRotationNode->mostBytesInSubtree;
+    recalculateMostBytes(previousRotationNode);
 }
 
 static MMNode *deleteNodeInPath(MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
@@ -267,8 +119,9 @@ static MMNode *deleteNodeInPath(MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
                 break;
             }
 
-            len = rebalanceDelete(visitedNodes[len - 1].direction, visitedNodes,
-                                  len);
+            len = rebalanceDelete(visitedNodes[len - 1].direction,
+                                  (VisitedNode *)visitedNodes, len,
+                                  setMostBytesAfterRotation);
         }
     }
 
@@ -411,8 +264,8 @@ InsertResult insertMMNode(MMNode **tree, MMNode *createdNode) {
 
     // Check for violations
     while (len >= 4 && visitedNodes[len - 2].node->color == RB_TREE_RED) {
-        len =
-            rebalanceInsert(visitedNodes[len - 3].direction, visitedNodes, len);
+        len = rebalanceInsert(visitedNodes[len - 3].direction, visitedNodes,
+                              len, setMostBytesAfterRotation);
     }
 
     (*tree)->color = RB_TREE_BLACK;

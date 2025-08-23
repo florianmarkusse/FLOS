@@ -1,4 +1,6 @@
 - clean up red-black tree mess somehow? This should be possible to abstract!
+  - Look into color OFFSETOF trick to get rid of slop
+  - Look into optimizing the struct by using indices instead of pointers
 - how to hide extern variables from showing up everywhere
 - look into struct x = {.y = 5} and check if it's actually necessary to zero initialize the rest of the struct, we can avoid this in most cases i think
 - add restrict to basically all pointers? look into aliasing again!!!
@@ -10,9 +12,6 @@
 - look into caching page table / meta data tables anyway and see if it's faster since it avoids zeroing
 - add some nicer logs to image-builder? i.e. more data about sizes in bytes and LBA, not one or the other.
 - rename abstraction/efi to abstraction/efi-to-kernel
-- make alignup/value into functions? Make a lot of maths macros into functions,
-  and look into where you are using VALUE and see if you can replace it by
-  divides by 2, which are faster
 - get rid of lots of virtual stuff in policy
   - move some stuff in policy to virtual?
   - Move policy & physical & (most of) virtual to be arch-independent?
@@ -20,9 +19,7 @@
 - Fix duplicate stuff in memory mappings
 - create macro for ctzl clzl stuff, so I dont need to pick the sizes?
 - Look into fixing todo's
-- Figure out a way to do better with masks and bit shifts for virtual values
 - policy is quite architecture-dependent. What's required to completely make it so?
-- Reploe X_VALUE with X_EXP when it is not compile-time known value? I.e. pageSizes array should be bitshifts I think, check GODBOLT!!
 - Remove NOLINTNEXTLINE?
 - go over abstraction folders and find out if you can change the ifdefs into just function calls
 - Look into U8* usage, as it can alias everything? -> switch to void*??

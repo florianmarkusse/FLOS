@@ -348,7 +348,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
     testSuccess();
 }
 
-static void testSubTopic(string subTopic, TestCases testCases, Arena scratch) {
+static void testSubTopic(String subTopic, TestCases testCases, Arena scratch) {
     TEST_TOPIC(subTopic) {
         JumpBuffer failureHandler;
         for (U64 i = 0; i < testCases.len; i++) {

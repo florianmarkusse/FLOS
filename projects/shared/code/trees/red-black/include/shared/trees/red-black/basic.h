@@ -13,8 +13,8 @@ struct RedBlackNodeBasic {
                                        // the same location for doing inserts.
                                        // And as polymorphism for some common
                                        // operations.
+    RedBlackColor color;               // NOTE: Keep this as the second element
     U64 value;
-    RedBlackColor color;
 };
 
 typedef struct {
@@ -22,16 +22,10 @@ typedef struct {
     RedBlackDirection direction;
 } VisitedNode;
 
-typedef void (*RotationUpdater)(void *rotationNode, void *rotationChild);
-
 typedef ARRAY(RedBlackNodeBasic *) RedBlackNodeBasicPtr_a;
 
 typedef MAX_LENGTH_ARRAY(RedBlackNodeBasic) RedBlackNodeBasic_max_a;
 typedef MAX_LENGTH_ARRAY(RedBlackNodeBasic *) RedBlackNodeBasicPtr_max_a;
-
-U32 rebalanceInsert(RedBlackDirection direction,
-                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
-                    RotationUpdater rotationUpdater);
 
 void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
                              RedBlackNodeBasic *createdNode);
