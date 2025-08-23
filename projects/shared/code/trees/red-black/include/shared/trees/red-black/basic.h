@@ -19,6 +19,9 @@ struct RedBlackNodeBasic {
 
 typedef ARRAY(RedBlackNodeBasic *) RedBlackNodeBasicPtr_a;
 
+typedef MAX_LENGTH_ARRAY(RedBlackNodeBasic) RedBlackNodeBasic_max_a;
+typedef MAX_LENGTH_ARRAY(RedBlackNodeBasic *) RedBlackNodeBasicPtr_max_a;
+
 void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
                              RedBlackNodeBasic *createdNode);
 RedBlackNodeBasic *deleteRedBlackNodeBasic(RedBlackNodeBasic **tree, U64 value);

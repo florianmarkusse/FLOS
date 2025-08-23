@@ -138,19 +138,27 @@ static void identityArrayToMappable(void_max_a *array, U64_pow2 alignBytes,
     array->cap = ALLOCATOR_MAX_BUFFER_SIZE / elementSizeBytes;
 }
 
-// NOTE: Ready for code generation
-static void VMMTreeToMappable(VMMTreeWithFreeList *memoryAllocator) {
+typedef struct {
+    RedBlackNodeBasic_max_a nodes;
+    RedBlackNodeBasic *tree;
+    RedBlackNodeBasicPtr_max_a freeList;
+} RedBlackNodeBasicTreeWithFreeList;
+
+static void
+treeWithFreeListToMappable(RedBlackNodeBasicTreeWithFreeList *memoryAllocator,
+                           U64_pow2 elementAlign, U64 elementSizeBytes,
+                           U32 additionalMapsForNodeBuffer) {
     U64 originalBufferLocation = (U64)memoryAllocator->nodes.buf;
 
-    identityArrayToMappable((void_max_a *)&memoryAllocator->nodes,
-                            alignof(*memoryAllocator->nodes.buf),
-                            sizeof(*memoryAllocator->nodes.buf), 0);
+    identityArrayToMappable((void_max_a *)&memoryAllocator->nodes, elementAlign,
+                            elementSizeBytes, additionalMapsForNodeBuffer);
     U64 newNodesLocation = (U64)memoryAllocator->nodes.buf;
     U64 nodesBias = newNodesLocation - originalBufferLocation;
     for (typeof(memoryAllocator->nodes.len) i = 0;
          i < memoryAllocator->nodes.len; i++) {
+        U8 *base = (U8 *)memoryAllocator->nodes.buf;
         RedBlackNodeBasic **children =
-            memoryAllocator->nodes.buf[i].basic.children;
+            (RedBlackNodeBasic **)(base + (i * elementSizeBytes));
 
         if (children[RB_TREE_LEFT]) {
             children[RB_TREE_LEFT] =
@@ -166,54 +174,14 @@ static void VMMTreeToMappable(VMMTreeWithFreeList *memoryAllocator) {
 
     if (memoryAllocator->tree) {
         memoryAllocator->tree =
-            (VMMNode *)((U8 *)memoryAllocator->tree + nodesBias);
+            (RedBlackNodeBasic *)((U8 *)memoryAllocator->tree + nodesBias);
     }
 
     for (typeof(memoryAllocator->freeList.len) i = 0;
          i < memoryAllocator->freeList.len; i++) {
         memoryAllocator->freeList.buf[i] =
-            (VMMNode *)((U8 *)memoryAllocator->freeList.buf[i] + nodesBias);
-    }
-
-    identityArrayToMappable((void_max_a *)&memoryAllocator->freeList,
-                            alignof(*memoryAllocator->freeList.buf),
-                            sizeof(*memoryAllocator->freeList.buf), 0);
-}
-
-// NOTE: Ready for code generation
-static void MMTreeToMappable(RedBlackMMTreeWithFreeList *memoryAllocator,
-                             U32 additionalMapsForNodesBuffer) {
-    U64 originalBufferLocation = (U64)memoryAllocator->nodes.buf;
-
-    identityArrayToMappable((void_max_a *)&memoryAllocator->nodes,
-                            alignof(*memoryAllocator->nodes.buf),
-                            sizeof(*memoryAllocator->nodes.buf),
-                            additionalMapsForNodesBuffer);
-    U64 newNodesLocation = (U64)memoryAllocator->nodes.buf;
-    U64 nodesBias = newNodesLocation - originalBufferLocation;
-    for (typeof(memoryAllocator->nodes.len) i = 0;
-         i < memoryAllocator->nodes.len; i++) {
-        MMNode **children = memoryAllocator->nodes.buf[i].children;
-
-        if (children[RB_TREE_LEFT]) {
-            children[RB_TREE_LEFT] =
-                (MMNode *)(((U8 *)children[RB_TREE_LEFT]) + nodesBias);
-        }
-        if (children[RB_TREE_RIGHT]) {
-            children[RB_TREE_RIGHT] =
-                (MMNode *)(((U8 *)children[RB_TREE_RIGHT]) + nodesBias);
-        }
-    }
-
-    if (memoryAllocator->tree) {
-        memoryAllocator->tree =
-            (MMNode *)((U8 *)memoryAllocator->tree + nodesBias);
-    }
-
-    for (typeof(memoryAllocator->freeList.len) i = 0;
-         i < memoryAllocator->freeList.len; i++) {
-        memoryAllocator->freeList.buf[i] =
-            (MMNode *)((U8 *)memoryAllocator->freeList.buf[i] + nodesBias);
+            (RedBlackNodeBasic *)((U8 *)memoryAllocator->freeList.buf[i] +
+                                  nodesBias);
     }
 
     identityArrayToMappable((void_max_a *)&memoryAllocator->freeList,
@@ -250,9 +218,16 @@ void initMemoryManagers(PackedKernelMemory *kernelMemory) {
 
     // NOTE: Adding one extra map here because we are doing page faults manually
     // which will increase the physical memory usage
-    MMTreeToMappable(&physicalMA, 1);
-    MMTreeToMappable(&virtualMA, 0);
-    VMMTreeToMappable(&virtualMemorySizeMapper);
+    treeWithFreeListToMappable((RedBlackNodeBasicTreeWithFreeList *)&physicalMA,
+                               alignof(*physicalMA.nodes.buf),
+                               sizeof(*physicalMA.nodes.buf), 1);
+    treeWithFreeListToMappable((RedBlackNodeBasicTreeWithFreeList *)&virtualMA,
+                               alignof(*virtualMA.nodes.buf),
+                               sizeof(*virtualMA.nodes.buf), 0);
+    treeWithFreeListToMappable(
+        (RedBlackNodeBasicTreeWithFreeList *)&virtualMemorySizeMapper,
+        alignof(*virtualMemorySizeMapper.nodes.buf),
+        sizeof(*virtualMemorySizeMapper.nodes.buf), 0);
 
     freePackedMMTree(&kernelMemory->physicalPMA);
     freePackedMMTree(&kernelMemory->virtualPMA);
