@@ -21,7 +21,8 @@ void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
     return result;
 }
 
-void freeZeroedMemoryForVirtual([[maybe_unused]] U64 address,
-                                [[maybe_unused]] VirtualAllocationType type) {
+void freeZeroedMemoryForVirtual(U64 address, VirtualAllocationType type) {
+    (void)address;
+    (void)type;
     EXIT_WITH_MESSAGE { ERROR(STRING("Not required for EFI implementation!")); }
 }
