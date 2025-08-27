@@ -12,36 +12,38 @@
 VMMTreeWithFreeList virtualMemorySizeMapper = {0};
 
 static U64_pow2 pageSizeFromVMM(U64 faultingAddress) {
-    VMMNode *result = findGreatestBelowOrEqualVMMNode(
-        &virtualMemorySizeMapper.tree, faultingAddress);
-    if (result && result->basic.value + result->bytes > faultingAddress) {
-        return result->mappingSize;
+    VMMNode *result = findGreatestBelowOrEqualVMMNode(&virtualMemorySizeMapper,
+                                                      faultingAddress);
+    if (result && result->data.memory.start + result->data.memory.bytes >
+                      faultingAddress) {
+        return result->data.mappingSize;
     }
 
     return pageSizesSmallest();
 }
 
 void removePageMapping(U64 address) {
-    VMMNode *deleted = deleteVMMNode(&virtualMemorySizeMapper.tree, address);
+    U32 deleted = deleteVMMNode(&virtualMemorySizeMapper, address);
     virtualMemorySizeMapper.freeList.buf[virtualMemorySizeMapper.freeList.len] =
         deleted;
     virtualMemorySizeMapper.freeList.len++;
 }
 
 void addPageMapping(Memory memory, U64_pow2 pageSize) {
-    VMMNode *newNode = getNodeFromTreeWithFreeList(
-        (voidPtr_max_a *)&virtualMemorySizeMapper.freeList,
-        (void_max_a *)&virtualMemorySizeMapper.nodes,
-        sizeof(*virtualMemorySizeMapper.nodes.buf));
+    U32 newNodeIndex = getNodeFromTreeWithFreeList(
+        &virtualMemorySizeMapper.freeList,
+        (void_max_a *)&virtualMemorySizeMapper.nodes);
 
-    if (!newNode) {
+    if (!newNodeIndex) {
         interruptUnexpectedError();
     }
-    newNode->basic.value = memory.start;
-    newNode->bytes = memory.bytes;
-    newNode->mappingSize = pageSize;
 
-    insertVMMNode(&virtualMemorySizeMapper.tree, newNode);
+    VMMNode *newNode =
+        getVMMNode(&virtualMemorySizeMapper.nodeLocation, newNodeIndex);
+    newNode->data.memory = memory;
+    newNode->data.mappingSize = pageSize;
+
+    insertVMMNode(&virtualMemorySizeMapper, newNode);
 }
 
 PageFaultResult handlePageFault(U64 faultingAddress) {

@@ -15,8 +15,9 @@
 #include "shared/trees/red-black/tests/assert.h"
 #include "shared/trees/red-black/tests/cases/memory-manager.h"
 
-static void addValueToExpected(Memory_max_a *expectedValues, Memory toAdd,
-                               MMNode *tree) {
+static void addValueToExpected(NodeLocation *nodeLocation,
+                               Memory_max_a *expectedValues, Memory toAdd,
+                               U32 tree) {
     U64 indexToInsert = 0;
     while (indexToInsert < expectedValues->len &&
            expectedValues->buf[indexToInsert].start < toAdd.start) {
@@ -59,7 +60,7 @@ static void addValueToExpected(Memory_max_a *expectedValues, Memory toAdd,
                             "Increase max size or decrease expected nodes "
                             "in Red-Black tree. Current maximum size: "));
                 INFO(MAX_NODES_IN_TREE, .flags = NEWLINE);
-                appendRedBlackTreeWithBadNode((RedBlackNode *)tree, nullptr,
+                appendRedBlackTreeWithBadNode(nodeLocation, tree, 0,
                                               RED_BLACK_MEMORY_MANAGER);
             }
         }
@@ -74,7 +75,21 @@ static void addValueToExpected(Memory_max_a *expectedValues, Memory toAdd,
 }
 
 static void testTree(TreeOperation_a operations, Arena scratch) {
-    MMNode *tree = nullptr;
+    U32 tree = 0;
+    MMTreeWithFreeList treeWithFreeList = {
+        .nodes = (MMNode_max_a){.buf = NEW(&scratch, MMNode,
+                                           .count = MAX_NODES_IN_TREE),
+                                .len = 0,
+                                .cap = MAX_NODES_IN_TREE},
+        .tree = &tree,
+        .freeList =
+            (U32_max_a){.buf = NEW(&scratch, U32, .count = MAX_NODES_IN_TREE),
+                        .len = 0,
+                        .cap = MAX_NODES_IN_TREE},
+        .nodeLocation = {.base = (U8 *)treeWithFreeList.nodes.buf,
+                         .elementSizeBytes =
+                             sizeof(*treeWithFreeList.nodes.buf)}};
+
     Memory_max_a expectedValues =
         (Memory_max_a){.buf = NEW(&scratch, Memory, .count = MAX_NODES_IN_TREE),
                        .len = 0,
@@ -82,17 +97,18 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
     for (U64 i = 0; i < operations.len; i++) {
         switch (operations.buf[i].type) {
         case INSERT: {
-            addValueToExpected(&expectedValues, operations.buf[i].memory, tree);
+            addValueToExpected(&treeWithFreeList.nodeLocation, &expectedValues,
+                               operations.buf[i].memory, tree);
 
             MMNode *createdNode = NEW(&scratch, MMNode);
-            createdNode->memory = operations.buf[i].memory;
-            (void)insertMMNode(&tree, createdNode);
+            createdNode->data.memory = operations.buf[i].memory;
+            (void)insertMMNode(&treeWithFreeList, createdNode);
             break;
         }
         case DELETE_AT_LEAST: {
-            MMNode *deleted =
-                deleteAtLeastMMNode(&tree, operations.buf[i].memory.bytes);
-            if (!deleted) {
+            U32 deletedIndex = deleteAtLeastMMNode(
+                &treeWithFreeList, operations.buf[i].memory.bytes);
+            if (!deletedIndex) {
                 for (U64 j = 0; j < expectedValues.len; j++) {
                     if (expectedValues.buf[j].bytes >=
                         operations.buf[i].memory.bytes) {
@@ -106,34 +122,42 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                     }
                 }
                 break;
-            } else if (deleted->memory.bytes < operations.buf[i].memory.bytes) {
-                TEST_FAILURE {
-                    INFO(STRING("Deleted value not equal the value that should "
-                                "have been deleted !\nExpected to be "
-                                "deleted value: "));
-                    INFO(operations.buf[i].memory.bytes, .flags = NEWLINE);
-                    INFO(STRING("Actual deleted value: "));
-                    INFO(deleted->memory.bytes, .flags = NEWLINE);
-                }
             } else {
-                U64 indexToRemove = 0;
-                for (U64 j = 0; j < expectedValues.len; j++) {
-                    if (expectedValues.buf[j].start == deleted->memory.start) {
-                        indexToRemove = j;
+                MMNode *deleted =
+                    getMMNode(&treeWithFreeList.nodeLocation, deletedIndex);
+                if (deleted->data.memory.bytes <
+                    operations.buf[i].memory.bytes) {
+                    TEST_FAILURE {
+                        INFO(STRING(
+                            "Deleted value not equal the value that should "
+                            "have been deleted !\nExpected to be "
+                            "deleted value: "));
+                        INFO(operations.buf[i].memory.bytes, .flags = NEWLINE);
+                        INFO(STRING("Actual deleted value: "));
+                        INFO(deleted->data.memory.bytes, .flags = NEWLINE);
                     }
-                }
-                memmove(&(expectedValues.buf[indexToRemove]),
-                        &(expectedValues.buf[indexToRemove + 1]),
-                        (expectedValues.len - indexToRemove) *
-                            sizeof(expectedValues.buf[0]));
-                expectedValues.len--;
+                } else {
+                    U64 indexToRemove = 0;
+                    for (U64 j = 0; j < expectedValues.len; j++) {
+                        if (expectedValues.buf[j].start ==
+                            deleted->data.memory.start) {
+                            indexToRemove = j;
+                        }
+                    }
+                    memmove(&(expectedValues.buf[indexToRemove]),
+                            &(expectedValues.buf[indexToRemove + 1]),
+                            (expectedValues.len - indexToRemove) *
+                                sizeof(expectedValues.buf[0]));
+                    expectedValues.len--;
 
-                break;
+                    break;
+                }
             }
         }
         }
 
-        assertMMRedBlackTreeValid(tree, expectedValues, scratch);
+        assertMMRedBlackTreeValid(&treeWithFreeList.nodeLocation, tree,
+                                  expectedValues, scratch);
     }
 
     testSuccess();

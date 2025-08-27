@@ -31,7 +31,7 @@ static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
 }
 
 void allocateSpaceForKernelMemory(
-    RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList, Arena scratch) {
+    MMTreeWithFreeList *redBlackMMTreeWithFreeList, Arena scratch) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
     U32 numberOfDescriptors =
         (U32)(memoryInfo.memoryMapSize / memoryInfo.descriptorSize);
@@ -80,7 +80,7 @@ static constexpr auto RED_COLOR = 0xFF0000;
 
 void convertToKernelMemory(
     MemoryInfo *memoryInfo, PackedMMTreeWithFreeList *physicalMemoryTree,
-    RedBlackMMTreeWithFreeList *RedBlackMMtreeWithFreeList,
+    MMTreeWithFreeList *RedBlackMMtreeWithFreeList,
     GraphicsOutputProtocolMode *mode) {
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
         if (memoryTypeCanBeUsedByKernel(desc->type)) {

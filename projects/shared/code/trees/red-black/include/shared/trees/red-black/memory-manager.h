@@ -6,35 +6,40 @@
 #include "shared/types/array-types.h"
 #include "shared/types/numeric.h"
 
-// This is not just a red-black tree, but also an interval tree. So,
-// inserts/deletes need some additional housekeeping to stay cnsistent.
-typedef struct MMNode MMNode;
-struct MMNode {
-    MMNode *
-        children[RB_TREE_CHILD_COUNT]; // NOTE: Keep this as the first elements.
-                                       // This is used in the insert so that
-                                       // children->[0] and a RedBlackNode* are
-                                       // the same location for doing inserts.
-    RedBlackColor color;               // NOTE: Keep this as the second element
+// This is not just a red-black tree, but also an interval tree and merges
+// contiguous nodes. So, inserts/deletes need some additional housekeeping to
+// stay cnsistent.
+
+typedef struct {
     Memory memory;
     U64 mostBytesInSubtree;
+} MMData;
+
+typedef struct MMNode MMNode;
+struct MMNode {
+    RedBlackNode header;
+    MMData data;
 };
 
 typedef MAX_LENGTH_ARRAY(MMNode) MMNode_max_a;
-typedef MAX_LENGTH_ARRAY(MMNode *) MMNodePtr_max_a;
+typedef TREE_WITH_FREELIST(MMNode) MMTreeWithFreeList;
 
 static constexpr auto RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT = 2;
 
 typedef struct {
-    MMNode *freed[RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT];
+    U32 freed[RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT];
 } InsertResult;
+
+MMNode *getMMNode(NodeLocation *nodeLocation, U32 index);
 
 // On inserting a node in this tree, there are 3 possibilities and 3
 // different return values:
 //  - a bridge merge with 2 other nodes: return 2 freed nodes
 //  - a single merge with 1 other node: return 1 freed node
 //  - no merges with other nodes: return 0 freed nodes
-[[nodiscard]] InsertResult insertMMNode(MMNode **tree, MMNode *createdNode);
-[[nodiscard]] MMNode *deleteAtLeastMMNode(MMNode **tree, U64 bytes);
+[[nodiscard]] InsertResult insertMMNode(MMTreeWithFreeList *treeWithFreeList,
+                                        MMNode *createdNode);
+[[nodiscard]] U32 deleteAtLeastMMNode(MMTreeWithFreeList *treeWithFreeList,
+                                      U64 bytes);
 
 #endif

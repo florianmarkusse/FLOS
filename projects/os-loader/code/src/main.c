@@ -269,7 +269,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
     drawStatusRectangle(gop->mode, GREEN_COLOR);
 
-    RedBlackMMTreeWithFreeList physical;
+    MMTreeWithFreeList physical;
     physical.tree = nullptr;
     allocateSpaceForKernelMemory(&physical, arena);
 

@@ -6,37 +6,62 @@
 #include "shared/memory/management/management.h"
 #include "shared/text/string.h"
 
-static void countAvailable(MMNode *current, U64 *available, U32 *nodes) {
-    if (!current) {
-        return;
+static AvailableMemoryState
+getAvailableMemory(MMTreeWithFreeList *treeWithFreeList) {
+    AvailableMemoryState result = {0};
+    if (!(*treeWithFreeList->tree)) {
+        return result;
     }
 
-    countAvailable(current->children[RB_TREE_LEFT], available, nodes);
+    NodeLocation nodeLocation = (NodeLocation){
+        .base = (U8 *)treeWithFreeList->nodes.buf,
+        .elementSizeBytes = sizeof(*treeWithFreeList->nodes.buf)};
 
-    *available += current->memory.bytes;
-    *nodes += 1;
+    U32 queue[RB_TREE_MAX_HEIGHT];
+    queue[0] = *treeWithFreeList->tree;
+    U32 len = 1;
 
-    countAvailable(current->children[RB_TREE_RIGHT], available, nodes);
+    while (len > 0) {
+        U32 poppedIndex = queue[len - 1];
+        len--;
+        MMNode *poppedNode = getMMNode(&nodeLocation, poppedIndex);
+        result.nodes++;
+        result.memory += poppedNode->data.memory.bytes;
+
+        U32 leftChildIndex = poppedNode->header.children[RB_TREE_LEFT];
+        if (leftChildIndex) {
+            queue[len] = leftChildIndex;
+            len++;
+        }
+
+        U32 rightChildIndex = poppedNode->header.children[RB_TREE_RIGHT];
+        if (rightChildIndex) {
+            queue[len] = rightChildIndex;
+            len++;
+        }
+    }
+
+    return result;
 }
 
-static void appendMemoryManagerStatus(RedBlackMMTreeWithFreeList *allocator,
+static void appendMemoryManagerStatus(MMTreeWithFreeList *treeWithFreeList,
                                       String name) {
     INFO(name);
-    AvailableMemoryState result = {0};
-    countAvailable(allocator->tree, &result.memory, &result.nodes);
+    AvailableMemoryState result = getAvailableMemory(treeWithFreeList);
     INFO(STRING(" mem: "));
     INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(result.memory), 16));
     INFO(STRING(" nodes: "));
     INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(result.nodes), 3));
     INFO(STRING("freelist size: "));
-    INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(allocator->freeList.len),
-                                  3));
+    INFO(stringWithMinSizeDefault(
+        CONVERT_TO_STRING(treeWithFreeList->freeList.len), 3));
     INFO(STRING("nodes buf: "));
-    INFO((void *)allocator->nodes.buf);
+    INFO((void *)treeWithFreeList->nodes.buf);
     INFO(STRING(" len: "));
-    INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(allocator->nodes.len), 3));
+    INFO(stringWithMinSizeDefault(
+        CONVERT_TO_STRING(treeWithFreeList->nodes.len), 3));
     INFO(STRING(" cap: "));
-    INFO(allocator->nodes.cap, .flags = NEWLINE);
+    INFO(treeWithFreeList->nodes.cap, .flags = NEWLINE);
 }
 
 void appendPhysicalMemoryManagerStatus() {
@@ -47,15 +72,10 @@ void appendVirtualMemoryManagerStatus() {
     appendMemoryManagerStatus(&virtualMA, STRING("[VIRT]"));
 }
 
-static AvailableMemoryState getAvailableMemory(MMNode *tree) {
-    AvailableMemoryState result = {0};
-    countAvailable(tree, &result.memory, &result.nodes);
-    return result;
+AvailableMemoryState getAvailablePhysicalMemory() {
+    return getAvailableMemory(&physicalMA);
 }
 
-AvailableMemoryState getAvailablePhysicalMemory() {
-    return getAvailableMemory(physicalMA.tree);
-}
 AvailableMemoryState getAvailableVirtualMemory() {
-    return getAvailableMemory(virtualMA.tree);
+    return getAvailableMemory(&virtualMA);
 }

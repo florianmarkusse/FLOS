@@ -235,7 +235,7 @@ static constexpr auto INITIAL_VIRTUAL_MAPPING_SIZES = 128;
 
 void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                                 Arena scratch) {
-    physicalMA = (RedBlackMMTreeWithFreeList){0};
+    physicalMA = (MMTreeWithFreeList){0};
 
     virtualMA.tree = nullptr;
     createDynamicArray(

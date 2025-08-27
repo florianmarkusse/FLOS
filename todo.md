@@ -1,6 +1,8 @@
 - clean up red-black tree mess somehow? This should be possible to abstract!
   - Look into color OFFSETOF trick to get rid of slop
   - Look into optimizing the struct by using indices instead of pointers
+- nodeLocation base thing is duplicated for no reason in the trees.
+- rename PackedX into X_packed_max_a etc.
 - how to hide extern variables from showing up everywhere
 - look into struct x = {.y = 5} and check if it's actually necessary to zero initialize the rest of the struct, we can avoid this in most cases i think
 - add restrict to basically all pointers? look into aliasing again!!!

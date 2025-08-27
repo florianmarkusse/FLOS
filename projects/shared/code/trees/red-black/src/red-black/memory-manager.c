@@ -5,122 +5,149 @@
 #include "shared/trees/red-black/basic.h"
 #include "shared/types/array.h"
 
-typedef struct {
-    MMNode *node;
-    RedBlackDirection direction;
-} MMVisitedNode;
+MMNode *getMMNode(NodeLocation *nodeLocation, U32 index) {
+    return (MMNode *)getNode(nodeLocation, index);
+}
 
-static void recalculateMostBytes(MMNode *node) {
-    node->mostBytesInSubtree = node->memory.bytes;
-    if (node->children[RB_TREE_RIGHT]) {
-        node->mostBytesInSubtree =
-            MAX(node->mostBytesInSubtree,
-                node->children[RB_TREE_RIGHT]->mostBytesInSubtree);
+static void initVisitedNodes(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                             U32 *len) {
+    visitedNodes[0].index = 0;
+    // NOTE: we should never be looking at [0].direction!
+    *len = 1;
+}
+
+static void recalculateMostBytes(NodeLocation *nodeLocation, MMNode *node) {
+    node->data.mostBytesInSubtree = node->data.memory.bytes;
+    if (node->header.children[RB_TREE_RIGHT]) {
+        MMNode *childNode =
+            getMMNode(nodeLocation, node->header.children[RB_TREE_RIGHT]);
+        node->data.mostBytesInSubtree = MAX(node->data.mostBytesInSubtree,
+                                            childNode->data.mostBytesInSubtree);
     }
-    if (node->children[RB_TREE_LEFT]) {
-        node->mostBytesInSubtree =
-            MAX(node->mostBytesInSubtree,
-                node->children[RB_TREE_LEFT]->mostBytesInSubtree);
+    if (node->header.children[RB_TREE_LEFT]) {
+        MMNode *childNode =
+            getMMNode(nodeLocation, node->header.children[RB_TREE_LEFT]);
+        node->data.mostBytesInSubtree = MAX(node->data.mostBytesInSubtree,
+                                            childNode->data.mostBytesInSubtree);
     }
 }
 
 // The fist entry always contains the pointer to the address of the root node.
-static constexpr auto ROOT_NODE_ADDRESS_LEN = 1;
+static constexpr auto ROOT_NODE_INDEX_LEN = 1;
 
-static void
-propagateInsertUpwards(U64 newMostBytesInSubtree,
-                       MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                       U32 len) {
-    while (len > ROOT_NODE_ADDRESS_LEN) {
-        MMNode *node = visitedNodes[len - 1].node;
-        if (node->mostBytesInSubtree >= newMostBytesInSubtree) {
+static void propagateInsertUpwards(NodeLocation *nodeLocation,
+                                   VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                                   U32 len, U64 newMostBytesInSubtree) {
+    while (len > ROOT_NODE_INDEX_LEN) {
+        MMNode *node = getMMNode(nodeLocation, visitedNodes[len - 1].index);
+        if (node->data.mostBytesInSubtree >= newMostBytesInSubtree) {
             return;
         }
-        node->mostBytesInSubtree = newMostBytesInSubtree;
+        node->data.mostBytesInSubtree = newMostBytesInSubtree;
         len--;
     }
 }
 
-static void
-propagateDeleteUpwards(U64 deletedBytes,
-                       MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
-                       U32 end) {
+static void propagateDeleteUpwards(NodeLocation *nodeLocation,
+                                   VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                                   U32 len, U64 deletedBytes, U32 end) {
     while (len > end) {
-        MMNode *node = visitedNodes[len - 1].node;
-        recalculateMostBytes(node);
-        if (node->mostBytesInSubtree >= deletedBytes) {
+        MMNode *node = getMMNode(nodeLocation, visitedNodes[len - 1].index);
+        recalculateMostBytes(nodeLocation, node);
+        if (node->data.mostBytesInSubtree >= deletedBytes) {
             return;
         }
         len--;
     }
 }
 
-static void setMostBytesAfterRotation(void *prevRotationNode,
-                                      void *prevRotationChild) {
-    MMNode *previousRotationNode = prevRotationNode;
-    MMNode *previousRotationChild = prevRotationChild;
-    previousRotationChild->mostBytesInSubtree =
-        previousRotationNode->mostBytesInSubtree;
-    recalculateMostBytes(previousRotationNode);
+static void setMostBytesAfterRotation(NodeLocation *nodeLocation,
+                                      U32 prevRotationNode,
+                                      U32 prevRotationChild) {
+    MMNode *previousRotationNode = getMMNode(nodeLocation, prevRotationNode);
+    MMNode *previousRotationChild = getMMNode(nodeLocation, prevRotationChild);
+    previousRotationChild->data.mostBytesInSubtree =
+        previousRotationNode->data.mostBytesInSubtree;
+    recalculateMostBytes(nodeLocation, previousRotationNode);
 }
 
-static MMNode *deleteNodeInPath(MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                                U32 len, MMNode *toDelete) {
-    U32 stepsToSuccessor = findAdjacentInSteps(
-        (RedBlackNode *)toDelete, (CommonVisitedNode *)&visitedNodes[len],
-        RB_TREE_RIGHT);
+static U32 deleteNodeInPath(NodeLocation *nodeLocation,
+                            VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                            U32 len, U32 *tree, U32 toDelete) {
+    U32 stepsToSuccessor = findAdjacentInSteps(nodeLocation, &visitedNodes[len],
+                                               toDelete, RB_TREE_RIGHT);
+
+    MMNode *toDeleteNode = getMMNode(nodeLocation, toDelete);
     // If there is no right child, we can delete by having the parent of
     // toDelete now point to toDelete's left child instead of toDelete.
     if (!stepsToSuccessor) {
-        visitedNodes[len - 1].node->children[visitedNodes[len - 1].direction] =
-            toDelete->children[RB_TREE_LEFT];
-        propagateDeleteUpwards(toDelete->memory.bytes, visitedNodes, len,
-                               ROOT_NODE_ADDRESS_LEN);
+        getMMNode(nodeLocation, visitedNodes[len - 1].index)
+            ->header.children[visitedNodes[len - 1].direction] =
+            getMMNode(nodeLocation, visitedNodes[len - 1].index)
+                ->header.children[RB_TREE_LEFT];
+        propagateDeleteUpwards(nodeLocation, visitedNodes, len,
+                               toDeleteNode->data.memory.bytes,
+                               ROOT_NODE_INDEX_LEN);
     }
     // Swap the values of the node to delete with the values of the successor
-    // node and delete the successor node instead (now containing the values of
-    // the to delete node).
+    // node and delete the successor node instead (now containing the values
+    // of the to delete node).
     else {
         U32 upperNodeIndex = len + 1;
         len += stepsToSuccessor;
-        toDelete = visitedNodes[len - 1]
-                       .node->children[visitedNodes[len - 1].direction];
 
-        // Swap the values around. Naturally, the node pointers can be swapped
-        // too.
-        Memory memoryToKeep = toDelete->memory;
+        MMNode *nodeGettingNewChild =
+            getMMNode(nodeLocation, visitedNodes[len - 1].index);
+        toDelete = nodeGettingNewChild->header
+                       .children[visitedNodes[len - 1].direction];
 
-        toDelete->memory = visitedNodes[upperNodeIndex - 1].node->memory;
-        visitedNodes[upperNodeIndex - 1].node->memory = memoryToKeep;
+        // Swap the values around. Naturally, the node pointers can be
+        // swapped too. Just swapping memory here, mostBytesInSubtree will be
+        // updated after.
+        toDeleteNode = getMMNode(nodeLocation, toDelete);
+        MMNode *swapNode =
+            getMMNode(nodeLocation, visitedNodes[upperNodeIndex - 1].index);
 
-        visitedNodes[len - 1].node->children[visitedNodes[len - 1].direction] =
-            toDelete->children[RB_TREE_RIGHT];
+        Memory memoryToKeep = toDeleteNode->data.memory;
 
-        // In the first part, memoryToKeep got "deleted", i.e., moved higher in
-        // the subtree. When we reach the node where the memoryTokeep is now at,
+        toDeleteNode->data.memory = swapNode->data.memory;
+        swapNode->data.memory = memoryToKeep;
+
+        nodeGettingNewChild->header.children[visitedNodes[len - 1].direction] =
+            toDeleteNode->header.children[RB_TREE_RIGHT];
+
+        // In the first part, memoryToKeep got "deleted", i.e., moved higher
+        // in
+        // the subtree. When we reach the node where the memoryTokeep is now
+        //   at,
         // toDelete->memory got deleted.
-        propagateDeleteUpwards(memoryToKeep.bytes, visitedNodes, len,
-                               upperNodeIndex);
-        propagateDeleteUpwards(toDelete->memory.bytes, visitedNodes,
-                               upperNodeIndex, ROOT_NODE_ADDRESS_LEN);
+        propagateDeleteUpwards(nodeLocation, visitedNodes, len,
+                               memoryToKeep.bytes, upperNodeIndex);
+        propagateDeleteUpwards(nodeLocation, visitedNodes, upperNodeIndex,
+                               toDeleteNode->data.memory.bytes,
+                               ROOT_NODE_INDEX_LEN);
     }
 
-    // Fix the violations present by removing the toDelete node. Note that this
-    // node does not have to be the node that originally contained the value to
-    // be deleted.
-    if (toDelete->color == RB_TREE_BLACK) {
+    // Fix the violations present by removing the toDelete node. Note that
+    // this node does not have to be the node that originally contained the
+    // value to be deleted.
+    if (getColorWithPointer(&toDeleteNode->header) == RB_TREE_BLACK) {
         while (len >= 2) {
-            MMNode *childDeficitBlackDirection =
-                visitedNodes[len - 1]
-                    .node->children[visitedNodes[len - 1].direction];
+            U32 childDeficitBlackDirection =
+                getMMNode(nodeLocation, visitedNodes[len - 1].index)
+                    ->header.children[visitedNodes[len - 1].direction];
+            MMNode *childDeficitBlackDirectionNode =
+                getMMNode(nodeLocation, childDeficitBlackDirection);
             if (childDeficitBlackDirection &&
-                childDeficitBlackDirection->color == RB_TREE_RED) {
-                childDeficitBlackDirection->color = RB_TREE_BLACK;
+                getColorWithPointer(&childDeficitBlackDirectionNode->header) ==
+                    RB_TREE_RED) {
+                setColorWithPointer(&childDeficitBlackDirectionNode->header,
+                                    RB_TREE_BLACK);
                 break;
             }
 
-            len = rebalanceDelete(visitedNodes[len - 1].direction,
-                                  (VisitedNode *)visitedNodes, len,
+            len = rebalanceDelete(nodeLocation, visitedNodes, len, tree,
+                                  visitedNodes[len - 1].direction,
                                   setMostBytesAfterRotation);
         }
     }
@@ -128,197 +155,245 @@ static MMNode *deleteNodeInPath(MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
     return toDelete;
 }
 
-static void propogateInsertIfRequired(
-    MMNode *current, MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len) {
-    if (current->memory.bytes > current->mostBytesInSubtree) {
-        current->mostBytesInSubtree = current->memory.bytes;
-        propagateInsertUpwards(current->memory.bytes, visitedNodes, len);
+static void
+propogateInsertIfRequired(NodeLocation *nodeLocation,
+                          VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                          MMNode *current) {
+    if (current->data.memory.bytes > current->data.mostBytesInSubtree) {
+        current->data.mostBytesInSubtree = current->data.memory.bytes;
+        propagateInsertUpwards(nodeLocation, visitedNodes, len,
+                               current->data.memory.bytes);
     }
 }
 
-static MMNode *bridgeMerge(MMNode *current, U64 adjacentBytes,
-                           U32 adjacentSteps,
-                           MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                           U32 len) {
-    current->memory.bytes += adjacentBytes;
-    propogateInsertIfRequired(current, visitedNodes, len);
+static U32 bridgeMerge(NodeLocation *nodeLocation,
+                       VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                       U32 *tree, MMNode *current, U64 adjacentBytes,
+                       U32 adjacentSteps) {
+    current->data.memory.bytes += adjacentBytes;
+    propogateInsertIfRequired(nodeLocation, visitedNodes, len, current);
     U32 newLen = len + adjacentSteps;
+
+    U32 previousNewLen = newLen - 1;
+    MMNode *previousNewParent =
+        getMMNode(nodeLocation, visitedNodes[previousNewLen].index);
+
     return deleteNodeInPath(
-        visitedNodes, newLen,
-        visitedNodes[newLen - 1]
-            .node->children[visitedNodes[newLen - 1].direction]);
+        nodeLocation, visitedNodes, newLen, tree,
+        previousNewParent->header
+            .children[visitedNodes[previousNewLen].direction]);
 }
 
-static MMNode *beforeRegionMerge(MMNode *current, MMNode *createdNode,
-                                 MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                                 U32 len) {
-    current->memory.bytes += createdNode->memory.bytes;
+static U32 beforeRegionMerge(NodeLocation *nodeLocation,
+                             VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                             U32 len, U32 *tree, U32 current,
+                             MMNode *createdNode) {
+    MMNode *currentNode = getMMNode(nodeLocation, current);
+    currentNode->data.memory.bytes += createdNode->data.memory.bytes;
 
-    U32 predecessorSteps = findAdjacentInSteps(
-        (RedBlackNode *)current, (CommonVisitedNode *)&visitedNodes[len],
-        RB_TREE_LEFT);
+    U32 predecessorSteps = findAdjacentInSteps(nodeLocation, &visitedNodes[len],
+                                               current, RB_TREE_LEFT);
     if (predecessorSteps) {
+        U32 predecessorLen = len + predecessorSteps - 1;
+        MMNode *predecessorParent =
+            getMMNode(nodeLocation, visitedNodes[predecessorLen].index);
         MMNode *predecessor =
-            visitedNodes[len + predecessorSteps - 1]
-                .node
-                ->children[visitedNodes[len + predecessorSteps - 1].direction];
+            getMMNode(nodeLocation,
+                      predecessorParent->header
+                          .children[visitedNodes[predecessorLen].direction]);
         // | predecessor | created | current |
-        if (predecessor->memory.start + predecessor->memory.bytes ==
-            createdNode->memory.start) {
-            current->memory.start = predecessor->memory.start;
-            return bridgeMerge(current, predecessor->memory.bytes,
-                               predecessorSteps, visitedNodes, len);
+        if (predecessor->data.memory.start + predecessor->data.memory.bytes ==
+            createdNode->data.memory.start) {
+            currentNode->data.memory.start = predecessor->data.memory.start;
+            return bridgeMerge(nodeLocation, visitedNodes, len, tree,
+                               currentNode, predecessor->data.memory.bytes,
+                               predecessorSteps);
         }
     }
 
-    current->memory.start = createdNode->memory.start;
-    propogateInsertIfRequired(current, visitedNodes, len);
-    return nullptr;
+    currentNode->data.memory.start = createdNode->data.memory.start;
+    propogateInsertIfRequired(nodeLocation, visitedNodes, len, currentNode);
+    return 0;
 }
 
-static MMNode *afterRegionMerge(MMNode *current, MMNode *createdNode,
-                                U64 createdEnd,
-                                MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                                U32 len) {
-    current->memory.bytes += createdNode->memory.bytes;
+static U32 afterRegionMerge(NodeLocation *nodeLocation,
+                            VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
+                            U32 len, U32 *tree, U32 current,
+                            MMNode *createdNode, U64 createdEnd) {
+    MMNode *currentNode = getMMNode(nodeLocation, current);
+    currentNode->data.memory.bytes += createdNode->data.memory.bytes;
 
-    U32 successorSteps = findAdjacentInSteps(
-        (RedBlackNode *)current, (CommonVisitedNode *)&visitedNodes[len],
-        RB_TREE_RIGHT);
+    U32 successorSteps = findAdjacentInSteps(nodeLocation, &visitedNodes[len],
+                                             current, RB_TREE_RIGHT);
     if (successorSteps) {
-        MMNode *successor =
-            visitedNodes[len + successorSteps - 1]
-                .node
-                ->children[visitedNodes[len + successorSteps - 1].direction];
+        U32 successorLen = len + successorSteps - 1;
+        MMNode *successorParent =
+            getMMNode(nodeLocation, visitedNodes[successorLen].index);
+        MMNode *successor = getMMNode(
+            nodeLocation, successorParent->header
+                              .children[visitedNodes[successorLen].direction]);
         // | current | created | successor |
-        if (createdEnd == successor->memory.start) {
-            return bridgeMerge(current, successor->memory.bytes, successorSteps,
-                               visitedNodes, len);
+        if (createdEnd == successor->data.memory.start) {
+            return bridgeMerge(nodeLocation, visitedNodes, len, tree,
+                               currentNode, successor->data.memory.bytes,
+                               successorSteps);
         }
     }
 
-    propogateInsertIfRequired(current, visitedNodes, len);
-    return nullptr;
+    propogateInsertIfRequired(nodeLocation, visitedNodes, len, currentNode);
+
+    return 0;
 }
 
-InsertResult insertMMNode(MMNode **tree, MMNode *createdNode) {
-    InsertResult result = {0};
+InsertResult insertMMNode(MMTreeWithFreeList *treeWithFreeList,
+                          MMNode *createdNode) {
+    NodeLocation *nodeLocation = &treeWithFreeList->nodeLocation;
+    U32 *tree = treeWithFreeList->tree;
 
-    createdNode->children[RB_TREE_LEFT] = nullptr;
-    createdNode->children[RB_TREE_RIGHT] = nullptr;
+    InsertResult result = {.freed = {0}};
 
+    createdNode->header.children[RB_TREE_LEFT] = 0;
+    createdNode->header.children[RB_TREE_RIGHT] = 0;
+
+    U32 createdNodeIndex = getIndex(nodeLocation, createdNode);
     if (!(*tree)) {
-        createdNode->color = RB_TREE_BLACK;
-        createdNode->mostBytesInSubtree = createdNode->memory.bytes;
-        *tree = createdNode;
+        // NOTE: Set created node to black, is already done by setting children
+        // to 0
+        createdNode->data.mostBytesInSubtree = createdNode->data.memory.bytes;
+        *tree = createdNodeIndex;
         return result;
     }
 
     // Search
-    MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
+    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
+    U32 len;
+    initVisitedNodes(visitedNodes, &len);
 
-    visitedNodes[0].node = (MMNode *)tree;
-    visitedNodes[0].direction = RB_TREE_LEFT;
-    U32 len = 1;
-
-    MMNode *current = *tree;
-    U64 createdEnd = createdNode->memory.start + createdNode->memory.bytes;
+    U32 current = *tree;
+    MMNode *currentNode = getMMNode(nodeLocation, current);
+    U64 createdEnd =
+        createdNode->data.memory.start + createdNode->data.memory.bytes;
     while (1) {
-        U64 currentEnd = current->memory.start + current->memory.bytes;
+        U64 currentEnd =
+            currentNode->data.memory.start + currentNode->data.memory.bytes;
         // | created | current |
-        if (createdEnd == current->memory.start) {
-            result.freed[0] = createdNode;
-            result.freed[1] =
-                beforeRegionMerge(current, createdNode, visitedNodes, len);
+        if (createdEnd == currentNode->data.memory.start) {
+            result.freed[0] = getIndex(nodeLocation, createdNode);
+            result.freed[1] = beforeRegionMerge(nodeLocation, visitedNodes, len,
+                                                tree, current, createdNode);
             return result;
         }
         // | current | created |
-        else if (currentEnd == createdNode->memory.start) {
-            result.freed[0] = createdNode;
-            result.freed[1] = afterRegionMerge(current, createdNode, createdEnd,
-                                               visitedNodes, len);
+        else if (currentEnd == createdNode->data.memory.start) {
+            result.freed[0] = createdNodeIndex;
+            result.freed[1] =
+                afterRegionMerge(nodeLocation, visitedNodes, len, tree, current,
+                                 createdNode, createdEnd);
             return result;
         }
 
-        visitedNodes[len].node = current;
+        visitedNodes[len].index = current;
         visitedNodes[len].direction = calculateDirection(
-            createdNode->memory.start, current->memory.start);
+            createdNode->data.memory.start, currentNode->data.memory.start);
         len++;
 
-        MMNode *next = current->children[visitedNodes[len - 1].direction];
+        U32 next =
+            currentNode->header.children[visitedNodes[len - 1].direction];
         if (!next) {
             break;
         }
+
         current = next;
+        currentNode = getMMNode(nodeLocation, current);
     }
 
     // Insert
-    createdNode->color = RB_TREE_RED;
-    createdNode->mostBytesInSubtree = createdNode->memory.bytes;
-    current->children[visitedNodes[len - 1].direction] = createdNode;
-    propagateInsertUpwards(createdNode->memory.bytes, visitedNodes, len);
+    setColorWithPointer(&createdNode->header, RB_TREE_RED);
+    createdNode->data.mostBytesInSubtree = createdNode->data.memory.bytes;
+    currentNode->header.children[visitedNodes[len - 1].direction] =
+        createdNodeIndex;
+    propagateInsertUpwards(nodeLocation, visitedNodes, len,
+                           createdNode->data.memory.bytes);
 
     // NOTE: we should never be looking at [len - 1].direction!
-    visitedNodes[len].node = createdNode;
+    visitedNodes[len].index = createdNodeIndex;
     len++;
 
     // Check for violations
-    while (len >= 4 && visitedNodes[len - 2].node->color == RB_TREE_RED) {
-        len = rebalanceInsert(visitedNodes[len - 3].direction, visitedNodes,
-                              len, setMostBytesAfterRotation);
+    while (len >= 4 &&
+           getColor(nodeLocation, visitedNodes[len - 2].index) == RB_TREE_RED) {
+        len = rebalanceInsert(nodeLocation, visitedNodes, len, tree,
+                              visitedNodes[len - 3].direction,
+                              setMostBytesAfterRotation);
     }
 
-    (*tree)->color = RB_TREE_BLACK;
+    setColor(nodeLocation, *tree, RB_TREE_BLACK);
 
     return result;
 }
 
-MMNode *deleteAtLeastMMNode(MMNode **tree, U64 bytes) {
-    if (!(*tree) || (*tree)->mostBytesInSubtree < bytes) {
-        return nullptr;
+U32 deleteAtLeastMMNode(MMTreeWithFreeList *treeWithFreeList, U64 bytes) {
+    NodeLocation *nodeLocation = &treeWithFreeList->nodeLocation;
+    U32 *tree = treeWithFreeList->tree;
+
+    if (!*tree) {
+        return 0;
     }
 
-    MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
+    MMNode *treeNode = getMMNode(nodeLocation, *tree);
+    if (treeNode->data.mostBytesInSubtree < bytes) {
+        return 0;
+    }
 
-    visitedNodes[0].node = (MMNode *)tree;
-    visitedNodes[0].direction = RB_TREE_LEFT;
-    U32 len = 1;
+    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
+    U32 len;
+    initVisitedNodes(visitedNodes, &len);
 
-    U64 bestSoFar = (*tree)->mostBytesInSubtree;
+    U64 bestSoFar = treeNode->data.mostBytesInSubtree;
     U32 bestWithVisitedNodesLen = 0;
 
-    for (MMNode *potential = *tree; potential;) {
-        if (potential->memory.bytes >= bytes &&
-            potential->memory.bytes <= bestSoFar) {
-            bestSoFar = potential->memory.bytes;
+    U32 potentialIndex = *tree;
+    for (MMNode *potential = treeNode; potential;) {
+        if (potential->data.memory.bytes >= bytes &&
+            potential->data.memory.bytes <= bestSoFar) {
+            bestSoFar = potential->data.memory.bytes;
             bestWithVisitedNodesLen = len;
         }
 
-        visitedNodes[len].node = potential;
+        visitedNodes[len].index = potentialIndex;
 
-        MMNode *leftChild = potential->children[RB_TREE_LEFT];
-        MMNode *rightChild = potential->children[RB_TREE_RIGHT];
+        U32 leftChildIndex = potential->header.children[RB_TREE_LEFT];
+        MMNode *leftChild = getMMNode(nodeLocation, leftChildIndex);
+        U32 rightChildIndex = potential->header.children[RB_TREE_RIGHT];
+        MMNode *rightChild = getMMNode(nodeLocation, rightChildIndex);
 
-        if (leftChild && leftChild->mostBytesInSubtree >= bytes) {
-            if (rightChild && rightChild->mostBytesInSubtree >= bytes &&
-                rightChild->mostBytesInSubtree <
-                    leftChild->mostBytesInSubtree) {
+        if (leftChild && leftChild->data.mostBytesInSubtree >= bytes) {
+            if (rightChild && rightChild->data.mostBytesInSubtree >= bytes &&
+                rightChild->data.mostBytesInSubtree <
+                    leftChild->data.mostBytesInSubtree) {
                 visitedNodes[len].direction = RB_TREE_RIGHT;
+                potentialIndex = rightChildIndex;
+                potential = rightChild;
             } else {
                 visitedNodes[len].direction = RB_TREE_LEFT;
+                potentialIndex = leftChildIndex;
+                potential = leftChild;
             }
         } else {
-            if (rightChild && rightChild->mostBytesInSubtree >= bytes) {
+            if (rightChild && rightChild->data.mostBytesInSubtree >= bytes) {
                 visitedNodes[len].direction = RB_TREE_RIGHT;
+                potentialIndex = rightChildIndex;
+                potential = rightChild;
             } else {
                 break;
             }
         }
 
-        potential = potential->children[visitedNodes[len].direction];
         len++;
     }
 
-    return deleteNodeInPath(visitedNodes, bestWithVisitedNodesLen,
-                            visitedNodes[bestWithVisitedNodesLen].node);
+    U32 deletedNodeIndex =
+        deleteNodeInPath(nodeLocation, visitedNodes, bestWithVisitedNodesLen,
+                         tree, visitedNodes[bestWithVisitedNodesLen].index);
+    return deletedNodeIndex;
 }

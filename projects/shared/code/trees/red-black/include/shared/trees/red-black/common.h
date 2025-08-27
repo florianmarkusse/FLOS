@@ -1,50 +1,89 @@
 #ifndef SHARED_TREES_RED_BLACK_COMMON_H
 #define SHARED_TREES_RED_BLACK_COMMON_H
 
+#include "shared/types/array-types.h"
 #include "shared/types/array.h"
 #include "shared/types/numeric.h"
+
 typedef enum { RB_TREE_BLACK = 0, RB_TREE_RED = 1 } RedBlackColor;
 typedef enum { RB_TREE_LEFT = 0, RB_TREE_RIGHT = 1 } RedBlackDirection;
 
 static constexpr auto RB_TREE_CHILD_COUNT = 2;
 static constexpr auto RB_TREE_MAX_HEIGHT = 128;
 
+// TODO: make this a function pointer too?
 RedBlackDirection calculateDirection(U64 value, U64 toCompare);
 
-// TODO: Having color here as the second argument causes some likely extra
-// padding in structs that is unneeded. However, for the polymorphism to work,
-// we need it for now. Later, can be looked into how to make this work with the
-// polymorphism and the freedom to pack the struct as efficiently as possible
 typedef struct RedBlackNode RedBlackNode;
 struct RedBlackNode {
-    RedBlackNode *
-        children[RB_TREE_CHILD_COUNT]; // NOTE: Keep this as the first elements.
-                                       // This is used in the insert so that
-                                       // children->[0] and a RedBlackNode* are
-                                       // the same location for doing inserts.
-    RedBlackColor color;               // NOTE: Keep this as the second element
+    // NOTE: Packing the children and color into 8 bytes.
+    // bit 0  - 30: low child index
+    // bit 32 - 62: high child index
+    // bit 63:      node color
+    // Don't directly access the metaData field, go through the functions
+    U64 metaData;
 };
 
+// TODO: do the same trick here too! Use the top bit for the direction, since
+// the index is 31-bit at max anyway
 typedef struct {
-    RedBlackNode *node;
+    U32 index;
     RedBlackDirection direction;
-} CommonVisitedNode;
+} VisitedNode;
 
-typedef void (*RotationUpdater)(void *rotationNode, void *rotationChild);
+typedef struct {
+    U8 *base;
+    U32 elementSizeBytes;
+} NodeLocation;
 
-U32 rebalanceInsert(RedBlackDirection direction,
-                    CommonVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+#define TREE_WITH_FREELIST(T)                                                  \
+    struct {                                                                   \
+        T##_max_a nodes;                                                       \
+        U32 *tree;                                                             \
+        U32_max_a freeList;                                                    \
+        NodeLocation nodeLocation;                                             \
+    }
+
+typedef TREE_WITH_FREELIST(void) TreeWithFreeList;
+
+typedef void (*RotationUpdater)(NodeLocation *nodeLocation, U32 rotationNode,
+                                U32 rotationChild);
+
+U32 getIndex(NodeLocation *nodeLocation, void *node);
+RedBlackNode *getNode(NodeLocation *nodeLocation, U32 index);
+
+void childNodePointerSet(RedBlackNode *parentNode, RedBlackDirection direction,
+                         U32 childIndex);
+void childNodeIndexSet(NodeLocation *nodeLocation, U32 parent,
+                       RedBlackDirection direction, U32 childIndex);
+
+U32 childNodePointerGet(RedBlackNode *parentNode, RedBlackDirection direction);
+U32 childNodeIndexGet(NodeLocation *nodeLocation, U32 parent,
+                      RedBlackDirection direction);
+
+void setColor(NodeLocation *nodeLocation, U32 index, RedBlackColor color);
+void setColorWithPointer(RedBlackNode *node, RedBlackColor color);
+
+RedBlackColor getColor(NodeLocation *nodeLocation, U32 index);
+RedBlackColor getColorWithPointer(RedBlackNode *node);
+
+U32 childIndexGet(NodeLocation *nodeLocation, U32 parent,
+                  RedBlackDirection direction);
+
+U32 rebalanceInsert(NodeLocation *nodeLocation,
+                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                    U32 *tree, RedBlackDirection direction,
                     RotationUpdater rotationUpdater);
-U32 rebalanceDelete(RedBlackDirection direction,
-                    CommonVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+U32 rebalanceDelete(NodeLocation *nodeLocation,
+                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                    U32 *tree, RedBlackDirection direction,
                     RotationUpdater rotationUpdater);
 
-void rotateAround(RedBlackNode *rotationParent, RedBlackNode *rotationNode,
-                  RedBlackNode *rotationChild,
+void rotateAround(NodeLocation *nodeLocation, U32 *tree, U32 rotationParent,
+                  U32 rotationNode, U32 rotationChild,
                   RedBlackDirection rotationDirection,
                   RedBlackDirection parentToChildDirection);
-
-U32 findAdjacentInSteps(RedBlackNode *node, CommonVisitedNode *visitedNodes,
-                        RedBlackDirection direction);
+U32 findAdjacentInSteps(NodeLocation *nodeLocation, VisitedNode *visitedNodes,
+                        U32 node, RedBlackDirection direction);
 
 #endif

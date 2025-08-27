@@ -14,8 +14,6 @@ void *allocateIdentityMemory(U64 bytes, U64_pow2 align) {
 
 void freeIdentityMemory(Memory memory) { freePhysicalMemory(memory); }
 
-// NOTE: in subsequent iteration, we should only allow power of 2's for
-// requests, minimum of virtual page size
 void *allocateMappableMemory(U64 bytes, U64_pow2 align, U64_pow2 mappingSize) {
     ASSERT(isPowerOf2(align));
     ASSERT(isPowerOf2(mappingSize));
