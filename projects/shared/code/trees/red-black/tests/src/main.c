@@ -21,15 +21,16 @@ int main() {
         PFLUSH_AFTER(STDERR) {
             ERROR(STRING("Failed to allocate memory!\n"));
             ERROR(STRING("Error code: "));
-            ERROR(errno, NEWLINE);
+            ERROR(errno, .flags = NEWLINE);
             ERROR(STRING("Error message: "));
-            ERROR(STRING_LEN(strerror(errno), strlen(strerror(errno))),
-                  NEWLINE);
+            ERROR(STRING_LEN(strerror(errno), (U32)strlen(strerror(errno))),
+                  .flags = NEWLINE);
         }
         return -1;
     }
-    Arena arena =
-        (Arena){.curFree = begin, .beg = begin, .end = begin + MEMORY_CAP};
+    Arena arena = (Arena){.curFree = (U8 *)begin,
+                          .beg = (U8 *)begin,
+                          .end = ((U8 *)begin) + MEMORY_CAP};
     if (setjmp(arena.jmpBuf)) {
         PFLUSH_AFTER(STDERR) { ERROR(STRING("Ran out of memory!\n")); }
     }
@@ -37,7 +38,7 @@ int main() {
     testSuiteStart(STRING("Red-Black Trees"));
 
     testBasicRedBlackTrees(arena);
-    // testMemoryManagerRedBlackTrees(arena);
+    testMemoryManagerRedBlackTrees(arena);
 
     return testSuiteFinish();
 }

@@ -28,13 +28,15 @@ getAvailableMemory(MMTreeWithFreeList *treeWithFreeList) {
         result.nodes++;
         result.memory += poppedNode->data.memory.bytes;
 
-        U32 leftChildIndex = poppedNode->header.children[RB_TREE_LEFT];
+        U32 leftChildIndex =
+            childNodePointerGet(&poppedNode->header, RB_TREE_LEFT);
         if (leftChildIndex) {
             queue[len] = leftChildIndex;
             len++;
         }
 
-        U32 rightChildIndex = poppedNode->header.children[RB_TREE_RIGHT];
+        U32 rightChildIndex =
+            childNodePointerGet(&poppedNode->header, RB_TREE_RIGHT);
         if (rightChildIndex) {
             queue[len] = rightChildIndex;
             len++;

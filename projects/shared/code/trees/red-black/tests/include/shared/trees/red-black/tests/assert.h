@@ -6,7 +6,7 @@
 #include "shared/trees/red-black/common.h"
 #include "shared/types/numeric.h"
 
-static constexpr auto MAX_NODES_IN_TREE = 1024;
+static constexpr auto MAX_NODES_IN_TREE = 16384;
 
 typedef enum {
     RED_BLACK_VIRTUAL_MEMORY_MAPPER,

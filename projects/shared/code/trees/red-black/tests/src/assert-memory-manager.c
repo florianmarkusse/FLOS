@@ -21,13 +21,13 @@ static void inOrderTraversalFillValues(NodeLocation *nodeLocation, U32 node,
 
     RedBlackNode *treeNode = getNode(nodeLocation, node);
 
-    inOrderTraversalFillValues(nodeLocation, treeNode->children[RB_TREE_LEFT],
-                               values);
+    inOrderTraversalFillValues(
+        nodeLocation, childNodePointerGet(treeNode, RB_TREE_LEFT), values);
     values->buf[values->len] = (NodeIndexMemory){
         .index = node, .memory = getMMNode(nodeLocation, node)->data.memory};
     values->len++;
-    inOrderTraversalFillValues(nodeLocation, treeNode->children[RB_TREE_RIGHT],
-                               values);
+    inOrderTraversalFillValues(
+        nodeLocation, childNodePointerGet(treeNode, RB_TREE_RIGHT), values);
 }
 
 static void appendExpectedValuesAndTreeValues(Memory_max_a expectedValues,
@@ -109,10 +109,11 @@ static U64 mostBytes(NodeLocation *nodeLocation, U32 node) {
     }
 
     MMNode *treeNode = getMMNode(nodeLocation, node);
-    return MAX(
-        treeNode->data.memory.bytes,
-        mostBytes(nodeLocation, treeNode->header.children[RB_TREE_LEFT]),
-        mostBytes(nodeLocation, treeNode->header.children[RB_TREE_RIGHT]));
+    return MAX(treeNode->data.memory.bytes,
+               mostBytes(nodeLocation,
+                         childNodePointerGet(&treeNode->header, RB_TREE_LEFT)),
+               mostBytes(nodeLocation, childNodePointerGet(&treeNode->header,
+                                                           RB_TREE_RIGHT)));
 }
 
 static void assertCorrectMostBytesInSubtreeValue(NodeLocation *nodeLocation,
@@ -131,9 +132,11 @@ static void assertCorrectMostBytesInSubtreeValue(NodeLocation *nodeLocation,
     }
 
     assertCorrectMostBytesInSubtreeValue(
-        nodeLocation, tree, theNode->header.children[RB_TREE_LEFT]);
+        nodeLocation, tree,
+        childNodePointerGet(&theNode->header, RB_TREE_LEFT));
     assertCorrectMostBytesInSubtreeValue(
-        nodeLocation, tree, theNode->header.children[RB_TREE_RIGHT]);
+        nodeLocation, tree,
+        childNodePointerGet(&theNode->header, RB_TREE_LEFT));
 }
 
 static void assertCorrectMostBytesTree(NodeLocation *nodeLocation, U32 tree) {
@@ -149,7 +152,8 @@ static void assertPrevNodeSmaller(NodeLocation *nodeLocation, U32 tree,
     MMNode *theNode = getMMNode(nodeLocation, node);
 
     assertPrevNodeSmaller(nodeLocation, tree,
-                          theNode->header.children[RB_TREE_LEFT], prevEnd);
+                          childNodePointerGet(&theNode->header, RB_TREE_LEFT),
+                          prevEnd);
 
     if (*prevEnd && theNode->data.memory.start <= *prevEnd) {
         TEST_FAILURE {
@@ -162,7 +166,8 @@ static void assertPrevNodeSmaller(NodeLocation *nodeLocation, U32 tree,
     *prevEnd = theNode->data.memory.start + theNode->data.memory.bytes;
 
     assertPrevNodeSmaller(nodeLocation, tree,
-                          theNode->header.children[RB_TREE_RIGHT], prevEnd);
+                          childNodePointerGet(&theNode->header, RB_TREE_RIGHT),
+                          prevEnd);
 }
 
 static void assertNoNodeOverlap(NodeLocation *nodeLocation, U32 tree) {

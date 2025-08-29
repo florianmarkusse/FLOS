@@ -10,6 +10,7 @@
 #include "shared/trees/red-black/memory-manager.h"
 #include "shared/trees/red-black/tests/assert-basic.h"
 #include "shared/trees/red-black/tests/assert.h"
+#include "shared/trees/red-black/tests/red-black/common.h"
 #include "shared/trees/red-black/virtual-mapping-manager.h"
 
 typedef enum { INSERT, DELETE, DELETE_AT_LEAST } OperationType;
@@ -34,9 +35,15 @@ static TreeOperation insert2[] = {{100, INSERT}, {50, INSERT}, {25, INSERT},
                                   {60, INSERT},  {80, INSERT}, {90, INSERT},
                                   {30, INSERT},  {20, INSERT}};
 static TreeOperation insert3[] = {
-    {1999, INSERT}, {2021, INSERT}, {100, INSERT}, {300, INSERT},
-    {150, INSERT},  {1200, INSERT}, {50, INSERT},  {987, INSERT},
-    {6000, INSERT}, {5678, INSERT}};
+    {1999, INSERT}, {2021, INSERT}, {100, INSERT},  {300, INSERT},
+    {150, INSERT},  {1200, INSERT}, {50, INSERT},   {987, INSERT},
+    {6000, INSERT}, {5678, INSERT}, {7000, INSERT}, {8000, INSERT},
+    {9000, INSERT}, {9001, INSERT}, {9002, INSERT}, {9003, INSERT},
+    {9004, INSERT}, {9005, INSERT}, {9006, INSERT}, {9007, INSERT},
+    {9008, INSERT}, {9009, INSERT}, {9010, INSERT}, {9011, INSERT},
+    {9012, INSERT}, {9013, INSERT}, {9014, INSERT}, {9015, INSERT},
+    {9016, INSERT}, {9017, INSERT}, {9018, INSERT}, {9019, INSERT},
+};
 static TreeOperation_a inserts[] = {
     {.buf = insert1, .len = COUNTOF(insert1)},
     {.buf = insert2, .len = COUNTOF(insert2)},
@@ -58,10 +65,21 @@ static TreeOperation insertDelete3[] = {
     {215, INSERT}, {778, INSERT}, {144, INSERT}, {310, INSERT}, {188, INSERT},
     {50, INSERT},  {25, INSERT},  {563, INSERT}, {137, INSERT}, {980, INSERT},
     {249, INSERT}, {500, INSERT}, {215, DELETE}, {144, DELETE}, {980, DELETE}};
+static TreeOperation insertDelete4[] = {{100, INSERT}, {100, DELETE}};
+static TreeOperation insertDelete5[] = {
+    {100, INSERT}, {75, INSERT}, {100, DELETE}};
+static TreeOperation insertDelete6[] = {
+    {100, INSERT}, {125, INSERT}, {100, DELETE}};
+static TreeOperation insertDelete7[] = {
+    {100, INSERT}, {125, INSERT}, {75, INSERT}, {100, DELETE}};
 static TreeOperation_a insertsAndDeletes[] = {
     {.buf = insertDelete1, .len = COUNTOF(insertDelete1)},
     {.buf = insertDelete2, .len = COUNTOF(insertDelete2)},
     {.buf = insertDelete3, .len = COUNTOF(insertDelete3)},
+    {.buf = insertDelete4, .len = COUNTOF(insertDelete4)},
+    {.buf = insertDelete5, .len = COUNTOF(insertDelete5)},
+    {.buf = insertDelete6, .len = COUNTOF(insertDelete6)},
+    {.buf = insertDelete7, .len = COUNTOF(insertDelete7)},
 };
 static constexpr auto INSERTS_AND_DELETES_TEST_CASES_LEN =
     COUNTOF(insertsAndDeletes);
@@ -244,21 +262,6 @@ static TreeOperation_a mixed[] = {
 static constexpr auto MIXED_TEST_CASES_LEN = COUNTOF(mixed);
 static TestCases mixedTestCases = {.buf = mixed, .len = MIXED_TEST_CASES_LEN};
 
-static VMMNode *getFromNodes(VMMNode_max_a *nodes) {
-    if (nodes->len == nodes->cap) {
-        TEST_FAILURE {
-            INFO(STRING("Tree contains too many nodes to fit in nodes array. "
-                        "Increase max size or decrease nodes "
-                        "in Red-Black tree. Current maximum size: "));
-            INFO(MAX_NODES_IN_TREE, .flags = NEWLINE);
-        }
-    }
-
-    VMMNode *result = &nodes->buf[nodes->len];
-    nodes->len++;
-    return result;
-}
-
 static void testTree(TreeOperation_a operations, Arena scratch) {
     U32 tree = 0;
     VMMTreeWithFreeList treeWithFreeList = {
@@ -285,11 +288,12 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
     for (U64 i = 0; i < operations.len; i++) {
         switch (operations.buf[i].type) {
         case INSERT: {
-            VMMNode *createdNode = getFromNodes(&treeWithFreeList.nodes);
+            VMMNode *createdNode =
+                getFromNodes((TreeWithFreeList *)&treeWithFreeList);
             createdNode->data.memory.start = operations.buf[i].value;
-            // Not testing merging here.
             createdNode->data.memory.bytes = 1;
             createdNode->data.mappingSize = 4096;
+
             (void)insertVMMNode(&treeWithFreeList, createdNode);
 
             if (expectedValues.len >= MAX_NODES_IN_TREE) {

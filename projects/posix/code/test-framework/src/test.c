@@ -28,7 +28,7 @@ static void addTopic(String topic) {
 
 static void appendSpaces() {
     for (typeof(nextTestTopic) i = 0; i < nextTestTopic - 1; i++) {
-        PLOG((STRING("  ")));
+        PLOG(STRING("  "));
     }
 }
 

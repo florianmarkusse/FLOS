@@ -1,5 +1,6 @@
 #include "shared/trees/red-black/tests/assert.h"
 #include "abstraction/log.h"
+#include "posix/log.h"
 #include "posix/test-framework/test.h"
 #include "shared/log.h"
 #include "shared/trees/red-black/memory-manager.h"
@@ -13,7 +14,7 @@ static void printTreeIndented(NodeLocation *nodeLocation, U32 node, int depth,
     }
 
     printTreeIndented(nodeLocation,
-                      getNode(nodeLocation, node)->children[RB_TREE_RIGHT],
+                      childNodeIndexGet(nodeLocation, node, RB_TREE_RIGHT),
                       depth + 1, STRING("R---"), badNode, treeType);
 
     for (int i = 0; i < depth; i++) {
@@ -52,8 +53,8 @@ static void printTreeIndented(NodeLocation *nodeLocation, U32 node, int depth,
 
     INFO(STRING("\n"));
 
-    printTreeIndented(nodeLocation, treeNode->children[RB_TREE_LEFT], depth + 1,
-                      STRING("L---"), badNode, treeType);
+    printTreeIndented(nodeLocation, childNodePointerGet(treeNode, RB_TREE_LEFT),
+                      depth + 1, STRING("L---"), badNode, treeType);
 }
 
 void appendRedBlackTreeWithBadNode(NodeLocation *nodeLocation, U32 tree,
@@ -75,8 +76,9 @@ U32 nodeCount(NodeLocation *nodeLocation, U32 tree, RedBlackTreeType treeType) {
         len--;
         result++;
 
-        for (U32 i = 0; i < RB_TREE_CHILD_COUNT; i++) {
-            if (node->children[i]) {
+        for (RedBlackDirection i = 0; i < RB_TREE_CHILD_COUNT; i++) {
+            U32 childIndex = childNodePointerGet(node, i);
+            if (childIndex) {
                 if (len > RB_TREE_MAX_HEIGHT) {
                     TEST_FAILURE {
                         INFO(STRING(
@@ -85,7 +87,7 @@ U32 nodeCount(NodeLocation *nodeLocation, U32 tree, RedBlackTreeType treeType) {
                                                       treeType);
                     }
                 }
-                buffer[len] = node->children[i];
+                buffer[len] = childIndex;
                 len++;
             }
         }
@@ -96,9 +98,8 @@ U32 nodeCount(NodeLocation *nodeLocation, U32 tree, RedBlackTreeType treeType) {
 
 static bool redParentHasRedChild(NodeLocation *nodeLocation, U32 node,
                                  RedBlackDirection direction) {
-    RedBlackNode *treeNode = getNode(nodeLocation, node);
-    if (treeNode->children[direction] &&
-        getColor(nodeLocation, treeNode->children[direction]) == RB_TREE_RED) {
+    U32 childIndex = childNodeIndexGet(nodeLocation, node, direction);
+    if (childIndex && getColor(nodeLocation, childIndex) == RB_TREE_RED) {
         return true;
     }
 
@@ -127,10 +128,11 @@ void assertNoRedNodeHasRedChild(NodeLocation *nodeLocation, U32 tree, U32 nodes,
             }
         }
 
-        for (U32 i = 0; i < RB_TREE_CHILD_COUNT; i++) {
-            RedBlackNode *treeNode = getNode(nodeLocation, node);
-            if (treeNode->children[i]) {
-                buffer[len] = treeNode->children[i];
+        RedBlackNode *treeNode = getNode(nodeLocation, node);
+        for (RedBlackDirection i = 0; i < RB_TREE_CHILD_COUNT; i++) {
+            U32 childIndex = childNodePointerGet(treeNode, i);
+            if (childIndex) {
+                buffer[len] = childIndex;
                 len++;
             }
         }
@@ -148,12 +150,12 @@ static void collectBlackHeightsForEachPath(NodeLocation *nodeLocation, U32 node,
             current++;
         }
 
-        collectBlackHeightsForEachPath(nodeLocation,
-                                       treeNode->children[RB_TREE_LEFT],
-                                       blackHeights, current);
-        collectBlackHeightsForEachPath(nodeLocation,
-                                       treeNode->children[RB_TREE_RIGHT],
-                                       blackHeights, current);
+        collectBlackHeightsForEachPath(
+            nodeLocation, childNodePointerGet(treeNode, RB_TREE_LEFT),
+            blackHeights, current);
+        collectBlackHeightsForEachPath(
+            nodeLocation, childNodePointerGet(treeNode, RB_TREE_RIGHT),
+            blackHeights, current);
     }
 }
 
@@ -197,9 +199,10 @@ void assertPathsFromNodeHaveSameBlackHeight(NodeLocation *nodeLocation,
         }
 
         RedBlackNode *treeNode = getNode(nodeLocation, node);
-        for (U32 i = 0; i < RB_TREE_CHILD_COUNT; i++) {
-            if (treeNode->children[i]) {
-                buffer[len] = treeNode->children[i];
+        for (RedBlackDirection i = 0; i < RB_TREE_CHILD_COUNT; i++) {
+            U32 childIndex = childNodePointerGet(treeNode, i);
+            if (childIndex) {
+                buffer[len] = childIndex;
                 len++;
             }
         }

@@ -1,15 +1,9 @@
 #include "shared/trees/red-black/common.h"
 
-static constexpr auto RED_BLACK_COLOR_MASK = (1ULL << 63);
-
-typedef struct {
-    U64 mask;
-    U8 shift;
-} MaskAndShift;
-
-static constexpr MaskAndShift RED_BLACK_CHILDREN[RB_TREE_CHILD_COUNT] = {
-    {.mask = (U32_MAX - 1ULL) << 0, .shift = 0},
-    {.mask = (U32_MAX - 1ULL) << 32, .shift = 32}};
+// Just need a consistent index. Using 0 or 1 as index value works.
+static constexpr auto RED_BLACK_COLOR_INDEX = 0;
+static constexpr auto RED_BLACK_COLOR_SHIFT = 31;
+static constexpr auto RED_BLACK_COLOR_MASK = (1ULL << RED_BLACK_COLOR_SHIFT);
 
 U32 getIndex(NodeLocation *nodeLocation, void *node) {
     U64 difference = (U64)(((U8 *)node) - (nodeLocation->base));
@@ -23,9 +17,9 @@ RedBlackNode *getNode(NodeLocation *nodeLocation, U32 index) {
 
 void setColorWithPointer(RedBlackNode *node, RedBlackColor color) {
     if (color == RB_TREE_BLACK) {
-        node->metaData &= (~RED_BLACK_COLOR_MASK);
+        node->metaData[RED_BLACK_COLOR_INDEX] &= (~RED_BLACK_COLOR_MASK);
     } else {
-        node->metaData |= RED_BLACK_COLOR_MASK;
+        node->metaData[RED_BLACK_COLOR_INDEX] |= RED_BLACK_COLOR_MASK;
     }
 }
 
@@ -34,7 +28,8 @@ void setColor(NodeLocation *nodeLocation, U32 index, RedBlackColor color) {
 }
 
 RedBlackColor getColorWithPointer(RedBlackNode *node) {
-    return (RedBlackColor)(node->metaData & RED_BLACK_COLOR_MASK);
+    return (RedBlackColor)(node->metaData[RED_BLACK_COLOR_INDEX] >>
+                           RED_BLACK_COLOR_SHIFT);
 }
 
 RedBlackColor getColor(NodeLocation *nodeLocation, U32 index) {
@@ -43,9 +38,8 @@ RedBlackColor getColor(NodeLocation *nodeLocation, U32 index) {
 
 void childNodePointerSet(RedBlackNode *parentNode, RedBlackDirection direction,
                          U32 childIndex) {
-    MaskAndShift childValueMask = RED_BLACK_CHILDREN[direction];
-    parentNode->metaData &= (~childValueMask.mask);
-    parentNode->metaData |= ((U64)(childIndex << childValueMask.shift));
+    parentNode->metaData[direction] =
+        (parentNode->metaData[direction] & RED_BLACK_COLOR_MASK) | childIndex;
 }
 
 void childNodeIndexSet(NodeLocation *nodeLocation, U32 parent,
@@ -55,9 +49,7 @@ void childNodeIndexSet(NodeLocation *nodeLocation, U32 parent,
 }
 
 U32 childNodePointerGet(RedBlackNode *parentNode, RedBlackDirection direction) {
-    MaskAndShift childValueMask = RED_BLACK_CHILDREN[direction];
-    U64 maskedChildIndex = parentNode->metaData & childValueMask.mask;
-    return (U32)(maskedChildIndex >> childValueMask.shift);
+    return parentNode->metaData[direction] & (~RED_BLACK_COLOR_MASK);
 }
 
 U32 childNodeIndexGet(NodeLocation *nodeLocation, U32 parent,
@@ -74,7 +66,7 @@ U32 rebalanceInsert(NodeLocation *nodeLocation,
     U32 parent = visitedNodes[len - 2].index;
     U32 node = visitedNodes[len - 1].index;
 
-    U32 uncle = childIndexGet(nodeLocation, grandParent, !direction);
+    U32 uncle = childNodeIndexGet(nodeLocation, grandParent, !direction);
     if (uncle && getColor(nodeLocation, uncle) == RB_TREE_RED) {
         setColor(nodeLocation, uncle, RB_TREE_BLACK);
         setColor(nodeLocation, parent, RB_TREE_BLACK);
@@ -95,8 +87,8 @@ U32 rebalanceInsert(NodeLocation *nodeLocation,
             rotationUpdater(nodeLocation, parent, node);
         }
 
-        node = childIndexGet(nodeLocation, node, direction);
-        parent = childIndexGet(nodeLocation, grandParent, direction);
+        node = childNodeIndexGet(nodeLocation, node, direction);
+        parent = childNodeIndexGet(nodeLocation, grandParent, direction);
     }
 
     //      x           y
@@ -113,8 +105,6 @@ U32 rebalanceInsert(NodeLocation *nodeLocation,
         rotationUpdater(nodeLocation, grandParent, parent);
     }
 
-    *tree = visitedNodes[0].index;
-
     return 0;
 }
 
@@ -130,7 +120,7 @@ U32 rebalanceDelete(NodeLocation *nodeLocation,
                     U32 *tree, RedBlackDirection direction,
                     RotationUpdater rotationUpdater) {
     U32 node = visitedNodes[len - 1].index;
-    U32 childOtherDirection = childIndexGet(nodeLocation, node, !direction);
+    U32 childOtherDirection = childNodeIndexGet(nodeLocation, node, !direction);
     // Ensure the other child is colored black, we "push" the problem a level
     // down in the process.
     //                       x(B)              y(B)
@@ -160,13 +150,13 @@ U32 rebalanceDelete(NodeLocation *nodeLocation,
         visitedNodes[len].direction = direction;
         len++;
 
-        childOtherDirection = childIndexGet(nodeLocation, node, !direction);
+        childOtherDirection = childNodeIndexGet(nodeLocation, node, !direction);
     }
 
     U32 innerChildOtherDirection =
-        childIndexGet(nodeLocation, childOtherDirection, direction);
+        childNodeIndexGet(nodeLocation, childOtherDirection, direction);
     U32 outerChildOtherDirection =
-        childIndexGet(nodeLocation, childOtherDirection, !direction);
+        childNodeIndexGet(nodeLocation, childOtherDirection, !direction);
     // Bubble up the problem by 1 level.
     if (((!innerChildOtherDirection) ||
          getColor(nodeLocation, innerChildOtherDirection) == RB_TREE_BLACK) &&
@@ -247,9 +237,14 @@ void rotateAround(NodeLocation *nodeLocation, U32 *tree, U32 rotationParent,
                       childNodePointerGet(rotationChildPtr, rotationDirection));
     childNodePointerSet(rotationChildPtr, rotationDirection, rotationNode);
     if (rotationParent) {
-        RedBlackNode *rotationParentPtr = getNode(nodeLocation, rotationParent);
-        childNodePointerSet(rotationParentPtr, parentToChildDirection,
-                            rotationChild);
+        if (!rotationParent) {
+            *tree = rotationChild;
+        } else {
+            RedBlackNode *rotationParentPtr =
+                getNode(nodeLocation, rotationParent);
+            childNodePointerSet(rotationParentPtr, parentToChildDirection,
+                                rotationChild);
+        }
     } else {
         *tree = rotationChild;
     }

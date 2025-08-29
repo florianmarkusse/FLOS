@@ -2,6 +2,7 @@
 
 #include "abstraction/log.h"
 #include "abstraction/memory/manipulation.h"
+#include "posix/log.h"
 #include "posix/test-framework/test.h"
 #include "shared/log.h"
 #include "shared/macros.h"
@@ -14,6 +15,7 @@
 #include "shared/trees/red-black/tests/assert-memory-manager.h"
 #include "shared/trees/red-black/tests/assert.h"
 #include "shared/trees/red-black/tests/cases/memory-manager.h"
+#include "shared/trees/red-black/tests/red-black/common.h"
 
 static void addValueToExpected(NodeLocation *nodeLocation,
                                Memory_max_a *expectedValues, Memory toAdd,
@@ -89,6 +91,8 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         .nodeLocation = {.base = (U8 *)treeWithFreeList.nodes.buf,
                          .elementSizeBytes =
                              sizeof(*treeWithFreeList.nodes.buf)}};
+    treeWithFreeList.nodes.buf[0] = (MMNode){0};
+    treeWithFreeList.nodes.len = 1;
 
     Memory_max_a expectedValues =
         (Memory_max_a){.buf = NEW(&scratch, Memory, .count = MAX_NODES_IN_TREE),
@@ -100,7 +104,8 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
             addValueToExpected(&treeWithFreeList.nodeLocation, &expectedValues,
                                operations.buf[i].memory, tree);
 
-            MMNode *createdNode = NEW(&scratch, MMNode);
+            MMNode *createdNode =
+                getFromNodes((TreeWithFreeList *)&treeWithFreeList.nodes);
             createdNode->data.memory = operations.buf[i].memory;
             (void)insertMMNode(&treeWithFreeList, createdNode);
             break;

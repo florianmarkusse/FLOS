@@ -24,23 +24,27 @@ static void inOrderTraversalFillValues(NodeLocation *nodeLocation, U32 node,
 
     RedBlackNode *treeNode = getNode(nodeLocation, node);
 
-    inOrderTraversalFillValues(nodeLocation, treeNode->children[RB_TREE_LEFT],
-                               values);
+    inOrderTraversalFillValues(
+        nodeLocation, childNodePointerGet(treeNode, RB_TREE_LEFT), values);
     values->buf[values->len] = (NodeIndexMemory){
         .index = node,
         .value = getVMMNode(nodeLocation, node)->data.memory.start};
     values->len++;
-    inOrderTraversalFillValues(nodeLocation, treeNode->children[RB_TREE_RIGHT],
-                               values);
+    inOrderTraversalFillValues(
+        nodeLocation, childNodePointerGet(treeNode, RB_TREE_RIGHT), values);
 }
 
-static void appendExpectedValuesAndTreeValues(U64_max_a expectedValues,
-                                              NodeIndexMemory_a inOrderValues) {
+static void appendExpectedValues(U64_max_a expectedValues) {
     INFO(STRING("Expected values:\n"));
     for (U32 i = 0; i < expectedValues.len; i++) {
         INFO(expectedValues.buf[i]);
         INFO(STRING(" "));
     }
+}
+
+static void appendExpectedValuesAndTreeValues(U64_max_a expectedValues,
+                                              NodeIndexMemory_a inOrderValues) {
+    appendExpectedValues(expectedValues);
     INFO(STRING("\nRed-Black Tree values:\n"));
     for (U32 i = 0; i < inOrderValues.len; i++) {
         INFO(inOrderValues.buf[i].value);
@@ -105,7 +109,15 @@ static void assertIsBSTWitExpectedValues(NodeLocation *nodeLocation, U32 node,
 void assertBasicRedBlackTreeValid(NodeLocation *nodeLocation, U32 tree,
                                   U64_max_a expectedValues, Arena scratch) {
     if (!tree) {
-        return;
+        if (expectedValues.len == 0) {
+            return;
+        }
+        TEST_FAILURE {
+            INFO(STRING(
+                "The Red-Black Tree is empty while expected values is not!\n"));
+            appendExpectedValues(expectedValues);
+            INFO(STRING("\n"));
+        }
     }
 
     U32 nodes = nodeCount(nodeLocation, tree, RED_BLACK_VIRTUAL_MEMORY_MAPPER);

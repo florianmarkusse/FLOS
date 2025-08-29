@@ -1,7 +1,10 @@
 - clean up red-black tree mess somehow? This should be possible to abstract!
   - Look into color OFFSETOF trick to get rid of slop
   - Look into optimizing the struct by using indices instead of pointers
+- merger getFromNodes
+- maybe see if removing gnu statement expressions is possible? so we can use those macros in other for/while macros
 - nodeLocation base thing is duplicated for no reason in the trees.
+- ALl the exponents I am using inside non-constant structs can be converted to U8 instead to save memory?
 - rename PackedX into X_packed_max_a etc.
 - how to hide extern variables from showing up everywhere
 - look into struct x = {.y = 5} and check if it's actually necessary to zero initialize the rest of the struct, we can avoid this in most cases i think

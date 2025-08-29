@@ -17,11 +17,11 @@ RedBlackDirection calculateDirection(U64 value, U64 toCompare);
 typedef struct RedBlackNode RedBlackNode;
 struct RedBlackNode {
     // NOTE: Packing the children and color into 8 bytes.
-    // bit 0  - 30: low child index
-    // bit 32 - 62: high child index
-    // bit 63:      node color
+    // bit 0  - 30:                                 low child index
+    // bit 32 - 62:                                 high child index
+    // bit 31/63 (Architecture/Compiler-dependent): node color
     // Don't directly access the metaData field, go through the functions
-    U64 metaData;
+    U32 metaData[RB_TREE_CHILD_COUNT];
 };
 
 // TODO: do the same trick here too! Use the top bit for the direction, since
@@ -66,9 +66,6 @@ void setColorWithPointer(RedBlackNode *node, RedBlackColor color);
 
 RedBlackColor getColor(NodeLocation *nodeLocation, U32 index);
 RedBlackColor getColorWithPointer(RedBlackNode *node);
-
-U32 childIndexGet(NodeLocation *nodeLocation, U32 parent,
-                  RedBlackDirection direction);
 
 U32 rebalanceInsert(NodeLocation *nodeLocation,
                     VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,

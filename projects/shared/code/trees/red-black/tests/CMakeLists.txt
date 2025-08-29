@@ -3,6 +3,7 @@ add_executable(
     ${PROJECT_NAME}
     "src/main.c"
     "src/red-black/basic.c"
+    "src/red-black/common.c"
     "src/red-black/memory-manager.c"
     "src/assert.c"
     "src/assert-basic.c"

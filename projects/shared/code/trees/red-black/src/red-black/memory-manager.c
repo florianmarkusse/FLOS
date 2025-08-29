@@ -1,4 +1,5 @@
 #include "shared/trees/red-black/memory-manager.h"
+#include "abstraction/memory/manipulation.h"
 #include "shared/maths.h"
 #include "shared/memory/allocator/macros.h"
 #include "shared/memory/sizes.h"
@@ -18,15 +19,15 @@ static void initVisitedNodes(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
 
 static void recalculateMostBytes(NodeLocation *nodeLocation, MMNode *node) {
     node->data.mostBytesInSubtree = node->data.memory.bytes;
-    if (node->header.children[RB_TREE_RIGHT]) {
-        MMNode *childNode =
-            getMMNode(nodeLocation, node->header.children[RB_TREE_RIGHT]);
+    U32 rightChildIndex = childNodePointerGet(&node->header, RB_TREE_RIGHT);
+    if (rightChildIndex) {
+        MMNode *childNode = getMMNode(nodeLocation, rightChildIndex);
         node->data.mostBytesInSubtree = MAX(node->data.mostBytesInSubtree,
                                             childNode->data.mostBytesInSubtree);
     }
-    if (node->header.children[RB_TREE_LEFT]) {
-        MMNode *childNode =
-            getMMNode(nodeLocation, node->header.children[RB_TREE_LEFT]);
+    U32 leftChildIndex = childNodePointerGet(&node->header, RB_TREE_LEFT);
+    if (leftChildIndex) {
+        MMNode *childNode = getMMNode(nodeLocation, leftChildIndex);
         node->data.mostBytesInSubtree = MAX(node->data.mostBytesInSubtree,
                                             childNode->data.mostBytesInSubtree);
     }
@@ -81,13 +82,20 @@ static U32 deleteNodeInPath(NodeLocation *nodeLocation,
     // If there is no right child, we can delete by having the parent of
     // toDelete now point to toDelete's left child instead of toDelete.
     if (!stepsToSuccessor) {
-        getMMNode(nodeLocation, visitedNodes[len - 1].index)
-            ->header.children[visitedNodes[len - 1].direction] =
-            getMMNode(nodeLocation, visitedNodes[len - 1].index)
-                ->header.children[RB_TREE_LEFT];
-        propagateDeleteUpwards(nodeLocation, visitedNodes, len,
-                               toDeleteNode->data.memory.bytes,
-                               ROOT_NODE_INDEX_LEN);
+        U32 leftChildIndexToDeleteNode =
+            childNodePointerGet(&toDeleteNode->header, RB_TREE_LEFT);
+        if (!visitedNodes[len - 1].index) {
+            *tree = leftChildIndexToDeleteNode;
+        } else {
+            MMNode *parentNode =
+                getMMNode(nodeLocation, visitedNodes[len - 1].index);
+            childNodePointerSet(&parentNode->header,
+                                visitedNodes[len - 1].direction,
+                                leftChildIndexToDeleteNode);
+            propagateDeleteUpwards(nodeLocation, visitedNodes, len,
+                                   toDeleteNode->data.memory.bytes,
+                                   ROOT_NODE_INDEX_LEN);
+        }
     }
     // Swap the values of the node to delete with the values of the successor
     // node and delete the successor node instead (now containing the values
@@ -98,8 +106,8 @@ static U32 deleteNodeInPath(NodeLocation *nodeLocation,
 
         MMNode *nodeGettingNewChild =
             getMMNode(nodeLocation, visitedNodes[len - 1].index);
-        toDelete = nodeGettingNewChild->header
-                       .children[visitedNodes[len - 1].direction];
+        toDelete = childNodePointerGet(&nodeGettingNewChild->header,
+                                       visitedNodes[len - 1].direction);
 
         // Swap the values around. Naturally, the node pointers can be
         // swapped too. Just swapping memory here, mostBytesInSubtree will be
@@ -113,8 +121,9 @@ static U32 deleteNodeInPath(NodeLocation *nodeLocation,
         toDeleteNode->data.memory = swapNode->data.memory;
         swapNode->data.memory = memoryToKeep;
 
-        nodeGettingNewChild->header.children[visitedNodes[len - 1].direction] =
-            toDeleteNode->header.children[RB_TREE_RIGHT];
+        childNodePointerSet(
+            &nodeGettingNewChild->header, visitedNodes[len - 1].direction,
+            childNodePointerGet(&toDeleteNode->header, RB_TREE_RIGHT));
 
         // In the first part, memoryToKeep got "deleted", i.e., moved higher
         // in
@@ -134,8 +143,8 @@ static U32 deleteNodeInPath(NodeLocation *nodeLocation,
     if (getColorWithPointer(&toDeleteNode->header) == RB_TREE_BLACK) {
         while (len >= 2) {
             U32 childDeficitBlackDirection =
-                getMMNode(nodeLocation, visitedNodes[len - 1].index)
-                    ->header.children[visitedNodes[len - 1].direction];
+                childNodeIndexGet(nodeLocation, visitedNodes[len - 1].index,
+                                  visitedNodes[len - 1].direction);
             MMNode *childDeficitBlackDirectionNode =
                 getMMNode(nodeLocation, childDeficitBlackDirection);
             if (childDeficitBlackDirection &&
@@ -180,8 +189,8 @@ static U32 bridgeMerge(NodeLocation *nodeLocation,
 
     return deleteNodeInPath(
         nodeLocation, visitedNodes, newLen, tree,
-        previousNewParent->header
-            .children[visitedNodes[previousNewLen].direction]);
+        childNodePointerGet(&previousNewParent->header,
+                            visitedNodes[previousNewLen].direction));
 }
 
 static U32 beforeRegionMerge(NodeLocation *nodeLocation,
@@ -197,10 +206,10 @@ static U32 beforeRegionMerge(NodeLocation *nodeLocation,
         U32 predecessorLen = len + predecessorSteps - 1;
         MMNode *predecessorParent =
             getMMNode(nodeLocation, visitedNodes[predecessorLen].index);
-        MMNode *predecessor =
-            getMMNode(nodeLocation,
-                      predecessorParent->header
-                          .children[visitedNodes[predecessorLen].direction]);
+        MMNode *predecessor = getMMNode(
+            nodeLocation,
+            childNodePointerGet(&predecessorParent->header,
+                                visitedNodes[predecessorLen].direction));
         // | predecessor | created | current |
         if (predecessor->data.memory.start + predecessor->data.memory.bytes ==
             createdNode->data.memory.start) {
@@ -230,8 +239,9 @@ static U32 afterRegionMerge(NodeLocation *nodeLocation,
         MMNode *successorParent =
             getMMNode(nodeLocation, visitedNodes[successorLen].index);
         MMNode *successor = getMMNode(
-            nodeLocation, successorParent->header
-                              .children[visitedNodes[successorLen].direction]);
+            nodeLocation,
+            childNodePointerGet(&successorParent->header,
+                                visitedNodes[successorLen].direction));
         // | current | created | successor |
         if (createdEnd == successor->data.memory.start) {
             return bridgeMerge(nodeLocation, visitedNodes, len, tree,
@@ -252,8 +262,9 @@ InsertResult insertMMNode(MMTreeWithFreeList *treeWithFreeList,
 
     InsertResult result = {.freed = {0}};
 
-    createdNode->header.children[RB_TREE_LEFT] = 0;
-    createdNode->header.children[RB_TREE_RIGHT] = 0;
+    // Zero out children (& color)
+    memset(createdNode->header.metaData, 0,
+           sizeof(createdNode->header.metaData));
 
     U32 createdNodeIndex = getIndex(nodeLocation, createdNode);
     if (!(*tree)) {
@@ -297,8 +308,8 @@ InsertResult insertMMNode(MMTreeWithFreeList *treeWithFreeList,
             createdNode->data.memory.start, currentNode->data.memory.start);
         len++;
 
-        U32 next =
-            currentNode->header.children[visitedNodes[len - 1].direction];
+        U32 next = childNodePointerGet(&currentNode->header,
+                                       visitedNodes[len - 1].direction);
         if (!next) {
             break;
         }
@@ -310,8 +321,8 @@ InsertResult insertMMNode(MMTreeWithFreeList *treeWithFreeList,
     // Insert
     setColorWithPointer(&createdNode->header, RB_TREE_RED);
     createdNode->data.mostBytesInSubtree = createdNode->data.memory.bytes;
-    currentNode->header.children[visitedNodes[len - 1].direction] =
-        createdNodeIndex;
+    childNodePointerSet(&currentNode->header, visitedNodes[len - 1].direction,
+                        createdNodeIndex);
     propagateInsertUpwards(nodeLocation, visitedNodes, len,
                            createdNode->data.memory.bytes);
 
@@ -353,7 +364,7 @@ U32 deleteAtLeastMMNode(MMTreeWithFreeList *treeWithFreeList, U64 bytes) {
     U32 bestWithVisitedNodesLen = 0;
 
     U32 potentialIndex = *tree;
-    for (MMNode *potential = treeNode; potential;) {
+    for (MMNode *potential = treeNode; potentialIndex;) {
         if (potential->data.memory.bytes >= bytes &&
             potential->data.memory.bytes <= bestSoFar) {
             bestSoFar = potential->data.memory.bytes;
@@ -362,9 +373,11 @@ U32 deleteAtLeastMMNode(MMTreeWithFreeList *treeWithFreeList, U64 bytes) {
 
         visitedNodes[len].index = potentialIndex;
 
-        U32 leftChildIndex = potential->header.children[RB_TREE_LEFT];
+        U32 leftChildIndex =
+            childNodePointerGet(&potential->header, RB_TREE_LEFT);
         MMNode *leftChild = getMMNode(nodeLocation, leftChildIndex);
-        U32 rightChildIndex = potential->header.children[RB_TREE_RIGHT];
+        U32 rightChildIndex =
+            childNodePointerGet(&potential->header, RB_TREE_RIGHT);
         MMNode *rightChild = getMMNode(nodeLocation, rightChildIndex);
 
         if (leftChild && leftChild->data.mostBytesInSubtree >= bytes) {
