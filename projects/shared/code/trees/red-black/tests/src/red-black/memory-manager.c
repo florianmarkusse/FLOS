@@ -77,18 +77,10 @@ static void addValueToExpected(MMTreeWithFreeList *treeWithFreeList,
 }
 
 static void testTree(TreeOperation_a operations, Arena scratch) {
-    MMTreeWithFreeList treeWithFreeList = {
-        .buf = NEW(&scratch, MMNode, .count = MAX_NODES_IN_TREE),
-        .len = 0,
-        .cap = MAX_NODES_IN_TREE,
-        .tree = 0,
-        .elementSizeBytes = sizeof(*treeWithFreeList.buf),
-        .freeList =
-            (U32_max_a){.buf = NEW(&scratch, U32, .count = MAX_NODES_IN_TREE),
-                        .len = 0,
-                        .cap = MAX_NODES_IN_TREE}};
-    treeWithFreeList.buf[0] = (MMNode){0};
-    treeWithFreeList.len = 1;
+    MMTreeWithFreeList treeWithFreeList;
+    treeWithFreeListInit(
+        (TreeWithFreeList *)&treeWithFreeList, sizeof(*treeWithFreeList.buf),
+        alignof(*treeWithFreeList.buf), MAX_NODES_IN_TREE, &scratch);
 
     Memory_max_a expectedValues =
         (Memory_max_a){.buf = NEW(&scratch, Memory, .count = MAX_NODES_IN_TREE),

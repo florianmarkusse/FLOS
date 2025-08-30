@@ -1,4 +1,6 @@
 #include "shared/trees/red-black/common.h"
+#include "abstraction/memory/manipulation.h"
+#include "shared/memory/allocator/arena.h"
 
 // Just need a consistent index. Using 0 or 1 as index value works.
 static constexpr auto RED_BLACK_COLOR_INDEX = 0;
@@ -7,6 +9,18 @@ static constexpr auto RED_BLACK_COLOR_MASK =
     (1ULL << RED_BLACK_BIT_FIELD_SHIFT);
 static constexpr auto RED_BLACK_DIRECTION_MASK =
     (1ULL << RED_BLACK_BIT_FIELD_SHIFT);
+
+void treeWithFreeListInit(TreeWithFreeList *result, U32 elementSizeBytes,
+                          U32 align, U32 count, Arena *arena) {
+    *result = (TreeWithFreeList){
+        .buf = alloc(arena, elementSizeBytes, align, count, 0),
+        .len = 1, // NOTE: element at index 0 is to indicate a leaf/empty tree
+        .cap = count,
+        .tree = 0,
+        .elementSizeBytes = elementSizeBytes,
+        .freeList = (U32_max_a){
+            .buf = NEW(arena, U32, .count = count), .len = 0, .cap = count}};
+}
 
 U32 getIndex(TreeWithFreeList *treeWithFreeList, void *node) {
     U64 difference = (U64)(((U8 *)node) - ((U8 *)treeWithFreeList->buf));

@@ -263,18 +263,10 @@ static constexpr auto MIXED_TEST_CASES_LEN = COUNTOF(mixed);
 static TestCases mixedTestCases = {.buf = mixed, .len = MIXED_TEST_CASES_LEN};
 
 static void testTree(TreeOperation_a operations, Arena scratch) {
-    VMMTreeWithFreeList treeWithFreeList = {
-        .buf = NEW(&scratch, VMMNode, .count = MAX_NODES_IN_TREE),
-        .len = 0,
-        .cap = MAX_NODES_IN_TREE,
-        .tree = 0,
-        .elementSizeBytes = sizeof(*treeWithFreeList.buf),
-        .freeList =
-            (U32_max_a){.buf = NEW(&scratch, U32, .count = MAX_NODES_IN_TREE),
-                        .len = 0,
-                        .cap = MAX_NODES_IN_TREE}};
-    treeWithFreeList.buf[0] = (VMMNode){0};
-    treeWithFreeList.len = 1;
+    VMMTreeWithFreeList treeWithFreeList;
+    treeWithFreeListInit(
+        (TreeWithFreeList *)&treeWithFreeList, sizeof(*treeWithFreeList.buf),
+        alignof(*treeWithFreeList.buf), MAX_NODES_IN_TREE, &scratch);
 
     U64_max_a expectedValues =
         (U64_max_a){.buf = NEW(&scratch, U64, .count = MAX_NODES_IN_TREE),
