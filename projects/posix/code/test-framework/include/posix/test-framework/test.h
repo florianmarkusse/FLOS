@@ -24,7 +24,7 @@ void appendTestFailureStart();
 void appendTestFailureFinish();
 
 #define TEST_FAILURE                                                           \
-    for (U32 MACRO_VAR(i) = (testFailure(), appendTestFailureStart(), 0);      \
+    for (auto MACRO_VAR(i) = (testFailure(), appendTestFailureStart(), 0);     \
          MACRO_VAR(i) < 1;                                                     \
          MACRO_VAR(i) = (appendTestFailureFinish(),                            \
                          appendToFlushBufferWithWriter(                        \

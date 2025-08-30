@@ -4,6 +4,12 @@
 - merger getFromNodes
 - maybe see if removing gnu statement expressions is possible? so we can use those macros in other for/while macros
 - nodeLocation base thing is duplicated for no reason in the trees.
+- Change memory model in os-loader?
+  3 arenas:
+  - memoryKernelUsed
+  - memoryKernelUsedRemapped
+  - memoryOSLoader
+    And use this instead of the weird kernel structure etc.
 - ALl the exponents I am using inside non-constant structs can be converted to U8 instead to save memory?
 - rename PackedX into X_packed_max_a etc.
 - how to hide extern variables from showing up everywhere

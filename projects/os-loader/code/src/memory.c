@@ -30,8 +30,8 @@ static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     }
 }
 
-void allocateSpaceForKernelMemory(
-    MMTreeWithFreeList *redBlackMMTreeWithFreeList, Arena scratch) {
+void allocateSpaceForKernelMemory(MMTreeWithFreeList *treeWithFreeList,
+                                  Arena scratch) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
     U32 numberOfDescriptors =
         (U32)(memoryInfo.memoryMapSize / memoryInfo.descriptorSize);
@@ -39,16 +39,18 @@ void allocateSpaceForKernelMemory(
     // state.
     U32 expectedNumberOfDescriptors = numberOfDescriptors * 2;
 
+    treeWithFreeList->elementSizeBytes = sizeof(*treeWithFreeList->buf);
+    U64 bytes =
+        treeWithFreeList->elementSizeBytes * expectedNumberOfDescriptors;
+    treeWithFreeList->buf = allocateKernelStructure(
+        bytes, alignof(*treeWithFreeList->buf), false, scratch);
+    treeWithFreeList->len = 0;
+    treeWithFreeList->cap = expectedNumberOfDescriptors;
+
     createDynamicArray(expectedNumberOfDescriptors,
-                       sizeof(*redBlackMMTreeWithFreeList->nodes.buf),
-                       alignof(*redBlackMMTreeWithFreeList->nodes.buf),
-                       (void_max_a *)&redBlackMMTreeWithFreeList->nodes,
-                       scratch);
-    createDynamicArray(expectedNumberOfDescriptors,
-                       sizeof(*redBlackMMTreeWithFreeList->freeList.buf),
-                       alignof(*redBlackMMTreeWithFreeList->freeList.buf),
-                       (void_max_a *)&redBlackMMTreeWithFreeList->freeList,
-                       scratch);
+                       sizeof(*treeWithFreeList->freeList.buf),
+                       alignof(*treeWithFreeList->freeList.buf),
+                       (void_max_a *)&treeWithFreeList->freeList, scratch);
 }
 
 U64 alignVirtual(U64 virtualAddress, U64 physicalAddress, U64 bytes) {
@@ -78,10 +80,10 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
 
 static constexpr auto RED_COLOR = 0xFF0000;
 
-void convertToKernelMemory(
-    MemoryInfo *memoryInfo, PackedMMTreeWithFreeList *physicalMemoryTree,
-    MMTreeWithFreeList *RedBlackMMtreeWithFreeList,
-    GraphicsOutputProtocolMode *mode) {
+void convertToKernelMemory(MemoryInfo *memoryInfo,
+                           PackedMMTreeWithFreeList *packedTreeWithFreeList,
+                           MMTreeWithFreeList *treeWithFreeList,
+                           GraphicsOutputProtocolMode *mode) {
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
         if (memoryTypeCanBeUsedByKernel(desc->type)) {
             if (desc->physicalStart == 0) {
@@ -129,23 +131,20 @@ void convertToKernelMemory(
 
             for (typeof(availableMemory.len) i = 0; i < availableMemory.len;
                  i++) {
-                MMNode *node = getNodeFromTreeWithFreeList(
-                    (voidPtr_max_a *)&RedBlackMMtreeWithFreeList->freeList,
-                    (void_max_a *)&RedBlackMMtreeWithFreeList->nodes,
-                    sizeof(*RedBlackMMtreeWithFreeList->nodes.buf));
+                U32 node = getNodeFromTreeWithFreeList(
+                    (TreeWithFreeList *)treeWithFreeList);
 
                 if (!node) {
                     drawStatusRectangle(mode, RED_COLOR);
                     hangThread();
                 }
-                node->memory = availableMemory.buf[i];
-                insertMMNodeAndAddToFreelist(
-                    &RedBlackMMtreeWithFreeList->tree, node,
-                    &RedBlackMMtreeWithFreeList->freeList);
+                MMNode *newNode = getMMNode(treeWithFreeList, node);
+                newNode->data.memory = availableMemory.buf[i];
+                insertMMNodeAndAddToFreelist(treeWithFreeList, newNode);
             }
         }
     }
 
-    setPackedMemoryAllocator((PackedTreeWithFreeList *)physicalMemoryTree,
-                             (TreeWithFreeList *)RedBlackMMtreeWithFreeList);
+    setPackedMemoryAllocator((PackedTreeWithFreeList *)packedTreeWithFreeList,
+                             (TreeWithFreeList *)treeWithFreeList);
 }

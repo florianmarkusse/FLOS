@@ -270,7 +270,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     drawStatusRectangle(gop->mode, GREEN_COLOR);
 
     MMTreeWithFreeList physical;
-    physical.tree = nullptr;
+    physical.tree = 0;
     allocateSpaceForKernelMemory(&physical, arena);
 
     /* NOTE: Keep this call in between the stub and the creation of available */
