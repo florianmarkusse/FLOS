@@ -24,13 +24,6 @@ struct RedBlackNode {
     U32 metaData[RB_TREE_CHILD_COUNT];
 };
 
-// TODO: do the same trick here too! Use the top bit for the direction, since
-// the index is 31-bit at max anyway
-typedef struct {
-    U32 index;
-    RedBlackDirection direction;
-} VisitedNode;
-
 #define TREE_ARRAY(T)                                                          \
     struct {                                                                   \
         T *buf;                                                                \
@@ -54,6 +47,15 @@ typedef void (*RotationUpdater)(TreeWithFreeList *treeWithFreeList,
 U32 getIndex(TreeWithFreeList *treeWithFreeList, void *node);
 RedBlackNode *getNode(TreeWithFreeList *treeWithFreeList, U32 index);
 
+RedBlackDirection visitedNodeDirectionGet(U32 visitedNodes[RB_TREE_MAX_HEIGHT],
+                                          U32 index);
+void visitedNodeDirectionSet(U32 visitedNodes[RB_TREE_MAX_HEIGHT], U32 index,
+                             RedBlackDirection direction);
+
+U32 visitedNodeIndexGet(U32 visitedNodes[RB_TREE_MAX_HEIGHT], U32 index);
+void visitedNodeIndexSet(U32 visitedNodes[RB_TREE_MAX_HEIGHT], U32 position,
+                         U32 index);
+
 void setColorWithPointer(RedBlackNode *node, RedBlackColor color);
 void setColor(TreeWithFreeList *treeWithFreeList, U32 index,
               RedBlackColor color);
@@ -71,11 +73,11 @@ U32 childNodeIndexGet(TreeWithFreeList *treeWithFreeList, U32 parent,
                       RedBlackDirection direction);
 
 U32 rebalanceInsert(TreeWithFreeList *treeWithFreeList,
-                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                    U32 visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                     RedBlackDirection direction,
                     RotationUpdater rotationUpdater);
 U32 rebalanceDelete(TreeWithFreeList *treeWithFreeList,
-                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                    U32 visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                     RedBlackDirection direction,
                     RotationUpdater rotationUpdater);
 
@@ -83,8 +85,7 @@ void rotateAround(TreeWithFreeList *treeWithFreeList, U32 rotationParent,
                   U32 rotationNode, U32 rotationChild,
                   RedBlackDirection rotationDirection,
                   RedBlackDirection parentToChildDirection);
-U32 findAdjacentInSteps(TreeWithFreeList *treeWithFreeList,
-                        VisitedNode *visitedNodes, U32 node,
-                        RedBlackDirection direction);
+U32 findAdjacentInSteps(TreeWithFreeList *treeWithFreeList, U32 *visitedNodes,
+                        U32 node, RedBlackDirection direction);
 
 #endif

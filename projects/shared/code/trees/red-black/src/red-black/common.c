@@ -2,8 +2,11 @@
 
 // Just need a consistent index. Using 0 or 1 as index value works.
 static constexpr auto RED_BLACK_COLOR_INDEX = 0;
-static constexpr auto RED_BLACK_COLOR_SHIFT = 31;
-static constexpr auto RED_BLACK_COLOR_MASK = (1ULL << RED_BLACK_COLOR_SHIFT);
+static constexpr auto RED_BLACK_BIT_FIELD_SHIFT = 31;
+static constexpr auto RED_BLACK_COLOR_MASK =
+    (1ULL << RED_BLACK_BIT_FIELD_SHIFT);
+static constexpr auto RED_BLACK_DIRECTION_MASK =
+    (1ULL << RED_BLACK_BIT_FIELD_SHIFT);
 
 U32 getIndex(TreeWithFreeList *treeWithFreeList, void *node) {
     U64 difference = (U64)(((U8 *)node) - ((U8 *)treeWithFreeList->buf));
@@ -13,6 +16,31 @@ U32 getIndex(TreeWithFreeList *treeWithFreeList, void *node) {
 RedBlackNode *getNode(TreeWithFreeList *treeWithFreeList, U32 index) {
     return (RedBlackNode *)((U8 *)treeWithFreeList->buf +
                             (index * treeWithFreeList->elementSizeBytes));
+}
+
+RedBlackDirection visitedNodeDirectionGet(U32 visitedNodes[RB_TREE_MAX_HEIGHT],
+                                          U32 index) {
+    return (RedBlackDirection)(visitedNodes[index] >>
+                               RED_BLACK_BIT_FIELD_SHIFT);
+}
+
+void visitedNodeDirectionSet(U32 visitedNodes[RB_TREE_MAX_HEIGHT], U32 index,
+                             RedBlackDirection direction) {
+    if (direction == RB_TREE_LEFT) {
+        visitedNodes[index] &= (~RED_BLACK_DIRECTION_MASK);
+    } else {
+        visitedNodes[index] |= RED_BLACK_DIRECTION_MASK;
+    }
+}
+
+U32 visitedNodeIndexGet(U32 visitedNodes[RB_TREE_MAX_HEIGHT], U32 index) {
+    return visitedNodes[index] & (~RED_BLACK_DIRECTION_MASK);
+}
+
+void visitedNodeIndexSet(U32 visitedNodes[RB_TREE_MAX_HEIGHT], U32 position,
+                         U32 index) {
+    visitedNodes[position] =
+        (visitedNodes[position] & RED_BLACK_DIRECTION_MASK) | index;
 }
 
 void setColorWithPointer(RedBlackNode *node, RedBlackColor color) {
@@ -30,7 +58,7 @@ void setColor(TreeWithFreeList *treeWithFreeList, U32 index,
 
 RedBlackColor getColorWithPointer(RedBlackNode *node) {
     return (RedBlackColor)(node->metaData[RED_BLACK_COLOR_INDEX] >>
-                           RED_BLACK_COLOR_SHIFT);
+                           RED_BLACK_BIT_FIELD_SHIFT);
 }
 
 RedBlackColor getColor(TreeWithFreeList *treeWithFreeList, U32 index) {
@@ -60,12 +88,12 @@ U32 childNodeIndexGet(TreeWithFreeList *treeWithFreeList, U32 parent,
 }
 
 U32 rebalanceInsert(TreeWithFreeList *treeWithFreeList,
-                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                    U32 visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                     RedBlackDirection direction,
                     RotationUpdater rotationUpdater) {
-    U32 grandParent = visitedNodes[len - 3].index;
-    U32 parent = visitedNodes[len - 2].index;
-    U32 node = visitedNodes[len - 1].index;
+    U32 grandParent = visitedNodeIndexGet(visitedNodes, len - 3);
+    U32 parent = visitedNodeIndexGet(visitedNodes, len - 2);
+    U32 node = visitedNodeIndexGet(visitedNodes, len - 1);
 
     U32 uncle = childNodeIndexGet(treeWithFreeList, grandParent, !direction);
     if (uncle && getColor(treeWithFreeList, uncle) == RB_TREE_RED) {
@@ -81,7 +109,7 @@ U32 rebalanceInsert(TreeWithFreeList *treeWithFreeList,
     //    y       ==>   z
     //     \           /
     //      z         y
-    if (visitedNodes[len - 2].direction == !direction) {
+    if (visitedNodeDirectionGet(visitedNodes, len - 2) == !direction) {
         rotateAround(treeWithFreeList, grandParent, parent, node, direction,
                      direction);
         if (rotationUpdater) {
@@ -100,8 +128,9 @@ U32 rebalanceInsert(TreeWithFreeList *treeWithFreeList,
     setColor(treeWithFreeList, parent, RB_TREE_BLACK);
     setColor(treeWithFreeList, grandParent, RB_TREE_RED);
 
-    rotateAround(treeWithFreeList, visitedNodes[len - 4].index, grandParent,
-                 parent, !direction, visitedNodes[len - 4].direction);
+    rotateAround(treeWithFreeList, visitedNodeIndexGet(visitedNodes, len - 4),
+                 grandParent, parent, !direction,
+                 visitedNodeDirectionGet(visitedNodes, len - 4));
     if (rotationUpdater) {
         rotationUpdater(treeWithFreeList, grandParent, parent);
     }
@@ -117,10 +146,10 @@ U32 rebalanceInsert(TreeWithFreeList *treeWithFreeList,
 // address that problem. On the other hand, coloring a node black in the
 // direction subtree immediately solves the deficiency in the whole tree.
 U32 rebalanceDelete(TreeWithFreeList *treeWithFreeList,
-                    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                    U32 visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                     RedBlackDirection direction,
                     RotationUpdater rotationUpdater) {
-    U32 node = visitedNodes[len - 1].index;
+    U32 node = visitedNodeIndexGet(visitedNodes, len - 1);
     U32 childOtherDirection =
         childNodeIndexGet(treeWithFreeList, node, !direction);
     // Ensure the other child is colored black, we "push" the problem a level
@@ -140,16 +169,17 @@ U32 rebalanceDelete(TreeWithFreeList *treeWithFreeList,
         setColor(treeWithFreeList, childOtherDirection, RB_TREE_BLACK);
         setColor(treeWithFreeList, node, RB_TREE_RED);
 
-        rotateAround(treeWithFreeList, visitedNodes[len - 2].index, node,
+        rotateAround(treeWithFreeList,
+                     visitedNodeIndexGet(visitedNodes, len - 2), node,
                      childOtherDirection, direction,
-                     visitedNodes[len - 2].direction);
+                     visitedNodeDirectionGet(visitedNodes, len - 2));
         if (rotationUpdater) {
             rotationUpdater(treeWithFreeList, node, childOtherDirection);
         }
 
-        visitedNodes[len - 1].index = childOtherDirection;
-        visitedNodes[len].index = node;
-        visitedNodes[len].direction = direction;
+        visitedNodeIndexSet(visitedNodes, len - 1, childOtherDirection);
+        visitedNodeIndexSet(visitedNodes, len, node);
+        visitedNodeDirectionSet(visitedNodes, len, direction);
         len++;
 
         childOtherDirection =
@@ -216,9 +246,9 @@ U32 rebalanceDelete(TreeWithFreeList *treeWithFreeList,
     setColor(treeWithFreeList, node, RB_TREE_BLACK);
     setColor(treeWithFreeList, outerChildOtherDirection, RB_TREE_BLACK);
 
-    rotateAround(treeWithFreeList, visitedNodes[len - 2].index, node,
-                 childOtherDirection, direction,
-                 visitedNodes[len - 2].direction);
+    rotateAround(treeWithFreeList, visitedNodeIndexGet(visitedNodes, len - 2),
+                 node, childOtherDirection, direction,
+                 visitedNodeDirectionGet(visitedNodes, len - 2));
     if (rotationUpdater) {
         rotationUpdater(treeWithFreeList, node, childOtherDirection);
     }
@@ -256,9 +286,8 @@ void rotateAround(TreeWithFreeList *treeWithFreeList, U32 rotationParent,
     }
 }
 
-U32 findAdjacentInSteps(TreeWithFreeList *treeWithFreeList,
-                        VisitedNode *visitedNodes, U32 node,
-                        RedBlackDirection direction) {
+U32 findAdjacentInSteps(TreeWithFreeList *treeWithFreeList, U32 *visitedNodes,
+                        U32 node, RedBlackDirection direction) {
     U32 directionChildIndex =
         childNodeIndexGet(treeWithFreeList, node, direction);
     if (!directionChildIndex) {
@@ -267,8 +296,8 @@ U32 findAdjacentInSteps(TreeWithFreeList *treeWithFreeList,
 
     U32 traversals = 0;
 
-    visitedNodes[traversals].index = node;
-    visitedNodes[traversals].direction = direction;
+    visitedNodeIndexSet(visitedNodes, traversals, node);
+    visitedNodeDirectionSet(visitedNodes, traversals, direction);
     node = directionChildIndex;
     traversals++;
 
@@ -278,8 +307,8 @@ U32 findAdjacentInSteps(TreeWithFreeList *treeWithFreeList,
             break;
         }
 
-        visitedNodes[traversals].index = node;
-        visitedNodes[traversals].direction = !direction;
+        visitedNodeIndexSet(visitedNodes, traversals, node);
+        visitedNodeDirectionSet(visitedNodes, traversals, !direction);
         traversals++;
 
         node = next;
