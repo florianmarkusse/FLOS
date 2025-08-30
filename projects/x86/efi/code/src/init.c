@@ -243,7 +243,7 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
     U64 bytes = virtualMA.elementSizeBytes * INITIAL_VIRTUAL_MEMORY_REGIONS;
     virtualMA.buf =
         allocateKernelStructure(bytes, alignof(*virtualMA.buf), false, scratch);
-    virtualMA.len = 0;
+    virtualMA.len = 1;
     virtualMA.cap = INITIAL_VIRTUAL_MEMORY_REGIONS;
 
     createDynamicArray(INITIAL_VIRTUAL_MEMORY_REGIONS,
@@ -272,7 +272,7 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
             INITIAL_VIRTUAL_MAPPING_SIZES;
     virtualMemorySizeMapper.buf = allocateKernelStructure(
         bytes, alignof(*virtualMemorySizeMapper.buf), false, scratch);
-    virtualMemorySizeMapper.len = 0;
+    virtualMemorySizeMapper.len = 1;
     virtualMemorySizeMapper.cap = INITIAL_VIRTUAL_MAPPING_SIZES;
 
     createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,

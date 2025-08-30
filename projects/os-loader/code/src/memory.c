@@ -44,7 +44,7 @@ void allocateSpaceForKernelMemory(MMTreeWithFreeList *treeWithFreeList,
         treeWithFreeList->elementSizeBytes * expectedNumberOfDescriptors;
     treeWithFreeList->buf = allocateKernelStructure(
         bytes, alignof(*treeWithFreeList->buf), false, scratch);
-    treeWithFreeList->len = 0;
+    treeWithFreeList->len = 1;
     treeWithFreeList->cap = expectedNumberOfDescriptors;
 
     createDynamicArray(expectedNumberOfDescriptors,
