@@ -31,56 +31,60 @@ typedef struct {
     RedBlackDirection direction;
 } VisitedNode;
 
-typedef struct {
-    U8 *base;
-    U32 elementSizeBytes;
-} NodeLocation;
+#define TREE_ARRAY(T)                                                          \
+    struct {                                                                   \
+        T *buf;                                                                \
+        U32 len;                                                               \
+        U32 cap;                                                               \
+        U32 elementSizeBytes;                                                  \
+    }
 
 #define TREE_WITH_FREELIST(T)                                                  \
     struct {                                                                   \
-        T##_max_a nodes;                                                       \
-        U32 *tree;                                                             \
         U32_max_a freeList;                                                    \
-        NodeLocation nodeLocation;                                             \
+        TREE_ARRAY(T);                                                         \
+        U32 tree;                                                              \
     }
 
 typedef TREE_WITH_FREELIST(void) TreeWithFreeList;
 
-typedef void (*RotationUpdater)(NodeLocation *nodeLocation, U32 rotationNode,
-                                U32 rotationChild);
+typedef void (*RotationUpdater)(TreeWithFreeList *treeWithFreeList,
+                                U32 rotationNode, U32 rotationChild);
 
-U32 getIndex(NodeLocation *nodeLocation, void *node);
-RedBlackNode *getNode(NodeLocation *nodeLocation, U32 index);
+U32 getIndex(TreeWithFreeList *treeWithFreeList, void *node);
+RedBlackNode *getNode(TreeWithFreeList *treeWithFreeList, U32 index);
+
+void setColorWithPointer(RedBlackNode *node, RedBlackColor color);
+void setColor(TreeWithFreeList *treeWithFreeList, U32 index,
+              RedBlackColor color);
+
+RedBlackColor getColorWithPointer(RedBlackNode *node);
+RedBlackColor getColor(TreeWithFreeList *treeWithFreeList, U32 index);
 
 void childNodePointerSet(RedBlackNode *parentNode, RedBlackDirection direction,
                          U32 childIndex);
-void childNodeIndexSet(NodeLocation *nodeLocation, U32 parent,
+void childNodeIndexSet(TreeWithFreeList *treeWithFreeList, U32 parent,
                        RedBlackDirection direction, U32 childIndex);
 
 U32 childNodePointerGet(RedBlackNode *parentNode, RedBlackDirection direction);
-U32 childNodeIndexGet(NodeLocation *nodeLocation, U32 parent,
+U32 childNodeIndexGet(TreeWithFreeList *treeWithFreeList, U32 parent,
                       RedBlackDirection direction);
 
-void setColor(NodeLocation *nodeLocation, U32 index, RedBlackColor color);
-void setColorWithPointer(RedBlackNode *node, RedBlackColor color);
-
-RedBlackColor getColor(NodeLocation *nodeLocation, U32 index);
-RedBlackColor getColorWithPointer(RedBlackNode *node);
-
-U32 rebalanceInsert(NodeLocation *nodeLocation,
+U32 rebalanceInsert(TreeWithFreeList *treeWithFreeList,
                     VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
-                    U32 *tree, RedBlackDirection direction,
+                    RedBlackDirection direction,
                     RotationUpdater rotationUpdater);
-U32 rebalanceDelete(NodeLocation *nodeLocation,
+U32 rebalanceDelete(TreeWithFreeList *treeWithFreeList,
                     VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
-                    U32 *tree, RedBlackDirection direction,
+                    RedBlackDirection direction,
                     RotationUpdater rotationUpdater);
 
-void rotateAround(NodeLocation *nodeLocation, U32 *tree, U32 rotationParent,
+void rotateAround(TreeWithFreeList *treeWithFreeList, U32 rotationParent,
                   U32 rotationNode, U32 rotationChild,
                   RedBlackDirection rotationDirection,
                   RedBlackDirection parentToChildDirection);
-U32 findAdjacentInSteps(NodeLocation *nodeLocation, VisitedNode *visitedNodes,
-                        U32 node, RedBlackDirection direction);
+U32 findAdjacentInSteps(TreeWithFreeList *treeWithFreeList,
+                        VisitedNode *visitedNodes, U32 node,
+                        RedBlackDirection direction);
 
 #endif

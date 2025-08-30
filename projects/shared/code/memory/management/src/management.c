@@ -28,14 +28,14 @@ void insertMMNodeAndAddToFreelist(MMTreeWithFreeList *treeWithFreeList,
 }
 
 static void insertMemory(Memory memory, MMTreeWithFreeList *allocator) {
-    U32 newNodeIndex = getNodeFromTreeWithFreeList(
-        &allocator->freeList, (void_max_a *)&allocator->nodes);
+    U32 newNodeIndex =
+        getNodeFromTreeWithFreeList((TreeWithFreeList *)allocator);
 
     if (!newNodeIndex) {
         interruptUnexpectedError();
     }
 
-    MMNode *newNode = getMMNode(&allocator->nodeLocation, newNodeIndex);
+    MMNode *newNode = getMMNode(allocator, newNodeIndex);
     newNode->data.memory = memory;
 
     insertMMNodeAndAddToFreelist(allocator, newNode);
@@ -94,8 +94,7 @@ static void *allocAlignedMemory(U64 bytes, U64_pow2 align,
                                 MMTreeWithFreeList *allocator) {
     U32 availableMemoryIndex =
         getMemoryAllocation(allocator, alignedToTotal(bytes, align));
-    MMNode *availableMemoryNode =
-        getMMNode(&allocator->nodeLocation, availableMemoryIndex);
+    MMNode *availableMemoryNode = getMMNode(allocator, availableMemoryIndex);
     U64 result = alignUp(availableMemoryNode->data.memory.start, align);
     handleRemovedAllocator(availableMemoryNode, availableMemoryIndex,
                            (Memory){.start = result, .bytes = bytes},
@@ -113,19 +112,16 @@ void *allocPhysicalMemory(U64 bytes, U64_pow2 align) {
 
 static void initMemoryAllocator(PackedTreeWithFreeList *packedMemoryAllocator,
                                 TreeWithFreeList *allocator) {
-    allocator->nodes.buf = packedMemoryAllocator->nodes.buf;
-    allocator->nodes.len = packedMemoryAllocator->nodes.len;
-    allocator->nodes.cap = packedMemoryAllocator->nodes.cap;
+    allocator->buf = packedMemoryAllocator->buf;
+    allocator->len = packedMemoryAllocator->len;
+    allocator->cap = packedMemoryAllocator->cap;
+    allocator->elementSizeBytes = packedMemoryAllocator->elementSizeBytes;
 
     allocator->freeList.buf = packedMemoryAllocator->freeList.buf;
     allocator->freeList.cap = packedMemoryAllocator->freeList.cap;
     allocator->freeList.len = packedMemoryAllocator->freeList.len;
 
     allocator->tree = packedMemoryAllocator->tree;
-
-    allocator->nodeLocation.base = packedMemoryAllocator->nodeLocation.base;
-    allocator->nodeLocation.elementSizeBytes =
-        packedMemoryAllocator->nodeLocation.elementSizeBytes;
 }
 
 static constexpr auto ALLOCATOR_MAX_BUFFER_SIZE = 1 * GiB;
@@ -136,34 +132,30 @@ static void IdentityToMappable(TreeWithFreeList *treeWithFreeList,
     void *virtualBuffer =
         allocVirtualMemory(ALLOCATOR_MAX_BUFFER_SIZE, alignBytes);
 
-    U64 bytesUsed = treeWithFreeList->nodes.len * elementSizeBytes;
+    U64 bytesUsed = treeWithFreeList->len * elementSizeBytes;
     U32 mapsToDo =
         (U32)ceilingDivide(bytesUsed, pageSizesSmallest()) + additionalMaps;
     for (typeof(mapsToDo) i = 0; i < mapsToDo; i++) {
         (void)handlePageFault((U64)virtualBuffer + (i * pageSizesSmallest()));
     }
 
-    memcpy(virtualBuffer, treeWithFreeList->nodes.buf,
-           treeWithFreeList->nodes.len * elementSizeBytes);
-    treeWithFreeList->nodes.buf = virtualBuffer;
-    treeWithFreeList->nodes.cap = ALLOCATOR_MAX_BUFFER_SIZE / elementSizeBytes;
-
-    treeWithFreeList->nodeLocation.base = virtualBuffer;
+    memcpy(virtualBuffer, treeWithFreeList->buf,
+           treeWithFreeList->len * elementSizeBytes);
+    treeWithFreeList->buf = virtualBuffer;
+    treeWithFreeList->cap = ALLOCATOR_MAX_BUFFER_SIZE / elementSizeBytes;
 }
 
 static void freePackedVMMTree(PackedVMMTreeWithFreeList *packed) {
-    freePhysicalMemory(
-        (Memory){.start = (U64)packed->nodes.buf,
-                 .bytes = packed->nodes.cap * sizeof(*packed->nodes.buf)});
+    freePhysicalMemory((Memory){.start = (U64)packed->buf,
+                                .bytes = packed->cap * sizeof(*packed->buf)});
     freePhysicalMemory((Memory){.start = (U64)packed->freeList.buf,
                                 .bytes = packed->freeList.cap *
                                          sizeof(*packed->freeList.buf)});
 }
 
 static void freePackedMMTree(PackedMMTreeWithFreeList *packed) {
-    freePhysicalMemory(
-        (Memory){.start = (U64)packed->nodes.buf,
-                 .bytes = packed->nodes.cap * sizeof(*packed->nodes.buf)});
+    freePhysicalMemory((Memory){.start = (U64)packed->buf,
+                                .bytes = packed->cap * sizeof(*packed->buf)});
     freePhysicalMemory((Memory){.start = (U64)packed->freeList.buf,
                                 .bytes = packed->freeList.cap *
                                          sizeof(*packed->freeList.buf)});
@@ -181,14 +173,12 @@ void initMemoryManagers(PackedKernelMemory *kernelMemory) {
     // NOTE: Adding one extra map here because we are doing page faults manually
     // which will increase the physical memory usage
     IdentityToMappable((TreeWithFreeList *)&physicalMA,
-                       alignof(*physicalMA.nodes.buf),
-                       sizeof(*physicalMA.nodes.buf), 1);
-    IdentityToMappable((TreeWithFreeList *)&virtualMA,
-                       alignof(*virtualMA.nodes.buf),
-                       sizeof(*virtualMA.nodes.buf), 0);
+                       alignof(*physicalMA.buf), sizeof(*physicalMA.buf), 1);
+    IdentityToMappable((TreeWithFreeList *)&virtualMA, alignof(*virtualMA.buf),
+                       sizeof(*virtualMA.buf), 0);
     IdentityToMappable((TreeWithFreeList *)&virtualMemorySizeMapper,
-                       alignof(*virtualMemorySizeMapper.nodes.buf),
-                       sizeof(*virtualMemorySizeMapper.nodes.buf), 0);
+                       alignof(*virtualMemorySizeMapper.buf),
+                       sizeof(*virtualMemorySizeMapper.buf), 0);
 
     freePackedMMTree(&kernelMemory->physicalPMA);
     freePackedMMTree(&kernelMemory->virtualPMA);

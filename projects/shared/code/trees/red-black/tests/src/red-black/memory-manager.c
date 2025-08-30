@@ -17,9 +17,8 @@
 #include "shared/trees/red-black/tests/cases/memory-manager.h"
 #include "shared/trees/red-black/tests/red-black/common.h"
 
-static void addValueToExpected(NodeLocation *nodeLocation,
-                               Memory_max_a *expectedValues, Memory toAdd,
-                               U32 tree) {
+static void addValueToExpected(MMTreeWithFreeList *treeWithFreeList,
+                               Memory_max_a *expectedValues, Memory toAdd) {
     U64 indexToInsert = 0;
     while (indexToInsert < expectedValues->len &&
            expectedValues->buf[indexToInsert].start < toAdd.start) {
@@ -62,8 +61,9 @@ static void addValueToExpected(NodeLocation *nodeLocation,
                             "Increase max size or decrease expected nodes "
                             "in Red-Black tree. Current maximum size: "));
                 INFO(MAX_NODES_IN_TREE, .flags = NEWLINE);
-                appendRedBlackTreeWithBadNode(nodeLocation, tree, 0,
-                                              RED_BLACK_MEMORY_MANAGER);
+                appendRedBlackTreeWithBadNode(
+                    (TreeWithFreeList *)treeWithFreeList, 0,
+                    RED_BLACK_MEMORY_MANAGER);
             }
         }
 
@@ -77,22 +77,18 @@ static void addValueToExpected(NodeLocation *nodeLocation,
 }
 
 static void testTree(TreeOperation_a operations, Arena scratch) {
-    U32 tree = 0;
     MMTreeWithFreeList treeWithFreeList = {
-        .nodes = (MMNode_max_a){.buf = NEW(&scratch, MMNode,
-                                           .count = MAX_NODES_IN_TREE),
-                                .len = 0,
-                                .cap = MAX_NODES_IN_TREE},
-        .tree = &tree,
+        .buf = NEW(&scratch, MMNode, .count = MAX_NODES_IN_TREE),
+        .len = 0,
+        .cap = MAX_NODES_IN_TREE,
+        .tree = 0,
+        .elementSizeBytes = sizeof(*treeWithFreeList.buf),
         .freeList =
             (U32_max_a){.buf = NEW(&scratch, U32, .count = MAX_NODES_IN_TREE),
                         .len = 0,
-                        .cap = MAX_NODES_IN_TREE},
-        .nodeLocation = {.base = (U8 *)treeWithFreeList.nodes.buf,
-                         .elementSizeBytes =
-                             sizeof(*treeWithFreeList.nodes.buf)}};
-    treeWithFreeList.nodes.buf[0] = (MMNode){0};
-    treeWithFreeList.nodes.len = 1;
+                        .cap = MAX_NODES_IN_TREE}};
+    treeWithFreeList.buf[0] = (MMNode){0};
+    treeWithFreeList.len = 1;
 
     Memory_max_a expectedValues =
         (Memory_max_a){.buf = NEW(&scratch, Memory, .count = MAX_NODES_IN_TREE),
@@ -101,11 +97,11 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
     for (U64 i = 0; i < operations.len; i++) {
         switch (operations.buf[i].type) {
         case INSERT: {
-            addValueToExpected(&treeWithFreeList.nodeLocation, &expectedValues,
-                               operations.buf[i].memory, tree);
+            addValueToExpected(&treeWithFreeList, &expectedValues,
+                               operations.buf[i].memory);
 
             MMNode *createdNode =
-                getFromNodes((TreeWithFreeList *)&treeWithFreeList.nodes);
+                getFromNodes((TreeWithFreeList *)&treeWithFreeList);
             createdNode->data.memory = operations.buf[i].memory;
             (void)insertMMNode(&treeWithFreeList, createdNode);
             break;
@@ -128,8 +124,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                 }
                 break;
             } else {
-                MMNode *deleted =
-                    getMMNode(&treeWithFreeList.nodeLocation, deletedIndex);
+                MMNode *deleted = getMMNode(&treeWithFreeList, deletedIndex);
                 if (deleted->data.memory.bytes <
                     operations.buf[i].memory.bytes) {
                     TEST_FAILURE {
@@ -161,8 +156,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         }
         }
 
-        assertMMRedBlackTreeValid(&treeWithFreeList.nodeLocation, tree,
-                                  expectedValues, scratch);
+        assertMMRedBlackTreeValid(&treeWithFreeList, expectedValues, scratch);
     }
 
     testSuccess();

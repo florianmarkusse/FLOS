@@ -13,14 +13,14 @@ typedef enum {
     RED_BLACK_MEMORY_MANAGER
 } RedBlackTreeType;
 
-void appendRedBlackTreeWithBadNode(NodeLocation *nodeLocation, U32 tree,
+void appendRedBlackTreeWithBadNode(TreeWithFreeList *treeWithFreeList,
                                    U32 badNode, RedBlackTreeType treeType);
 
-U32 nodeCount(NodeLocation *nodeLocation, U32 tree, RedBlackTreeType treeType);
-void assertNoRedNodeHasRedChild(NodeLocation *nodeLocation, U32 tree, U32 nodes,
+U32 nodeCount(TreeWithFreeList *treeWithFreeList, RedBlackTreeType treeType);
+void assertNoRedNodeHasRedChild(TreeWithFreeList *treeWithFreeList, U32 nodes,
                                 RedBlackTreeType treeType, Arena scratch);
-void assertPathsFromNodeHaveSameBlackHeight(NodeLocation *nodeLocation,
-                                            U32 tree, U32 nodes,
+void assertPathsFromNodeHaveSameBlackHeight(TreeWithFreeList *treeWithFreeList,
+                                            U32 nodes,
                                             RedBlackTreeType treeType,
                                             Arena scratch);
 

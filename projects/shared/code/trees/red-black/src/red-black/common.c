@@ -5,14 +5,14 @@ static constexpr auto RED_BLACK_COLOR_INDEX = 0;
 static constexpr auto RED_BLACK_COLOR_SHIFT = 31;
 static constexpr auto RED_BLACK_COLOR_MASK = (1ULL << RED_BLACK_COLOR_SHIFT);
 
-U32 getIndex(NodeLocation *nodeLocation, void *node) {
-    U64 difference = (U64)(((U8 *)node) - (nodeLocation->base));
-    return (U32)(difference / nodeLocation->elementSizeBytes);
+U32 getIndex(TreeWithFreeList *treeWithFreeList, void *node) {
+    U64 difference = (U64)(((U8 *)node) - ((U8 *)treeWithFreeList->buf));
+    return (U32)(difference / treeWithFreeList->elementSizeBytes);
 }
 
-RedBlackNode *getNode(NodeLocation *nodeLocation, U32 index) {
-    return (RedBlackNode *)(nodeLocation->base +
-                            (index * nodeLocation->elementSizeBytes));
+RedBlackNode *getNode(TreeWithFreeList *treeWithFreeList, U32 index) {
+    return (RedBlackNode *)((U8 *)treeWithFreeList->buf +
+                            (index * treeWithFreeList->elementSizeBytes));
 }
 
 void setColorWithPointer(RedBlackNode *node, RedBlackColor color) {
@@ -23,8 +23,9 @@ void setColorWithPointer(RedBlackNode *node, RedBlackColor color) {
     }
 }
 
-void setColor(NodeLocation *nodeLocation, U32 index, RedBlackColor color) {
-    setColorWithPointer(getNode(nodeLocation, index), color);
+void setColor(TreeWithFreeList *treeWithFreeList, U32 index,
+              RedBlackColor color) {
+    setColorWithPointer(getNode(treeWithFreeList, index), color);
 }
 
 RedBlackColor getColorWithPointer(RedBlackNode *node) {
@@ -32,8 +33,8 @@ RedBlackColor getColorWithPointer(RedBlackNode *node) {
                            RED_BLACK_COLOR_SHIFT);
 }
 
-RedBlackColor getColor(NodeLocation *nodeLocation, U32 index) {
-    return getColorWithPointer(getNode(nodeLocation, index));
+RedBlackColor getColor(TreeWithFreeList *treeWithFreeList, U32 index) {
+    return getColorWithPointer(getNode(treeWithFreeList, index));
 }
 
 void childNodePointerSet(RedBlackNode *parentNode, RedBlackDirection direction,
@@ -42,9 +43,9 @@ void childNodePointerSet(RedBlackNode *parentNode, RedBlackDirection direction,
         (parentNode->metaData[direction] & RED_BLACK_COLOR_MASK) | childIndex;
 }
 
-void childNodeIndexSet(NodeLocation *nodeLocation, U32 parent,
+void childNodeIndexSet(TreeWithFreeList *treeWithFreeList, U32 parent,
                        RedBlackDirection direction, U32 childIndex) {
-    RedBlackNode *parentNode = getNode(nodeLocation, parent);
+    RedBlackNode *parentNode = getNode(treeWithFreeList, parent);
     childNodePointerSet(parentNode, direction, childIndex);
 }
 
@@ -52,25 +53,25 @@ U32 childNodePointerGet(RedBlackNode *parentNode, RedBlackDirection direction) {
     return parentNode->metaData[direction] & (~RED_BLACK_COLOR_MASK);
 }
 
-U32 childNodeIndexGet(NodeLocation *nodeLocation, U32 parent,
+U32 childNodeIndexGet(TreeWithFreeList *treeWithFreeList, U32 parent,
                       RedBlackDirection direction) {
-    RedBlackNode *parentNode = getNode(nodeLocation, parent);
+    RedBlackNode *parentNode = getNode(treeWithFreeList, parent);
     return childNodePointerGet(parentNode, direction);
 }
 
-U32 rebalanceInsert(NodeLocation *nodeLocation,
+U32 rebalanceInsert(TreeWithFreeList *treeWithFreeList,
                     VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
-                    U32 *tree, RedBlackDirection direction,
+                    RedBlackDirection direction,
                     RotationUpdater rotationUpdater) {
     U32 grandParent = visitedNodes[len - 3].index;
     U32 parent = visitedNodes[len - 2].index;
     U32 node = visitedNodes[len - 1].index;
 
-    U32 uncle = childNodeIndexGet(nodeLocation, grandParent, !direction);
-    if (uncle && getColor(nodeLocation, uncle) == RB_TREE_RED) {
-        setColor(nodeLocation, uncle, RB_TREE_BLACK);
-        setColor(nodeLocation, parent, RB_TREE_BLACK);
-        setColor(nodeLocation, grandParent, RB_TREE_RED);
+    U32 uncle = childNodeIndexGet(treeWithFreeList, grandParent, !direction);
+    if (uncle && getColor(treeWithFreeList, uncle) == RB_TREE_RED) {
+        setColor(treeWithFreeList, uncle, RB_TREE_BLACK);
+        setColor(treeWithFreeList, parent, RB_TREE_BLACK);
+        setColor(treeWithFreeList, grandParent, RB_TREE_RED);
 
         return len - 2;
     }
@@ -81,14 +82,14 @@ U32 rebalanceInsert(NodeLocation *nodeLocation,
     //     \           /
     //      z         y
     if (visitedNodes[len - 2].direction == !direction) {
-        rotateAround(nodeLocation, tree, grandParent, parent, node, direction,
+        rotateAround(treeWithFreeList, grandParent, parent, node, direction,
                      direction);
         if (rotationUpdater) {
-            rotationUpdater(nodeLocation, parent, node);
+            rotationUpdater(treeWithFreeList, parent, node);
         }
 
-        node = childNodeIndexGet(nodeLocation, node, direction);
-        parent = childNodeIndexGet(nodeLocation, grandParent, direction);
+        node = childNodeIndexGet(treeWithFreeList, node, direction);
+        parent = childNodeIndexGet(treeWithFreeList, grandParent, direction);
     }
 
     //      x           y
@@ -96,13 +97,13 @@ U32 rebalanceInsert(NodeLocation *nodeLocation,
     //    y      ==>  z   x
     //   /
     //  z
-    setColor(nodeLocation, parent, RB_TREE_BLACK);
-    setColor(nodeLocation, grandParent, RB_TREE_RED);
+    setColor(treeWithFreeList, parent, RB_TREE_BLACK);
+    setColor(treeWithFreeList, grandParent, RB_TREE_RED);
 
-    rotateAround(nodeLocation, tree, visitedNodes[len - 4].index, grandParent,
+    rotateAround(treeWithFreeList, visitedNodes[len - 4].index, grandParent,
                  parent, !direction, visitedNodes[len - 4].direction);
     if (rotationUpdater) {
-        rotationUpdater(nodeLocation, grandParent, parent);
+        rotationUpdater(treeWithFreeList, grandParent, parent);
     }
 
     return 0;
@@ -115,12 +116,13 @@ U32 rebalanceInsert(NodeLocation *nodeLocation,
 // a black node from the other direction subtree means that we stil need to
 // address that problem. On the other hand, coloring a node black in the
 // direction subtree immediately solves the deficiency in the whole tree.
-U32 rebalanceDelete(NodeLocation *nodeLocation,
+U32 rebalanceDelete(TreeWithFreeList *treeWithFreeList,
                     VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
-                    U32 *tree, RedBlackDirection direction,
+                    RedBlackDirection direction,
                     RotationUpdater rotationUpdater) {
     U32 node = visitedNodes[len - 1].index;
-    U32 childOtherDirection = childNodeIndexGet(nodeLocation, node, !direction);
+    U32 childOtherDirection =
+        childNodeIndexGet(treeWithFreeList, node, !direction);
     // Ensure the other child is colored black, we "push" the problem a level
     // down in the process.
     //                       x(B)              y(B)
@@ -134,15 +136,15 @@ U32 rebalanceDelete(NodeLocation *nodeLocation,
     // RIGHT_DIRECTION     y(R)       ==>   a(B)x(R)
     //                     / \                  /
     //                   a(B)z(B)             z(B)
-    if (getColor(nodeLocation, childOtherDirection) == RB_TREE_RED) {
-        setColor(nodeLocation, childOtherDirection, RB_TREE_BLACK);
-        setColor(nodeLocation, node, RB_TREE_RED);
+    if (getColor(treeWithFreeList, childOtherDirection) == RB_TREE_RED) {
+        setColor(treeWithFreeList, childOtherDirection, RB_TREE_BLACK);
+        setColor(treeWithFreeList, node, RB_TREE_RED);
 
-        rotateAround(nodeLocation, tree, visitedNodes[len - 2].index, node,
+        rotateAround(treeWithFreeList, visitedNodes[len - 2].index, node,
                      childOtherDirection, direction,
                      visitedNodes[len - 2].direction);
         if (rotationUpdater) {
-            rotationUpdater(nodeLocation, node, childOtherDirection);
+            rotationUpdater(treeWithFreeList, node, childOtherDirection);
         }
 
         visitedNodes[len - 1].index = childOtherDirection;
@@ -150,19 +152,22 @@ U32 rebalanceDelete(NodeLocation *nodeLocation,
         visitedNodes[len].direction = direction;
         len++;
 
-        childOtherDirection = childNodeIndexGet(nodeLocation, node, !direction);
+        childOtherDirection =
+            childNodeIndexGet(treeWithFreeList, node, !direction);
     }
 
     U32 innerChildOtherDirection =
-        childNodeIndexGet(nodeLocation, childOtherDirection, direction);
+        childNodeIndexGet(treeWithFreeList, childOtherDirection, direction);
     U32 outerChildOtherDirection =
-        childNodeIndexGet(nodeLocation, childOtherDirection, !direction);
+        childNodeIndexGet(treeWithFreeList, childOtherDirection, !direction);
     // Bubble up the problem by 1 level.
     if (((!innerChildOtherDirection) ||
-         getColor(nodeLocation, innerChildOtherDirection) == RB_TREE_BLACK) &&
+         getColor(treeWithFreeList, innerChildOtherDirection) ==
+             RB_TREE_BLACK) &&
         ((!outerChildOtherDirection) ||
-         getColor(nodeLocation, outerChildOtherDirection) == RB_TREE_BLACK)) {
-        setColor(nodeLocation, childOtherDirection, RB_TREE_RED);
+         getColor(treeWithFreeList, outerChildOtherDirection) ==
+             RB_TREE_BLACK)) {
+        setColor(treeWithFreeList, childOtherDirection, RB_TREE_RED);
 
         return len - 1;
     }
@@ -179,14 +184,14 @@ U32 rebalanceDelete(NodeLocation *nodeLocation,
     //                     \                   /
     //                     z(R)             y(R)
     if ((!outerChildOtherDirection) ||
-        getColor(nodeLocation, outerChildOtherDirection) == RB_TREE_BLACK) {
-        setColor(nodeLocation, childOtherDirection, RB_TREE_RED);
-        setColor(nodeLocation, innerChildOtherDirection, RB_TREE_BLACK);
+        getColor(treeWithFreeList, outerChildOtherDirection) == RB_TREE_BLACK) {
+        setColor(treeWithFreeList, childOtherDirection, RB_TREE_RED);
+        setColor(treeWithFreeList, innerChildOtherDirection, RB_TREE_BLACK);
 
-        rotateAround(nodeLocation, tree, node, childOtherDirection,
+        rotateAround(treeWithFreeList, node, childOtherDirection,
                      innerChildOtherDirection, !direction, !direction);
         if (rotationUpdater) {
-            rotationUpdater(nodeLocation, childOtherDirection,
+            rotationUpdater(treeWithFreeList, childOtherDirection,
                             innerChildOtherDirection);
         }
 
@@ -206,15 +211,16 @@ U32 rebalanceDelete(NodeLocation *nodeLocation,
     // RIGHT_DIRECTION      y(B)a(B)        ===>       z(B)x(B)
     //                      /                               \
     //                    z(R)                              a(B)
-    setColor(nodeLocation, childOtherDirection, getColor(nodeLocation, node));
-    setColor(nodeLocation, node, RB_TREE_BLACK);
-    setColor(nodeLocation, outerChildOtherDirection, RB_TREE_BLACK);
+    setColor(treeWithFreeList, childOtherDirection,
+             getColor(treeWithFreeList, node));
+    setColor(treeWithFreeList, node, RB_TREE_BLACK);
+    setColor(treeWithFreeList, outerChildOtherDirection, RB_TREE_BLACK);
 
-    rotateAround(nodeLocation, tree, visitedNodes[len - 2].index, node,
+    rotateAround(treeWithFreeList, visitedNodes[len - 2].index, node,
                  childOtherDirection, direction,
                  visitedNodes[len - 2].direction);
     if (rotationUpdater) {
-        rotationUpdater(nodeLocation, node, childOtherDirection);
+        rotationUpdater(treeWithFreeList, node, childOtherDirection);
     }
 
     return 0;
@@ -227,32 +233,34 @@ RedBlackDirection calculateDirection(U64 value, U64 toCompare) {
     return RB_TREE_LEFT;
 }
 
-void rotateAround(NodeLocation *nodeLocation, U32 *tree, U32 rotationParent,
+void rotateAround(TreeWithFreeList *treeWithFreeList, U32 rotationParent,
                   U32 rotationNode, U32 rotationChild,
                   RedBlackDirection rotationDirection,
                   RedBlackDirection parentToChildDirection) {
-    RedBlackNode *rotationChildPtr = getNode(nodeLocation, rotationChild);
+    RedBlackNode *rotationChildPtr = getNode(treeWithFreeList, rotationChild);
 
-    childNodeIndexSet(nodeLocation, rotationNode, !rotationDirection,
+    childNodeIndexSet(treeWithFreeList, rotationNode, !rotationDirection,
                       childNodePointerGet(rotationChildPtr, rotationDirection));
     childNodePointerSet(rotationChildPtr, rotationDirection, rotationNode);
     if (rotationParent) {
         if (!rotationParent) {
-            *tree = rotationChild;
+            treeWithFreeList->tree = rotationChild;
         } else {
             RedBlackNode *rotationParentPtr =
-                getNode(nodeLocation, rotationParent);
+                getNode(treeWithFreeList, rotationParent);
             childNodePointerSet(rotationParentPtr, parentToChildDirection,
                                 rotationChild);
         }
     } else {
-        *tree = rotationChild;
+        treeWithFreeList->tree = rotationChild;
     }
 }
 
-U32 findAdjacentInSteps(NodeLocation *nodeLocation, VisitedNode *visitedNodes,
-                        U32 node, RedBlackDirection direction) {
-    U32 directionChildIndex = childNodeIndexGet(nodeLocation, node, direction);
+U32 findAdjacentInSteps(TreeWithFreeList *treeWithFreeList,
+                        VisitedNode *visitedNodes, U32 node,
+                        RedBlackDirection direction) {
+    U32 directionChildIndex =
+        childNodeIndexGet(treeWithFreeList, node, direction);
     if (!directionChildIndex) {
         return 0;
     }
@@ -265,7 +273,7 @@ U32 findAdjacentInSteps(NodeLocation *nodeLocation, VisitedNode *visitedNodes,
     traversals++;
 
     while (true) {
-        U32 next = childNodeIndexGet(nodeLocation, node, !direction);
+        U32 next = childNodeIndexGet(treeWithFreeList, node, !direction);
         if (!next) {
             break;
         }

@@ -1,14 +1,15 @@
 #include "shared/memory/management/memory-tree.h"
 
-U32 getNodeFromTreeWithFreeList(U32_max_a *freeList, void_max_a *nodes) {
-    if (freeList->len > 0) {
-        U32 result = freeList->buf[freeList->len - 1];
-        freeList->len--;
+U32 getNodeFromTreeWithFreeList(TreeWithFreeList *treeWithFreeList) {
+    if (treeWithFreeList->freeList.len > 0) {
+        U32 result =
+            treeWithFreeList->freeList.buf[treeWithFreeList->freeList.len - 1];
+        treeWithFreeList->freeList.len--;
         return result;
     }
 
-    if (nodes->len < nodes->cap) {
-        return nodes->len;
+    if (treeWithFreeList->len < treeWithFreeList->cap) {
+        return treeWithFreeList->len;
     }
 
     return 0;

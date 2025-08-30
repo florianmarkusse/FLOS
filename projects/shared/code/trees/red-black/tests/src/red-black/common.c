@@ -9,9 +9,9 @@ void *getFromNodes(TreeWithFreeList *treeWithFreeList) {
             treeWithFreeList->freeList.buf[treeWithFreeList->freeList.len - 1];
         treeWithFreeList->freeList.len--;
 
-        return getNode(&treeWithFreeList->nodeLocation, freeIndex);
+        return getNode(treeWithFreeList, freeIndex);
     }
-    if (treeWithFreeList->nodes.len == treeWithFreeList->nodes.cap) {
+    if (treeWithFreeList->len == treeWithFreeList->cap) {
         TEST_FAILURE {
             INFO(STRING("Tree contains too many nodes to fit in nodes array."
                         "Increase max size or decrease nodes "
@@ -20,9 +20,8 @@ void *getFromNodes(TreeWithFreeList *treeWithFreeList) {
         }
     }
 
-    void *result = ((U8 *)treeWithFreeList->nodes.buf) +
-                   (treeWithFreeList->nodeLocation.elementSizeBytes *
-                    treeWithFreeList->nodes.len);
-    treeWithFreeList->nodes.len++;
+    void *result = ((U8 *)treeWithFreeList->buf) +
+                   (treeWithFreeList->elementSizeBytes * treeWithFreeList->len);
+    treeWithFreeList->len++;
     return result;
 }

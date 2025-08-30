@@ -19,7 +19,7 @@ typedef struct {
 typedef MAX_LENGTH_ARRAY(VMMNode) VMMNode_max_a;
 typedef TREE_WITH_FREELIST(VMMNode) VMMTreeWithFreeList;
 
-VMMNode *getVMMNode(NodeLocation *nodeLocation, U32 index);
+VMMNode *getVMMNode(VMMTreeWithFreeList *treeWithFreeList, U32 index);
 
 void insertVMMNode(VMMTreeWithFreeList *treeWithFreeList, VMMNode *createdNode);
 [[nodiscard]] U32 deleteVMMNode(VMMTreeWithFreeList *treeWithFreeList,

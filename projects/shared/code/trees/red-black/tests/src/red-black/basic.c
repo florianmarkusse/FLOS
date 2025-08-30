@@ -263,22 +263,18 @@ static constexpr auto MIXED_TEST_CASES_LEN = COUNTOF(mixed);
 static TestCases mixedTestCases = {.buf = mixed, .len = MIXED_TEST_CASES_LEN};
 
 static void testTree(TreeOperation_a operations, Arena scratch) {
-    U32 tree = 0;
     VMMTreeWithFreeList treeWithFreeList = {
-        .nodes = (VMMNode_max_a){.buf = NEW(&scratch, VMMNode,
-                                            .count = MAX_NODES_IN_TREE),
-                                 .len = 0,
-                                 .cap = MAX_NODES_IN_TREE},
-        .tree = &tree,
+        .buf = NEW(&scratch, VMMNode, .count = MAX_NODES_IN_TREE),
+        .len = 0,
+        .cap = MAX_NODES_IN_TREE,
+        .tree = 0,
+        .elementSizeBytes = sizeof(*treeWithFreeList.buf),
         .freeList =
             (U32_max_a){.buf = NEW(&scratch, U32, .count = MAX_NODES_IN_TREE),
                         .len = 0,
-                        .cap = MAX_NODES_IN_TREE},
-        .nodeLocation = {.base = (U8 *)treeWithFreeList.nodes.buf,
-                         .elementSizeBytes =
-                             sizeof(*treeWithFreeList.nodes.buf)}};
-    treeWithFreeList.nodes.buf[0] = (VMMNode){0};
-    treeWithFreeList.nodes.len = 1;
+                        .cap = MAX_NODES_IN_TREE}};
+    treeWithFreeList.buf[0] = (VMMNode){0};
+    treeWithFreeList.len = 1;
 
     U64_max_a expectedValues =
         (U64_max_a){.buf = NEW(&scratch, U64, .count = MAX_NODES_IN_TREE),
@@ -303,7 +299,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                                 "in Red-Black tree. Current maximum size: "));
                     INFO(MAX_NODES_IN_TREE, .flags = NEWLINE);
                     appendRedBlackTreeWithBadNode(
-                        &treeWithFreeList.nodeLocation, tree, 0,
+                        (TreeWithFreeList *)&treeWithFreeList, 0,
                         RED_BLACK_VIRTUAL_MEMORY_MAPPER);
                 }
             }
@@ -314,8 +310,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         case DELETE: {
             U32 deleted =
                 deleteVMMNode(&treeWithFreeList, operations.buf[i].value);
-            VMMNode *deletedNode =
-                getVMMNode(&treeWithFreeList.nodeLocation, deleted);
+            VMMNode *deletedNode = getVMMNode(&treeWithFreeList, deleted);
             if (deletedNode->data.memory.start != operations.buf[i].value) {
                 TEST_FAILURE {
                     INFO(STRING("Deleted value does not equal the value that "
@@ -358,8 +353,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
                 }
                 break;
             } else {
-                VMMNode *deletedNode =
-                    getVMMNode(&treeWithFreeList.nodeLocation, deleted);
+                VMMNode *deletedNode = getVMMNode(&treeWithFreeList, deleted);
                 if (deletedNode->data.memory.start < operations.buf[i].value) {
                     TEST_FAILURE {
                         INFO(STRING("Deleted value not equal the value that "
@@ -390,8 +384,8 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         }
         }
 
-        assertBasicRedBlackTreeValid(&treeWithFreeList.nodeLocation, tree,
-                                     expectedValues, scratch);
+        assertBasicRedBlackTreeValid(&treeWithFreeList, expectedValues,
+                                     scratch);
     }
 
     testSuccess();

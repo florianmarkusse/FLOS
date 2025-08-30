@@ -3,8 +3,9 @@
 
 #include "shared/memory/allocator/arena.h"
 #include "shared/trees/red-black/common.h"
+#include "shared/trees/red-black/virtual-mapping-manager.h"
 #include "shared/types/array-types.h"
 
-void assertBasicRedBlackTreeValid(NodeLocation *nodeLocation, U32 tree,
+void assertBasicRedBlackTreeValid(VMMTreeWithFreeList *treeWithFreeList,
                                   U64_max_a expectedValues, Arena scratch);
 #endif

@@ -31,15 +31,13 @@ void removePageMapping(U64 address) {
 
 void addPageMapping(Memory memory, U64_pow2 pageSize) {
     U32 newNodeIndex = getNodeFromTreeWithFreeList(
-        &virtualMemorySizeMapper.freeList,
-        (void_max_a *)&virtualMemorySizeMapper.nodes);
+        (TreeWithFreeList *)&virtualMemorySizeMapper);
 
     if (!newNodeIndex) {
         interruptUnexpectedError();
     }
 
-    VMMNode *newNode =
-        getVMMNode(&virtualMemorySizeMapper.nodeLocation, newNodeIndex);
+    VMMNode *newNode = getVMMNode(&virtualMemorySizeMapper, newNodeIndex);
     newNode->data.memory = memory;
     newNode->data.mappingSize = pageSize;
 

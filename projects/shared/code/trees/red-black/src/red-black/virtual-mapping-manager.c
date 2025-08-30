@@ -2,8 +2,8 @@
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/converter.h"
 
-VMMNode *getVMMNode(NodeLocation *nodeLocation, U32 index) {
-    return (VMMNode *)getNode(nodeLocation, index);
+VMMNode *getVMMNode(VMMTreeWithFreeList *treeWithFreeList, U32 index) {
+    return (VMMNode *)getNode((TreeWithFreeList *)treeWithFreeList, index);
 }
 
 static void initVisitedNodes(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
@@ -13,23 +13,24 @@ static void initVisitedNodes(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
     *len = 1;
 }
 
-static U32 deleteNodeInPath(NodeLocation *nodeLocation,
+static U32 deleteNodeInPath(VMMTreeWithFreeList *treeWithFreeList,
                             VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT],
-                            U32 len, U32 *tree, U32 toDelete) {
-    U32 stepsToSuccessor = findAdjacentInSteps(nodeLocation, &visitedNodes[len],
-                                               toDelete, RB_TREE_RIGHT);
+                            U32 len, U32 toDelete) {
+    U32 stepsToSuccessor =
+        findAdjacentInSteps((TreeWithFreeList *)treeWithFreeList,
+                            &visitedNodes[len], toDelete, RB_TREE_RIGHT);
 
-    VMMNode *toDeleteNode = getVMMNode(nodeLocation, toDelete);
+    VMMNode *toDeleteNode = getVMMNode(treeWithFreeList, toDelete);
     // If there is no right child, we can delete by having the parent of
     // toDelete now point to toDelete's left child instead of toDelete.
     if (!stepsToSuccessor) {
         U32 leftChildIndexToDeleteNode =
             childNodePointerGet(&toDeleteNode->header, RB_TREE_LEFT);
         if (!visitedNodes[len - 1].index) {
-            *tree = leftChildIndexToDeleteNode;
+            treeWithFreeList->tree = leftChildIndexToDeleteNode;
         } else {
             VMMNode *parentNode =
-                getVMMNode(nodeLocation, visitedNodes[len - 1].index);
+                getVMMNode(treeWithFreeList, visitedNodes[len - 1].index);
             childNodePointerSet(&parentNode->header,
                                 visitedNodes[len - 1].direction,
                                 leftChildIndexToDeleteNode);
@@ -43,15 +44,15 @@ static U32 deleteNodeInPath(NodeLocation *nodeLocation,
         len += stepsToSuccessor;
 
         VMMNode *nodeGettingNewChild =
-            getVMMNode(nodeLocation, visitedNodes[len - 1].index);
+            getVMMNode(treeWithFreeList, visitedNodes[len - 1].index);
         toDelete = childNodePointerGet(&nodeGettingNewChild->header,
                                        visitedNodes[len - 1].direction);
 
         // Swap the values around. Naturally, the node pointers can be swapped
         // too.
-        toDeleteNode = getVMMNode(nodeLocation, toDelete);
-        VMMNode *swapNode =
-            getVMMNode(nodeLocation, visitedNodes[upperNodeIndex - 1].index);
+        toDeleteNode = getVMMNode(treeWithFreeList, toDelete);
+        VMMNode *swapNode = getVMMNode(treeWithFreeList,
+                                       visitedNodes[upperNodeIndex - 1].index);
 
         VMMData valueToKeep = toDeleteNode->data;
 
@@ -68,11 +69,11 @@ static U32 deleteNodeInPath(NodeLocation *nodeLocation,
     // be deleted.
     if (getColorWithPointer(&toDeleteNode->header) == RB_TREE_BLACK) {
         while (len >= 2) {
-            U32 childDeficitBlackDirection =
-                childNodeIndexGet(nodeLocation, visitedNodes[len - 1].index,
-                                  visitedNodes[len - 1].direction);
+            U32 childDeficitBlackDirection = childNodeIndexGet(
+                (TreeWithFreeList *)treeWithFreeList,
+                visitedNodes[len - 1].index, visitedNodes[len - 1].direction);
             VMMNode *childDeficitBlackDirectionNode =
-                getVMMNode(nodeLocation, childDeficitBlackDirection);
+                getVMMNode(treeWithFreeList, childDeficitBlackDirection);
             if (childDeficitBlackDirection &&
                 getColorWithPointer(&childDeficitBlackDirectionNode->header) ==
                     RB_TREE_RED) {
@@ -81,7 +82,8 @@ static U32 deleteNodeInPath(NodeLocation *nodeLocation,
                 break;
             }
 
-            len = rebalanceDelete(nodeLocation, visitedNodes, len, tree,
+            len = rebalanceDelete((TreeWithFreeList *)treeWithFreeList,
+                                  visitedNodes, len,
                                   visitedNodes[len - 1].direction, nullptr);
         }
     }
@@ -91,18 +93,16 @@ static U32 deleteNodeInPath(NodeLocation *nodeLocation,
 
 void insertVMMNode(VMMTreeWithFreeList *treeWithFreeList,
                    VMMNode *createdNode) {
-    NodeLocation *nodeLocation = &treeWithFreeList->nodeLocation;
-    U32 *tree = treeWithFreeList->tree;
-
     // Zero out children (& color)
     memset(createdNode->header.metaData, 0,
            sizeof(createdNode->header.metaData));
 
-    U32 createdNodeIndex = getIndex(nodeLocation, createdNode);
-    if (!(*tree)) {
+    U32 createdNodeIndex =
+        getIndex((TreeWithFreeList *)treeWithFreeList, createdNode);
+    if (!(treeWithFreeList->tree)) {
         // NOTE: Set created node to black, is already done by setting children
         // to 0
-        *tree = createdNodeIndex;
+        treeWithFreeList->tree = createdNodeIndex;
         return;
     }
 
@@ -111,8 +111,8 @@ void insertVMMNode(VMMTreeWithFreeList *treeWithFreeList,
     U32 len;
     initVisitedNodes(visitedNodes, &len);
 
-    U32 current = *tree;
-    VMMNode *currentNode = getVMMNode(nodeLocation, current);
+    U32 current = treeWithFreeList->tree;
+    VMMNode *currentNode = getVMMNode(treeWithFreeList, current);
     while (1) {
         visitedNodes[len].index = current;
         visitedNodes[len].direction = calculateDirection(
@@ -126,7 +126,7 @@ void insertVMMNode(VMMTreeWithFreeList *treeWithFreeList,
         }
 
         current = next;
-        currentNode = getVMMNode(nodeLocation, current);
+        currentNode = getVMMNode(treeWithFreeList, current);
     }
 
     // Insert
@@ -139,25 +139,24 @@ void insertVMMNode(VMMTreeWithFreeList *treeWithFreeList,
     len++;
 
     // Check for violations
-    while (len >= 4 &&
-           getColor(nodeLocation, visitedNodes[len - 2].index) == RB_TREE_RED) {
-        len = rebalanceInsert(nodeLocation, visitedNodes, len, tree,
-                              visitedNodes[len - 3].direction, nullptr);
+    while (len >= 4 && getColor((TreeWithFreeList *)treeWithFreeList,
+                                visitedNodes[len - 2].index) == RB_TREE_RED) {
+        len =
+            rebalanceInsert((TreeWithFreeList *)treeWithFreeList, visitedNodes,
+                            len, visitedNodes[len - 3].direction, nullptr);
     }
 
-    setColor(nodeLocation, *tree, RB_TREE_BLACK);
+    setColor((TreeWithFreeList *)treeWithFreeList, treeWithFreeList->tree,
+             RB_TREE_BLACK);
 }
 
 U32 deleteVMMNode(VMMTreeWithFreeList *treeWithFreeList, U64 value) {
-    NodeLocation *nodeLocation = &treeWithFreeList->nodeLocation;
-    U32 *tree = treeWithFreeList->tree;
-
     VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
     U32 len;
     initVisitedNodes(visitedNodes, &len);
 
-    U32 currentIndex = *tree;
-    for (VMMNode *current = getVMMNode(nodeLocation, currentIndex);
+    U32 currentIndex = treeWithFreeList->tree;
+    for (VMMNode *current = getVMMNode(treeWithFreeList, currentIndex);
          current->data.memory.start != value; len++) {
         visitedNodes[len].index = currentIndex;
         visitedNodes[len].direction =
@@ -165,29 +164,25 @@ U32 deleteVMMNode(VMMTreeWithFreeList *treeWithFreeList, U64 value) {
 
         currentIndex =
             childNodePointerGet(&current->header, visitedNodes[len].direction);
-        current = getVMMNode(nodeLocation, currentIndex);
+        current = getVMMNode(treeWithFreeList, currentIndex);
     }
 
-    return deleteNodeInPath(nodeLocation, visitedNodes, len, tree,
-                            currentIndex);
+    return deleteNodeInPath(treeWithFreeList, visitedNodes, len, currentIndex);
 }
 
 [[nodiscard]] U32 deleteAtLeastVMMNode(VMMTreeWithFreeList *treeWithFreeList,
                                        U64 value) {
-    NodeLocation *nodeLocation = &treeWithFreeList->nodeLocation;
-    U32 *tree = treeWithFreeList->tree;
-
     VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
     U32 len;
     initVisitedNodes(visitedNodes, &len);
 
     U32 bestWithVisitedNodesLen = 0;
 
-    U32 potentialIndex = *tree;
-    for (VMMNode *potential = getVMMNode(nodeLocation, *tree);
-         potentialIndex;) {
+    U32 potentialIndex = treeWithFreeList->tree;
+    while (potentialIndex) {
+        VMMNode *potential = getVMMNode(treeWithFreeList, potentialIndex);
         if (potential->data.memory.start == value) {
-            return deleteNodeInPath(nodeLocation, visitedNodes, len, tree,
+            return deleteNodeInPath(treeWithFreeList, visitedNodes, len,
                                     potentialIndex);
         }
 
@@ -202,27 +197,24 @@ U32 deleteVMMNode(VMMTreeWithFreeList *treeWithFreeList, U64 value) {
         len++;
 
         potentialIndex = childNodePointerGet(&potential->header, dir);
-        potential = getVMMNode(nodeLocation, potentialIndex);
     }
 
     if (bestWithVisitedNodesLen == 0) {
         return 0;
     }
 
-    return deleteNodeInPath(nodeLocation, visitedNodes, bestWithVisitedNodesLen,
-                            tree, visitedNodes[bestWithVisitedNodesLen].index);
+    return deleteNodeInPath(treeWithFreeList, visitedNodes,
+                            bestWithVisitedNodesLen,
+                            visitedNodes[bestWithVisitedNodesLen].index);
 }
 
 VMMNode *findGreatestBelowOrEqualVMMNode(VMMTreeWithFreeList *treeWithFreeList,
                                          U64 address) {
-    NodeLocation *nodeLocation = &treeWithFreeList->nodeLocation;
-    U32 *tree = treeWithFreeList->tree;
-
-    U32 current = *tree;
+    U32 current = treeWithFreeList->tree;
     U32 result = 0;
 
     while (current) {
-        VMMNode *currentPtr = getVMMNode(nodeLocation, current);
+        VMMNode *currentPtr = getVMMNode(treeWithFreeList, current);
         if (currentPtr->data.memory.start == address) {
             return currentPtr;
         } else if (currentPtr->data.memory.start < address) {
@@ -233,5 +225,5 @@ VMMNode *findGreatestBelowOrEqualVMMNode(VMMTreeWithFreeList *treeWithFreeList,
         }
     }
 
-    return getVMMNode(nodeLocation, result);
+    return getVMMNode(treeWithFreeList, result);
 }

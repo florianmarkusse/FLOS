@@ -30,7 +30,7 @@ typedef struct {
     U32 freed[RED_BLACK_MM_MAX_POSSIBLE_FREES_ON_INSERT];
 } InsertResult;
 
-MMNode *getMMNode(NodeLocation *nodeLocation, U32 index);
+MMNode *getMMNode(MMTreeWithFreeList *treeWithFreeList, U32 index);
 
 // On inserting a node in this tree, there are 3 possibilities and 3
 // different return values:

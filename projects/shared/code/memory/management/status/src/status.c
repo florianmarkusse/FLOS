@@ -9,22 +9,18 @@
 static AvailableMemoryState
 getAvailableMemory(MMTreeWithFreeList *treeWithFreeList) {
     AvailableMemoryState result = {0};
-    if (!(*treeWithFreeList->tree)) {
+    if (!(treeWithFreeList->tree)) {
         return result;
     }
 
-    NodeLocation nodeLocation = (NodeLocation){
-        .base = (U8 *)treeWithFreeList->nodes.buf,
-        .elementSizeBytes = sizeof(*treeWithFreeList->nodes.buf)};
-
     U32 queue[RB_TREE_MAX_HEIGHT];
-    queue[0] = *treeWithFreeList->tree;
+    queue[0] = treeWithFreeList->tree;
     U32 len = 1;
 
     while (len > 0) {
         U32 poppedIndex = queue[len - 1];
         len--;
-        MMNode *poppedNode = getMMNode(&nodeLocation, poppedIndex);
+        MMNode *poppedNode = getMMNode(treeWithFreeList, poppedIndex);
         result.nodes++;
         result.memory += poppedNode->data.memory.bytes;
 
@@ -58,12 +54,11 @@ static void appendMemoryManagerStatus(MMTreeWithFreeList *treeWithFreeList,
     INFO(stringWithMinSizeDefault(
         CONVERT_TO_STRING(treeWithFreeList->freeList.len), 3));
     INFO(STRING("nodes buf: "));
-    INFO((void *)treeWithFreeList->nodes.buf);
+    INFO((void *)treeWithFreeList->buf);
     INFO(STRING(" len: "));
-    INFO(stringWithMinSizeDefault(
-        CONVERT_TO_STRING(treeWithFreeList->nodes.len), 3));
+    INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(treeWithFreeList->len), 3));
     INFO(STRING(" cap: "));
-    INFO(treeWithFreeList->nodes.cap, .flags = NEWLINE);
+    INFO(treeWithFreeList->cap, .flags = NEWLINE);
 }
 
 void appendPhysicalMemoryManagerStatus() {

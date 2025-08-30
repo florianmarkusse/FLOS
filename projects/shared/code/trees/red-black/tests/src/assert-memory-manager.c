@@ -13,25 +13,26 @@ typedef struct {
 
 typedef ARRAY(NodeIndexMemory) NodeIndexMemory_a;
 
-static void inOrderTraversalFillValues(NodeLocation *nodeLocation, U32 node,
-                                       NodeIndexMemory_a *values) {
+static void inOrderTraversalFillValues(MMTreeWithFreeList *treeWithFreeList,
+                                       U32 node, NodeIndexMemory_a *values) {
     if (!node) {
         return;
     }
 
-    RedBlackNode *treeNode = getNode(nodeLocation, node);
+    RedBlackNode *treeNode =
+        getNode((TreeWithFreeList *)treeWithFreeList, node);
 
     inOrderTraversalFillValues(
-        nodeLocation, childNodePointerGet(treeNode, RB_TREE_LEFT), values);
+        treeWithFreeList, childNodePointerGet(treeNode, RB_TREE_LEFT), values);
     values->buf[values->len] = (NodeIndexMemory){
-        .index = node, .memory = getMMNode(nodeLocation, node)->data.memory};
+        .index = node,
+        .memory = getMMNode(treeWithFreeList, node)->data.memory};
     values->len++;
     inOrderTraversalFillValues(
-        nodeLocation, childNodePointerGet(treeNode, RB_TREE_RIGHT), values);
+        treeWithFreeList, childNodePointerGet(treeNode, RB_TREE_RIGHT), values);
 }
 
-static void appendExpectedValuesAndTreeValues(Memory_max_a expectedValues,
-                                              NodeIndexMemory_a inOrderValues) {
+static void appendExpectedValues(Memory_max_a expectedValues) {
     INFO(STRING("Expected values:\n"));
     for (U32 i = 0; i < expectedValues.len; i++) {
         INFO(STRING("start: "));
@@ -39,6 +40,11 @@ static void appendExpectedValuesAndTreeValues(Memory_max_a expectedValues,
         INFO(STRING(" bytes: "));
         INFO(expectedValues.buf[i].bytes, .flags = NEWLINE);
     }
+}
+
+static void appendExpectedValuesAndTreeValues(Memory_max_a expectedValues,
+                                              NodeIndexMemory_a inOrderValues) {
+    appendExpectedValues(expectedValues);
     INFO(STRING("Red-Black Tree values:\n"));
     for (U32 i = 0; i < inOrderValues.len; i++) {
         INFO(STRING("start: "));
@@ -49,21 +55,22 @@ static void appendExpectedValuesAndTreeValues(Memory_max_a expectedValues,
     INFO(STRING("\n"));
 }
 
-static void assertIsBSTWitExpectedValues(NodeLocation *nodeLocation, U32 node,
+static void assertIsBSTWitExpectedValues(MMTreeWithFreeList *treeWithFreeList,
                                          U32 nodes, Memory_max_a expectedValues,
                                          Arena scratch) {
     NodeIndexMemory_a inOrderValues = {
         .buf = NEW(&scratch, NodeIndexMemory, .count = nodes), .len = 0};
 
-    inOrderTraversalFillValues(nodeLocation, node, &inOrderValues);
+    inOrderTraversalFillValues(treeWithFreeList, treeWithFreeList->tree,
+                               &inOrderValues);
 
     if (inOrderValues.len != expectedValues.len) {
         TEST_FAILURE {
             INFO(STRING("The Red-Black Tree does not contain all the values it "
                         "should contain or it contains more!\n"));
             appendExpectedValuesAndTreeValues(expectedValues, inOrderValues);
-            appendRedBlackTreeWithBadNode(nodeLocation, node, 0,
-                                          RED_BLACK_MEMORY_MANAGER);
+            appendRedBlackTreeWithBadNode((TreeWithFreeList *)treeWithFreeList,
+                                          0, RED_BLACK_MEMORY_MANAGER);
         }
     }
 
@@ -83,8 +90,9 @@ static void assertIsBSTWitExpectedValues(NodeLocation *nodeLocation, U32 node,
                 INFO(expectedValues.buf[i].start, .flags = NEWLINE);
                 appendExpectedValuesAndTreeValues(expectedValues,
                                                   inOrderValues);
-                appendRedBlackTreeWithBadNode(nodeLocation, node, 0,
-                                              RED_BLACK_MEMORY_MANAGER);
+                appendRedBlackTreeWithBadNode(
+                    (TreeWithFreeList *)treeWithFreeList, 0,
+                    RED_BLACK_MEMORY_MANAGER);
             }
         }
     }
@@ -94,102 +102,114 @@ static void assertIsBSTWitExpectedValues(NodeLocation *nodeLocation, U32 node,
         if (previousStart > inOrderValues.buf[i].memory.start) {
             TEST_FAILURE {
                 INFO(STRING("Not a Binary Search Tree!\n"));
-                appendRedBlackTreeWithBadNode(nodeLocation, node,
-                                              inOrderValues.buf[i].index,
-                                              RED_BLACK_MEMORY_MANAGER);
+                appendRedBlackTreeWithBadNode(
+                    (TreeWithFreeList *)treeWithFreeList,
+                    inOrderValues.buf[i].index, RED_BLACK_MEMORY_MANAGER);
             }
         }
         previousStart = inOrderValues.buf[i].memory.start;
     }
 }
 
-static U64 mostBytes(NodeLocation *nodeLocation, U32 node) {
+static U64 mostBytes(MMTreeWithFreeList *treeWithFreeList, U32 node) {
     if (!node) {
         return 0;
     }
 
-    MMNode *treeNode = getMMNode(nodeLocation, node);
-    return MAX(treeNode->data.memory.bytes,
-               mostBytes(nodeLocation,
-                         childNodePointerGet(&treeNode->header, RB_TREE_LEFT)),
-               mostBytes(nodeLocation, childNodePointerGet(&treeNode->header,
-                                                           RB_TREE_RIGHT)));
+    MMNode *treeNode = getMMNode(treeWithFreeList, node);
+    return MAX(
+        treeNode->data.memory.bytes,
+        mostBytes(treeWithFreeList,
+                  childNodePointerGet(&treeNode->header, RB_TREE_LEFT)),
+        mostBytes(treeWithFreeList,
+                  childNodePointerGet(&treeNode->header, RB_TREE_RIGHT)));
 }
 
-static void assertCorrectMostBytesInSubtreeValue(NodeLocation *nodeLocation,
-                                                 U32 tree, U32 node) {
+static void
+assertCorrectMostBytesInSubtreeValue(MMTreeWithFreeList *treeWithFreeList,
+                                     U32 node) {
     if (!node) {
         return;
     }
 
-    MMNode *theNode = getMMNode(nodeLocation, node);
-    if (theNode->data.mostBytesInSubtree != mostBytes(nodeLocation, node)) {
+    MMNode *theNode = getMMNode(treeWithFreeList, node);
+    if (theNode->data.mostBytesInSubtree != mostBytes(treeWithFreeList, node)) {
         TEST_FAILURE {
             INFO(STRING("Found wrong most bytes value!\n"));
-            appendRedBlackTreeWithBadNode(nodeLocation, tree, node,
-                                          RED_BLACK_MEMORY_MANAGER);
+            appendRedBlackTreeWithBadNode((TreeWithFreeList *)treeWithFreeList,
+                                          node, RED_BLACK_MEMORY_MANAGER);
         }
     }
 
     assertCorrectMostBytesInSubtreeValue(
-        nodeLocation, tree,
-        childNodePointerGet(&theNode->header, RB_TREE_LEFT));
+        treeWithFreeList, childNodePointerGet(&theNode->header, RB_TREE_LEFT));
     assertCorrectMostBytesInSubtreeValue(
-        nodeLocation, tree,
-        childNodePointerGet(&theNode->header, RB_TREE_LEFT));
+        treeWithFreeList, childNodePointerGet(&theNode->header, RB_TREE_LEFT));
 }
 
-static void assertCorrectMostBytesTree(NodeLocation *nodeLocation, U32 tree) {
-    assertCorrectMostBytesInSubtreeValue(nodeLocation, tree, tree);
+static void assertCorrectMostBytesTree(MMTreeWithFreeList *treeWithFreeList) {
+    assertCorrectMostBytesInSubtreeValue(treeWithFreeList,
+                                         treeWithFreeList->tree);
 }
 
-static void assertPrevNodeSmaller(NodeLocation *nodeLocation, U32 tree,
+static void assertPrevNodeSmaller(MMTreeWithFreeList *treeWithFreeList,
                                   U32 node, U64 *prevEnd) {
     if (!node) {
         return;
     }
 
-    MMNode *theNode = getMMNode(nodeLocation, node);
+    MMNode *theNode = getMMNode(treeWithFreeList, node);
 
-    assertPrevNodeSmaller(nodeLocation, tree,
+    assertPrevNodeSmaller(treeWithFreeList,
                           childNodePointerGet(&theNode->header, RB_TREE_LEFT),
                           prevEnd);
 
     if (*prevEnd && theNode->data.memory.start <= *prevEnd) {
         TEST_FAILURE {
             INFO(STRING("Should not have been inserted as a separate node!\n"));
-            appendRedBlackTreeWithBadNode(nodeLocation, tree, node,
-                                          RED_BLACK_MEMORY_MANAGER);
+            appendRedBlackTreeWithBadNode((TreeWithFreeList *)treeWithFreeList,
+                                          node, RED_BLACK_MEMORY_MANAGER);
         }
     }
 
     *prevEnd = theNode->data.memory.start + theNode->data.memory.bytes;
 
-    assertPrevNodeSmaller(nodeLocation, tree,
+    assertPrevNodeSmaller(treeWithFreeList,
                           childNodePointerGet(&theNode->header, RB_TREE_RIGHT),
                           prevEnd);
 }
 
-static void assertNoNodeOverlap(NodeLocation *nodeLocation, U32 tree) {
+static void assertNoNodeOverlap(MMTreeWithFreeList *treeWithFreeList) {
     U64 startValue = 0;
-    assertPrevNodeSmaller(nodeLocation, tree, tree, &startValue);
+    assertPrevNodeSmaller(treeWithFreeList, treeWithFreeList->tree,
+                          &startValue);
 }
 
-void assertMMRedBlackTreeValid(NodeLocation *nodeLocation, U32 tree,
+void assertMMRedBlackTreeValid(MMTreeWithFreeList *treeWithFreeList,
                                Memory_max_a expectedValues, Arena scratch) {
-    if (!tree) {
-        return;
+    if (!treeWithFreeList->tree) {
+        if (expectedValues.len == 0) {
+            return;
+        }
+        TEST_FAILURE {
+            INFO(STRING(
+                "The Red-Black Tree is empty while expected values is not!\n"));
+            appendExpectedValues(expectedValues);
+            INFO(STRING("\n"));
+        }
     }
 
-    U32 nodes = nodeCount(nodeLocation, tree, RED_BLACK_MEMORY_MANAGER);
+    U32 nodes = nodeCount((TreeWithFreeList *)treeWithFreeList,
+                          RED_BLACK_MEMORY_MANAGER);
 
-    assertNoNodeOverlap(nodeLocation, tree);
+    assertNoNodeOverlap(treeWithFreeList);
 
-    assertIsBSTWitExpectedValues(nodeLocation, tree, nodes, expectedValues,
+    assertIsBSTWitExpectedValues(treeWithFreeList, nodes, expectedValues,
                                  scratch);
-    assertNoRedNodeHasRedChild(nodeLocation, tree, nodes,
+    assertNoRedNodeHasRedChild((TreeWithFreeList *)treeWithFreeList, nodes,
                                RED_BLACK_MEMORY_MANAGER, scratch);
-    assertPathsFromNodeHaveSameBlackHeight(nodeLocation, tree, nodes,
-                                           RED_BLACK_MEMORY_MANAGER, scratch);
-    assertCorrectMostBytesTree(nodeLocation, tree);
+    assertPathsFromNodeHaveSameBlackHeight((TreeWithFreeList *)treeWithFreeList,
+                                           nodes, RED_BLACK_MEMORY_MANAGER,
+                                           scratch);
+    assertCorrectMostBytesTree(treeWithFreeList);
 }

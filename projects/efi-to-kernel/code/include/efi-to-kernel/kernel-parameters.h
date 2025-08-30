@@ -36,12 +36,20 @@ typedef struct __attribute__((packed)) {
     U32 elementSizeBytes;
 } PackedNodeLocation;
 
+#define PACKED_TREE_ARRAY(T)                                                   \
+    struct __attribute__((packed)) {                                           \
+        /* NOLINTNEXTLINE */                                                   \
+        T *buf;                                                                \
+        U32 len;                                                               \
+        U32 cap;                                                               \
+        U32 elementSizeBytes;                                                  \
+    }
+
 #define PACKED_TREE_WITH_FREELIST(T)                                           \
     struct __attribute__((packed)) {                                           \
-        Packed##T##_max_a nodes;                                               \
-        U32 *tree;                                                             \
-        PackedU32_max_a freeList;                                              \
-        PackedNodeLocation nodeLocation;                                       \
+        U32_max_a freeList;                                                    \
+        PACKED_TREE_ARRAY(T);                                                  \
+        U32 tree;                                                              \
     }
 
 typedef PACKED_MAX_LENGTH_ARRAY(void) Packedvoid_max_a;
