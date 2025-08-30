@@ -61,7 +61,7 @@ static void printTreeIndented(TreeWithFreeList *treeWithFreeList, U32 node,
 void appendRedBlackTreeWithBadNode(TreeWithFreeList *treeWithFreeList,
                                    U32 badNode, RedBlackTreeType treeType) {
     INFO(STRING("Red-Black Tree Structure:"), .flags = NEWLINE);
-    printTreeIndented(treeWithFreeList, treeWithFreeList->tree, 0,
+    printTreeIndented(treeWithFreeList, treeWithFreeList->rootIndex, 0,
                       STRING("Root---"), badNode, treeType);
 }
 
@@ -70,7 +70,7 @@ U32 nodeCount(TreeWithFreeList *treeWithFreeList, RedBlackTreeType treeType) {
 
     U32 result = 0;
 
-    buffer[0] = treeWithFreeList->tree;
+    buffer[0] = treeWithFreeList->rootIndex;
     U32 len = 1;
     while (len > 0) {
         RedBlackNode *node = getNode(treeWithFreeList, buffer[len - 1]);
@@ -85,7 +85,8 @@ U32 nodeCount(TreeWithFreeList *treeWithFreeList, RedBlackTreeType treeType) {
                         INFO(STRING(
                             "Tree has too many nodes to assert correctness!"));
                         appendRedBlackTreeWithBadNode(
-                            treeWithFreeList, treeWithFreeList->tree, treeType);
+                            treeWithFreeList, treeWithFreeList->rootIndex,
+                            treeType);
                     }
                 }
                 buffer[len] = childIndex;
@@ -112,7 +113,7 @@ void assertNoRedNodeHasRedChild(TreeWithFreeList *treeWithFreeList, U32 nodes,
     U32 *buffer = NEW(&scratch, U32, .count = nodes);
     U32 len = 0;
 
-    buffer[len] = treeWithFreeList->tree;
+    buffer[len] = treeWithFreeList->rootIndex;
     len++;
     while (len > 0) {
         U32 node = buffer[len - 1];
@@ -168,7 +169,7 @@ void assertPathsFromNodeHaveSameBlackHeight(TreeWithFreeList *treeWithFreeList,
     U32 *buffer = NEW(&scratch, U32, .count = nodes);
     U32 len = 0;
 
-    buffer[len] = treeWithFreeList->tree;
+    buffer[len] = treeWithFreeList->rootIndex;
     len++;
 
     while (len > 0) {

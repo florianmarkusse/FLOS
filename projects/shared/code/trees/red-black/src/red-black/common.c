@@ -16,7 +16,7 @@ void treeWithFreeListInit(TreeWithFreeList *result, U32 elementSizeBytes,
         .buf = alloc(arena, elementSizeBytes, align, count, 0),
         .len = 1, // NOTE: element at index 0 is to indicate a leaf/empty tree
         .cap = count,
-        .tree = 0,
+        .rootIndex = 0,
         .elementSizeBytes = elementSizeBytes,
         .freeList = (U32_max_a){
             .buf = NEW(arena, U32, .count = count), .len = 0, .cap = count}};
@@ -288,7 +288,7 @@ void rotateAround(TreeWithFreeList *treeWithFreeList, U32 rotationParent,
     childNodePointerSet(rotationChildPtr, rotationDirection, rotationNode);
     if (rotationParent) {
         if (!rotationParent) {
-            treeWithFreeList->tree = rotationChild;
+            treeWithFreeList->rootIndex = rotationChild;
         } else {
             RedBlackNode *rotationParentPtr =
                 getNode(treeWithFreeList, rotationParent);
@@ -296,7 +296,7 @@ void rotateAround(TreeWithFreeList *treeWithFreeList, U32 rotationParent,
                                 rotationChild);
         }
     } else {
-        treeWithFreeList->tree = rotationChild;
+        treeWithFreeList->rootIndex = rotationChild;
     }
 }
 

@@ -60,7 +60,7 @@ static void assertIsBSTWitExpectedValues(VMMTreeWithFreeList *treeWithFreeList,
     NodeIndexMemory_a inOrderValues = {
         .buf = NEW(&scratch, NodeIndexMemory, .count = nodes), .len = 0};
 
-    inOrderTraversalFillValues(treeWithFreeList, treeWithFreeList->tree,
+    inOrderTraversalFillValues(treeWithFreeList, treeWithFreeList->rootIndex,
                                &inOrderValues);
 
     if (inOrderValues.len != expectedValues.len) {
@@ -112,7 +112,7 @@ static void assertIsBSTWitExpectedValues(VMMTreeWithFreeList *treeWithFreeList,
 
 void assertBasicRedBlackTreeValid(VMMTreeWithFreeList *treeWithFreeList,
                                   U64_max_a expectedValues, Arena scratch) {
-    if (!treeWithFreeList->tree) {
+    if (!treeWithFreeList->rootIndex) {
         if (expectedValues.len == 0) {
             return;
         }

@@ -2,6 +2,7 @@
   - Look into color OFFSETOF trick to get rid of slop
   - Look into optimizing the struct by using indices instead of pointers
 - merger getFromNodes
+- elementSizeBytes -> U32 instead of U64 and alignBytes / align also U32 instead of U64
 - maybe see if removing gnu statement expressions is possible? so we can use those macros in other for/while macros
 - nodeLocation base thing is duplicated for no reason in the trees.
 - Change memory model in os-loader?

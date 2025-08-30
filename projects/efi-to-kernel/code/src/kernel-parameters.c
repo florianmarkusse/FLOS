@@ -10,5 +10,5 @@ void setPackedMemoryAllocator(PackedTreeWithFreeList *packedTreeWithFreeList,
         .len = treeWithFreeList->len,
         .cap = treeWithFreeList->cap,
         .elementSizeBytes = treeWithFreeList->elementSizeBytes,
-        .tree = treeWithFreeList->tree};
+        .rootIndex = treeWithFreeList->rootIndex};
 }

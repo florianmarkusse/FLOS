@@ -233,11 +233,13 @@ void initRootVirtualMemoryInKernel() {
 static constexpr auto INITIAL_VIRTUAL_MEMORY_REGIONS = 16;
 static constexpr auto INITIAL_VIRTUAL_MAPPING_SIZES = 128;
 
+// TODO: Fix this by making better use of specialized arenas and get rid of
+// allocatekernelstructure...
 void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                                 Arena scratch) {
     physicalMA = (MMTreeWithFreeList){0};
 
-    virtualMA.tree = 0;
+    virtualMA.rootIndex = 0;
 
     virtualMA.elementSizeBytes = sizeof(*virtualMA.buf);
     U64 bytes = virtualMA.elementSizeBytes * INITIAL_VIRTUAL_MEMORY_REGIONS;
@@ -264,7 +266,7 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                                  .bytes = endingAddress - HIGHER_HALF_START};
     (void)insertMMNode(&virtualMA, node);
 
-    virtualMemorySizeMapper.tree = 0;
+    virtualMemorySizeMapper.rootIndex = 0;
 
     virtualMemorySizeMapper.elementSizeBytes =
         sizeof(*virtualMemorySizeMapper.buf);

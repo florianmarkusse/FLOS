@@ -9,7 +9,9 @@ U32 getNodeFromTreeWithFreeList(TreeWithFreeList *treeWithFreeList) {
     }
 
     if (treeWithFreeList->len < treeWithFreeList->cap) {
-        return treeWithFreeList->len;
+        U32 result = treeWithFreeList->len;
+        treeWithFreeList->len++;
+        return result;
     }
 
     return 0;

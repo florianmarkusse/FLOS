@@ -9,12 +9,12 @@
 static AvailableMemoryState
 getAvailableMemory(MMTreeWithFreeList *treeWithFreeList) {
     AvailableMemoryState result = {0};
-    if (!(treeWithFreeList->tree)) {
+    if (!(treeWithFreeList->rootIndex)) {
         return result;
     }
 
     U32 queue[RB_TREE_MAX_HEIGHT];
-    queue[0] = treeWithFreeList->tree;
+    queue[0] = treeWithFreeList->rootIndex;
     U32 len = 1;
 
     while (len > 0) {

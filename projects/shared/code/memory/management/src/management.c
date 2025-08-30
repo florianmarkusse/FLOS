@@ -1,9 +1,12 @@
 #include "shared/memory/management/management.h"
 
 #include "abstraction/interrupts.h"
+#include "abstraction/log.h"
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/converter.h"
 #include "efi-to-kernel/kernel-parameters.h"
+#include "shared/assert.h"
+#include "shared/log.h"
 #include "shared/maths.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/page.h"
@@ -121,28 +124,40 @@ static void initMemoryAllocator(PackedTreeWithFreeList *packedMemoryAllocator,
     allocator->freeList.cap = packedMemoryAllocator->freeList.cap;
     allocator->freeList.len = packedMemoryAllocator->freeList.len;
 
-    allocator->tree = packedMemoryAllocator->tree;
+    allocator->rootIndex = packedMemoryAllocator->rootIndex;
 }
 
 static constexpr auto ALLOCATOR_MAX_BUFFER_SIZE = 1 * GiB;
 
-static void IdentityToMappable(TreeWithFreeList *treeWithFreeList,
-                               U64_pow2 alignBytes, U64 elementSizeBytes,
-                               U32 additionalMaps) {
+static void arrayLikeMappable(void **buf, U32 *cap, U32 len,
+                              U64_pow2 alignBytes, U64 elementSizeBytes,
+                              U32 additionalMaps) {
     void *virtualBuffer =
         allocVirtualMemory(ALLOCATOR_MAX_BUFFER_SIZE, alignBytes);
 
-    U64 bytesUsed = treeWithFreeList->len * elementSizeBytes;
+    U64 bytesUsed = len * elementSizeBytes;
     U32 mapsToDo =
         (U32)ceilingDivide(bytesUsed, pageSizesSmallest()) + additionalMaps;
     for (typeof(mapsToDo) i = 0; i < mapsToDo; i++) {
         (void)handlePageFault((U64)virtualBuffer + (i * pageSizesSmallest()));
     }
 
-    memcpy(virtualBuffer, treeWithFreeList->buf,
-           treeWithFreeList->len * elementSizeBytes);
-    treeWithFreeList->buf = virtualBuffer;
-    treeWithFreeList->cap = ALLOCATOR_MAX_BUFFER_SIZE / elementSizeBytes;
+    memcpy(virtualBuffer, *buf, len * elementSizeBytes);
+    *buf = virtualBuffer;
+    *cap = ALLOCATOR_MAX_BUFFER_SIZE / elementSizeBytes;
+}
+
+static void IdentityToMappable(TreeWithFreeList *treeWithFreeList,
+                               U64_pow2 alignBytes, U64 elementSizeBytes,
+                               U32 additionalMaps) {
+    arrayLikeMappable(&treeWithFreeList->buf, &treeWithFreeList->cap,
+                      treeWithFreeList->len, alignBytes, elementSizeBytes,
+                      additionalMaps);
+
+    arrayLikeMappable((void **)&treeWithFreeList->freeList.buf,
+                      &treeWithFreeList->freeList.cap,
+                      treeWithFreeList->freeList.len, alignof(U32), sizeof(U32),
+                      0);
 }
 
 static void freePackedVMMTree(PackedVMMTreeWithFreeList *packed) {

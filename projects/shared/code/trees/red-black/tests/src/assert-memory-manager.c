@@ -61,7 +61,7 @@ static void assertIsBSTWitExpectedValues(MMTreeWithFreeList *treeWithFreeList,
     NodeIndexMemory_a inOrderValues = {
         .buf = NEW(&scratch, NodeIndexMemory, .count = nodes), .len = 0};
 
-    inOrderTraversalFillValues(treeWithFreeList, treeWithFreeList->tree,
+    inOrderTraversalFillValues(treeWithFreeList, treeWithFreeList->rootIndex,
                                &inOrderValues);
 
     if (inOrderValues.len != expectedValues.len) {
@@ -149,7 +149,7 @@ assertCorrectMostBytesInSubtreeValue(MMTreeWithFreeList *treeWithFreeList,
 
 static void assertCorrectMostBytesTree(MMTreeWithFreeList *treeWithFreeList) {
     assertCorrectMostBytesInSubtreeValue(treeWithFreeList,
-                                         treeWithFreeList->tree);
+                                         treeWithFreeList->rootIndex);
 }
 
 static void assertPrevNodeSmaller(MMTreeWithFreeList *treeWithFreeList,
@@ -181,13 +181,13 @@ static void assertPrevNodeSmaller(MMTreeWithFreeList *treeWithFreeList,
 
 static void assertNoNodeOverlap(MMTreeWithFreeList *treeWithFreeList) {
     U64 startValue = 0;
-    assertPrevNodeSmaller(treeWithFreeList, treeWithFreeList->tree,
+    assertPrevNodeSmaller(treeWithFreeList, treeWithFreeList->rootIndex,
                           &startValue);
 }
 
 void assertMMRedBlackTreeValid(MMTreeWithFreeList *treeWithFreeList,
                                Memory_max_a expectedValues, Arena scratch) {
-    if (!treeWithFreeList->tree) {
+    if (!treeWithFreeList->rootIndex) {
         if (expectedValues.len == 0) {
             return;
         }

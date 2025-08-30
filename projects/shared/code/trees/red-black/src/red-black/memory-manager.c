@@ -86,7 +86,7 @@ static U32 deleteNodeInPath(MMTreeWithFreeList *treeWithFreeList,
             childNodePointerGet(&toDeleteNode->header, RB_TREE_LEFT);
         U32 previousIndex = visitedNodeIndexGet(visitedNodes, len - 1);
         if (!previousIndex) {
-            treeWithFreeList->tree = leftChildIndexToDeleteNode;
+            treeWithFreeList->rootIndex = leftChildIndexToDeleteNode;
         } else {
             MMNode *parentNode = getMMNode(treeWithFreeList, previousIndex);
             childNodePointerSet(&parentNode->header,
@@ -271,11 +271,11 @@ InsertResult insertMMNode(MMTreeWithFreeList *treeWithFreeList,
 
     U32 createdNodeIndex =
         getIndex((TreeWithFreeList *)treeWithFreeList, createdNode);
-    if (!(treeWithFreeList->tree)) {
+    if (!(treeWithFreeList->rootIndex)) {
         // NOTE: Set created node to black, is already done by setting children
         // to 0
         createdNode->data.mostBytesInSubtree = createdNode->data.memory.bytes;
-        treeWithFreeList->tree = createdNodeIndex;
+        treeWithFreeList->rootIndex = createdNodeIndex;
         return result;
     }
 
@@ -284,7 +284,7 @@ InsertResult insertMMNode(MMTreeWithFreeList *treeWithFreeList,
     visitedNodes[0] = 0;
     U32 len = 1;
 
-    U32 current = treeWithFreeList->tree;
+    U32 current = treeWithFreeList->rootIndex;
     MMNode *currentNode = getMMNode(treeWithFreeList, current);
     U64 createdEnd =
         createdNode->data.memory.start + createdNode->data.memory.bytes;
@@ -345,18 +345,18 @@ InsertResult insertMMNode(MMTreeWithFreeList *treeWithFreeList,
                             setMostBytesAfterRotation);
     }
 
-    setColor((TreeWithFreeList *)treeWithFreeList, treeWithFreeList->tree,
+    setColor((TreeWithFreeList *)treeWithFreeList, treeWithFreeList->rootIndex,
              RB_TREE_BLACK);
 
     return result;
 }
 
 U32 deleteAtLeastMMNode(MMTreeWithFreeList *treeWithFreeList, U64 bytes) {
-    if (!treeWithFreeList->tree) {
+    if (!treeWithFreeList->rootIndex) {
         return 0;
     }
 
-    MMNode *treeNode = getMMNode(treeWithFreeList, treeWithFreeList->tree);
+    MMNode *treeNode = getMMNode(treeWithFreeList, treeWithFreeList->rootIndex);
     if (treeNode->data.mostBytesInSubtree < bytes) {
         return 0;
     }
@@ -368,7 +368,7 @@ U32 deleteAtLeastMMNode(MMTreeWithFreeList *treeWithFreeList, U64 bytes) {
     U64 bestSoFar = treeNode->data.mostBytesInSubtree;
     U32 bestWithVisitedNodesLen = 0;
 
-    U32 potentialIndex = treeWithFreeList->tree;
+    U32 potentialIndex = treeWithFreeList->rootIndex;
     MMNode *potential = treeNode;
     while (potentialIndex) {
         if (potential->data.memory.bytes >= bytes &&

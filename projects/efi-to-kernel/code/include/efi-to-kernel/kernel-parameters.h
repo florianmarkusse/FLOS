@@ -49,7 +49,7 @@ typedef struct __attribute__((packed)) {
     struct __attribute__((packed)) {                                           \
         U32_max_a freeList;                                                    \
         PACKED_TREE_ARRAY(T);                                                  \
-        U32 tree;                                                              \
+        U32 rootIndex;                                                         \
     }
 
 typedef PACKED_MAX_LENGTH_ARRAY(void) Packedvoid_max_a;

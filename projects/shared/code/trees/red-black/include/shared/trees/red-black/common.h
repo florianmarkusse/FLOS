@@ -36,7 +36,7 @@ struct RedBlackNode {
     struct {                                                                   \
         U32_max_a freeList;                                                    \
         TREE_ARRAY(T);                                                         \
-        U32 tree;                                                              \
+        U32 rootIndex;                                                         \
     }
 
 typedef TREE_WITH_FREELIST(void) TreeWithFreeList;
