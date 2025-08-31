@@ -13,8 +13,8 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                                 Arena scratch);
 
 typedef struct {
-    U64 bytes;
-    U64_pow2 align;
+    U32 bytes;
+    U32_pow2 align;
 } ArchParamsRequirements;
 ArchParamsRequirements getArchParamsRequirements();
 

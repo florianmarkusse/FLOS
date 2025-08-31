@@ -101,8 +101,8 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
 
     U8 *TSSes = (U8 *)allocateKernelStructure(bytesPerTSS * numberOfProcessors,
                                               bytesPerTSS, false, scratch);
-    U64 istStackBytesAligned =
-        alignUp(TOTAL_IST_STACKS_BYTES, (U64)KERNEL_STACK_ALIGNMENT);
+    U32 istStackBytesAligned =
+        (U32)alignUp(TOTAL_IST_STACKS_BYTES, (U64)KERNEL_STACK_ALIGNMENT);
     U64 interruptStacksRegion =
         (U64)allocateKernelStructure(istStackBytesAligned * numberOfProcessors,
                                      KERNEL_STACK_ALIGNMENT, false, scratch);

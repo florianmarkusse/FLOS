@@ -121,8 +121,8 @@ static void initMemoryAllocator(PackedTreeWithFreeList *packedMemoryAllocator,
 
 static constexpr auto ALLOCATOR_MAX_BUFFER_SIZE = 1 * GiB;
 
-static void identityArrayToMappable(void_max_a *array, U64_pow2 alignBytes,
-                                    U64 elementSizeBytes, U32 additionalMaps) {
+static void identityArrayToMappable(void_max_a *array, U32_pow2 alignBytes,
+                                    U32 elementSizeBytes, U32 additionalMaps) {
     void *virtualBuffer =
         allocVirtualMemory(ALLOCATOR_MAX_BUFFER_SIZE, alignBytes);
 
@@ -146,12 +146,13 @@ typedef struct {
 
 static void
 treeWithFreeListToMappable(RedBlackNodeBasicTreeWithFreeList *memoryAllocator,
-                           U64_pow2 elementAlign, U64 elementSizeBytes,
+                           U32_pow2 elementAlignBytes, U32 elementSizeBytes,
                            U32 additionalMapsForNodeBuffer) {
     U64 originalBufferLocation = (U64)memoryAllocator->nodes.buf;
 
-    identityArrayToMappable((void_max_a *)&memoryAllocator->nodes, elementAlign,
-                            elementSizeBytes, additionalMapsForNodeBuffer);
+    identityArrayToMappable((void_max_a *)&memoryAllocator->nodes,
+                            elementAlignBytes, elementSizeBytes,
+                            additionalMapsForNodeBuffer);
     U64 newNodesLocation = (U64)memoryAllocator->nodes.buf;
     U64 nodesBias = newNodesLocation - originalBufferLocation;
     for (typeof(memoryAllocator->nodes.len) i = 0;

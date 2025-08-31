@@ -19,8 +19,8 @@ static constexpr auto VIRTUAL_ALLOCATION_TYPE_COUNT =
     (0 VIRTUAL_ALLOCATION_TYPE_ENUM(PLUS_ONE));
 
 typedef struct {
-    U64 bytes;
-    U64_pow2 align;
+    U32 bytes;
+    U32_pow2 align;
 } StructReq;
 
 // NOTE: here as config keys!

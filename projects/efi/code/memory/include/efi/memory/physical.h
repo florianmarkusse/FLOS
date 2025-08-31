@@ -27,13 +27,13 @@ void initKernelStructureLocations(Arena *perm);
 
 U64 findHighestMemoryAddress(U64 currentHighestAddress, Arena scratch);
 __attribute__((malloc, alloc_align(2))) void *
-allocateKernelStructure(U64 bytes, U64_pow2 minimumAlignment,
+allocateKernelStructure(U32 bytes, U32_pow2 minimumAlignment,
                         bool tryEncompassingVirtual, Arena scratch);
 __attribute__((malloc, aligned(UEFI_PAGE_SIZE))) void *
-allocateBytesInUefiPages(U64 bytes, bool isKernelStructure);
+allocateBytesInUefiPages(U32 bytes, bool isKernelStructure);
 
-void createDynamicArray(U32 elements, U64 elementSizeBytes,
-                        U64_pow2 elementAlignBytes, void_max_a *result,
+void createDynamicArray(U32 elements, U32 elementSizeBytes,
+                        U32_pow2 elementAlignBytes, void_max_a *result,
                         Arena scratch);
 
 #define FOR_EACH_DESCRIPTOR(memoryInfoAddress, descriptorName)                 \

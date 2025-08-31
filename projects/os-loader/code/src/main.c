@@ -196,11 +196,11 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
 
     ArchParamsRequirements archParamsRequirements = getArchParamsRequirements();
-    U64 kernelParamsAlignment =
+    U32 kernelParamsAlignment =
         MAX(alignof(PackedKernelParameters), archParamsRequirements.align);
-    U64 archKernelParamsOffset =
-        alignUp(sizeof(PackedKernelParameters), kernelParamsAlignment);
-    U64 kernelParamsSize =
+    U32 archKernelParamsOffset =
+        (U32)alignUp(sizeof(PackedKernelParameters), kernelParamsAlignment);
+    U32 kernelParamsSize =
         archKernelParamsOffset + archParamsRequirements.bytes;
 
     PackedKernelParameters *kernelParams =

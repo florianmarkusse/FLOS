@@ -200,7 +200,7 @@ static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
     __builtin_unreachable();
 }
 
-void *allocateKernelStructure(U64 bytes, U64_pow2 minimumAlignment,
+void *allocateKernelStructure(U32 bytes, U32_pow2 minimumAlignment,
                               bool tryEncompassingVirtual, Arena scratch) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
 
@@ -211,7 +211,7 @@ void *allocateKernelStructure(U64 bytes, U64_pow2 minimumAlignment,
     return (void *)result;
 }
 
-void *allocateBytesInUefiPages(U64 bytes, bool isKernelStructure) {
+void *allocateBytesInUefiPages(U32 bytes, bool isKernelStructure) {
     U64 address = 0;
 
     allocatePages(ALLOCATE_ANY_PAGES, bytes, &address);
@@ -222,10 +222,10 @@ void *allocateBytesInUefiPages(U64 bytes, bool isKernelStructure) {
     return (void *)address;
 }
 
-void createDynamicArray(U32 elements, U64 elementSizeBytes,
-                        U64_pow2 elementAlignBytes, void_max_a *result,
+void createDynamicArray(U32 elements, U32 elementSizeBytes,
+                        U32_pow2 elementAlignBytes, void_max_a *result,
                         Arena scratch) {
-    U64 bytes = elementSizeBytes * elements;
+    U32 bytes = elementSizeBytes * elements;
     void *buffer =
         allocateKernelStructure(bytes, elementAlignBytes, false, scratch);
 
