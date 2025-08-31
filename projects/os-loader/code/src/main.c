@@ -269,8 +269,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
     drawStatusRectangle(gop->mode, GREEN_COLOR);
 
-    RedBlackMMTreeWithFreeList physical;
-    physical.tree = nullptr;
+    MMTreeWithFreeList physical;
+    physical.rootIndex = 0;
     allocateSpaceForKernelMemory(&physical, arena);
 
     /* NOTE: Keep this call in between the stub and the creation of available */
@@ -287,6 +287,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     convertToKernelMemory(&memoryInfo, &kernelParams->memory.physicalPMA,
                           &physical, gop->mode);
+
     jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE, 0, kernelParams);
 
     __builtin_unreachable();

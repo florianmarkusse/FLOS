@@ -214,16 +214,6 @@ U32 getKernelBytes(Arena scratch) {
     globals.st->boot_services->close_protocol(
         globals.h, &LOADED_IMAGE_PROTOCOL_GUID, globals.h, nullptr);
 
-    I64 firstE = firstOccurenceOf(dataFile, 'E');
-    I64 secondE = firstOccurenceOf(dataFile, 'E', .from = (U32)(firstE + 1));
-
-    KFLUSH_AFTER {
-        INFO(STRING("first e location: "));
-        INFO(firstE, .flags = NEWLINE);
-        INFO(STRING("second e location: "));
-        INFO(secondE, .flags = NEWLINE);
-    }
-
     // Assumes the below file structure:
     // KERNEL_SIZE_BYTES=132456
     StringIter lines;

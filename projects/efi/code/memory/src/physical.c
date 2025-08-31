@@ -222,6 +222,8 @@ void *allocateBytesInUefiPages(U64 bytes, bool isKernelStructure) {
     return (void *)address;
 }
 
+// TODO: Remove this after we change to buddy allocator? Improvement of memory
+// stuff in os-loader...
 void createDynamicArray(U32 elements, U64 elementSizeBytes,
                         U64_pow2 elementAlignBytes, void_max_a *result,
                         Arena scratch) {

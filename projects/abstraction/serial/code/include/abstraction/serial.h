@@ -3,6 +3,6 @@
 
 #include "shared/types/array-types.h"
 
-void flushToSerial(U8_max_a buffer);
+void flushToSerial(U8_a buffer);
 
 #endif

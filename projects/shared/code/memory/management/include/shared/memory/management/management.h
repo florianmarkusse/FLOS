@@ -5,17 +5,11 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/trees/red-black/memory-manager.h"
 
-typedef struct {
-    MMNode_max_a nodes;
-    MMNode *tree;
-    MMNodePtr_max_a freeList;
-} RedBlackMMTreeWithFreeList;
+extern MMTreeWithFreeList virtualMA;
+extern MMTreeWithFreeList physicalMA;
 
-extern RedBlackMMTreeWithFreeList virtualMA;
-extern RedBlackMMTreeWithFreeList physicalMA;
-
-void insertMMNodeAndAddToFreelist(MMNode **root, MMNode *newNode,
-                                  MMNodePtr_max_a *freeList);
+void insertMMNodeAndAddToFreelist(MMTreeWithFreeList *treeWithFreeList,
+                                  MMNode *newNode);
 
 void initMemoryManagers(PackedKernelMemory *kernelMemory);
 

@@ -9,6 +9,7 @@
 #include "efi-to-kernel/memory/definitions.h" // for KERNEL_PARAMS_START
 #include "freestanding/log/init.h"
 #include "freestanding/peripheral/screen.h"
+#include "shared/assert.h"
 #include "shared/log.h"
 #include "shared/maths.h"
 #include "shared/memory/allocator/arena.h"

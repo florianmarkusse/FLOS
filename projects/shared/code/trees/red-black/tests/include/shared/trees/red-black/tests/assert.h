@@ -3,19 +3,24 @@
 
 #include "shared/memory/allocator/arena.h"
 #include "shared/trees/red-black/basic.h"
+#include "shared/trees/red-black/common.h"
 #include "shared/types/numeric.h"
 
-static constexpr auto MAX_NODES_IN_TREE = 1024;
+static constexpr auto MAX_NODES_IN_TREE = 16384;
 
-typedef enum { RED_BLACK_BASIC, RED_BLACK_MEMORY_MANAGER } RedBlackTreeType;
+typedef enum {
+    RED_BLACK_VIRTUAL_MEMORY_MAPPER,
+    RED_BLACK_MEMORY_MANAGER
+} RedBlackTreeType;
 
-void appendRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode,
-                                   RedBlackTreeType treeType);
+void appendRedBlackTreeWithBadNode(TreeWithFreeList *treeWithFreeList,
+                                   U32 badNode, RedBlackTreeType treeType);
 
-U64 nodeCount(RedBlackNode *tree, RedBlackTreeType treeType);
-void assertNoRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
+U32 nodeCount(TreeWithFreeList *treeWithFreeList, RedBlackTreeType treeType);
+void assertNoRedNodeHasRedChild(TreeWithFreeList *treeWithFreeList, U32 nodes,
                                 RedBlackTreeType treeType, Arena scratch);
-void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
+void assertPathsFromNodeHaveSameBlackHeight(TreeWithFreeList *treeWithFreeList,
+                                            U32 nodes,
                                             RedBlackTreeType treeType,
                                             Arena scratch);
 

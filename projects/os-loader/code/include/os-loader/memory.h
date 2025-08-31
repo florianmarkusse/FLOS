@@ -15,12 +15,12 @@
 static constexpr auto DYNAMIC_MEMORY_CAPACITY = 1 * MiB;
 
 void allocateSpaceForKernelMemory(
-    RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList, Arena scratch);
+    MMTreeWithFreeList *redBlackMMTreeWithFreeList, Arena scratch);
 
-void convertToKernelMemory(
-    MemoryInfo *memoryInfo, PackedMMTreeWithFreeList *physicalMemoryTree,
-    RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList,
-    GraphicsOutputProtocolMode *mode);
+void convertToKernelMemory(MemoryInfo *memoryInfo,
+                           PackedMMTreeWithFreeList *packedTreeWithFreeList,
+                           MMTreeWithFreeList *treeWithFreeList,
+                           GraphicsOutputProtocolMode *mode);
 
 U64 alignVirtual(U64 virtualAddress, U64 physicalAddress, U64 bytes);
 
