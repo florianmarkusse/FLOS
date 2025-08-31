@@ -24,12 +24,12 @@ static void
 appendExpectedValuesAndTreeValues(U64_max_a expectedValues,
                                   RedBlackNodeBasicPtr_a inOrderValues) {
     INFO(STRING("Expected values:\n"));
-    for (U64 i = 0; i < expectedValues.len; i++) {
+    for (typeof(expectedValues.len) i = 0; i < expectedValues.len; i++) {
         INFO(expectedValues.buf[i]);
         INFO(STRING(" "));
     }
     INFO(STRING("\nRed-Black Tree values:\n"));
-    for (U64 i = 0; i < inOrderValues.len; i++) {
+    for (typeof(inOrderValues.len) i = 0; i < inOrderValues.len; i++) {
         INFO(inOrderValues.buf[i]->value);
         INFO(STRING(" "));
     }
@@ -55,9 +55,9 @@ static void assertIsBSTWitExpectedValues(RedBlackNodeBasic *node, U64 nodes,
         }
     }
 
-    for (U64 i = 0; i < expectedValues.len; i++) {
+    for (typeof(expectedValues.len) i = 0; i < expectedValues.len; i++) {
         bool found = false;
-        for (U64 j = 0; j < inOrderValues.len; j++) {
+        for (typeof(inOrderValues.len) j = 0; j < inOrderValues.len; j++) {
             if (inOrderValues.buf[j]->value == expectedValues.buf[i]) {
                 found = true;
                 break;

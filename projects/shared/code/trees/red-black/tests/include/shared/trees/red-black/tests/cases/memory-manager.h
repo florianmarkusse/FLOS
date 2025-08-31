@@ -55,10 +55,19 @@ static TreeOperation insert3[] = {{{.start = 10000, .bytes = 512}, INSERT},
                                   {{.start = 15000, .bytes = 256}, INSERT},
                                   {{.start = 18063, .bytes = 12345567}, INSERT},
                                   {{.start = 11280, .bytes = 220}, INSERT}};
+
+static TreeOperation insert4[] = {
+    {{.start = 20000, .bytes = 1000}, INSERT},
+    {{.start = 22000, .bytes = 1000}, INSERT},
+    {{.start = 21000, .bytes = 1000}, INSERT},
+};
+
 static TreeOperation_a inserts[] = {{.buf = insert1, .len = COUNTOF(insert1)},
                                     {.buf = insert2, .len = COUNTOF(insert2)},
-                                    {.buf = insert3, .len = COUNTOF(insert3)}};
+                                    {.buf = insert3, .len = COUNTOF(insert3)},
+                                    {.buf = insert4, .len = COUNTOF(insert4)}};
 static constexpr auto INSERTS_TEST_CASES_LEN = COUNTOF(inserts);
+
 static TestCases insertsOnlyTestCases = {.buf = inserts,
                                          .len = INSERTS_TEST_CASES_LEN};
 
@@ -12429,11 +12438,39 @@ static TreeOperation insertDeleteAtLeast4[] = {
 {{.start = 508993536, .bytes = 9920512}, INSERT},
 };
 
+static TreeOperation insertDeleteAtLeast5[] = {
+    {{.start = 1000, .bytes = 100}, INSERT},
+    {{.start = 0, .bytes = 100}, DELETE_AT_LEAST},
+};
+
+static TreeOperation insertDeleteAtLeast6[] = {
+    {{.start = 1000, .bytes = 100}, INSERT},
+    {{.start = 0, .bytes = 50}, INSERT},
+    {{.start = 0, .bytes = 100}, DELETE_AT_LEAST},
+};
+
+static TreeOperation insertDeleteAtLeast7[] = {
+    {{.start = 1000, .bytes = 100}, INSERT},
+    {{.start = 1200, .bytes = 50}, INSERT},
+    {{.start = 0, .bytes = 100}, DELETE_AT_LEAST},
+};
+
+static TreeOperation insertDeleteAtLeast8[] = {
+    {{.start = 1000, .bytes = 100}, INSERT},
+    {{.start = 0, .bytes = 50}, INSERT},
+    {{.start = 1200, .bytes = 50}, INSERT},
+    {{.start = 0, .bytes = 100}, DELETE_AT_LEAST},
+};
+
 static TreeOperation_a insertDeleteAtLeasts[] = {
    {.buf = insertDeleteAtLeast1, .len = COUNTOF(insertDeleteAtLeast1)},
    {.buf = insertDeleteAtLeast2, .len = COUNTOF(insertDeleteAtLeast2)},
    {.buf = insertDeleteAtLeast3, .len = COUNTOF(insertDeleteAtLeast3)},
-   {.buf = insertDeleteAtLeast4, .len = COUNTOF(insertDeleteAtLeast4)}};
+   {.buf = insertDeleteAtLeast4, .len = COUNTOF(insertDeleteAtLeast4)},
+   {.buf = insertDeleteAtLeast5, .len = COUNTOF(insertDeleteAtLeast5)},
+   {.buf = insertDeleteAtLeast6, .len = COUNTOF(insertDeleteAtLeast6)},
+   {.buf = insertDeleteAtLeast7, .len = COUNTOF(insertDeleteAtLeast7)},
+   {.buf = insertDeleteAtLeast8, .len = COUNTOF(insertDeleteAtLeast8)}};
 static constexpr auto INSERT_DELETE_AT_LEASTS_TEST_CASES_LEN =
     COUNTOF(insertDeleteAtLeasts);
 static TestCases insertDeleteAtLeastsOnlyTestCases = {

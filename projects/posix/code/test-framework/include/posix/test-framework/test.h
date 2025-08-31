@@ -2,7 +2,9 @@
 #define POSIX_TEST_FRAMEWORK_TEST_H
 
 #include "abstraction/jmp.h"
+#include "abstraction/log.h"
 #include "posix/log.h"
+#include "shared/log.h"
 #include "shared/macros.h"      // for MACRO_VAR
 #include "shared/text/string.h" // for string
 
@@ -24,9 +26,10 @@ void appendTestFailureFinish();
 #define TEST_FAILURE                                                           \
     for (auto MACRO_VAR(i) = (testFailure(), appendTestFailureStart(), 0);     \
          MACRO_VAR(i) < 1;                                                     \
-         MACRO_VAR(i) =                                                        \
-             (appendTestFailureFinish(), PLOG(STRING("\n\n"), .flags = FLUSH), \
-              toCleanupHandler(), 1))
+         MACRO_VAR(i) = (appendTestFailureFinish(),                            \
+                         appendToFlushBufferWithWriter(                        \
+                             STRING("\n\n"), NEWLINE, getWriteBuffer(STDOUT)), \
+                         toCleanupHandler(), 1))
 
 #define TEST(testString, failureHandler)                                       \
     for (auto MACRO_VAR(i) = (unitTestStart(testString, failureHandler), 0);   \

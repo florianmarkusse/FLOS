@@ -2,6 +2,18 @@
   - Look into color OFFSETOF trick to get rid of slop
   - Look into optimizing the struct by using indices instead of pointers
 - how to hide extern variables from showing up everywhere
+- merger getFromNodes
+- elementSizeBytes -> U32 instead of U64 and alignBytes / align also U32 instead of U64
+- maybe see if removing gnu statement expressions is possible? so we can use those macros in other for/while macros
+- nodeLocation base thing is duplicated for no reason in the trees.
+- Change memory model in os-loader?
+  3 arenas:
+  - memoryKernelUsed
+  - memoryKernelUsedRemapped
+  - memoryOSLoader
+    And use this instead of the weird kernel structure etc.
+- ALl the exponents I am using inside non-constant structs can be converted to U8 instead to save memory?
+- rename PackedX into X_packed_max_a etc.
 - look into struct x = {.y = 5} and check if it's actually necessary to zero initialize the rest of the struct, we can avoid this in most cases i think
 - add restrict to basically all pointers? look into aliasing again!!!
 - warning pointer cast turn on again? Maybe ask c_programming how to fix this better? Or whether this can be ignored?

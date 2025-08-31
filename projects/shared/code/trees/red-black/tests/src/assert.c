@@ -72,20 +72,20 @@ void appendRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode,
     printTreeIndented(root, 0, STRING("Root---"), badNode, treeType);
 }
 
-U64 nodeCount(RedBlackNode *tree, RedBlackTreeType treeType) {
+U32 nodeCount(RedBlackNode *tree, RedBlackTreeType treeType) {
     RedBlackNode *buffer[RB_TREE_MAX_HEIGHT];
 
-    U64 result = 0;
+    U32 result = 0;
 
     buffer[0] = tree;
-    U64 len = 1;
+    U32 len = 1;
     while (len > 0) {
         RedBlackNode *node = buffer[len - 1];
         len--;
         result++;
 
-        for (U64 i = 0; i < RB_TREE_CHILD_COUNT; i++) {
-            if (node->children[i]) {
+        for (RedBlackDirection dir = 0; dir < RB_TREE_CHILD_COUNT; dir++) {
+            if (node->children[dir]) {
                 if (len > RB_TREE_MAX_HEIGHT) {
                     TEST_FAILURE {
                         INFO(STRING(
@@ -93,7 +93,7 @@ U64 nodeCount(RedBlackNode *tree, RedBlackTreeType treeType) {
                         appendRedBlackTreeWithBadNode(tree, tree, treeType);
                     }
                 }
-                buffer[len] = node->children[i];
+                buffer[len] = node->children[dir];
                 len++;
             }
         }
@@ -113,10 +113,10 @@ static bool redParentHasRedChild(RedBlackNode *node,
     return false;
 }
 
-void assertNoRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
+void assertNoRedNodeHasRedChild(RedBlackNode *tree, U32 nodes,
                                 RedBlackTreeType treeType, Arena scratch) {
     RedBlackNode **buffer = NEW(&scratch, RedBlackNode *, .count = nodes);
-    U64 len = 0;
+    U32 len = 0;
 
     buffer[len] = tree;
     len++;
@@ -134,9 +134,9 @@ void assertNoRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
             }
         }
 
-        for (U64 i = 0; i < RB_TREE_CHILD_COUNT; i++) {
-            if (node->children[i]) {
-                buffer[len] = node->children[i];
+        for (RedBlackDirection dir = 0; dir < RB_TREE_CHILD_COUNT; dir++) {
+            if (node->children[dir]) {
+                buffer[len] = node->children[dir];
                 len++;
             }
         }
@@ -144,7 +144,7 @@ void assertNoRedNodeHasRedChild(RedBlackNode *tree, U64 nodes,
 }
 
 static void collectBlackHeightsForEachPath(RedBlackNode *node,
-                                           U64_a *blackHeights, U64 current,
+                                           U32_a *blackHeights, U32 current,
                                            RedBlackTreeType treeType) {
     if (!node) {
         blackHeights->buf[blackHeights->len] = current + 1;
@@ -161,11 +161,11 @@ static void collectBlackHeightsForEachPath(RedBlackNode *node,
     }
 }
 
-void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
+void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U32 nodes,
                                             RedBlackTreeType treeType,
                                             Arena scratch) {
     RedBlackNode **buffer = NEW(&scratch, RedBlackNode *, .count = nodes);
-    U64 len = 0;
+    U32 len = 0;
 
     buffer[len] = tree;
     len++;
@@ -175,13 +175,13 @@ void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
         len--;
 
         // Stops at leaf nodes, so nodes + 1 is max lenght
-        U64_a blackHeights = {.buf = NEW(&scratch, U64, .count = nodes + 1),
+        U32_a blackHeights = {.buf = NEW(&scratch, U32, .count = nodes + 1),
                               .len = 0};
 
         collectBlackHeightsForEachPath(node, &blackHeights, 0, treeType);
 
-        U64 first = blackHeights.buf[0];
-        for (U64 i = 1; i < blackHeights.len; i++) {
+        U32 first = blackHeights.buf[0];
+        for (typeof(blackHeights.len) i = 1; i < blackHeights.len; i++) {
             if (blackHeights.buf[i] != first) {
                 TEST_FAILURE {
                     INFO(STRING("Found differing black heights!\n"));
@@ -189,7 +189,8 @@ void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
 
                     INFO(STRING("Black heights calculated (leftmost leaf node "
                                 "to rightmost leaf node):"));
-                    for (U64 j = 0; j < blackHeights.len; j++) {
+                    for (typeof(blackHeights.len) j = 0; j < blackHeights.len;
+                         j++) {
                         INFO(blackHeights.buf[j]);
                         INFO(STRING(" "));
                     }
@@ -198,9 +199,9 @@ void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U64 nodes,
             }
         }
 
-        for (U64 i = 0; i < RB_TREE_CHILD_COUNT; i++) {
-            if (node->children[i]) {
-                buffer[len] = node->children[i];
+        for (RedBlackDirection dir = 0; dir < RB_TREE_CHILD_COUNT; dir++) {
+            if (node->children[dir]) {
+                buffer[len] = node->children[dir];
                 len++;
             }
         }

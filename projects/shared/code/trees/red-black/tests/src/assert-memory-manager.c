@@ -11,14 +11,14 @@ typedef ARRAY(MMNode *) MMNodePtr_a;
 static void appendExpectedValuesAndTreeValues(Memory_max_a expectedValues,
                                               MMNodePtr_a inOrderValues) {
     INFO(STRING("Expected values:\n"));
-    for (U32 i = 0; i < expectedValues.len; i++) {
+    for (typeof(expectedValues.len) i = 0; i < expectedValues.len; i++) {
         INFO(STRING("start: "));
         INFO(expectedValues.buf[i].start);
         INFO(STRING(" bytes: "));
         INFO(expectedValues.buf[i].bytes, .flags = NEWLINE);
     }
     INFO(STRING("Red-Black Tree values:\n"));
-    for (U32 i = 0; i < inOrderValues.len; i++) {
+    for (typeof(inOrderValues.len) i = 0; i < inOrderValues.len; i++) {
         INFO(STRING("start: "));
         INFO(inOrderValues.buf[i]->memory.start);
         INFO(STRING(" bytes: "));
@@ -56,9 +56,9 @@ static void assertIsBSTWitExpectedValues(MMNode *node, U32 nodes,
         }
     }
 
-    for (U32 i = 0; i < expectedValues.len; i++) {
+    for (typeof(expectedValues.len) i = 0; i < expectedValues.len; i++) {
         bool found = false;
-        for (U32 j = 0; j < inOrderValues.len; j++) {
+        for (typeof(inOrderValues.len) j = 0; j < inOrderValues.len; j++) {
             if (inOrderValues.buf[j]->memory.start ==
                 expectedValues.buf[i].start) {
                 found = true;
@@ -79,7 +79,7 @@ static void assertIsBSTWitExpectedValues(MMNode *node, U32 nodes,
     }
 
     U64 previousStart = 0;
-    for (U32 i = 0; i < inOrderValues.len; i++) {
+    for (typeof(inOrderValues.len) i = 0; i < inOrderValues.len; i++) {
         if (previousStart > inOrderValues.buf[i]->memory.start) {
             TEST_FAILURE {
                 INFO(STRING("Not a Binary Search Tree!\n"));
