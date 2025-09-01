@@ -14,3 +14,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-jmp-i)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-i)
+
+if(${BUILD} STREQUAL "UNIT_TEST")
+    add_subdirectory(tests)
+endif()

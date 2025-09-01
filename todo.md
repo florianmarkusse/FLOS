@@ -3,7 +3,6 @@
   - Look into optimizing the struct by using indices instead of pointers
 - how to hide extern variables from showing up everywhere
 - merger getFromNodes
-- elementSizeBytes -> U32 instead of U64 and alignBytes / align also U32 instead of U64
 - maybe see if removing gnu statement expressions is possible? so we can use those macros in other for/while macros
 - nodeLocation base thing is duplicated for no reason in the trees.
 - Change memory model in os-loader?
