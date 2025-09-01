@@ -4,12 +4,15 @@ add_library(
     OBJECT
     "src/arena.c"
     # NOTE: Unused for now.
-    # "src/buddy.c"
+    "src/buddy.c"
     # "src/pool.c"
 )
 
 add_includes_for_sublibrary()
 
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-virtual-i)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-log-i)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-text-converter-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-jmp-i)
 

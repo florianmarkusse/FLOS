@@ -8,8 +8,7 @@
 - Change memory model in os-loader?
   3 arenas:
   - memoryKernelUsed
-  - memoryKernelUsedRemapped
-  - memoryOSLoader
+  - memoryKernelUsedRemapped memoryOSLoader
     And use this instead of the weird kernel structure etc.
 - ALl the exponents I am using inside non-constant structs can be converted to U8 instead to save memory?
 - rename PackedX into X_packed_max_a etc.
