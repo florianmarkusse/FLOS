@@ -15,8 +15,17 @@ typedef struct {
     PageFrame **freePageFrames;
     PageFrame *pageFrames;
     Exponent smallestBlockSize;
+    Exponent largestBlockSize;
 } Buddy;
 
-Buddy *buddyInit(U64 addressSpace, Arena *perm);
+Buddy *buddyInit(U64 addressSpace, U64_pow2 largestBlockSize,
+                 U64_pow2 smallestBlockSize, Arena *perm);
+
+void buddyStatusAppend(Buddy *buddy);
+
+// Ensure these addresses are at least aligned to the buddy's smallest block
+// size size! addressStart up and addressEndExclusive down
+void buddyFreeRegionAdd(Buddy *buddy, U64 addressStart,
+                        U64 addressEndExclusive);
 
 #endif

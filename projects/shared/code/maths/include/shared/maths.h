@@ -35,6 +35,9 @@ U64 ringBufferMinus(U64 value, U64 amount, U64_pow2 ringBUfferSize);
 // Moves value up to the closest power of 2. Unchanged if already a power of
 // 2
 U64_pow2 ceilingPowerOf2(U64 x);
+// Moves value down to the closest power of 2. Unchanged if already a power of
+// 2
+U64_pow2 floorPowerOf2(U64 x);
 bool isPowerOf2(U64 x);
 U64 power(U64 base, Exponent exponent);
 U64 divideByPowerOf2(U64 value, U64_pow2 divisor);
