@@ -53,9 +53,14 @@ void buddyStatusAppend(Buddy *buddy) {
 
 void buddyFreeRegionAdd(Buddy *buddy, U64 addressStart,
                         U64 addressEndExclusive) {
+    U64_pow2 blockSizeSmallest = 1 << buddy->smallestBlockSize;
+    ASSERT(addressStart == alignUp(addressStart, blockSizeSmallest));
+    ASSERT(addressEndExclusive ==
+           alignDown(addressEndExclusive, blockSizeSmallest));
+
     Exponent maxOrder = buddy->largestBlockSize - buddy->smallestBlockSize;
-    Exponent bias =
-        maxOrder + (Exponent)__builtin_clzll(1 << (buddy->largestBlockSize));
+    Exponent bias = maxOrder + ((sizeof(U64) * BITS_PER_BYTE) -
+                                (buddy->largestBlockSize) - 1);
     while (addressStart < addressEndExclusive) {
         Exponent orderToAdd = MIN(
             maxOrder, (Exponent)(bias - (__builtin_clzll(addressEndExclusive -
@@ -78,16 +83,19 @@ Buddy *buddyInit(U64 addressSpace, U64_pow2 largestBlockSize,
     // NOTE: Need to align it up to the next power of 2 of the largest block
     // size. Otherwise we may end up with an odd number of largest blocks, which
     // would be bad.
-    U64 addressSpaceAlignedUpLargestPageSize =
+    U64 addressSpaceAlignedUpLargestBlockSize =
         alignUp(addressSpace, largestBlockSize * 2);
+    U64 addressSpaceAlignedDownSmallestBlockSize =
+        alignDown(addressSpace, smallestBlockSize);
 
-    U64 requiredPageFrames = addressSpaceAlignedUpLargestPageSize >>
+    U64 requiredPageFrames = addressSpaceAlignedUpLargestBlockSize >>
                              __builtin_ctzll(smallestBlockSize);
 
-    Exponent pageSizeLargestExponents = (U8)__builtin_ctzll(largestBlockSize);
-    Exponent pageSizeSmallestExponents = (U8)__builtin_ctzll(smallestBlockSize);
+    Exponent blockSizeLargestExponents = (U8)__builtin_ctzll(largestBlockSize);
+    Exponent blockSizeSmallestExponents =
+        (U8)__builtin_ctzll(smallestBlockSize);
 
-    U8 totalOrders = pageSizeLargestExponents - pageSizeSmallestExponents + 1;
+    U8 totalOrders = blockSizeLargestExponents - blockSizeSmallestExponents + 1;
 
     KFLUSH_AFTER {
         INFO(STRING("required:\t\t\t"));
@@ -97,15 +105,12 @@ Buddy *buddyInit(U64 addressSpace, U64_pow2 largestBlockSize,
     }
 
     Buddy *result = NEW(perm, typeof(*result));
-    result->smallestBlockSize = pageSizeSmallestExponents;
-    result->largestBlockSize = pageSizeLargestExponents;
+    result->smallestBlockSize = blockSizeSmallestExponents;
+    result->largestBlockSize = blockSizeLargestExponents;
     result->freePageFrames = NEW(perm, typeof(*result->freePageFrames),
                                  .count = totalOrders, .flags = ZERO_MEMORY);
     result->pageFrames = NEW(perm, typeof(*result->pageFrames),
                              .count = requiredPageFrames, .flags = ZERO_MEMORY);
-
-    U64 addressSpaceAlignedDownSmallestBlockSize =
-        alignDown(addressSpace, smallestBlockSize);
 
     KFLUSH_AFTER {
         INFO(STRING("size of buddy:\t\t\t"));
@@ -128,9 +133,9 @@ Buddy *buddyInit(U64 addressSpace, U64_pow2 largestBlockSize,
         INFO((void *)addressSpaceAlignedDownSmallestBlockSize,
              .flags = NEWLINE);
         INFO(STRING("aligned up address space:\t"));
-        INFO(addressSpaceAlignedUpLargestPageSize, .flags = NEWLINE);
+        INFO(addressSpaceAlignedUpLargestBlockSize, .flags = NEWLINE);
         INFO(STRING("aligned up address space:\t"));
-        INFO((void *)addressSpaceAlignedUpLargestPageSize, .flags = NEWLINE);
+        INFO((void *)addressSpaceAlignedUpLargestBlockSize, .flags = NEWLINE);
     }
 
     return result;

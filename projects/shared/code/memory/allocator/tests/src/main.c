@@ -42,11 +42,14 @@ int main() {
 
     U64 start = 0;
     U64 end = (1ULL << 20ULL);
-    for (U32 i = 0; i < 3; i++) {
+    for (U32 i = 0; i < 10; i++) {
         buddyFreeRegionAdd(myBuddy, alignUp(start, pageSizesSmallest()),
                            alignDown(end, pageSizesSmallest()));
         start = end + 4096;
         end = end * 2;
-        PFLUSH_AFTER(STDOUT) { buddyStatusAppend(myBuddy); }
+        PFLUSH_AFTER(STDOUT) {
+            buddyStatusAppend(myBuddy);
+            INFO(STRING("--------------\n"));
+        }
     }
 }
