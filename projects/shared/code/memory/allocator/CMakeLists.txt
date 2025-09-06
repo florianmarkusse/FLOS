@@ -3,8 +3,9 @@ add_library(
     ${PROJECT_NAME}
     OBJECT
     "src/arena.c"
-    # NOTE: Unused for now.
     "src/buddy.c"
+    "src/node.c"
+    # NOTE: Unused for now.
     # "src/pool.c"
 )
 

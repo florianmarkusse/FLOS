@@ -4,6 +4,7 @@
 #include "shared/maths.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/allocator/buddy.h"
+#include "shared/memory/allocator/node.h"
 #include "shared/memory/sizes.h"
 
 #include <errno.h>
@@ -37,18 +38,28 @@ int main() {
     PFLUSH_AFTER(STDOUT) { INFO(STRING("hello trehrethr\n")); }
 
     U64 totalSize = 4 * (1ULL << 30ULL) - 465468;
-    Buddy *myBuddy =
-        buddyInit(totalSize, pageSizesLargest(), pageSizesSmallest(), &arena);
+    Buddy myBuddy;
+    buddyInit(&myBuddy, totalSize);
+
+    NodeAllocator nodeAllocator;
+    nodeAllocatorInit(
+        &nodeAllocator,
+        (void_a){.buf =
+                     NEW(&arena, typeof(*myBuddy.blocksFree[0]), .count = 1000),
+                 .len = 1000 * sizeof(*myBuddy.blocksFree[0])},
+        (void_a){.buf = NEW(&arena, void *, .count = 1000),
+                 .len = 1000 * sizeof(void *)},
+        sizeof(*myBuddy.blocksFree[0]));
 
     U64 start = 0;
     U64 end = (1ULL << 20ULL);
     for (U32 i = 0; i < 10; i++) {
-        buddyFreeRegionAdd(myBuddy, alignUp(start, pageSizesSmallest()),
-                           alignDown(end, pageSizesSmallest()));
+        buddyFreeRegionAdd(&myBuddy, alignUp(start, pageSizesSmallest()),
+                           alignDown(end, pageSizesSmallest()), &nodeAllocator);
         start = end + 4096;
         end = end * 2;
         PFLUSH_AFTER(STDOUT) {
-            buddyStatusAppend(myBuddy);
+            buddyStatusAppend(&myBuddy);
             INFO(STRING("--------------\n"));
         }
     }
