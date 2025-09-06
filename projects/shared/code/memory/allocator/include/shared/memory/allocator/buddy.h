@@ -20,7 +20,8 @@ void buddyStatusAppend(Buddy *buddy);
 
 // Ensure these addresses are at least aligned to the buddy's smallest block
 // size size! addressStart up and addressEndExclusive down
-bool buddyFreeRegionAdd(Buddy *buddy, U64 addressStart, U64 addressEndExclusive,
-                        NodeAllocator *nodeAllocator);
+[[nodiscard]] bool buddyFreeRegionAdd(Buddy *buddy, U64 addressStart,
+                                      U64 addressEndExclusive,
+                                      NodeAllocator *nodeAllocator);
 
 #endif
