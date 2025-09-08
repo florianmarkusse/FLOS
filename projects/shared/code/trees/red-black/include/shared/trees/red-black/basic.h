@@ -30,6 +30,7 @@ typedef MAX_LENGTH_ARRAY(RedBlackNodeBasic *) RedBlackNodeBasicPtr_max_a;
 void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
                              RedBlackNodeBasic *createdNode);
 RedBlackNodeBasic *deleteRedBlackNodeBasic(RedBlackNodeBasic **tree, U64 value);
+RedBlackNodeBasic *popRedBlackNodeBasic(RedBlackNodeBasic **tree);
 RedBlackNodeBasic *deleteAtLeastRedBlackNodeBasic(RedBlackNodeBasic **tree,
                                                   U64 value);
 RedBlackNodeBasic *findGreatestBelowOrEqual(RedBlackNodeBasic **tree,

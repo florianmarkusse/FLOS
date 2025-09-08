@@ -158,6 +158,20 @@ RedBlackNodeBasic *deleteAtLeastRedBlackNodeBasic(RedBlackNodeBasic **tree,
                             visitedNodes[bestWithVisitedNodesLen].node);
 }
 
+RedBlackNodeBasic *popRedBlackNodeBasic(RedBlackNodeBasic **tree) {
+    if (!(*tree)) {
+        return nullptr;
+    }
+
+    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
+
+    visitedNodes[0].node = (RedBlackNodeBasic *)tree;
+    visitedNodes[0].direction = RB_TREE_LEFT;
+    U32 len = 1;
+
+    return deleteNodeInPath(visitedNodes, len, *tree);
+}
+
 // Assumes the value is inside the tree
 RedBlackNodeBasic *deleteRedBlackNodeBasic(RedBlackNodeBasic **tree,
                                            U64 value) {

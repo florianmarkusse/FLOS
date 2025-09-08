@@ -13,9 +13,57 @@ static U64_pow2 getBlockSize(Buddy *buddy, U8 order) {
     return ((1 << (buddy->blockSizeSmallest + order)));
 }
 
-// static PageFrame *getBuddy(Buddy *buddy, PageFrame *pageFrame, U8 order) {
-//     return (PageFrame *)((U64)pageFrame ^ (getBlockSize(buddy, order)));
-// }
+static U64 getBuddyAddress(U64 address, U64_pow2 blockSize) {
+    return (address ^ (blockSize));
+}
+
+void *buddyAllocate(Buddy *buddy, U64_pow2 blockSize,
+                    NodeAllocator *nodeAllocator) {
+    ASSERT(blockSize >= 1ULL << buddy->blockSizeSmallest);
+    ASSERT(blockSize <= 1ULL << buddy->blockSizeLargest);
+
+    Exponent orderRequested =
+        (Exponent)__builtin_ctzll(blockSize) - buddy->blockSizeSmallest;
+    Exponent orderFound = orderRequested;
+
+    RedBlackNodeBasic *pop =
+        popRedBlackNodeBasic(&buddy->blocksFree[orderFound]);
+    while (!pop) {
+        orderFound++;
+        if (orderFound > buddy->blockSizeLargest) {
+            return nullptr;
+        }
+        blockSize *= 2;
+        pop = popRedBlackNodeBasic(&buddy->blocksFree[orderFound]);
+    }
+
+    while (orderFound > orderRequested) {
+        RedBlackNodeBasic *splitNode = nodeAllocatorGet(nodeAllocator);
+        if (!splitNode) {
+            insertRedBlackNodeBasic(&buddy->blocksFree[orderFound], pop);
+            return nullptr;
+        }
+        orderFound--;
+        blockSize /= 2;
+
+        splitNode->value = getBuddyAddress(pop->value, blockSize);
+        insertRedBlackNodeBasic(&buddy->blocksFree[orderFound], splitNode);
+    }
+
+    return (void *)pop->value;
+}
+
+void buddyNodesValueAppend(RedBlackNodeBasic *node) {
+    if (!node) {
+        return;
+    }
+
+    INFO(STRING("\t"));
+    INFO((void *)node->value);
+
+    buddyNodesValueAppend(node->children[RB_TREE_LEFT]);
+    buddyNodesValueAppend(node->children[RB_TREE_RIGHT]);
+}
 
 void buddyStatusAppend(Buddy *buddy) {
     U32 iterations = buddy->blockSizeLargest - buddy->blockSizeSmallest + 1;
@@ -25,6 +73,8 @@ void buddyStatusAppend(Buddy *buddy) {
         INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(i), 2));
         INFO(STRING(" block size: "));
         INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(blockSize), 13));
+        INFO(
+            stringWithMinSizeDefault(CONVERT_TO_STRING((void *)blockSize), 20));
         U64 nodesFreeCount = 0;
 
         RedBlackNodeBasic *tree = buddy->blocksFree[i];
@@ -50,6 +100,11 @@ void buddyStatusAppend(Buddy *buddy) {
 
         INFO(STRING("Free: "));
         INFO(nodesFreeCount, .flags = NEWLINE);
+
+        if (tree) {
+            buddyNodesValueAppend(tree);
+            INFO(STRING("\n"));
+        }
     }
 }
 
@@ -63,18 +118,32 @@ bool buddyFreeRegionAdd(Buddy *buddy, U64 addressStart, U64 addressEndExclusive,
     Exponent maxOrder = buddy->blockSizeLargest - buddy->blockSizeSmallest;
     Exponent bias = maxOrder + ((sizeof(U64) * BITS_PER_BYTE) -
                                 (buddy->blockSizeLargest) - 1);
-    while (addressStart < addressEndExclusive) {
-        Exponent orderToAdd = MIN(
-            maxOrder, (Exponent)(bias - (__builtin_clzll(addressEndExclusive -
-                                                         addressStart))));
+
+    U64 remaining = addressEndExclusive - addressStart;
+    while (remaining) {
+        // block size given the size of the region to add
+        Exponent orderToAdd =
+            MIN(maxOrder, (Exponent)(bias - (__builtin_clzll(remaining))));
+
+        // block size given the alignment constraints
+        if (addressStart) {
+            orderToAdd =
+                MIN(orderToAdd, (Exponent)__builtin_ctzll(addressStart) -
+                                    buddy->blockSizeSmallest);
+        }
 
         RedBlackNodeBasic *node = nodeAllocatorGet(nodeAllocator);
         if (!node) {
             return false;
         }
+
         node->value = addressStart;
         insertRedBlackNodeBasic(&buddy->blocksFree[orderToAdd], node);
-        addressStart += getBlockSize(buddy, orderToAdd);
+
+        U64_pow2 blockSize = getBlockSize(buddy, orderToAdd);
+        ASSERT(isAlignedTo(node->value, blockSize));
+        addressStart += blockSize;
+        remaining -= blockSize;
     }
 
     return true;
@@ -93,9 +162,9 @@ void buddyInit(Buddy *buddy, U64 addressSpace) {
     KFLUSH_AFTER {
         INFO(STRING("size of buddy:\t\t\t"));
         INFO(sizeof(Buddy), .flags = NEWLINE);
-        INFO(STRING("pageSizesSmallest():\t\t"));
+        INFO(STRING("block size smallest:\t\t"));
         INFO(buddy->blockSizeSmallest, .flags = NEWLINE);
-        INFO(STRING("largestBlockSize:\t\t"));
+        INFO(STRING("block size largest:\t\t"));
         INFO(buddy->blockSizeLargest, .flags = NEWLINE);
         INFO(STRING("given space:\t\t\t"));
         INFO(addressSpace, .flags = NEWLINE);

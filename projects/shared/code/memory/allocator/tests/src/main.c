@@ -52,8 +52,8 @@ int main() {
         sizeof(*myBuddy.blocksFree[0]));
 
     U64 start = 0;
-    U64 end = (1ULL << 20ULL);
-    for (U32 i = 0; i < 10; i++) {
+    U64 end = (1ULL << 23ULL);
+    for (U32 i = 0; i < 5; i++) {
         if (!buddyFreeRegionAdd(&myBuddy, alignUp(start, pageSizesSmallest()),
                                 alignDown(end, pageSizesSmallest()),
                                 &nodeAllocator)) {
@@ -62,11 +62,34 @@ int main() {
             }
             return -1;
         }
-        start = end + 4096;
-        end = end * 2;
+        start = end * 2;
+        end = end * 3;
+
         PFLUSH_AFTER(STDOUT) {
             buddyStatusAppend(&myBuddy);
             INFO(STRING("--------------\n"));
+        }
+    }
+
+    void *address = buddyAllocate(&myBuddy, 134217728, &nodeAllocator);
+    if (!address) {
+        PFLUSH_AFTER(STDOUT) { ERROR(STRING("Unable to get memory!\n")); }
+        return -1;
+    }
+    PFLUSH_AFTER(STDOUT) {
+        INFO(STRING("+++++++++++++\n"));
+        buddyStatusAppend(&myBuddy);
+    }
+
+    for (U32 i = 0; i < 15; i++) {
+        address = buddyAllocate(&myBuddy, 4096, &nodeAllocator);
+        if (!address) {
+            PFLUSH_AFTER(STDOUT) { ERROR(STRING("Unable to get memory!\n")); }
+            return -1;
+        }
+        PFLUSH_AFTER(STDOUT) {
+            INFO(STRING("+++++++++++++\n"));
+            buddyStatusAppend(&myBuddy);
         }
     }
 }

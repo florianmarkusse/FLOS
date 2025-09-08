@@ -16,6 +16,9 @@ typedef struct {
 
 void buddyInit(Buddy *buddy, U64 addressSpace);
 
+[[nodiscard]] __attribute__((malloc, alloc_align(2))) void *
+buddyAllocate(Buddy *buddy, U64_pow2 blockSize, NodeAllocator *nodeAllocator);
+
 void buddyStatusAppend(Buddy *buddy);
 
 // Ensure these addresses are at least aligned to the buddy's smallest block
