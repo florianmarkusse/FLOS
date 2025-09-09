@@ -40,6 +40,12 @@ int main() {
     U64 totalSize = 4 * (1ULL << 30ULL) - 465468;
     Buddy myBuddy;
     buddyInit(&myBuddy, totalSize);
+    if (setjmp(myBuddy.jmpBuf)) {
+        PFLUSH_AFTER(STDOUT) {
+            ERROR(STRING("Buddy is empty or node allocator full!\n"));
+        }
+        return 1;
+    }
 
     NodeAllocator nodeAllocator;
     nodeAllocatorInit(
@@ -51,9 +57,9 @@ int main() {
                  .len = 1000 * sizeof(void *)},
         sizeof(*myBuddy.blocksFree[0]));
 
-    U64 start = 0;
-    U64 end = (1ULL << 23ULL);
-    for (U32 i = 0; i < 5; i++) {
+    U64 start = 1ULL << 23ULL;
+    U64 end = (1ULL << 24ULL);
+    for (U32 i = 0; i < 1; i++) {
         if (!buddyFreeRegionAdd(&myBuddy, alignUp(start, pageSizesSmallest()),
                                 alignDown(end, pageSizesSmallest()),
                                 &nodeAllocator)) {
@@ -71,25 +77,24 @@ int main() {
         }
     }
 
-    void *address = buddyAllocate(&myBuddy, 134217728, &nodeAllocator);
-    if (!address) {
-        PFLUSH_AFTER(STDOUT) { ERROR(STRING("Unable to get memory!\n")); }
-        return -1;
-    }
+    void *address = buddyAllocate(&myBuddy, 4096, &nodeAllocator);
     PFLUSH_AFTER(STDOUT) {
-        INFO(STRING("+++++++++++++\n"));
         buddyStatusAppend(&myBuddy);
+        INFO(STRING("--------------\n"));
     }
 
-    for (U32 i = 0; i < 15; i++) {
-        address = buddyAllocate(&myBuddy, 4096, &nodeAllocator);
-        if (!address) {
-            PFLUSH_AFTER(STDOUT) { ERROR(STRING("Unable to get memory!\n")); }
-            return -1;
-        }
-        PFLUSH_AFTER(STDOUT) {
-            INFO(STRING("+++++++++++++\n"));
-            buddyStatusAppend(&myBuddy);
-        }
+    buddyFree(&myBuddy, address, 4096, &nodeAllocator);
+
+    PFLUSH_AFTER(STDOUT) {
+        buddyStatusAppend(&myBuddy);
+        INFO(STRING("--------------\n"));
     }
+
+    address = buddyAllocate(&myBuddy, 8388608, &nodeAllocator);
+    PFLUSH_AFTER(STDOUT) {
+        buddyStatusAppend(&myBuddy);
+        INFO(STRING("--------------\n"));
+    }
+
+    address = buddyAllocate(&myBuddy, 4096, &nodeAllocator);
 }

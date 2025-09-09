@@ -17,6 +17,47 @@ static U64 getBuddyAddress(U64 address, U64_pow2 blockSize) {
     return (address ^ (blockSize));
 }
 
+void buddyFree(Buddy *buddy, void *address, U64_pow2 blockSize,
+               NodeAllocator *nodeAllocator) {
+    ASSERT(blockSize >= 1ULL << buddy->blockSizeSmallest);
+    ASSERT(blockSize <= 1ULL << buddy->blockSizeLargest);
+
+    Exponent order =
+        (Exponent)__builtin_ctzll(blockSize) - buddy->blockSizeSmallest;
+    U64 memoryAddress = (U64)address;
+
+    U64 buddyAddress = getBuddyAddress(memoryAddress, blockSize);
+    RedBlackNodeBasic *nodeFree =
+        deleteRedBlackNodeBasic(&buddy->blocksFree[order], buddyAddress);
+    if (!nodeFree) {
+        nodeFree = nodeAllocatorGet(nodeAllocator);
+        if (!nodeFree) {
+            longjmp(buddy->jmpBuf, 1);
+        }
+    } else {
+        while (1) {
+            // Turn off the bit, so we always have the "lowest" buddy, so we can
+            // move up an order
+            memoryAddress &= (~blockSize);
+            blockSize *= 2;
+            order++;
+            buddyAddress = getBuddyAddress(memoryAddress, blockSize);
+
+            RedBlackNodeBasic *nodeHigherOrder = deleteRedBlackNodeBasic(
+                &buddy->blocksFree[order], buddyAddress);
+            if (nodeHigherOrder) {
+                nodeAllocatorFree(nodeAllocator, nodeFree);
+                nodeFree = nodeHigherOrder;
+            } else {
+                break;
+            }
+        }
+    }
+
+    nodeFree->value = memoryAddress;
+    insertRedBlackNodeBasic(&buddy->blocksFree[order], nodeFree);
+}
+
 void *buddyAllocate(Buddy *buddy, U64_pow2 blockSize,
                     NodeAllocator *nodeAllocator) {
     ASSERT(blockSize >= 1ULL << buddy->blockSizeSmallest);
@@ -31,7 +72,7 @@ void *buddyAllocate(Buddy *buddy, U64_pow2 blockSize,
     while (!pop) {
         orderFound++;
         if (orderFound > buddy->blockSizeLargest) {
-            return nullptr;
+            longjmp(buddy->jmpBuf, 1);
         }
         blockSize *= 2;
         pop = popRedBlackNodeBasic(&buddy->blocksFree[orderFound]);
@@ -41,7 +82,7 @@ void *buddyAllocate(Buddy *buddy, U64_pow2 blockSize,
         RedBlackNodeBasic *splitNode = nodeAllocatorGet(nodeAllocator);
         if (!splitNode) {
             insertRedBlackNodeBasic(&buddy->blocksFree[orderFound], pop);
-            return nullptr;
+            longjmp(buddy->jmpBuf, 1);
         }
         orderFound--;
         blockSize /= 2;

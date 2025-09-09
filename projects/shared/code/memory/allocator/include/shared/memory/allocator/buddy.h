@@ -10,14 +10,19 @@ static constexpr auto BUDDY_ORDERS_MAX = 54;
 
 typedef struct {
     RedBlackNodeBasic *blocksFree[BUDDY_ORDERS_MAX];
+    JumpBuffer jmpBuf;
     Exponent blockSizeSmallest;
     Exponent blockSizeLargest;
+
 } Buddy;
 
 void buddyInit(Buddy *buddy, U64 addressSpace);
 
 [[nodiscard]] __attribute__((malloc, alloc_align(2))) void *
 buddyAllocate(Buddy *buddy, U64_pow2 blockSize, NodeAllocator *nodeAllocator);
+
+void buddyFree(Buddy *buddy, void *address, U64_pow2 blockSize,
+               NodeAllocator *nodeAllocator);
 
 void buddyStatusAppend(Buddy *buddy);
 

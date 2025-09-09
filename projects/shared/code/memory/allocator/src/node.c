@@ -37,3 +37,9 @@ void *nodeAllocatorGet(NodeAllocator *nodeAllocator) {
 
     return nullptr;
 }
+
+void nodeAllocatorFree(NodeAllocator *nodeAllocator, void *nodeFreed) {
+    nodeAllocator->nodesFreeList.buf[nodeAllocator->nodesFreeList.len] =
+        nodeFreed;
+    nodeAllocator->nodesFreeList.len++;
+}

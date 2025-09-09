@@ -14,6 +14,8 @@ typedef struct {
 void nodeAllocatorInit(NodeAllocator *nodeAllocator, void_a nodes,
                        void_a nodesFreeList, U32 elementSizeBytes);
 
-void *nodeAllocatorGet(NodeAllocator *nodeAllocator);
+[[nodiscard]] void *nodeAllocatorGet(NodeAllocator *nodeAllocator);
+
+void nodeAllocatorFree(NodeAllocator *nodeAllocator, void *nodeFreed);
 
 #endif
