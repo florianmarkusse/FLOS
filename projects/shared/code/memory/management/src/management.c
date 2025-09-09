@@ -100,15 +100,15 @@ void *allocPhysicalMemory(U64 bytes, U64_pow2 align) {
 }
 
 static void initMemoryAllocator(NodeAllocator *nodeAllocator, void **tree,
-                                PackedNodeAllocator *packedNodeAllocator,
+                                NodeAllocator *nodeAllocatorParam,
                                 void *packedTree) {
-    nodeAllocator->nodes.buf = packedNodeAllocator->nodes.buf;
-    nodeAllocator->nodes.len = packedNodeAllocator->nodes.len;
-    nodeAllocator->nodes.cap = packedNodeAllocator->nodes.cap;
+    nodeAllocator->nodes.buf = nodeAllocatorParam->nodes.buf;
+    nodeAllocator->nodes.len = nodeAllocatorParam->nodes.len;
+    nodeAllocator->nodes.cap = nodeAllocatorParam->nodes.cap;
 
-    nodeAllocator->nodesFreeList.buf = packedNodeAllocator->nodesFreeList.buf;
-    nodeAllocator->nodesFreeList.cap = packedNodeAllocator->nodesFreeList.cap;
-    nodeAllocator->nodesFreeList.len = packedNodeAllocator->nodesFreeList.len;
+    nodeAllocator->nodesFreeList.buf = nodeAllocatorParam->nodesFreeList.buf;
+    nodeAllocator->nodesFreeList.cap = nodeAllocatorParam->nodesFreeList.cap;
+    nodeAllocator->nodesFreeList.len = nodeAllocatorParam->nodesFreeList.len;
 
     *tree = packedTree;
 }
@@ -183,18 +183,17 @@ static void treeWithFreeListToMappable(NodeAllocator *nodeAllocator,
                             sizeof(*nodeAllocator->nodesFreeList.buf), 0);
 }
 
-static void freePackedNodeAllocator(PackedNodeAllocator *packedNodeAllocator) {
+static void freePackedNodeAllocator(NodeAllocator *nodeAllocatorParam) {
+    freePhysicalMemory((Memory){.start = (U64)nodeAllocatorParam->nodes.buf,
+                                .bytes = nodeAllocatorParam->nodes.cap *
+                                         nodeAllocatorParam->elementSizeBytes});
     freePhysicalMemory(
-        (Memory){.start = (U64)packedNodeAllocator->nodes.buf,
-                 .bytes = packedNodeAllocator->nodes.cap *
-                          packedNodeAllocator->elementSizeBytes});
-    freePhysicalMemory(
-        (Memory){.start = (U64)packedNodeAllocator->nodesFreeList.buf,
-                 .bytes = packedNodeAllocator->nodesFreeList.cap *
-                          sizeof(*packedNodeAllocator->nodesFreeList.buf)});
+        (Memory){.start = (U64)nodeAllocatorParam->nodesFreeList.buf,
+                 .bytes = nodeAllocatorParam->nodesFreeList.cap *
+                          sizeof(*nodeAllocatorParam->nodesFreeList.buf)});
 }
 
-void initMemoryManagers(PackedKernelMemory *kernelMemory) {
+void initMemoryManagers(KernelMemory *kernelMemory) {
     initMemoryAllocator(&physicalMA.nodeAllocator, (void **)&physicalMA.tree,
                         &kernelMemory->physicalPMA.nodeAllocator,
                         &kernelMemory->physicalPMA.tree);

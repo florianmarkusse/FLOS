@@ -46,11 +46,12 @@ void allocateSpaceForKernelMemory(
                          sizeof(*redBlackMMTreeWithFreeList->tree),
                      alignof(*redBlackMMTreeWithFreeList->tree), false,
                      scratch),
-                 .len = expectedNumberOfDescriptors},
+                 .len = expectedNumberOfDescriptors *
+                        sizeof(*redBlackMMTreeWithFreeList->tree)},
         (void_a){.buf = allocateKernelStructure(
                      expectedNumberOfDescriptors * sizeof(void *),
                      alignof(void *), false, scratch),
-                 .len = expectedNumberOfDescriptors},
+                 .len = expectedNumberOfDescriptors * sizeof(void *)},
         sizeof(*redBlackMMTreeWithFreeList->tree),
         alignof(*redBlackMMTreeWithFreeList->tree));
 }
@@ -83,8 +84,8 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
 static constexpr auto RED_COLOR = 0xFF0000;
 
 void convertToKernelMemory(
-    MemoryInfo *memoryInfo, PackedMMTreeWithFreeList *physicalMemoryTree,
-    RedBlackMMTreeWithFreeList *RedBlackMMtreeWithFreeList,
+    MemoryInfo *memoryInfo,
+    RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList,
     GraphicsOutputProtocolMode *mode) {
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
         if (memoryTypeCanBeUsedByKernel(desc->type)) {
@@ -134,19 +135,14 @@ void convertToKernelMemory(
             for (typeof(availableMemory.len) i = 0; i < availableMemory.len;
                  i++) {
                 MMNode *node = nodeAllocatorGet(
-                    &RedBlackMMtreeWithFreeList->nodeAllocator);
+                    &redBlackMMTreeWithFreeList->nodeAllocator);
                 if (!node) {
                     drawStatusRectangle(mode, RED_COLOR);
                     hangThread();
                 }
                 node->memory = availableMemory.buf[i];
-                insertMMNodeAndAddToFreelist(RedBlackMMtreeWithFreeList, node);
+                insertMMNodeAndAddToFreelist(redBlackMMTreeWithFreeList, node);
             }
         }
     }
-
-    setPackedMemoryAllocator(&physicalMemoryTree->nodeAllocator,
-                             &physicalMemoryTree->tree,
-                             &RedBlackMMtreeWithFreeList->nodeAllocator,
-                             RedBlackMMtreeWithFreeList->tree);
 }

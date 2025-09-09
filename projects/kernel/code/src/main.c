@@ -12,6 +12,7 @@
 #include "shared/log.h"
 #include "shared/maths.h"
 #include "shared/memory/allocator/arena.h"
+#include "shared/memory/management/init.h"
 #include "shared/memory/management/management.h"
 #include "shared/memory/management/status.h"
 #include "shared/memory/policy.h"
@@ -358,7 +359,7 @@ static void mappingTests() {
 }
 
 __attribute__((section("kernel-start"))) int
-kernelMain(PackedKernelParameters *kernelParams) {
+kernelMain(KernelParameters *kernelParams) {
     archInit(kernelParams->archParams);
     initMemoryManagers(&kernelParams->memory);
 

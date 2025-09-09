@@ -18,7 +18,7 @@ void allocateSpaceForKernelMemory(
     RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList, Arena scratch);
 
 void convertToKernelMemory(
-    MemoryInfo *memoryInfo, PackedMMTreeWithFreeList *physicalMemoryTree,
+    MemoryInfo *memoryInfo,
     RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList,
     GraphicsOutputProtocolMode *mode);
 

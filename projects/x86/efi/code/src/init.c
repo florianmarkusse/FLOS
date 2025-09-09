@@ -243,11 +243,12 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
         (void_a){.buf = allocateKernelStructure(
                      INITIAL_VIRTUAL_MEMORY_REGIONS * sizeof(*virtualMA.tree),
                      alignof(*virtualMA.tree), false, scratch),
-                 .len = INITIAL_VIRTUAL_MEMORY_REGIONS},
+                 .len =
+                     INITIAL_VIRTUAL_MEMORY_REGIONS * sizeof(*virtualMA.tree)},
         (void_a){.buf = allocateKernelStructure(
                      INITIAL_VIRTUAL_MEMORY_REGIONS * sizeof(void *),
                      alignof(void *), false, scratch),
-                 .len = INITIAL_VIRTUAL_MEMORY_REGIONS},
+                 .len = INITIAL_VIRTUAL_MEMORY_REGIONS * sizeof(void *)},
         sizeof(*virtualMA.tree), alignof(*virtualMA.tree));
 
     // Initial size > 2 so no bounds checking here.
@@ -268,11 +269,12 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
                      INITIAL_VIRTUAL_MAPPING_SIZES *
                          sizeof(*virtualMemorySizeMapper.tree),
                      alignof(*virtualMemorySizeMapper.tree), false, scratch),
-                 .len = INITIAL_VIRTUAL_MAPPING_SIZES},
+                 .len = INITIAL_VIRTUAL_MAPPING_SIZES *
+                        sizeof(*virtualMemorySizeMapper.tree)},
         (void_a){.buf = allocateKernelStructure(
                      INITIAL_VIRTUAL_MAPPING_SIZES * sizeof(void *),
                      alignof(void *), false, scratch),
-                 .len = INITIAL_VIRTUAL_MAPPING_SIZES},
+                 .len = INITIAL_VIRTUAL_MAPPING_SIZES * sizeof(void *)},
         sizeof(*virtualMemorySizeMapper.tree),
         alignof(*virtualMemorySizeMapper.tree));
 }

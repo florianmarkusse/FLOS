@@ -21,7 +21,7 @@ ArchParamsRequirements getArchParamsRequirements();
 void fillArchParams(void *archParams, Arena scratch);
 
 void jumpIntoKernel(U64 newStackPointer, U16 processorID,
-                    PackedKernelParameters *kernelParameters);
+                    KernelParameters *kernelParameters);
 U64 initScreenMemory(U64 physicalScreenAddress, U64 bytes);
 
 U64 kernelCodeStart();

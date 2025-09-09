@@ -1,6 +1,7 @@
 #ifndef SHARED_TREES_RED_BLACK_MEMORY_MANAGER_H
 #define SHARED_TREES_RED_BLACK_MEMORY_MANAGER_H
 
+#include "shared/macros.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/trees/red-black/common.h"
 #include "shared/types/array-types.h"
@@ -19,6 +20,10 @@ struct MMNode {
     Memory memory;
     U64 mostBytesInSubtree;
 };
+static_assert(OFFSETOF(MMNode, children) == 0);
+static_assert(OFFSETOF(MMNode, color) ==
+              sizeof(MMNode *) * RB_TREE_CHILD_COUNT);
+static_assert(sizeof(MMNode) == 48);
 
 typedef MAX_LENGTH_ARRAY(MMNode) MMNode_max_a;
 typedef MAX_LENGTH_ARRAY(MMNode *) MMNodePtr_max_a;

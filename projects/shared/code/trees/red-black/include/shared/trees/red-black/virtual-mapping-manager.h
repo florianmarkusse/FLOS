@@ -9,6 +9,7 @@ typedef struct {
     U64 bytes;
     U64_pow2 mappingSize;
 } VMMNode;
+static_assert(sizeof(VMMNode) == 48);
 
 typedef MAX_LENGTH_ARRAY(VMMNode) RedBlackVMM_max_a;
 typedef MAX_LENGTH_ARRAY(VMMNode *) RedBlackVMMPtr_max_a;

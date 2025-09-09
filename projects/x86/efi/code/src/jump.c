@@ -9,8 +9,7 @@ static void enableNewMemoryMapping() {
     asm volatile("mov %%rax, %%cr3" : : "a"(rootPageTable) : "memory");
 }
 
-static void toKernel(U64 newStackPointer,
-                     PackedKernelParameters *kernelParams) {
+static void toKernel(U64 newStackPointer, KernelParameters *kernelParams) {
     // NOTE: The Sys V ABI requires rsp to be 16-byte aligned before doing a
     // call instruction to jump to a function. When you do call, it pushes 8
     // bytes on the rsp so the C-compiler assumes that rsp is not 16-byte
@@ -32,7 +31,7 @@ static void toKernel(U64 newStackPointer,
 }
 
 void jumpIntoKernel(U64 newStackPointer, U16 processorID,
-                    PackedKernelParameters *kernelParams) {
+                    KernelParameters *kernelParams) {
     loadGDTAndSegments(&gdtDescriptor);
     loadTaskRegister(processorID);
     enableNewMemoryMapping();

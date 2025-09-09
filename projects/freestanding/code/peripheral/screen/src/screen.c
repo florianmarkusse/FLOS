@@ -9,13 +9,9 @@
 // This struct implicitly assumes that there are 4 bytes per pixel, hence a
 // U32 buffer
 typedef struct {
-    U32 *screen;
-    U32 *backingBuffer;
-    U64 size;
-    U32 width;
-    U32 height;
-    U32 scanline;
-} Window;
+    U32 *backingPixels;
+    Window window;
+} Screen;
 
 // The header contains all the data for each glyph. After that comes numGlyph *
 // bytesPerGlyph bytes.
@@ -61,7 +57,7 @@ static constexpr auto TAB_SIZE_IN_GLYPHS = (1 << 2);
 
 // NOTE: we write to this variable all the time, care should be taken when we
 // move to multithreading
-static Window dim;
+static Screen dim;
 
 static U16 glyphsPerLine;
 static U16 glyphsPerColumn;
@@ -92,28 +88,30 @@ static U32 nextCharInBuf;
 static U8 *buf;
 
 static void switchToScreenDisplay() {
-    memcpy(dim.screen, dim.backingBuffer,
-           dim.scanline * dim.height * BYTES_PER_PIXEL);
+    memcpy(dim.window.pixels, dim.backingPixels,
+           dim.window.scanline * dim.window.height * BYTES_PER_PIXEL);
 }
 
 static void drawTerminalBox() {
-    for (typeof(dim.height) y = 0; y < dim.height; y++) {
-        for (typeof(dim.scanline) x = 0; x < dim.scanline; x++) {
-            dim.backingBuffer[y * dim.scanline + x] = 0x00000000;
+    for (typeof(dim.window.height) y = 0; y < dim.window.height; y++) {
+        for (typeof(dim.window.scanline) x = 0; x < dim.window.scanline; x++) {
+            dim.backingPixels[y * dim.window.scanline + x] = 0x00000000;
         }
     }
 
-    for (typeof(dim.scanline) x = 0; x < dim.scanline; x++) {
-        dim.backingBuffer[x] = HAXOR_GREEN;
+    for (typeof(dim.window.scanline) x = 0; x < dim.window.scanline; x++) {
+        dim.backingPixels[x] = HAXOR_GREEN;
     }
-    for (typeof(dim.height) y = 0; y < dim.height; y++) {
-        dim.backingBuffer[y * dim.scanline] = HAXOR_GREEN;
+    for (typeof(dim.window.height) y = 0; y < dim.window.height; y++) {
+        dim.backingPixels[y * dim.window.scanline] = HAXOR_GREEN;
     }
-    for (typeof(dim.height) y = 0; y < dim.height; y++) {
-        dim.backingBuffer[y * dim.scanline + (dim.width - 1)] = HAXOR_GREEN;
+    for (typeof(dim.window.height) y = 0; y < dim.window.height; y++) {
+        dim.backingPixels[y * dim.window.scanline + (dim.window.width - 1)] =
+            HAXOR_GREEN;
     }
-    for (typeof(dim.scanline) x = 0; x < dim.scanline; x++) {
-        dim.backingBuffer[(dim.scanline * (dim.height - 1)) + x] = HAXOR_GREEN;
+    for (typeof(dim.window.scanline) x = 0; x < dim.window.scanline; x++) {
+        dim.backingPixels[(dim.window.scanline * (dim.window.height - 1)) + x] =
+            HAXOR_GREEN;
     }
 
     switchToScreenDisplay();
@@ -135,21 +133,21 @@ static void drawGlyph(U8 ch, U32 topRightGlyphOffset) {
         // 000011110000 0000
         ASSERT(font->width <= sizeof(glyphLine) * BITS_PER_BYTE);
         for (typeof(font->width) x = 0; x < font->width; x++) {
-            dim.backingBuffer[line] =
+            dim.backingPixels[line] =
                 (((glyphLine) & (mask)) != 0) * HAXOR_WHITE;
             mask >>= 1;
             line++;
         }
         glyphStart += bytesPerGlyphLine;
-        glyphOffset += dim.scanline;
+        glyphOffset += dim.window.scanline;
     }
 }
 
 static void zeroOutGlyphs(U32 topRightGlyphOffset, U16 numberOfGlyphs) {
     for (typeof(font->height) i = 0; i < font->height; i++) {
-        memset(&dim.backingBuffer[topRightGlyphOffset], 0,
+        memset(&dim.backingPixels[topRightGlyphOffset], 0,
                numberOfGlyphs * font->width * BYTES_PER_PIXEL);
-        topRightGlyphOffset += dim.scanline;
+        topRightGlyphOffset += dim.window.scanline;
     }
 }
 
@@ -158,7 +156,7 @@ static void drawLines(U32 startIndex, U16 screenLinesToDraw,
     U16 currentScreenLines = 0;
 
     U32 topRightGlyphOffset =
-        glyphStartOffset + (rowNumber * (dim.scanline * font->height));
+        glyphStartOffset + (rowNumber * (dim.window.scanline * font->height));
     U16 currentGlyphLen = 0;
     bool toNext = false;
 
@@ -175,7 +173,7 @@ static void drawLines(U32 startIndex, U16 screenLinesToDraw,
 
             topRightGlyphOffset =
                 glyphStartOffset + ((rowNumber + currentScreenLines) *
-                                    (dim.scanline * font->height));
+                                    (dim.window.scanline * font->height));
             currentGlyphLen = 0;
             toNext = false;
         }
@@ -217,7 +215,7 @@ static void drawLines(U32 startIndex, U16 screenLinesToDraw,
 
                 topRightGlyphOffset =
                     glyphStartOffset + ((rowNumber + currentScreenLines) *
-                                        (dim.scanline * font->height));
+                                        (dim.window.scanline * font->height));
                 currentGlyphLen = additionalSpace - extraSpacePreviousLine;
 
                 zeroOutGlyphs(topRightGlyphOffset, currentGlyphLen);
@@ -479,11 +477,11 @@ static void toTail() {
         U32 fromOffset =
             glyphStartVerticalOffset +
             (fillResult.realScreenLinesWritten - lastScreenlineOpen) *
-                (dim.scanline * font->height);
+                (dim.window.scanline * font->height);
 
-        memmove(&dim.backingBuffer[glyphStartVerticalOffset],
-                &dim.backingBuffer[fromOffset],
-                oldScreenLines * (dim.scanline * font->height * 4));
+        memmove(&dim.backingPixels[glyphStartVerticalOffset],
+                &dim.backingPixels[fromOffset],
+                oldScreenLines * (dim.window.scanline * font->height * 4));
     }
 
     U16 drawLineStartIndex = (U16)ringBufferPlus(
@@ -537,23 +535,23 @@ bool flushToScreen(U8_a buffer) {
     return true;
 }
 
-void initScreen(PackedWindow *window, Arena *perm) {
+void initScreen(Window *window, Arena *perm) {
     buf = NEW(perm, U8, .count = FILE_BUF_LEN);
     // Need correct alignment
     U32 *doubleBuffer = NEW(
         perm, U32, .count = (U32)ceilingDivide(window->size, BYTES_PER_PIXEL));
 
-    dim.screen = window->screen;
-    dim.backingBuffer = doubleBuffer;
-    dim.size = window->size;
-    dim.width = window->width;
-    dim.height = window->height;
-    dim.scanline = window->scanline;
+    dim.window.pixels = window->pixels;
+    dim.backingPixels = doubleBuffer;
+    dim.window.size = window->size;
+    dim.window.width = window->width;
+    dim.window.height = window->height;
+    dim.window.scanline = window->scanline;
 
     glyphsPerLine =
-        (U16)(dim.width - HORIZONTAL_PIXEL_MARGIN * 2) / (font->width);
+        (U16)(dim.window.width - HORIZONTAL_PIXEL_MARGIN * 2) / (font->width);
     glyphsPerColumn =
-        (U16)(dim.height - VERTICAL_PIXEL_MARGIN * 2) / (font->height);
+        (U16)(dim.window.height - VERTICAL_PIXEL_MARGIN * 2) / (font->height);
 
     ringGlyphsPerLine = (U16)ceilingPowerOf2(glyphsPerLine);
     ringGlyphsPerColumn = (U16)ceilingPowerOf2((glyphsPerColumn + 1));
@@ -571,7 +569,7 @@ void initScreen(PackedWindow *window, Arena *perm) {
 
     maxGlyphsOnScreen = glyphsPerLine * glyphsPerColumn;
     maxCharsToProcess = 2 * maxGlyphsOnScreen;
-    glyphStartVerticalOffset = dim.scanline * VERTICAL_PIXEL_MARGIN;
+    glyphStartVerticalOffset = dim.window.scanline * VERTICAL_PIXEL_MARGIN;
     glyphStartOffset = glyphStartVerticalOffset + HORIZONTAL_PIXEL_MARGIN;
     bytesPerGlyphLine = (U32)ceilingDivide(font->width, BITS_PER_BYTE);
 
@@ -619,12 +617,12 @@ void rewind(U16 numberOfScreenLines) {
     }
 
     U32 fromOffset = glyphStartVerticalOffset +
-                     newScreenLinesOnTop * (dim.scanline * font->height);
+                     newScreenLinesOnTop * (dim.window.scanline * font->height);
 
-    memmove(&dim.backingBuffer[fromOffset],
-            &dim.backingBuffer[glyphStartVerticalOffset],
+    memmove(&dim.backingPixels[fromOffset],
+            &dim.backingPixels[glyphStartVerticalOffset],
             (glyphsPerColumn - newScreenLinesOnTop) *
-                (dim.scanline * font->height * 4));
+                (dim.window.scanline * font->height * 4));
 
     drawLines(oldestScreenLineIndex, newScreenLinesOnTop,
               logicalLineLens[startIndex], 0);
@@ -671,12 +669,12 @@ void prowind(U16 numberOfScreenLines) {
     }
 
     U32 fromOffset =
-        glyphStartVerticalOffset +
-        fillResult.realScreenLinesWritten * (dim.scanline * font->height);
+        glyphStartVerticalOffset + fillResult.realScreenLinesWritten *
+                                       (dim.window.scanline * font->height);
 
-    memmove(&dim.backingBuffer[glyphStartVerticalOffset],
-            &dim.backingBuffer[fromOffset],
-            oldScreenLines * (dim.scanline * font->height * 4));
+    memmove(&dim.backingPixels[glyphStartVerticalOffset],
+            &dim.backingPixels[fromOffset],
+            oldScreenLines * (dim.window.scanline * font->height * 4));
 
     U16 drawLineStartIndex = (U16)ringBufferPlus(
         oldestScreenLineIndex, oldScreenLines, ringGlyphsPerColumn);

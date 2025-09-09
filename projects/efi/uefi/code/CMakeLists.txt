@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 project(efi-uefi-i LANGUAGES C ASM)
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     include("${REPO_PROJECTS}/setup.cmake")

@@ -1,6 +1,7 @@
 #ifndef SHARED_TREES_RED_BLACK_BASIC_H
 #define SHARED_TREES_RED_BLACK_BASIC_H
 
+#include "shared/macros.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/trees/red-black/common.h"
 
@@ -16,6 +17,11 @@ struct RedBlackNodeBasic {
     RedBlackColor color;               // NOTE: Keep this as the second element
     U64 value;
 };
+
+static_assert(OFFSETOF(RedBlackNodeBasic, children) == 0);
+static_assert(OFFSETOF(RedBlackNodeBasic, color) ==
+              sizeof(RedBlackNodeBasic *) * RB_TREE_CHILD_COUNT);
+static_assert(sizeof(RedBlackNodeBasic) == 32);
 
 typedef struct {
     RedBlackNodeBasic *node;

@@ -9,6 +9,7 @@ typedef struct {
     VMMNode *tree;
     NodeAllocator nodeAllocator;
 } VMMTreeWithFreeList;
+static_assert(sizeof(VMMTreeWithFreeList) == 48);
 
 extern VMMTreeWithFreeList virtualMemorySizeMapper;
 

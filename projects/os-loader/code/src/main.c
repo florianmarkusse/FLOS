@@ -71,8 +71,54 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         mapMemory(0, 0, highestLowerHalfAddress,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict());
 
+    KFLUSH_AFTER {
+        INFO(STRING("virutal node allocator status:\n"));
+        INFO(STRING("nodes buf: "));
+        INFO(virtualMA.nodeAllocator.nodes.buf);
+        INFO(STRING("\tnodes len: "));
+        INFO(virtualMA.nodeAllocator.nodes.len);
+        INFO(STRING("\tnodes cap: "));
+        INFO(virtualMA.nodeAllocator.nodes.cap);
+
+        INFO(STRING("nodesFreeList buf: "));
+        INFO((void *)virtualMA.nodeAllocator.nodesFreeList.buf);
+        INFO(STRING("\tnodesFreeList len: "));
+        INFO(virtualMA.nodeAllocator.nodesFreeList.len);
+        INFO(STRING("\tnodesFreeList cap: "));
+        INFO(virtualMA.nodeAllocator.nodesFreeList.cap);
+
+        INFO(STRING("\telement size bytes: "));
+        INFO(virtualMA.nodeAllocator.elementSizeBytes);
+
+        INFO(STRING("\telement align: "));
+        INFO(virtualMA.nodeAllocator.alignBytes);
+    }
+
     initKernelMemoryManagement(firstFreeVirtual, kernelVirtualMemoryEnd(),
                                arena);
+
+    KFLUSH_AFTER {
+        INFO(STRING("virutal node allocator status:\n"));
+        INFO(STRING("nodes buf: "));
+        INFO(virtualMA.nodeAllocator.nodes.buf);
+        INFO(STRING("\tnodes len: "));
+        INFO(virtualMA.nodeAllocator.nodes.len);
+        INFO(STRING("\tnodes cap: "));
+        INFO(virtualMA.nodeAllocator.nodes.cap);
+
+        INFO(STRING("nodesFreeList buf: "));
+        INFO((void *)virtualMA.nodeAllocator.nodesFreeList.buf);
+        INFO(STRING("\tnodesFreeList len: "));
+        INFO(virtualMA.nodeAllocator.nodesFreeList.len);
+        INFO(STRING("\tnodesFreeList cap: "));
+        INFO(virtualMA.nodeAllocator.nodesFreeList.cap);
+
+        INFO(STRING("\telement size bytes: "));
+        INFO(virtualMA.nodeAllocator.elementSizeBytes);
+
+        INFO(STRING("\telement align: "));
+        INFO(virtualMA.nodeAllocator.alignBytes);
+    }
 
     KFLUSH_AFTER { INFO(STRING("Going to fetch kernel bytes\n")); }
     U32 kernelBytes = getKernelBytes(arena);
@@ -115,9 +161,13 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)(kernelCodeStart() + kernelContent.len), .flags = NEWLINE);
     }
 
+    KFLUSH_AFTER { INFO(STRING("HERERERREERRE\n")); }
+
     U64 virtualForKernel =
         (U64)allocVirtualMemory(MIN_VIRTUAL_MEMORY_REQUIRED, 1);
     U64 endVirtualForKernel = virtualForKernel + MIN_VIRTUAL_MEMORY_REQUIRED;
+
+    KFLUSH_AFTER { INFO(STRING("HERERERREERRE\n")); }
 
     KFLUSH_AFTER {
         INFO(STRING("Got "));
@@ -197,14 +247,14 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     ArchParamsRequirements archParamsRequirements = getArchParamsRequirements();
     U32 kernelParamsAlignment =
-        MAX(alignof(PackedKernelParameters), archParamsRequirements.align);
+        MAX(alignof(KernelParameters), archParamsRequirements.align);
     U32 archKernelParamsOffset =
-        (U32)alignUp(sizeof(PackedKernelParameters), kernelParamsAlignment);
+        (U32)alignUp(sizeof(KernelParameters), kernelParamsAlignment);
     U32 kernelParamsSize =
         archKernelParamsOffset + archParamsRequirements.bytes;
 
-    PackedKernelParameters *kernelParams =
-        (PackedKernelParameters *)allocateKernelStructure(
+    KernelParameters *kernelParams =
+        (KernelParameters *)allocateKernelStructure(
             kernelParamsSize, kernelParamsAlignment, false, arena);
     void *archParams = ((U8 *)kernelParams) + archKernelParamsOffset;
     void *kernelParamsEnd = ((U8 *)kernelParams) + kernelParamsSize;
@@ -230,11 +280,11 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     kernelParams->archParams =
         (void **)((U8 *)kernelParams) + archKernelParamsOffset;
     kernelParams->window =
-        (PackedWindow){.screen = (U32 *)screenMemoryVirtualStart,
-                       .size = gop->mode->frameBufferSize,
-                       .width = gop->mode->info->horizontalResolution,
-                       .height = gop->mode->info->verticalResolution,
-                       .scanline = gop->mode->info->pixelsPerScanLine};
+        (Window){.pixels = (U32 *)screenMemoryVirtualStart,
+                 .size = gop->mode->frameBufferSize,
+                 .width = gop->mode->info->horizontalResolution,
+                 .height = gop->mode->info->verticalResolution,
+                 .scanline = gop->mode->info->pixelsPerScanLine};
 
     KFLUSH_AFTER { INFO(STRING("Filling specific arch params\n")); }
     fillArchParams(kernelParams->archParams, arena);
@@ -255,14 +305,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     // NOTE: Don't use virtual memory allocations anymore from this point
     // onward.
-    // TODO: bad!
-    setPackedMemoryAllocator(&kernelParams->memory.virtualPMA.nodeAllocator,
-                             &kernelParams->memory.virtualPMA.tree,
-                             &virtualMA.nodeAllocator, virtualMA.tree);
-    setPackedMemoryAllocator(
-        &kernelParams->memory.virtualMemorySizeMapper.nodeAllocator,
-        &kernelParams->memory.virtualMemorySizeMapper.tree,
-        &virtualMemorySizeMapper.nodeAllocator, virtualMemorySizeMapper.tree);
+    kernelParams->memory.virtualPMA = virtualMA;
+    kernelParams->memory.virtualMemorySizeMapper = virtualMemorySizeMapper;
 
     KFLUSH_AFTER {
         INFO(STRING("Finished set-up. Collecting physical memory and jumping "
@@ -271,9 +315,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
     drawStatusRectangle(gop->mode, GREEN_COLOR);
 
-    RedBlackMMTreeWithFreeList physical;
-    physical.tree = nullptr;
-    allocateSpaceForKernelMemory(&physical, arena);
+    kernelParams->memory.physicalPMA.tree = nullptr;
+    allocateSpaceForKernelMemory(&kernelParams->memory.physicalPMA, arena);
 
     /* NOTE: Keep this call in between the stub and the creation of available */
     /* memory! The stub allocates memory and logs on failure which is not */
@@ -288,7 +331,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     convertToKernelMemory(&memoryInfo, &kernelParams->memory.physicalPMA,
-                          &physical, gop->mode);
+                          gop->mode);
     jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE, 0, kernelParams);
 
     __builtin_unreachable();
