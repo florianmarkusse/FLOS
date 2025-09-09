@@ -29,14 +29,15 @@ static void appendMemoryManagerStatus(RedBlackMMTreeWithFreeList *allocator,
     INFO(STRING(" nodes: "));
     INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(result.nodes), 3));
     INFO(STRING("freelist size: "));
-    INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(allocator->freeList.len),
-                                  3));
+    INFO(stringWithMinSizeDefault(
+        CONVERT_TO_STRING(allocator->nodeAllocator.nodesFreeList.len), 3));
     INFO(STRING("nodes buf: "));
-    INFO((void *)allocator->nodes.buf);
+    INFO((void *)allocator->nodeAllocator.nodes.buf);
     INFO(STRING(" len: "));
-    INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(allocator->nodes.len), 3));
+    INFO(stringWithMinSizeDefault(
+        CONVERT_TO_STRING(allocator->nodeAllocator.nodes.len), 3));
     INFO(STRING(" cap: "));
-    INFO(allocator->nodes.cap, .flags = NEWLINE);
+    INFO(allocator->nodeAllocator.nodes.cap, .flags = NEWLINE);
 }
 
 void appendPhysicalMemoryManagerStatus() {

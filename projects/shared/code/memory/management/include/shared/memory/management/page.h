@@ -1,13 +1,13 @@
 #ifndef SHARED_MEMORY_MANAGEMENT_PAGE_H
 #define SHARED_MEMORY_MANAGEMENT_PAGE_H
 
+#include "shared/memory/allocator/node.h"
 #include "shared/trees/red-black/virtual-mapping-manager.h"
 #include "shared/types/numeric.h"
 
 typedef struct {
-    RedBlackVMM_max_a nodes;
     VMMNode *tree;
-    RedBlackVMMPtr_max_a freeList;
+    NodeAllocator nodeAllocator;
 } VMMTreeWithFreeList;
 
 extern VMMTreeWithFreeList virtualMemorySizeMapper;

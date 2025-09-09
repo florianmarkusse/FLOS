@@ -9,10 +9,12 @@ typedef struct {
     void_max_a nodes;
     voidPtr_max_a nodesFreeList;
     U32 elementSizeBytes;
+    U32 alignBytes;
 } NodeAllocator;
 
 void nodeAllocatorInit(NodeAllocator *nodeAllocator, void_a nodes,
-                       void_a nodesFreeList, U32 elementSizeBytes);
+                       void_a nodesFreeList, U32 elementSizeBytes,
+                       U32 alignBytes);
 
 [[nodiscard]] void *nodeAllocatorGet(NodeAllocator *nodeAllocator);
 

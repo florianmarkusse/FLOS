@@ -3,19 +3,19 @@
 
 #include "efi-to-kernel/kernel-parameters.h"
 #include "shared/memory/allocator/arena.h"
+#include "shared/memory/allocator/node.h"
 #include "shared/trees/red-black/memory-manager.h"
 
 typedef struct {
-    MMNode_max_a nodes;
     MMNode *tree;
-    MMNodePtr_max_a freeList;
+    NodeAllocator nodeAllocator;
 } RedBlackMMTreeWithFreeList;
 
 extern RedBlackMMTreeWithFreeList virtualMA;
 extern RedBlackMMTreeWithFreeList physicalMA;
 
-void insertMMNodeAndAddToFreelist(MMNode **root, MMNode *newNode,
-                                  MMNodePtr_max_a *freeList);
+void insertMMNodeAndAddToFreelist(RedBlackMMTreeWithFreeList *allocator,
+                                  MMNode *newNode);
 
 void initMemoryManagers(PackedKernelMemory *kernelMemory);
 

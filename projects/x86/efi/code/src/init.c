@@ -238,37 +238,43 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
     physicalMA = (RedBlackMMTreeWithFreeList){0};
 
     virtualMA.tree = nullptr;
-    createDynamicArray(
-        INITIAL_VIRTUAL_MEMORY_REGIONS, sizeof(*virtualMA.nodes.buf),
-        alignof(*virtualMA.nodes.buf), (void_max_a *)&virtualMA.nodes, scratch);
-    createDynamicArray(INITIAL_VIRTUAL_MEMORY_REGIONS,
-                       sizeof(*virtualMA.freeList.buf),
-                       alignof(*virtualMA.freeList.buf),
-                       (void_max_a *)&virtualMA.freeList, scratch);
+    nodeAllocatorInit(
+        &virtualMA.nodeAllocator,
+        (void_a){.buf = allocateKernelStructure(
+                     INITIAL_VIRTUAL_MEMORY_REGIONS * sizeof(*virtualMA.tree),
+                     alignof(*virtualMA.tree), false, scratch),
+                 .len = INITIAL_VIRTUAL_MEMORY_REGIONS},
+        (void_a){.buf = allocateKernelStructure(
+                     INITIAL_VIRTUAL_MEMORY_REGIONS * sizeof(void *),
+                     alignof(void *), false, scratch),
+                 .len = INITIAL_VIRTUAL_MEMORY_REGIONS},
+        sizeof(*virtualMA.tree), alignof(*virtualMA.tree));
 
     // Initial size > 2 so no bounds checking here.
-    MMNode *node = &virtualMA.nodes.buf[virtualMA.nodes.len];
-    virtualMA.nodes.len++;
+    MMNode *node = nodeAllocatorGet(&virtualMA.nodeAllocator);
     node->memory = (Memory){.start = startingAddress,
                             .bytes = LOWER_HALF_END - startingAddress};
     (void)insertMMNode(&virtualMA.tree, node);
 
-    node = &virtualMA.nodes.buf[virtualMA.nodes.len];
-    virtualMA.nodes.len++;
+    node = nodeAllocatorGet(&virtualMA.nodeAllocator);
     node->memory = (Memory){.start = HIGHER_HALF_START,
                             .bytes = endingAddress - HIGHER_HALF_START};
     (void)insertMMNode(&virtualMA.tree, node);
 
     virtualMemorySizeMapper.tree = nullptr;
-    createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,
-                       sizeof(*virtualMemorySizeMapper.nodes.buf),
-                       alignof(*virtualMemorySizeMapper.nodes.buf),
-                       (void_max_a *)&virtualMemorySizeMapper.nodes, scratch);
-    createDynamicArray(INITIAL_VIRTUAL_MAPPING_SIZES,
-                       sizeof(*virtualMemorySizeMapper.freeList.buf),
-                       alignof(*virtualMemorySizeMapper.freeList.buf),
-                       (void_max_a *)&virtualMemorySizeMapper.freeList,
-                       scratch);
+    nodeAllocatorInit(
+        &virtualMemorySizeMapper.nodeAllocator,
+        (void_a){.buf = allocateKernelStructure(
+                     INITIAL_VIRTUAL_MAPPING_SIZES *
+                         sizeof(*virtualMemorySizeMapper.tree),
+                     alignof(*virtualMemorySizeMapper.tree), false, scratch),
+                 .len = INITIAL_VIRTUAL_MAPPING_SIZES},
+        (void_a){.buf = allocateKernelStructure(
+                     INITIAL_VIRTUAL_MAPPING_SIZES * sizeof(void *),
+                     alignof(void *), false, scratch),
+                 .len = INITIAL_VIRTUAL_MAPPING_SIZES},
+        sizeof(*virtualMemorySizeMapper.tree),
+        alignof(*virtualMemorySizeMapper.tree));
 }
 
 void fillArchParams(void *archParams, Arena scratch) {

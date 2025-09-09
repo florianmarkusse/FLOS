@@ -1,11 +1,5 @@
 project(shared-memory-management LANGUAGES C ASM)
-add_library(
-    ${PROJECT_NAME}
-    OBJECT
-    "src/management.c"
-    "src/page.c"
-    "src/memory-tree.c"
-)
+add_library(${PROJECT_NAME} OBJECT "src/management.c" "src/page.c")
 
 add_includes_for_sublibrary()
 

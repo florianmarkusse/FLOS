@@ -1,7 +1,8 @@
 #include "shared/memory/allocator/node.h"
 
 void nodeAllocatorInit(NodeAllocator *nodeAllocator, void_a nodes,
-                       void_a nodesFreeList, U32 elementSizeBytes) {
+                       void_a nodesFreeList, U32 elementSizeBytes,
+                       U32 alignBytes) {
     *nodeAllocator = (NodeAllocator){
         .nodes =
             {
@@ -16,7 +17,8 @@ void nodeAllocatorInit(NodeAllocator *nodeAllocator, void_a nodes,
                 .cap = nodesFreeList.len /
                        sizeof(typeof(*nodeAllocator->nodesFreeList.buf)),
             },
-        .elementSizeBytes = elementSizeBytes};
+        .elementSizeBytes = elementSizeBytes,
+        .alignBytes = alignBytes};
 }
 
 void *nodeAllocatorGet(NodeAllocator *nodeAllocator) {

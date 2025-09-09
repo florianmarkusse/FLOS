@@ -55,7 +55,7 @@ int main() {
                  .len = 1000 * sizeof(*myBuddy.blocksFree[0])},
         (void_a){.buf = NEW(&arena, void *, .count = 1000),
                  .len = 1000 * sizeof(void *)},
-        sizeof(*myBuddy.blocksFree[0]));
+        sizeof(*myBuddy.blocksFree[0]), alignof(*myBuddy.blocksFree[0]));
 
     U64 start = 1ULL << 23ULL;
     U64 end = (1ULL << 24ULL);

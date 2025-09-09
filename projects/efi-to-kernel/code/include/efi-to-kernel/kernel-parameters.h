@@ -2,8 +2,8 @@
 #define EFI_TO_KERNEL_KERNEL_PARAMETERS_H
 
 #include "shared/memory/allocator/arena.h"
+#include "shared/memory/allocator/node.h"
 #include "shared/memory/management/definitions.h"
-#include "shared/memory/management/memory-tree.h"
 #include "shared/trees/red-black/memory-manager.h"
 #include "shared/trees/red-black/virtual-mapping-manager.h"
 #include "shared/types/array.h"
@@ -16,43 +16,56 @@
 
 // This struct implicitly assumes that there are 4 bytes per pixel, hence a
 // U32 buffer
-typedef struct __attribute__((packed)) {
+typedef struct {
     U32 *screen;
     U64 size;
     U32 width;
     U32 height;
     U32 scanline;
 } PackedWindow;
+static_assert(sizeof(PackedWindow) == 32);
 
-typedef struct __attribute__((packed)) {
+typedef struct {
     U8 *curFree;
     U8 *beg;
     U8 *end;
 } PackedArena;
-
-typedef PACKED_MAX_LENGTH_ARRAY(VMMNode) PackedVMMNode_max_a;
-typedef PACKED_MAX_LENGTH_ARRAY(VMMNode *) PackedVMMNodePtr_max_a;
-typedef struct __attribute__((packed)) {
-    PackedVMMNode_max_a nodes;
-    VMMNode *tree;
-    PackedVMMNodePtr_max_a freeList;
-} PackedVMMTreeWithFreeList;
-
-typedef PACKED_MAX_LENGTH_ARRAY(MMNode) PackedMMNode_max_a;
-typedef PACKED_MAX_LENGTH_ARRAY(MMNode *) PackedMMNodePtr_max_a;
-typedef struct __attribute__((packed)) {
-    PackedMMNode_max_a nodes;
-    MMNode *tree;
-    PackedMMNodePtr_max_a freeList;
-} PackedMMTreeWithFreeList;
+static_assert(sizeof(PackedArena) == 24);
 
 typedef PACKED_MAX_LENGTH_ARRAY(void) PackedVoid_max_a;
 typedef PACKED_MAX_LENGTH_ARRAY(void *) PackedVoidPtr_max_a;
 typedef struct __attribute__((packed)) {
     PackedVoid_max_a nodes;
+    PackedVoidPtr_max_a nodesFreeList;
+    U32 elementSizeBytes;
+} PackedNodeAllocator;
+
+typedef struct __attribute__((packed)) {
     VMMNode *tree;
-    PackedVoidPtr_max_a freeList;
-} PackedTreeWithFreeList;
+    PackedNodeAllocator nodeAllocator;
+} PackedVMMTreeWithFreeList;
+
+typedef struct __attribute__((packed)) {
+    U64 start;
+    U64 bytes;
+} PackedMemory;
+
+typedef struct __attribute__((packed)) PackedMMNode PackedMMNode;
+struct PackedMMNode {
+    PackedMMNode *
+        children[RB_TREE_CHILD_COUNT]; // NOTE: Keep this as the first elements.
+                                       // This is used in the insert so that
+                                       // children->[0] and a RedBlackNode* are
+                                       // the same location for doing inserts.
+    RedBlackColor color;               // NOTE: Keep this as the second element
+    PackedMemory memory;
+    U64 mostBytesInSubtree;
+};
+
+typedef struct __attribute__((packed)) {
+    MMNode *tree;
+    PackedNodeAllocator nodeAllocator;
+} PackedMMTreeWithFreeList;
 
 typedef struct __attribute__((packed)) {
     PackedMMTreeWithFreeList physicalPMA;
@@ -66,7 +79,8 @@ typedef struct __attribute__((packed)) {
     void *archParams;
 } PackedKernelParameters;
 
-void setPackedMemoryAllocator(PackedTreeWithFreeList *packedTreeWithFreeList,
-                              TreeWithFreeList *treeWithFreeList);
+void setPackedMemoryAllocator(PackedNodeAllocator *packedNodeAllocator,
+                              void **packedTree, NodeAllocator *nodeAllocator,
+                              void *tree);
 
 #endif

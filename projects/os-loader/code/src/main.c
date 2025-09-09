@@ -255,12 +255,14 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     // NOTE: Don't use virtual memory allocations anymore from this point
     // onward.
+    // TODO: bad!
+    setPackedMemoryAllocator(&kernelParams->memory.virtualPMA.nodeAllocator,
+                             &kernelParams->memory.virtualPMA.tree,
+                             &virtualMA.nodeAllocator, virtualMA.tree);
     setPackedMemoryAllocator(
-        (PackedTreeWithFreeList *)&kernelParams->memory.virtualPMA,
-        (TreeWithFreeList *)&virtualMA);
-    setPackedMemoryAllocator(
-        (PackedTreeWithFreeList *)&kernelParams->memory.virtualMemorySizeMapper,
-        (TreeWithFreeList *)&virtualMemorySizeMapper);
+        &kernelParams->memory.virtualMemorySizeMapper.nodeAllocator,
+        &kernelParams->memory.virtualMemorySizeMapper.tree,
+        &virtualMemorySizeMapper.nodeAllocator, virtualMemorySizeMapper.tree);
 
     KFLUSH_AFTER {
         INFO(STRING("Finished set-up. Collecting physical memory and jumping "

@@ -39,16 +39,20 @@ void allocateSpaceForKernelMemory(
     // state.
     U32 expectedNumberOfDescriptors = numberOfDescriptors * 2;
 
-    createDynamicArray(expectedNumberOfDescriptors,
-                       sizeof(*redBlackMMTreeWithFreeList->nodes.buf),
-                       alignof(*redBlackMMTreeWithFreeList->nodes.buf),
-                       (void_max_a *)&redBlackMMTreeWithFreeList->nodes,
-                       scratch);
-    createDynamicArray(expectedNumberOfDescriptors,
-                       sizeof(*redBlackMMTreeWithFreeList->freeList.buf),
-                       alignof(*redBlackMMTreeWithFreeList->freeList.buf),
-                       (void_max_a *)&redBlackMMTreeWithFreeList->freeList,
-                       scratch);
+    nodeAllocatorInit(
+        &redBlackMMTreeWithFreeList->nodeAllocator,
+        (void_a){.buf = allocateKernelStructure(
+                     expectedNumberOfDescriptors *
+                         sizeof(*redBlackMMTreeWithFreeList->tree),
+                     alignof(*redBlackMMTreeWithFreeList->tree), false,
+                     scratch),
+                 .len = expectedNumberOfDescriptors},
+        (void_a){.buf = allocateKernelStructure(
+                     expectedNumberOfDescriptors * sizeof(void *),
+                     alignof(void *), false, scratch),
+                 .len = expectedNumberOfDescriptors},
+        sizeof(*redBlackMMTreeWithFreeList->tree),
+        alignof(*redBlackMMTreeWithFreeList->tree));
 }
 
 U64 alignVirtual(U64 virtualAddress, U64 physicalAddress, U64 bytes) {
@@ -129,23 +133,20 @@ void convertToKernelMemory(
 
             for (typeof(availableMemory.len) i = 0; i < availableMemory.len;
                  i++) {
-                MMNode *node = getNodeFromTreeWithFreeList(
-                    (voidPtr_max_a *)&RedBlackMMtreeWithFreeList->freeList,
-                    (void_max_a *)&RedBlackMMtreeWithFreeList->nodes,
-                    sizeof(*RedBlackMMtreeWithFreeList->nodes.buf));
-
+                MMNode *node = nodeAllocatorGet(
+                    &RedBlackMMtreeWithFreeList->nodeAllocator);
                 if (!node) {
                     drawStatusRectangle(mode, RED_COLOR);
                     hangThread();
                 }
                 node->memory = availableMemory.buf[i];
-                insertMMNodeAndAddToFreelist(
-                    &RedBlackMMtreeWithFreeList->tree, node,
-                    &RedBlackMMtreeWithFreeList->freeList);
+                insertMMNodeAndAddToFreelist(RedBlackMMtreeWithFreeList, node);
             }
         }
     }
 
-    setPackedMemoryAllocator((PackedTreeWithFreeList *)physicalMemoryTree,
-                             (TreeWithFreeList *)RedBlackMMtreeWithFreeList);
+    setPackedMemoryAllocator(&physicalMemoryTree->nodeAllocator,
+                             &physicalMemoryTree->tree,
+                             &RedBlackMMtreeWithFreeList->nodeAllocator,
+                             RedBlackMMtreeWithFreeList->tree);
 }
