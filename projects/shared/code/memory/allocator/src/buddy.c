@@ -36,8 +36,8 @@ void buddyFree(Buddy *buddy, void *address, U64_pow2 blockSize,
         }
     } else {
         while (1) {
-            // Turn off the bit, so we always have the "lowest" buddy, so we can
-            // move up an order
+            // Turn off the order's bit, so we always have the "lowest" address
+            // buddy, so we can move up an order
             memoryAddress &= (~blockSize);
             blockSize *= 2;
             order++;
@@ -149,7 +149,7 @@ void buddyStatusAppend(Buddy *buddy) {
     }
 }
 
-bool buddyFreeRegionAdd(Buddy *buddy, U64 addressStart, U64 addressEndExclusive,
+void buddyFreeRegionAdd(Buddy *buddy, U64 addressStart, U64 addressEndExclusive,
                         NodeAllocator *nodeAllocator) {
     U64_pow2 blockSizeSmallest = 1 << buddy->blockSizeSmallest;
     ASSERT(addressStart == alignUp(addressStart, blockSizeSmallest));
@@ -175,7 +175,7 @@ bool buddyFreeRegionAdd(Buddy *buddy, U64 addressStart, U64 addressEndExclusive,
 
         RedBlackNodeBasic *node = nodeAllocatorGet(nodeAllocator);
         if (!node) {
-            return false;
+            longjmp(buddy->jmpBuf, 1);
         }
 
         node->value = addressStart;
@@ -186,8 +186,6 @@ bool buddyFreeRegionAdd(Buddy *buddy, U64 addressStart, U64 addressEndExclusive,
         addressStart += blockSize;
         remaining -= blockSize;
     }
-
-    return true;
 }
 
 void buddyInit(Buddy *buddy, U64 addressSpace) {

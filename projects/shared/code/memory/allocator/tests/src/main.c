@@ -60,14 +60,8 @@ int main() {
     U64 start = 1ULL << 23ULL;
     U64 end = (1ULL << 24ULL);
     for (U32 i = 0; i < 1; i++) {
-        if (!buddyFreeRegionAdd(&myBuddy, alignUp(start, pageSizesSmallest()),
-                                alignDown(end, pageSizesSmallest()),
-                                &nodeAllocator)) {
-            PFLUSH_AFTER(STDOUT) {
-                ERROR(STRING("Unable to add free region, ran out of nodes!\n"));
-            }
-            return -1;
-        }
+        buddyFreeRegionAdd(&myBuddy, alignUp(start, pageSizesSmallest()),
+                           alignDown(end, pageSizesSmallest()), &nodeAllocator);
         start = end * 2;
         end = end * 3;
 
