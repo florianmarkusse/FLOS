@@ -221,15 +221,3 @@ void *allocateBytesInUefiPages(U32 bytes, bool isKernelStructure) {
     }
     return (void *)address;
 }
-
-void createDynamicArray(U32 elements, U32 elementSizeBytes,
-                        U32_pow2 elementAlignBytes, void_max_a *result,
-                        Arena scratch) {
-    U32 bytes = elementSizeBytes * elements;
-    void *buffer =
-        allocateKernelStructure(bytes, elementAlignBytes, false, scratch);
-
-    result->buf = buffer;
-    result->cap = elements;
-    result->len = 0;
-}

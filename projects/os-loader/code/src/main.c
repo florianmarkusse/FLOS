@@ -71,54 +71,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         mapMemory(0, 0, highestLowerHalfAddress,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict());
 
-    KFLUSH_AFTER {
-        INFO(STRING("virutal node allocator status:\n"));
-        INFO(STRING("nodes buf: "));
-        INFO(virtualMA.nodeAllocator.nodes.buf);
-        INFO(STRING("\tnodes len: "));
-        INFO(virtualMA.nodeAllocator.nodes.len);
-        INFO(STRING("\tnodes cap: "));
-        INFO(virtualMA.nodeAllocator.nodes.cap);
-
-        INFO(STRING("nodesFreeList buf: "));
-        INFO((void *)virtualMA.nodeAllocator.nodesFreeList.buf);
-        INFO(STRING("\tnodesFreeList len: "));
-        INFO(virtualMA.nodeAllocator.nodesFreeList.len);
-        INFO(STRING("\tnodesFreeList cap: "));
-        INFO(virtualMA.nodeAllocator.nodesFreeList.cap);
-
-        INFO(STRING("\telement size bytes: "));
-        INFO(virtualMA.nodeAllocator.elementSizeBytes);
-
-        INFO(STRING("\telement align: "));
-        INFO(virtualMA.nodeAllocator.alignBytes);
-    }
-
     initKernelMemoryManagement(firstFreeVirtual, kernelVirtualMemoryEnd(),
                                arena);
-
-    KFLUSH_AFTER {
-        INFO(STRING("virutal node allocator status:\n"));
-        INFO(STRING("nodes buf: "));
-        INFO(virtualMA.nodeAllocator.nodes.buf);
-        INFO(STRING("\tnodes len: "));
-        INFO(virtualMA.nodeAllocator.nodes.len);
-        INFO(STRING("\tnodes cap: "));
-        INFO(virtualMA.nodeAllocator.nodes.cap);
-
-        INFO(STRING("nodesFreeList buf: "));
-        INFO((void *)virtualMA.nodeAllocator.nodesFreeList.buf);
-        INFO(STRING("\tnodesFreeList len: "));
-        INFO(virtualMA.nodeAllocator.nodesFreeList.len);
-        INFO(STRING("\tnodesFreeList cap: "));
-        INFO(virtualMA.nodeAllocator.nodesFreeList.cap);
-
-        INFO(STRING("\telement size bytes: "));
-        INFO(virtualMA.nodeAllocator.elementSizeBytes);
-
-        INFO(STRING("\telement align: "));
-        INFO(virtualMA.nodeAllocator.alignBytes);
-    }
 
     KFLUSH_AFTER { INFO(STRING("Going to fetch kernel bytes\n")); }
     U32 kernelBytes = getKernelBytes(arena);
@@ -161,13 +115,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)(kernelCodeStart() + kernelContent.len), .flags = NEWLINE);
     }
 
-    KFLUSH_AFTER { INFO(STRING("HERERERREERRE\n")); }
-
     U64 virtualForKernel =
         (U64)allocVirtualMemory(MIN_VIRTUAL_MEMORY_REQUIRED, 1);
     U64 endVirtualForKernel = virtualForKernel + MIN_VIRTUAL_MEMORY_REQUIRED;
-
-    KFLUSH_AFTER { INFO(STRING("HERERERREERRE\n")); }
 
     KFLUSH_AFTER {
         INFO(STRING("Got "));

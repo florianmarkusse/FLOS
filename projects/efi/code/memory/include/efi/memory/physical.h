@@ -32,10 +32,6 @@ allocateKernelStructure(U32 bytes, U32_pow2 minimumAlignment,
 __attribute__((malloc, aligned(UEFI_PAGE_SIZE))) void *
 allocateBytesInUefiPages(U32 bytes, bool isKernelStructure);
 
-void createDynamicArray(U32 elements, U32 elementSizeBytes,
-                        U32_pow2 elementAlignBytes, void_max_a *result,
-                        Arena scratch);
-
 #define FOR_EACH_DESCRIPTOR(memoryInfoAddress, descriptorName)                 \
     for (MemoryDescriptor * (descriptorName) = (memoryInfoAddress)->memoryMap; \
          (U64)(descriptorName) < ((U64)(memoryInfoAddress)->memoryMap +        \
