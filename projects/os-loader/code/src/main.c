@@ -51,28 +51,6 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         }
     }
     initKernelStructureLocations(&arena);
-    initRootVirtualMemoryInKernel();
-
-    GraphicsOutputProtocol *gop = nullptr;
-    Status status = globals.st->boot_services->locate_protocol(
-        &GRAPHICS_OUTPUT_PROTOCOL_GUID, nullptr, (void **)&gop);
-    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
-        ERROR(STRING("Could not locate locate GOP\n"));
-    }
-
-    U64 highestLowerHalfAddress = findHighestMemoryAddress(
-        gop->mode->frameBufferBase + gop->mode->frameBufferSize, arena);
-    KFLUSH_AFTER {
-        INFO(STRING("Identity mapping all memory, highest address found: "));
-        INFO((void *)highestLowerHalfAddress, .flags = NEWLINE);
-    }
-
-    U64 firstFreeVirtual =
-        mapMemory(0, 0, highestLowerHalfAddress,
-                  pageFlagsReadWrite() | pageFlagsNoCacheEvict());
-
-    initKernelMemoryManagement(firstFreeVirtual, kernelVirtualMemoryEnd(),
-                               arena);
 
     KFLUSH_AFTER { INFO(STRING("Going to fetch kernel bytes\n")); }
     U32 kernelBytes = getKernelBytes(arena);
@@ -93,6 +71,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     String kernelContent = readKernelFromCurrentLoadedImage(kernelBytes, arena);
 
+    initRootVirtualMemoryInKernel();
     KFLUSH_AFTER { INFO(STRING("Mapping kernel into location\n")); }
     if (mapMemory(kernelCodeStart(), (U64)kernelContent.buf, kernelContent.len,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict()) <
@@ -114,6 +93,27 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(STRING("stop:  "));
         INFO((void *)(kernelCodeStart() + kernelContent.len), .flags = NEWLINE);
     }
+
+    GraphicsOutputProtocol *gop = nullptr;
+    Status status = globals.st->boot_services->locate_protocol(
+        &GRAPHICS_OUTPUT_PROTOCOL_GUID, nullptr, (void **)&gop);
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+        ERROR(STRING("Could not locate locate GOP\n"));
+    }
+
+    U64 highestLowerHalfAddress = findHighestMemoryAddress(
+        gop->mode->frameBufferBase + gop->mode->frameBufferSize, arena);
+    KFLUSH_AFTER {
+        INFO(STRING("Identity mapping all memory, highest address found: "));
+        INFO((void *)highestLowerHalfAddress, .flags = NEWLINE);
+    }
+
+    U64 firstFreeVirtual =
+        mapMemory(0, 0, highestLowerHalfAddress,
+                  pageFlagsReadWrite() | pageFlagsNoCacheEvict());
+
+    initKernelMemoryManagement(firstFreeVirtual, kernelVirtualMemoryEnd(),
+                               arena);
 
     U64 virtualForKernel =
         (U64)allocVirtualMemory(MIN_VIRTUAL_MEMORY_REQUIRED, 1);
