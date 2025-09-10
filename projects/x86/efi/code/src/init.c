@@ -12,6 +12,7 @@
 #include "efi/memory/physical.h"
 #include "shared/log.h"
 #include "shared/maths.h"
+#include "shared/memory/allocator/macros.h"
 #include "shared/memory/management/management.h"
 #include "shared/memory/management/page.h"
 #include "shared/text/string.h"
@@ -51,8 +52,9 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
         INFO(requiredBytesForDescriptorTable, .flags = NEWLINE);
     }
 
-    SegmentDescriptor *GDT = (SegmentDescriptor *)allocateKernelStructure(
-        requiredBytesForDescriptorTable, sizeof(TSSDescriptor), false, scratch);
+    SegmentDescriptor *GDT = (SegmentDescriptor *)NEW(
+        &globals.kernelPermanent, U8, .count = requiredBytesForDescriptorTable,
+        .align = sizeof(TSSDescriptor));
     GDT[0] = (SegmentDescriptor){0}; // null segment;
     GDT[1] = (SegmentDescriptor){
         .limit_15_0 = 0, // ignored in 64-bit
@@ -99,13 +101,15 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
         INFO(bytesPerTSS, .flags = NEWLINE);
     }
 
-    U8 *TSSes = (U8 *)allocateKernelStructure(bytesPerTSS * numberOfProcessors,
-                                              bytesPerTSS, false, scratch);
+    U8 *TSSes =
+        NEW(&globals.kernelPermanent, U8,
+            .count = bytesPerTSS * numberOfProcessors, .align = bytesPerTSS);
     U32 istStackBytesAligned =
         (U32)alignUp(TOTAL_IST_STACKS_BYTES, (U64)KERNEL_STACK_ALIGNMENT);
     U64 interruptStacksRegion =
-        (U64)allocateKernelStructure(istStackBytesAligned * numberOfProcessors,
-                                     KERNEL_STACK_ALIGNMENT, false, scratch);
+        (U64)NEW(&globals.kernelPermanent, U8,
+                 .count = istStackBytesAligned * numberOfProcessors,
+                 .align = KERNEL_STACK_ALIGNMENT);
 
     for (typeof(numberOfProcessors) i = 0; i < numberOfProcessors; i++) {
         TaskStateSegment *perCPUTSS =
@@ -233,21 +237,18 @@ void initRootVirtualMemoryInKernel() {
 static constexpr auto INITIAL_VIRTUAL_MEMORY_REGIONS = 16;
 static constexpr auto INITIAL_VIRTUAL_MAPPING_SIZES = 128;
 
-void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
-                                Arena scratch) {
+void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress) {
     physicalMA = (RedBlackMMTreeWithFreeList){0};
 
     virtualMA.tree = nullptr;
     nodeAllocatorInit(
         &virtualMA.nodeAllocator,
-        (void_a){.buf = allocateKernelStructure(
-                     INITIAL_VIRTUAL_MEMORY_REGIONS * sizeof(*virtualMA.tree),
-                     alignof(*virtualMA.tree), false, scratch),
+        (void_a){.buf = NEW(&globals.kernelTemporary, typeof(*virtualMA.tree),
+                            .count = INITIAL_VIRTUAL_MEMORY_REGIONS),
                  .len =
                      INITIAL_VIRTUAL_MEMORY_REGIONS * sizeof(*virtualMA.tree)},
-        (void_a){.buf = allocateKernelStructure(
-                     INITIAL_VIRTUAL_MEMORY_REGIONS * sizeof(void *),
-                     alignof(void *), false, scratch),
+        (void_a){.buf = NEW(&globals.kernelTemporary, void *,
+                            .count = INITIAL_VIRTUAL_MEMORY_REGIONS),
                  .len = INITIAL_VIRTUAL_MEMORY_REGIONS * sizeof(void *)},
         sizeof(*virtualMA.tree), alignof(*virtualMA.tree));
 
@@ -265,15 +266,13 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
     virtualMemorySizeMapper.tree = nullptr;
     nodeAllocatorInit(
         &virtualMemorySizeMapper.nodeAllocator,
-        (void_a){.buf = allocateKernelStructure(
-                     INITIAL_VIRTUAL_MAPPING_SIZES *
-                         sizeof(*virtualMemorySizeMapper.tree),
-                     alignof(*virtualMemorySizeMapper.tree), false, scratch),
+        (void_a){.buf = NEW(&globals.kernelTemporary,
+                            typeof(*virtualMemorySizeMapper.tree),
+                            .count = INITIAL_VIRTUAL_MAPPING_SIZES),
                  .len = INITIAL_VIRTUAL_MAPPING_SIZES *
                         sizeof(*virtualMemorySizeMapper.tree)},
-        (void_a){.buf = allocateKernelStructure(
-                     INITIAL_VIRTUAL_MAPPING_SIZES * sizeof(void *),
-                     alignof(void *), false, scratch),
+        (void_a){.buf = NEW(&globals.kernelTemporary, typeof(void *),
+                            .count = INITIAL_VIRTUAL_MAPPING_SIZES),
                  .len = INITIAL_VIRTUAL_MAPPING_SIZES * sizeof(void *)},
         sizeof(*virtualMemorySizeMapper.tree),
         alignof(*virtualMemorySizeMapper.tree));
@@ -388,9 +387,8 @@ void fillArchParams(void *archParams, Arena scratch) {
         INFO(XSAVESize, .flags = NEWLINE);
     }
 
-    U8 *XSAVEAddress = (U8 *)allocateKernelStructure(XSAVESize, XSAVE_ALIGNMENT,
-                                                     false, scratch);
-    memset(XSAVEAddress, 0, XSAVESize);
+    U8 *XSAVEAddress = NEW(&globals.kernelPermanent, U8, .count = XSAVESize,
+                           .align = XSAVE_ALIGNMENT, .flags = ZERO_MEMORY);
     INFO(STRING("XSAVE space location: "));
 
     U32 maxExtendedCPUID = CPUID(EXTENDED_MAX_VALUE_PARAMETER).eax;

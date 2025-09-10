@@ -2,6 +2,7 @@
 #define EFI_MEMORY_PHYSICAL_H
 
 #include "efi/firmware/memory.h"
+#include "efi/firmware/system.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/trees/red-black/memory-manager.h"
@@ -9,6 +10,14 @@
 #include "shared/types/numeric.h"
 
 static constexpr U64 UEFI_PAGE_SIZE = 1 << 12;
+
+static constexpr auto MAX_KERNEL_STRUCTURES = 4;
+
+typedef struct {
+    Memory buf[MAX_KERNEL_STRUCTURES];
+    U32 len;
+} KernelStructures;
+extern KernelStructures kernelStructureLocations;
 
 typedef struct {
     USize memoryMapSize;
@@ -20,17 +29,11 @@ typedef struct {
 
 MemoryInfo getMemoryInfo(Arena *perm);
 
-static constexpr auto MAX_KERNEL_STRUCTURES = 32;
-extern Memory_max_a kernelStructureLocations;
+void *findAlignedMemoryBlock(U64_pow2 bytes, U64_pow2 alignment, Arena scratch);
 
-void initKernelStructureLocations(Arena *perm);
+__attribute__((malloc, aligned(UEFI_PAGE_SIZE))) void *allocatePages(U64 bytes);
 
 U64 findHighestMemoryAddress(U64 currentHighestAddress, Arena scratch);
-__attribute__((malloc, alloc_align(2))) void *
-allocateKernelStructure(U32 bytes, U32_pow2 minimumAlignment,
-                        bool tryEncompassingVirtual, Arena scratch);
-__attribute__((malloc, aligned(UEFI_PAGE_SIZE))) void *
-allocateBytesInUefiPages(U32 bytes, bool isKernelStructure);
 
 #define FOR_EACH_DESCRIPTOR(memoryInfoAddress, descriptorName)                 \
     for (MemoryDescriptor * (descriptorName) = (memoryInfoAddress)->memoryMap; \

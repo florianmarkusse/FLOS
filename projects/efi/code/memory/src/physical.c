@@ -30,7 +30,8 @@ static MemoryInfo prepareMemoryInfo() {
     return memoryInfo;
 }
 
-static void allocatePages(AllocateType allocateType, U64 bytes, U64 *address) {
+__attribute__((malloc, aligned(UEFI_PAGE_SIZE))) static void *
+allocatePagesAll(AllocateType allocateType, U64 bytes, U64 *address) {
     Status status = globals.st->boot_services->allocate_pages(
         allocateType, LOADER_DATA, ceilingDivide(bytes, UEFI_PAGE_SIZE),
         address);
@@ -45,6 +46,13 @@ static void allocatePages(AllocateType allocateType, U64 bytes, U64 *address) {
     EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("allocating pages for memory failed!\n"));
     }
+
+    return (void *)address;
+}
+
+void *allocatePages(U64 bytes) {
+    U64 address = 0;
+    return allocatePagesAll(ALLOCATE_ANY_PAGES, bytes, &address);
 }
 
 static void fillMemoryInfo(MemoryInfo *memoryInfo) {
@@ -54,28 +62,6 @@ static void fillMemoryInfo(MemoryInfo *memoryInfo) {
     EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Getting memory map failed!\n"));
     }
-}
-
-Memory_max_a kernelStructureLocations;
-
-void initKernelStructureLocations(Arena *perm) {
-    kernelStructureLocations = (Memory_max_a){
-        .buf = NEW(perm, Memory, .count = MAX_KERNEL_STRUCTURES),
-        .len = 0,
-        .cap = MAX_KERNEL_STRUCTURES,
-    };
-}
-
-static void addAddressToKernelStructure(U64 address, U64 bytes) {
-    if (kernelStructureLocations.len >= kernelStructureLocations.cap) {
-        EXIT_WITH_MESSAGE {
-            ERROR(STRING("Too many kernel structure locations added!\n"));
-        }
-    }
-
-    kernelStructureLocations.buf[kernelStructureLocations.len] =
-        (Memory){.start = address, .bytes = bytes};
-    kernelStructureLocations.len++;
 }
 
 MemoryInfo getMemoryInfo(Arena *perm) {
@@ -111,13 +97,13 @@ typedef struct {
 
 static void setIfBetterDescriptor(AlignedMemory *current,
                                   AlignedMemory proposed,
-                                  U64_pow2 largerPageSize) {
+                                  U64_pow2 largerAlignment) {
     if (current->address == U64_MAX) {
         *current = proposed;
         return;
     } else {
-        if (!ringBufferIndex(current->alignedAddress, largerPageSize)) {
-            if (ringBufferIndex(proposed.alignedAddress, largerPageSize)) {
+        if (!ringBufferIndex(current->alignedAddress, largerAlignment)) {
+            if (ringBufferIndex(proposed.alignedAddress, largerAlignment)) {
                 *current = proposed;
                 return;
             }
@@ -130,94 +116,70 @@ static void setIfBetterDescriptor(AlignedMemory *current,
     }
 }
 
-static U64 findAlignedMemory(MemoryInfo *memoryInfo, U64 bytes,
-                             U64_pow2 minimumAlignment,
-                             bool tryEncompassingVirtual) {
-    U64_pow2 pageSize = pageSizeEncompassing(minimumAlignment);
-    if (tryEncompassingVirtual) {
-        pageSize = MAX(pageSize, pageSizeEncompassing(bytes));
+KernelStructures kernelStructureLocations;
+
+static void addAddressToKernelStructure(U64 address, U64 bytes) {
+    if (kernelStructureLocations.len >= MAX_KERNEL_STRUCTURES) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("Too many kernel structure locations added!\n"));
+        }
     }
 
-    U64_pow2 largerPageSize;
-    if (pageSize == pageSizesLargest()) {
-        largerPageSize = pageSize;
-    } else {
-        largerPageSize = increasePageSize(pageSize);
-    }
+    kernelStructureLocations.buf[kernelStructureLocations.len] =
+        (Memory){.start = address, .bytes = bytes};
+    kernelStructureLocations.len++;
+}
+
+void *findAlignedMemoryBlock(U64_pow2 bytes, U64_pow2 alignment,
+                             Arena scratch) {
+    MemoryInfo memoryInfo = getMemoryInfo(&scratch);
 
     AlignedMemory bestDescriptor = {
         .address = U64_MAX, .alignedAddress = U64_MAX, .padding = U64_MAX};
-    for (; pageSize >= minimumAlignment;
-         largerPageSize = pageSize, pageSize = decreasePageSize(pageSize)) {
-        FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
-            if (!canBeUsedInEFI(desc->type)) {
-                continue;
-            }
-
-            U64 alignedAddress = alignUp(desc->physicalStart, pageSize);
-            U64 originalSize = desc->numberOfPages * UEFI_PAGE_SIZE;
-            if (alignedAddress >= desc->physicalStart + originalSize) {
-                continue;
-            }
-
-            U64 padding = alignedAddress - desc->physicalStart;
-            U64 alignedSize = originalSize - padding;
-            if (alignedSize < bytes) {
-                continue;
-            }
-
-            setIfBetterDescriptor(
-                &bestDescriptor,
-                (AlignedMemory){.address = desc->physicalStart,
-                                .alignedAddress = alignedAddress,
-                                .padding = padding},
-                largerPageSize);
+    FOR_EACH_DESCRIPTOR(&memoryInfo, desc) {
+        if (!canBeUsedInEFI(desc->type)) {
+            continue;
         }
 
-        if (bestDescriptor.address != U64_MAX) {
-            allocatePages(ALLOCATE_ADDRESS, bestDescriptor.padding + bytes,
-                          &bestDescriptor.address);
+        U64 alignedAddress = alignUp(desc->physicalStart, alignment);
+        U64 originalSize = desc->numberOfPages * UEFI_PAGE_SIZE;
+        if (alignedAddress >= desc->physicalStart + originalSize) {
+            continue;
+        }
 
-            if (bestDescriptor.padding) {
-                Status status = globals.st->boot_services->free_pages(
-                    bestDescriptor.address,
-                    ceilingDivide(bestDescriptor.padding, UEFI_PAGE_SIZE));
-                EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
-                    ERROR(STRING("Freeing padded memory failed!\n"));
-                }
+        U64 padding = alignedAddress - desc->physicalStart;
+        U64 alignedSize = originalSize - padding;
+
+        if (alignedSize < bytes) {
+            continue;
+        }
+
+        setIfBetterDescriptor(&bestDescriptor,
+                              (AlignedMemory){.address = desc->physicalStart,
+                                              .alignedAddress = alignedAddress,
+                                              .padding = padding},
+                              alignment * 2);
+    }
+
+    if (bestDescriptor.address != U64_MAX) {
+        allocatePagesAll(ALLOCATE_ADDRESS, bestDescriptor.padding + bytes,
+                         &bestDescriptor.address);
+
+        if (bestDescriptor.padding) {
+            Status status = globals.st->boot_services->free_pages(
+                bestDescriptor.address,
+                ceilingDivide(bestDescriptor.padding, UEFI_PAGE_SIZE));
+            EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+                ERROR(STRING("Freeing padded memory failed!\n"));
             }
-
-            return bestDescriptor.alignedAddress;
         }
 
-        if (pageSize == pageSizesSmallest()) {
-            break;
-        }
+        addAddressToKernelStructure(bestDescriptor.alignedAddress, bytes);
+
+        return (void *)bestDescriptor.alignedAddress;
     }
 
     EXIT_WITH_MESSAGE { ERROR(STRING("Could not find memory!")); }
 
     __builtin_unreachable();
-}
-
-void *allocateKernelStructure(U32 bytes, U32_pow2 minimumAlignment,
-                              bool tryEncompassingVirtual, Arena scratch) {
-    MemoryInfo memoryInfo = getMemoryInfo(&scratch);
-
-    U64 result = findAlignedMemory(&memoryInfo, bytes, minimumAlignment,
-                                   tryEncompassingVirtual);
-
-    addAddressToKernelStructure(result, bytes);
-    return (void *)result;
-}
-
-void *allocateBytesInUefiPages(U32 bytes, bool isKernelStructure) {
-    U64 address = 0;
-
-    allocatePages(ALLOCATE_ANY_PAGES, bytes, &address);
-
-    if (isKernelStructure) {
-        addAddressToKernelStructure(address, bytes);
-    }
-    return (void *)address;
 }

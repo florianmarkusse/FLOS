@@ -29,6 +29,10 @@
 #include "shared/text/string.h"   // for CEILING_DIV_V...
 #include "shared/types/numeric.h" // for U64, U32, USize
 
+static constexpr auto KERNEL_PERMANENT_MEMORY = 4 * MiB;
+static constexpr auto KERNEL_PERMANENT_MEMORY_ALIGNMENT =
+    2 * MiB; // Good enough for optimal mappings.
+static constexpr auto KERNEL_TEMPORARY_MEMORY = 4 * MiB;
 static constexpr auto MIN_VIRTUAL_MEMORY_REQUIRED = 32 * GiB;
 
 static constexpr auto GREEN_COLOR = 0x00FF00;
@@ -40,8 +44,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     globals.st->con_out->set_attribute(globals.st->con_out,
                                        BACKGROUND_BLACK | WHITE);
 
-    void *memoryForArena =
-        allocateBytesInUefiPages(DYNAMIC_MEMORY_CAPACITY, false);
+    void *memoryForArena = allocatePages(DYNAMIC_MEMORY_CAPACITY);
+
     Arena arena = (Arena){.curFree = memoryForArena,
                           .beg = memoryForArena,
                           .end = memoryForArena + DYNAMIC_MEMORY_CAPACITY};
@@ -50,7 +54,39 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
             ERROR(STRING("Ran out of dynamic memory capacity\n"));
         }
     }
-    initKernelStructureLocations(&arena);
+
+    U8 *memoryKernelPermanent = findAlignedMemoryBlock(
+        KERNEL_PERMANENT_MEMORY, KERNEL_PERMANENT_MEMORY_ALIGNMENT, arena);
+    globals.kernelPermanent =
+        (Arena){.curFree = memoryKernelPermanent,
+                .beg = memoryKernelPermanent,
+                .end = memoryKernelPermanent + KERNEL_PERMANENT_MEMORY};
+    if (setjmp(globals.kernelPermanent.jmpBuf)) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("No more permanent kernel memory available\n"));
+        }
+    }
+
+    U8 *memoryKernelTemporary =
+        findAlignedMemoryBlock(KERNEL_TEMPORARY_MEMORY, UEFI_PAGE_SIZE, arena);
+    globals.kernelTemporary =
+        (Arena){.curFree = memoryKernelTemporary,
+                .beg = memoryKernelTemporary,
+                .end = memoryKernelTemporary + KERNEL_TEMPORARY_MEMORY};
+    if (setjmp(globals.kernelTemporary.jmpBuf)) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("No more Temporary kernel memory available\n"));
+        }
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING("Address of memory kernel permanent: "));
+        INFO(memoryKernelPermanent, .flags = NEWLINE);
+        INFO(STRING("Address of memory kernel temporary: "));
+        INFO(memoryKernelTemporary, .flags = NEWLINE);
+    }
+
+    EXIT_WITH_MESSAGE { ERROR(STRING("DFGHKDFHGKJFDHGKJDFHJKGHDFKJHG")); }
 
     KFLUSH_AFTER { INFO(STRING("Going to fetch kernel bytes\n")); }
     U32 kernelBytes = getKernelBytes(arena);
@@ -112,8 +148,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         mapMemory(0, 0, highestLowerHalfAddress,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict());
 
-    initKernelMemoryManagement(firstFreeVirtual, kernelVirtualMemoryEnd(),
-                               arena);
+    initKernelMemoryManagement(firstFreeVirtual, kernelVirtualMemoryEnd());
 
     U64 virtualForKernel =
         (U64)allocVirtualMemory(MIN_VIRTUAL_MEMORY_REQUIRED, 1);
@@ -156,8 +191,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }
-    U64 stackAddress = (U64)allocateKernelStructure(
-        KERNEL_STACK_SIZE, KERNEL_STACK_ALIGNMENT, true, arena);
+    U64 stackAddress = (U64)findAlignedMemoryBlock(
+        KERNEL_STACK_SIZE, KERNEL_STACK_ALIGNMENT, arena);
 
     KFLUSH_AFTER { INFO(STRING("Mapping stack into location\n")); }
     // NOTE: Overflow precaution
@@ -203,9 +238,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     U32 kernelParamsSize =
         archKernelParamsOffset + archParamsRequirements.bytes;
 
-    KernelParameters *kernelParams =
-        (KernelParameters *)allocateKernelStructure(
-            kernelParamsSize, kernelParamsAlignment, false, arena);
+    KernelParameters *kernelParams = (KernelParameters *)NEW(
+        &globals.kernelTemporary, U8, .count = kernelParamsSize,
+        .align = kernelParamsAlignment);
     void *archParams = ((U8 *)kernelParams) + archKernelParamsOffset;
     void *kernelParamsEnd = ((U8 *)kernelParams) + kernelParamsSize;
 

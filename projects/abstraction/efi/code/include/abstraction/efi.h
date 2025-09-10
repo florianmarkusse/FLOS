@@ -9,8 +9,7 @@
 // mapping will only take effect once we set CR3 to that value, i.e., enter the
 // kernel
 void initRootVirtualMemoryInKernel();
-void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress,
-                                Arena scratch);
+void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress);
 
 typedef struct {
     U32 bytes;
