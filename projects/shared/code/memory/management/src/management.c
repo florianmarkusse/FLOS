@@ -110,6 +110,9 @@ static void initMemoryAllocator(NodeAllocator *nodeAllocator, void **tree,
     nodeAllocator->nodesFreeList.cap = nodeAllocatorParam->nodesFreeList.cap;
     nodeAllocator->nodesFreeList.len = nodeAllocatorParam->nodesFreeList.len;
 
+    nodeAllocator->elementSizeBytes = nodeAllocatorParam->elementSizeBytes;
+    nodeAllocator->alignBytes = nodeAllocatorParam->alignBytes;
+
     *tree = packedTree;
 }
 
@@ -196,14 +199,14 @@ static void freePackedNodeAllocator(NodeAllocator *nodeAllocatorParam) {
 void initMemoryManagers(KernelMemory *kernelMemory) {
     initMemoryAllocator(&physicalMA.nodeAllocator, (void **)&physicalMA.tree,
                         &kernelMemory->physicalPMA.nodeAllocator,
-                        &kernelMemory->physicalPMA.tree);
+                        kernelMemory->physicalPMA.tree);
     initMemoryAllocator(&virtualMA.nodeAllocator, (void **)&virtualMA.tree,
                         &kernelMemory->virtualPMA.nodeAllocator,
-                        &kernelMemory->virtualPMA.tree);
+                        kernelMemory->virtualPMA.tree);
     initMemoryAllocator(&virtualMemorySizeMapper.nodeAllocator,
                         (void **)&virtualMemorySizeMapper.tree,
                         &kernelMemory->virtualMemorySizeMapper.nodeAllocator,
-                        &kernelMemory->virtualMemorySizeMapper.tree);
+                        kernelMemory->virtualMemorySizeMapper.tree);
 
     // NOTE: Adding one extra map here because we are doing page faults manually
     // which will increase the physical memory usage
