@@ -47,7 +47,7 @@ allocatePagesAll(AllocateType allocateType, U64 bytes, U64 *address) {
         ERROR(STRING("allocating pages for memory failed!\n"));
     }
 
-    return (void *)address;
+    return (void *)*address;
 }
 
 void *allocatePages(U64 bytes) {
@@ -130,35 +130,57 @@ static void addAddressToKernelStructure(U64 address, U64 bytes) {
     kernelStructureLocations.len++;
 }
 
-void *findAlignedMemoryBlock(U64_pow2 bytes, U64_pow2 alignment,
-                             Arena scratch) {
+void *findAlignedMemoryBlock(U64_pow2 bytes, U64_pow2 alignment, Arena scratch,
+                             bool attemptLargestMapping) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
+
+    U64_pow2 pageSize = pageSizeEncompassing(alignment);
+    if (attemptLargestMapping) {
+        pageSize = MAX(pageSize, pageSizeEncompassing(bytes));
+    }
+
+    U64_pow2 largerPageSize;
+    if (pageSize == pageSizesLargest()) {
+        largerPageSize = pageSize;
+    } else {
+        largerPageSize = increasePageSize(pageSize);
+    }
 
     AlignedMemory bestDescriptor = {
         .address = U64_MAX, .alignedAddress = U64_MAX, .padding = U64_MAX};
-    FOR_EACH_DESCRIPTOR(&memoryInfo, desc) {
-        if (!canBeUsedInEFI(desc->type)) {
-            continue;
+    while (pageSize >= alignment && bestDescriptor.address == U64_MAX) {
+        FOR_EACH_DESCRIPTOR(&memoryInfo, desc) {
+            if (!canBeUsedInEFI(desc->type)) {
+                continue;
+            }
+
+            U64 alignedAddress = alignUp(desc->physicalStart, pageSize);
+            U64 originalSize = desc->numberOfPages * UEFI_PAGE_SIZE;
+            if (alignedAddress >= desc->physicalStart + originalSize) {
+                continue;
+            }
+
+            U64 padding = alignedAddress - desc->physicalStart;
+            U64 alignedSize = originalSize - padding;
+
+            if (alignedSize < bytes) {
+                continue;
+            }
+
+            setIfBetterDescriptor(
+                &bestDescriptor,
+                (AlignedMemory){.address = desc->physicalStart,
+                                .alignedAddress = alignedAddress,
+                                .padding = padding},
+                largerPageSize);
         }
 
-        U64 alignedAddress = alignUp(desc->physicalStart, alignment);
-        U64 originalSize = desc->numberOfPages * UEFI_PAGE_SIZE;
-        if (alignedAddress >= desc->physicalStart + originalSize) {
-            continue;
+        largerPageSize = pageSize;
+        if (pageSize > pageSizesSmallest()) {
+            pageSize = decreasePageSize(pageSize);
+        } else {
+            pageSize = 0;
         }
-
-        U64 padding = alignedAddress - desc->physicalStart;
-        U64 alignedSize = originalSize - padding;
-
-        if (alignedSize < bytes) {
-            continue;
-        }
-
-        setIfBetterDescriptor(&bestDescriptor,
-                              (AlignedMemory){.address = desc->physicalStart,
-                                              .alignedAddress = alignedAddress,
-                                              .padding = padding},
-                              alignment * 2);
     }
 
     if (bestDescriptor.address != U64_MAX) {

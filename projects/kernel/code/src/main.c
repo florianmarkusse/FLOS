@@ -21,10 +21,11 @@
 #include "shared/prng/biski.h"
 #include "shared/text/string.h"
 #include "shared/types/numeric.h" // for U32
+#include "x86/memory/virtual.h"
 
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
-static constexpr auto TEST_MEMORY_AMOUNT = 32 * MiB;
+static constexpr auto TEST_MEMORY_AMOUNT = 4 * KiB;
 static constexpr auto MAX_TEST_ENTRIES = TEST_MEMORY_AMOUNT / (sizeof(U64));
 
 static constexpr U64 PRNG_SEED = 15466503514872390148ULL;
@@ -48,6 +49,97 @@ static void appendMemoryDeltaType(AvailableMemoryState startMemory,
         INFO((I64)endMemory.memory - (I64)startMemory.memory);
         INFO(STRING(" nodes: "));
         INFO((I64)endMemory.nodes - (I64)startMemory.nodes, .flags = NEWLINE);
+    }
+}
+
+static void appendMapping(U64 addressVirtual[4], U64 physical,
+                          U64_pow2 mappingSize) {
+    U64 virtualAddress = addressVirtual[0] + addressVirtual[1] +
+                         addressVirtual[2] + addressVirtual[3];
+
+    INFO((void *)virtualAddress);
+    INFO(STRING(" -> ["));
+    INFO((void *)physical);
+    INFO(STRING(", "));
+    INFO((void *)physical + mappingSize);
+    INFO(STRING("] mapping size: "));
+    INFO(mappingSize, .flags = NEWLINE);
+}
+
+static void appendVirtualMemoryMapping() {
+    for (U32 i = 0; i < PageTableFormat.ENTRIES; i++) {
+        VirtualPageTable *pageTable = rootPageTable;
+        U64 entries[4] = {0};
+        U64 addressVirtual[4] = {0};
+        addressVirtual[0] = 0;
+        U64 pageSize = PAGE_ROOT_ENTRY_MAX_SIZE;
+        if (i >= 256) {
+            addressVirtual[0] = 0xFFFF000000000000ULL + (i * pageSize);
+        } else {
+            addressVirtual[0] = i * pageSize;
+        }
+        U64 addressPhysical = 0;
+
+        entries[0] = pageTable->pages[i];
+        if (!entries[0]) {
+            continue;
+        }
+
+        for (U32 j = 0; j < PageTableFormat.ENTRIES; j++) {
+            pageSize = X86_1GIB_PAGE;
+            pageTable =
+                (VirtualPageTable *)(entries[0] &
+                                     VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE);
+            addressVirtual[1] = j * pageSize;
+            entries[1] = pageTable->pages[j];
+            if (!entries[1]) {
+                continue;
+            }
+
+            if (entries[1] & (VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
+                addressPhysical =
+                    entries[1] & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
+                appendMapping(addressVirtual, addressPhysical, pageSize);
+                continue;
+            }
+
+            for (U32 k = 0; k < PageTableFormat.ENTRIES; k++) {
+                pageSize = X86_2MIB_PAGE;
+                pageTable = (VirtualPageTable *)(entries[1] &
+                                                 VirtualPageMasks
+                                                     .FRAME_OR_NEXT_PAGE_TABLE);
+
+                addressVirtual[2] = k * pageSize;
+                entries[2] = pageTable->pages[k];
+                if (!entries[2]) {
+                    continue;
+                }
+
+                if (entries[2] & (VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
+                    addressPhysical =
+                        entries[2] & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
+                    appendMapping(addressVirtual, addressPhysical, pageSize);
+                    continue;
+                }
+
+                for (U32 l = 0; l < PageTableFormat.ENTRIES; l++) {
+                    pageSize = X86_4KIB_PAGE;
+                    pageTable =
+                        (VirtualPageTable *)(entries[2] &
+                                             VirtualPageMasks
+                                                 .FRAME_OR_NEXT_PAGE_TABLE);
+                    addressVirtual[3] = l * pageSize;
+                    entries[3] = pageTable->pages[l];
+                    if (!entries[3]) {
+                        continue;
+                    }
+
+                    addressPhysical =
+                        entries[3] & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
+                    appendMapping(addressVirtual, addressPhysical, pageSize);
+                }
+            }
+        }
     }
 }
 
@@ -106,12 +198,42 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
     } else {
         buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT,
                                         sizeof(alignof(U64)), pageSize);
+        KFLUSH_AFTER {
+            KLOG(STRING("mappable address is: "));
+            KLOG(buffer, .flags = NEWLINE);
+        }
 
         beforePageFaults = currentNumberOfPageFaults;
         U64 startCycleCount = currentCycleCounter(true, false);
 
+        KFLUSH_AFTER {
+            appendVirtualMemoryMapping();
+            INFO(STRING("Writing to: "));
+            INFO(buffer, .flags = NEWLINE);
+        }
+
         for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
             buffer[i] = i;
+        }
+
+        KFLUSH_AFTER {
+            appendVirtualMemoryMapping();
+            INFO(STRING("Written to: "));
+            INFO(buffer, .flags = NEWLINE);
+        }
+
+        for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
+            if (buffer[i] != i) {
+                KFLUSH_AFTER {
+                    INFO(STRING("AAAAarithmetic error at i="));
+                    INFO(i);
+                    INFO(STRING(", expected="));
+                    INFO(i);
+                    INFO(STRING(", actual="));
+                    INFO(buffer[i], .flags = NEWLINE);
+                }
+                return 0;
+            }
         }
 
         U64 endCycleCount = currentCycleCounter(false, true);
@@ -378,19 +500,157 @@ kernelMain(KernelParameters *kernelParams) {
     initLogger(&arena);
     initScreen(&kernelParams->window, &arena);
 
-    freeIdentityMemory((Memory){.start = (U64)arena.curFree,
-                                .bytes = (U64)(arena.end - arena.curFree)});
-    freeIdentityMemory(
-        (Memory){.start = (U64)kernelParams, .bytes = sizeof(*kernelParams)});
+    // TODO: free me
+    // freeIdentityMemory((Memory){.start = (U64)arena.curFree,
+    //                             .bytes = (U64)(arena.end -
+    //                             arena.curFree)});
 
     enableInterrupts();
+    // TODO: Need to free the kernel temporary memory from uefi here!
+    // freeIdentityMemory(
+    //     (Memory){.start = (U64)kernelParams, .bytes =
+    //     sizeof(*kernelParams)});
+
     // NOTE: from here, everything is initialized
+
+    canLog = true;
 
     KFLUSH_AFTER {
         KLOG(STRING("ITS WEDNESDAY MY DUDES\n"));
         KLOG(STRING("ITS WEDNESDAY MY DUDES\n"));
         appendMemoryManagementStatus();
     }
+
+    KFLUSH_AFTER {
+        INFO(STRING("\n"));
+        for (typeof(virtualMA.nodeAllocator.nodes.len) i = 0;
+             i < virtualMA.nodeAllocator.nodes.len; i++) {
+            INFO(STRING("start: "));
+            INFO((void *)((MMNode *)virtualMA.nodeAllocator.nodes.buf)[i]
+                     .memory.start);
+            INFO(STRING(" bytes: "));
+            INFO(((MMNode *)virtualMA.nodeAllocator.nodes.buf)[i]
+                     .memory.bytes, );
+            INFO(STRING(" bytes: "));
+            INFO((void *)((MMNode *)virtualMA.nodeAllocator.nodes.buf)[i]
+                     .memory.bytes,
+                 .flags = NEWLINE);
+        }
+    }
+
+    KFLUSH_AFTER {
+        INFO(STRING("\n"));
+        for (typeof(physicalMA.nodeAllocator.nodes.len) i = 0;
+             i < physicalMA.nodeAllocator.nodes.len; i++) {
+            INFO(STRING("start: "));
+            INFO((void *)((MMNode *)physicalMA.nodeAllocator.nodes.buf)[i]
+                     .memory.start);
+            INFO(STRING(" bytes: "));
+            INFO(((MMNode *)physicalMA.nodeAllocator.nodes.buf)[i]
+                     .memory.bytes, );
+            INFO(STRING(" bytes: "));
+            INFO((void *)((MMNode *)physicalMA.nodeAllocator.nodes.buf)[i]
+                     .memory.bytes,
+                 .flags = NEWLINE);
+        }
+    }
+
+    KFLUSH_AFTER { appendVirtualMemoryMapping(); }
+
+    // KFLUSH_AFTER {
+    //     for (U32 i = 0; i < PageTableFormat.ENTRIES; i++) {
+    //         U64 addressVirtual[4] = {0};
+    //         VirtualPageTable *pageTable = rootPageTable;
+    //         U64 pageSize = PAGE_ROOT_ENTRY_MAX_SIZE;
+    //         addressVirtual[0] = 0;
+    //         if (i >= 256) {
+    //             addressVirtual[0] += 0xFFFF000000000000;
+    //         }
+    //         U64 addressPhysical = 0;
+    //
+    //         addressVirtual[0] += i * pageSize;
+    //         U64 entryValue = pageTable->pages[i];
+    //         if (!entryValue) {
+    //             continue;
+    //         }
+    //
+    //         pageSize /= 512;
+    //
+    //         pageTable =
+    //             (VirtualPageTable *)(entryValue &
+    //                                  VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE);
+    //         for (U32 j = 0; j < PageTableFormat.ENTRIES; j++) {
+    //             addressVirtual[1] = i * pageSize;
+    //             U64 entryValue = pageTable->pages[i];
+    //             if (!entryValue) {
+    //                 continue;
+    //             }
+    //
+    //             if (entryValue & (VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
+    //                 addressPhysical =
+    //                     entryValue &
+    //                     VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
+    //                 appendMapping(addressVirtual, addressPhysical);
+    //             }
+    //         }
+    //
+    //         pageSize /= 512;
+    //
+    //         pageTable =
+    //             (VirtualPageTable *)(entryValue &
+    //                                  VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE);
+    //         for (U32 j = 0; j < PageTableFormat.ENTRIES; j++) {
+    //             addressVirtual[2] = i * pageSize;
+    //             U64 entryValue = pageTable->pages[i];
+    //             if (!entryValue) {
+    //                 continue;
+    //             }
+    //
+    //             if (entryValue & (VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
+    //                 addressPhysical =
+    //                     entryValue &
+    //                     VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
+    //                 appendMapping(addressVirtual, addressPhysical);
+    //             }
+    //         }
+    //
+    //         pageSize /= 512;
+    //
+    //         pageTable =
+    //             (VirtualPageTable *)(entryValue &
+    //                                  VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE);
+    //         for (U32 j = 0; j < PageTableFormat.ENTRIES; j++) {
+    //             addressVirtual[3] = i * pageSize;
+    //             U64 entryValue = pageTable->pages[i];
+    //             if (!entryValue) {
+    //                 continue;
+    //             }
+    //
+    //             appendMapping(addressVirtual, addressPhysical);
+    //         }
+    //     }
+    // }
+
+    // for (typeof(physicalMA.nodeAllocator.nodes.len) i = 0;
+    //      i < physicalMA.nodeAllocator.nodes.len; i++) {
+    //     MMNode *node = &((MMNode
+    //     *)physicalMA.nodeAllocator.nodes.buf)[i]; volatile U8 *address =
+    //     (U8 *)node->memory.start; for (U64 j = 0; j < node->memory.bytes;
+    //     j++) {
+    //         address[j] = 0x69;
+    //     }
+    //
+    //     for (U64 j = 0; j < node->memory.bytes; j++) {
+    //         if (address[j] != 0x69) {
+    //             KFLUSH_AFTER { KLOG(STRING("Ruh roh\n")); }
+    //
+    //             hangThread();
+    //         }
+    //     }
+    // }
+    //
+    // KFLUSH_AFTER { KLOG(STRING("Succ?\n")); }
+    // hangThread();
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 

@@ -86,6 +86,7 @@ void mapPage_(U64 virt, U64 physical, U64_pow2 mappingSize, U64 flags) {
             }
         }
 
+        // TODO: Use FRAME_OR_NEXT_PAGE_TABLE mask isntead?
         pageTable =
             /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
             (VirtualPageTable *)alignDown(*tableEntryAddress,

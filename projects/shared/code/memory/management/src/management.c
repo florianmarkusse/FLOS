@@ -218,8 +218,9 @@ void initMemoryManagers(KernelMemory *kernelMemory) {
     treeWithFreeListToMappable(&virtualMemorySizeMapper.nodeAllocator,
                                (void **)&virtualMemorySizeMapper.tree, 0);
 
-    freePackedNodeAllocator(&kernelMemory->physicalPMA.nodeAllocator);
-    freePackedNodeAllocator(&kernelMemory->virtualPMA.nodeAllocator);
-    freePackedNodeAllocator(
-        &kernelMemory->virtualMemorySizeMapper.nodeAllocator);
+    // TODO: FREE ME!!!
+    // freePackedNodeAllocator(&kernelMemory->physicalPMA.nodeAllocator);
+    // freePackedNodeAllocator(&kernelMemory->virtualPMA.nodeAllocator);
+    // freePackedNodeAllocator(
+    //     &kernelMemory->virtualMemorySizeMapper.nodeAllocator);
 }

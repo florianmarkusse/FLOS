@@ -12,6 +12,7 @@ typedef struct {
 static_assert(sizeof(VMMTreeWithFreeList) == 48);
 
 extern VMMTreeWithFreeList virtualMemorySizeMapper;
+extern bool canLog;
 
 typedef enum {
     PAGE_FAULT_RESULT_MAPPED,

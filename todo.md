@@ -61,4 +61,18 @@
 | IST4 | No  | Machine Check = critical, no nesting              | Report & Exit                                                                                                                                                                            |
 | IST5 | Yes | (after prologue) Normal interrupts, allow nesting | Push registers, Calculate 128 bytes down from RSP (Red-zone), then push all interesting vars to that new stack and call that fault handler                                               |
 
-gdb --args /home/florian/Desktop/FLOS/projects/image-builder/code/build/X86/clang-19/ld.lld-19/POSIX/with-floats/no-serial/DEBUG/image-builder --phys 512 --efi FLOS_EFI.efi --kernel FLOS_KERNEL.bin
+start: 0x0000000000011000 bytes: 585728 bytes: 0x000000000008F000
+start: 0x0000000000700000 bytes: 1048576 bytes: 0x0000000000100000
+start: 0x000000000080A000 bytes: 4096 bytes: 0x0000000000001000
+start: 0x0000000000900000 bytes: 460324864 bytes: 0x000000001B700000
+start: 0x000000000080F000 bytes: 4096 bytes: 0x0000000000001000
+start: 0x000000001D400000 bytes: 28180480 bytes: 0x0000000001AE0000
+start: 0x000000001EFA1000 bytes: 9756672 bytes: 0x000000000094E000
+start: 0x000000001FBFF000 bytes: 3510272 bytes: 0x0000000000359000
+
+---
+
+start: 0x0000000000102058 bytes: 14896 bytes: 0x0000000000003A30
+start: 0x0000000000100000 bytes: 8064 bytes: 0x0000000000001F80
+start: 0x0000000000100780 bytes: 6144 bytes: 0x0000000000001800
+start: 0x0000000000100380 bytes: 1024 bytes: 0x0000000000000400

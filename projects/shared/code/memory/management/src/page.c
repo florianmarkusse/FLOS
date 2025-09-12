@@ -4,12 +4,14 @@
 #include "abstraction/memory/virtual/converter.h"
 #include "abstraction/memory/virtual/map.h"
 #include "abstraction/thread.h"
+#include "shared/log.h"
 #include "shared/maths.h"
 #include "shared/memory/converter.h"
 #include "shared/memory/management/management.h"
 #include "shared/memory/sizes.h"
 
 VMMTreeWithFreeList virtualMemorySizeMapper = {0};
+bool canLog = false;
 
 static U64_pow2 pageSizeFromVMM(U64 faultingAddress) {
     VMMNode *result = findGreatestBelowOrEqualVMMNode(
@@ -39,6 +41,12 @@ void addPageMapping(Memory memory, U64_pow2 pageSize) {
 }
 
 PageFaultResult handlePageFault(U64 faultingAddress) {
+    if (canLog) {
+        KFLUSH_AFTER {
+            KLOG(STRING("The faulting address is: "));
+            KLOG((void *)faultingAddress, .flags = NEWLINE);
+        }
+    }
     U64_pow2 pageSizeForFault = pageSizeFromVMM(faultingAddress);
 
     if (!pageSizeForFault) {
@@ -57,6 +65,14 @@ PageFaultResult handlePageFault(U64 faultingAddress) {
     U32_pow2 mapsToDo = (U32)divideByPowerOf2(pageSizeForFault, pageSizeToUse);
     for (U32 i = 0; i < mapsToDo; i++) {
         U8 *address = allocPhysicalMemory(pageSizeToUse, pageSizeToUse);
+        if (canLog) {
+            KFLUSH_AFTER {
+                KLOG(STRING("mapping  "));
+                KLOG((void *)startingMap + (i * pageSizeToUse));
+                KLOG(STRING(" to "));
+                KLOG(address, .flags = NEWLINE);
+            }
+        }
         mapPage(startingMap + (i * pageSizeToUse), (U64)address, pageSizeToUse);
     }
 

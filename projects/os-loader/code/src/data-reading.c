@@ -87,8 +87,9 @@ static String fetchKernelThroughBIOP(Handle handle, U32 bytes, Arena scratch) {
                                   (void *)blockAddress);
         if (!(EFI_ERROR(status)) && !memcmp(KERNEL_MAGIC, (void *)blockAddress,
                                             COUNTOF(KERNEL_MAGIC))) {
-            void *kernelAddress = allocateKernelStructure(
-                bytes, (U32_pow2)pageSizesSmallest(), true, scratch);
+            void *kernelAddress =
+                NEW(&globals.kernelPermanent, U8, .count = bytes,
+                    .align = pageSizesSmallest());
 
             memcpy(kernelAddress, blockAddress, bytes);
             result = (String){.buf = (void *)kernelAddress, .len = bytes};

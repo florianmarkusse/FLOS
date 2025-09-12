@@ -55,8 +55,10 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         }
     }
 
-    U8 *memoryKernelPermanent = findAlignedMemoryBlock(
-        KERNEL_PERMANENT_MEMORY, KERNEL_PERMANENT_MEMORY_ALIGNMENT, arena);
+    U8 *memoryKernelPermanent =
+        findAlignedMemoryBlock(KERNEL_PERMANENT_MEMORY,
+                               KERNEL_PERMANENT_MEMORY_ALIGNMENT, arena, false);
+
     globals.kernelPermanent =
         (Arena){.curFree = memoryKernelPermanent,
                 .beg = memoryKernelPermanent,
@@ -67,8 +69,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         }
     }
 
-    U8 *memoryKernelTemporary =
-        findAlignedMemoryBlock(KERNEL_TEMPORARY_MEMORY, UEFI_PAGE_SIZE, arena);
+    U8 *memoryKernelTemporary = findAlignedMemoryBlock(
+        KERNEL_TEMPORARY_MEMORY, UEFI_PAGE_SIZE, arena, false);
     globals.kernelTemporary =
         (Arena){.curFree = memoryKernelTemporary,
                 .beg = memoryKernelTemporary,
@@ -80,13 +82,13 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     KFLUSH_AFTER {
-        INFO(STRING("Address of memory kernel permanent: "));
+        INFO(STRING("Scratch: "));
+        INFO(memoryForArena, .flags = NEWLINE);
+        INFO(STRING("kernel Permanent: "));
         INFO(memoryKernelPermanent, .flags = NEWLINE);
-        INFO(STRING("Address of memory kernel temporary: "));
+        INFO(STRING("kernel Temporary: "));
         INFO(memoryKernelTemporary, .flags = NEWLINE);
     }
-
-    EXIT_WITH_MESSAGE { ERROR(STRING("DFGHKDFHGKJFDHGKJDFHJKGHDFKJHG")); }
 
     KFLUSH_AFTER { INFO(STRING("Going to fetch kernel bytes\n")); }
     U32 kernelBytes = getKernelBytes(arena);
@@ -192,7 +194,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }
     U64 stackAddress = (U64)findAlignedMemoryBlock(
-        KERNEL_STACK_SIZE, KERNEL_STACK_ALIGNMENT, arena);
+        KERNEL_STACK_SIZE, KERNEL_STACK_ALIGNMENT, arena, true);
 
     KFLUSH_AFTER { INFO(STRING("Mapping stack into location\n")); }
     // NOTE: Overflow precaution
@@ -249,14 +251,6 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(STRING("The common phyiscal kernel params:\nstart: "));
         INFO((void *)kernelParams, .flags = NEWLINE);
         INFO(STRING("The arch-specific phyiscal kernel params:\nstart: "));
-        INFO((void *)archParams, .flags = NEWLINE);
-        INFO(STRING("stop:  "));
-        INFO(kernelParamsEnd, .flags = NEWLINE);
-
-        INFO(STRING("The virtual kernel params (identity mapped):\n"));
-        INFO(STRING("The common kernel params:\nstart: "));
-        INFO((void *)kernelParams, .flags = NEWLINE);
-        INFO(STRING("The arch-specific virtual kernel params:\nstart: "));
         INFO((void *)archParams, .flags = NEWLINE);
         INFO(STRING("stop:  "));
         INFO(kernelParamsEnd, .flags = NEWLINE);

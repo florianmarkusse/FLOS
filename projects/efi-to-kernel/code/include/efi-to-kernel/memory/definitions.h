@@ -12,6 +12,7 @@
 // 0xFFFFFFFFFFFFFFFF
 
 #include "abstraction/memory/virtual/converter.h"
+#include "shared/memory/converter.h"
 #include "shared/memory/sizes.h"
 
 static constexpr auto KERNEL_STACK_SIZE = 2 * MiB;

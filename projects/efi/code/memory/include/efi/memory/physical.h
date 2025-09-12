@@ -29,7 +29,9 @@ typedef struct {
 
 MemoryInfo getMemoryInfo(Arena *perm);
 
-void *findAlignedMemoryBlock(U64_pow2 bytes, U64_pow2 alignment, Arena scratch);
+__attribute__((malloc, alloc_align(2))) void *
+findAlignedMemoryBlock(U64_pow2 bytes, U64_pow2 alignment, Arena scratch,
+                       bool attemptLargestMapping);
 
 __attribute__((malloc, aligned(UEFI_PAGE_SIZE))) void *allocatePages(U64 bytes);
 

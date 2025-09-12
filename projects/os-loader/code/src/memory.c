@@ -41,16 +41,13 @@ void allocateSpaceForKernelMemory(
 
     nodeAllocatorInit(
         &redBlackMMTreeWithFreeList->nodeAllocator,
-        (void_a){.buf = allocateKernelStructure(
-                     expectedNumberOfDescriptors *
-                         sizeof(*redBlackMMTreeWithFreeList->tree),
-                     alignof(*redBlackMMTreeWithFreeList->tree), false,
-                     scratch),
+        (void_a){.buf = NEW(&globals.kernelTemporary,
+                            typeof(*redBlackMMTreeWithFreeList->tree),
+                            .count = expectedNumberOfDescriptors),
                  .len = expectedNumberOfDescriptors *
                         sizeof(*redBlackMMTreeWithFreeList->tree)},
-        (void_a){.buf = allocateKernelStructure(
-                     expectedNumberOfDescriptors * sizeof(void *),
-                     alignof(void *), false, scratch),
+        (void_a){.buf = NEW(&globals.kernelTemporary, void *,
+                            .count = expectedNumberOfDescriptors),
                  .len = expectedNumberOfDescriptors * sizeof(void *)},
         sizeof(*redBlackMMTreeWithFreeList->tree),
         alignof(*redBlackMMTreeWithFreeList->tree));
@@ -75,7 +72,6 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
          virt += mappingSize, physical += mappingSize,
                        bytesMapped += mappingSize) {
         mappingSize = pageSizeLeastLargerThan(physical, bytes - bytesMapped);
-
         mapPage(virt, physical, mappingSize, .flags = flags);
     }
     return virt;
