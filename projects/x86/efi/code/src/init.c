@@ -104,11 +104,9 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
     U8 *TSSes =
         NEW(&globals.kernelPermanent, U8,
             .count = bytesPerTSS * numberOfProcessors, .align = bytesPerTSS);
-    U32 istStackBytesAligned =
-        (U32)alignUp(TOTAL_IST_STACKS_BYTES, (U64)KERNEL_STACK_ALIGNMENT);
     U64 interruptStacksRegion =
         (U64)NEW(&globals.kernelPermanent, U8,
-                 .count = istStackBytesAligned * numberOfProcessors,
+                 .count = TOTAL_IST_STACKS_BYTES * numberOfProcessors,
                  .align = KERNEL_STACK_ALIGNMENT);
 
     for (typeof(numberOfProcessors) i = 0; i < numberOfProcessors; i++) {
@@ -125,15 +123,7 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
             for (typeof_unqual(INTERRUPT_STACK_TABLE_COUNT) j = 0;
                  j < INTERRUPT_STACK_TABLE_COUNT; j++) {
                 // Stack grows down
-                stackAddress += IST_STACK_SIZES[j];
-                if (!isAlignedTo(stackAddress, KERNEL_STACK_ALIGNMENT)) {
-                    EXIT_WITH_MESSAGE {
-                        ERROR(STRING("IST stack needs to be aligned to "));
-                        ERROR(KERNEL_STACK_ALIGNMENT);
-                        ERROR(STRING(" bytes.\nCurrent stack value: "));
-                        ERROR(stackAddress, .flags = NEWLINE);
-                    }
-                }
+                stackAddress += IST_STACK_SIZE;
                 perCPUTSS->ists[j] = stackAddress;
                 INFO(STRING("TSS ist["));
                 INFO(j);
@@ -390,6 +380,7 @@ void fillArchParams(void *archParams, Arena scratch) {
     U8 *XSAVEAddress = NEW(&globals.kernelPermanent, U8, .count = XSAVESize,
                            .align = XSAVE_ALIGNMENT, .flags = ZERO_MEMORY);
     INFO(STRING("XSAVE space location: "));
+    INFO(XSAVEAddress, .flags = NEWLINE);
 
     U32 maxExtendedCPUID = CPUID(EXTENDED_MAX_VALUE_PARAMETER).eax;
     if (maxExtendedCPUID < EXTENDED_MAX_REQUIRED_PARAMETER) {

@@ -26,6 +26,7 @@ add_project("abstraction/serial")
 add_project("abstraction/kernel")
 add_project("abstraction/memory/manipulation")
 add_project("abstraction/memory/virtual")
+add_project("abstraction/memory/virtual/status")
 
 include("${REPO_PROJECTS}/print-configuration.cmake")
 
@@ -58,6 +59,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-text-converter)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-serial)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-manipulation)
 target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-virtual)
+target_link_libraries(${PROJECT_NAME} PRIVATE abstraction-memory-virtual-status)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-i)
 target_link_libraries(${PROJECT_NAME} PRIVATE freestanding-log-init)

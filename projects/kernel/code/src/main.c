@@ -3,6 +3,7 @@
 #include "abstraction/log.h" // for LOG, LOG_CHOOSER_IMPL_1, rewind, pro...
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/map.h"
+#include "abstraction/memory/virtual/status.h"
 #include "abstraction/thread.h"
 #include "abstraction/time.h"
 #include "efi-to-kernel/kernel-parameters.h"  // for KernelParameters
@@ -21,7 +22,6 @@
 #include "shared/prng/biski.h"
 #include "shared/text/string.h"
 #include "shared/types/numeric.h" // for U32
-#include "x86/memory/virtual.h"
 
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
@@ -49,97 +49,6 @@ static void appendMemoryDeltaType(AvailableMemoryState startMemory,
         INFO((I64)endMemory.memory - (I64)startMemory.memory);
         INFO(STRING(" nodes: "));
         INFO((I64)endMemory.nodes - (I64)startMemory.nodes, .flags = NEWLINE);
-    }
-}
-
-static void appendMapping(U64 addressVirtual[4], U64 physical,
-                          U64_pow2 mappingSize) {
-    U64 virtualAddress = addressVirtual[0] + addressVirtual[1] +
-                         addressVirtual[2] + addressVirtual[3];
-
-    INFO((void *)virtualAddress);
-    INFO(STRING(" -> ["));
-    INFO((void *)physical);
-    INFO(STRING(", "));
-    INFO((void *)physical + mappingSize);
-    INFO(STRING("] mapping size: "));
-    INFO(mappingSize, .flags = NEWLINE);
-}
-
-static void appendVirtualMemoryMapping() {
-    for (U32 i = 0; i < PageTableFormat.ENTRIES; i++) {
-        VirtualPageTable *pageTable = rootPageTable;
-        U64 entries[4] = {0};
-        U64 addressVirtual[4] = {0};
-        addressVirtual[0] = 0;
-        U64 pageSize = PAGE_ROOT_ENTRY_MAX_SIZE;
-        if (i >= 256) {
-            addressVirtual[0] = 0xFFFF000000000000ULL + (i * pageSize);
-        } else {
-            addressVirtual[0] = i * pageSize;
-        }
-        U64 addressPhysical = 0;
-
-        entries[0] = pageTable->pages[i];
-        if (!entries[0]) {
-            continue;
-        }
-
-        for (U32 j = 0; j < PageTableFormat.ENTRIES; j++) {
-            pageSize = X86_1GIB_PAGE;
-            pageTable =
-                (VirtualPageTable *)(entries[0] &
-                                     VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE);
-            addressVirtual[1] = j * pageSize;
-            entries[1] = pageTable->pages[j];
-            if (!entries[1]) {
-                continue;
-            }
-
-            if (entries[1] & (VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
-                addressPhysical =
-                    entries[1] & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
-                appendMapping(addressVirtual, addressPhysical, pageSize);
-                continue;
-            }
-
-            for (U32 k = 0; k < PageTableFormat.ENTRIES; k++) {
-                pageSize = X86_2MIB_PAGE;
-                pageTable = (VirtualPageTable *)(entries[1] &
-                                                 VirtualPageMasks
-                                                     .FRAME_OR_NEXT_PAGE_TABLE);
-
-                addressVirtual[2] = k * pageSize;
-                entries[2] = pageTable->pages[k];
-                if (!entries[2]) {
-                    continue;
-                }
-
-                if (entries[2] & (VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
-                    addressPhysical =
-                        entries[2] & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
-                    appendMapping(addressVirtual, addressPhysical, pageSize);
-                    continue;
-                }
-
-                for (U32 l = 0; l < PageTableFormat.ENTRIES; l++) {
-                    pageSize = X86_4KIB_PAGE;
-                    pageTable =
-                        (VirtualPageTable *)(entries[2] &
-                                             VirtualPageMasks
-                                                 .FRAME_OR_NEXT_PAGE_TABLE);
-                    addressVirtual[3] = l * pageSize;
-                    entries[3] = pageTable->pages[l];
-                    if (!entries[3]) {
-                        continue;
-                    }
-
-                    addressPhysical =
-                        entries[3] & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
-                    appendMapping(addressVirtual, addressPhysical, pageSize);
-                }
-            }
-        }
     }
 }
 
@@ -198,43 +107,54 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
     } else {
         buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT,
                                         sizeof(alignof(U64)), pageSize);
-        KFLUSH_AFTER {
-            KLOG(STRING("mappable address is: "));
-            KLOG(buffer, .flags = NEWLINE);
-        }
+        // KFLUSH_AFTER {
+        //     KLOG(STRING("mappable address is: "));
+        //     KLOG(buffer, .flags = NEWLINE);
+        // }
 
         beforePageFaults = currentNumberOfPageFaults;
         U64 startCycleCount = currentCycleCounter(true, false);
 
-        KFLUSH_AFTER {
-            appendVirtualMemoryMapping();
-            INFO(STRING("Writing to: "));
-            INFO(buffer, .flags = NEWLINE);
-        }
+        // KFLUSH_AFTER {
+        //     appendVirtualMemoryMapping();
+        //     INFO(STRING("Writing to: "));
+        //     INFO(buffer, .flags = NEWLINE);
+        // }
 
         for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
             buffer[i] = i;
+            // if (i >= 6 && buffer[6] != 6) {
+            //     KFLUSH_AFTER {
+            //         INFO(STRING("hmmmm error at i="));
+            //         INFO(i);
+            //         INFO(STRING(", expected="));
+            //         INFO(6);
+            //         INFO(STRING(", actual="));
+            //         INFO(buffer[6], .flags = NEWLINE);
+            //     }
+            //     return 0;
+            // }
         }
 
-        KFLUSH_AFTER {
-            appendVirtualMemoryMapping();
-            INFO(STRING("Written to: "));
-            INFO(buffer, .flags = NEWLINE);
-        }
-
-        for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
-            if (buffer[i] != i) {
-                KFLUSH_AFTER {
-                    INFO(STRING("AAAAarithmetic error at i="));
-                    INFO(i);
-                    INFO(STRING(", expected="));
-                    INFO(i);
-                    INFO(STRING(", actual="));
-                    INFO(buffer[i], .flags = NEWLINE);
-                }
-                return 0;
-            }
-        }
+        // KFLUSH_AFTER {
+        //     appendVirtualMemoryMapping();
+        //     INFO(STRING("Written to: "));
+        //     INFO(buffer, .flags = NEWLINE);
+        // }
+        //
+        // for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
+        //     if (buffer[i] != i) {
+        //         KFLUSH_AFTER {
+        //             INFO(STRING("AAAAarithmetic error at i="));
+        //             INFO(i);
+        //             INFO(STRING(", expected="));
+        //             INFO(i);
+        //             INFO(STRING(", actual="));
+        //             INFO(buffer[i], .flags = NEWLINE);
+        //         }
+        //         return 0;
+        //     }
+        // }
 
         U64 endCycleCount = currentCycleCounter(false, true);
         afterPageFaults = currentNumberOfPageFaults;
@@ -521,41 +441,9 @@ kernelMain(KernelParameters *kernelParams) {
         appendMemoryManagementStatus();
     }
 
-    KFLUSH_AFTER {
-        INFO(STRING("\n"));
-        for (typeof(virtualMA.nodeAllocator.nodes.len) i = 0;
-             i < virtualMA.nodeAllocator.nodes.len; i++) {
-            INFO(STRING("start: "));
-            INFO((void *)((MMNode *)virtualMA.nodeAllocator.nodes.buf)[i]
-                     .memory.start);
-            INFO(STRING(" bytes: "));
-            INFO(((MMNode *)virtualMA.nodeAllocator.nodes.buf)[i]
-                     .memory.bytes, );
-            INFO(STRING(" bytes: "));
-            INFO((void *)((MMNode *)virtualMA.nodeAllocator.nodes.buf)[i]
-                     .memory.bytes,
-                 .flags = NEWLINE);
-        }
-    }
+    KFLUSH_AFTER { memoryVirtualMappingStatusAppend(); }
 
-    KFLUSH_AFTER {
-        INFO(STRING("\n"));
-        for (typeof(physicalMA.nodeAllocator.nodes.len) i = 0;
-             i < physicalMA.nodeAllocator.nodes.len; i++) {
-            INFO(STRING("start: "));
-            INFO((void *)((MMNode *)physicalMA.nodeAllocator.nodes.buf)[i]
-                     .memory.start);
-            INFO(STRING(" bytes: "));
-            INFO(((MMNode *)physicalMA.nodeAllocator.nodes.buf)[i]
-                     .memory.bytes, );
-            INFO(STRING(" bytes: "));
-            INFO((void *)((MMNode *)physicalMA.nodeAllocator.nodes.buf)[i]
-                     .memory.bytes,
-                 .flags = NEWLINE);
-        }
-    }
-
-    KFLUSH_AFTER { appendVirtualMemoryMapping(); }
+    hangThread();
 
     // KFLUSH_AFTER {
     //     for (U32 i = 0; i < PageTableFormat.ENTRIES; i++) {

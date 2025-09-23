@@ -5,6 +5,8 @@
 
 // The C isr handler
 .extern faultHandler
+.extern simdStart
+.extern simdEnd
 
 //////////////////
 // asm_lidt(*void)
@@ -59,11 +61,18 @@ asm_lidt:
 .endm
 
 .macro handle_fault_and_return
+
+    cld
+    call simdStart
+
     movq %rsp, %rdi
     cld
     # NOTE: Careful, need to be 16-byte aligned! pushing 22 8-byte registers
     # from a more-than 16-byte aligned stack, so it's okay
     call faultHandler
+
+    cld
+    call simdEnd
 
     # TODO: On upgrade to newer CPU, use xsaves and xrstors respectively
     mov XSAVESpace(%rip), %rcx

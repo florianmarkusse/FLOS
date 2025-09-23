@@ -19,7 +19,10 @@ typedef enum {
     PAGE_FAULT_RESULT_STACK_OVERFLOW
 } PageFaultResult;
 
-[[nodiscard]] PageFaultResult handlePageFault(U64 faultingAddress);
+// [[nodiscard]] PageFaultResult handlePageFault(U64 faultingAddress);
+// NOTE: TEMPORARY
+[[nodiscard]] PageFaultResult handlePageFault(U64 faultingAddress, U8 *temp,
+                                              U8 *now);
 
 void addPageMapping(Memory memory, U64_pow2 pageSize);
 void removePageMapping(U64 address);

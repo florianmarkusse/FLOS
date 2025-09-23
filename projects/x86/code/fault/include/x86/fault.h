@@ -1,11 +1,12 @@
 #ifndef X86_FAULT_H
 #define X86_FAULT_H
 
+#include "efi-to-kernel/memory/definitions.h"
 #include "shared/enum.h"
+#include "shared/maths.h"
 #include "shared/memory/sizes.h"
 #include "shared/types/numeric.h"
 
-// NOTE: if you add a value here
 #define INTERRUPT_STACK_TABLE_ENUM(VARIANT)                                    \
     VARIANT(FAULT_PAGE_IST)                                                    \
     VARIANT(NON_MASKABLE_INTERRUPT_IST)                                        \
@@ -18,15 +19,11 @@ typedef enum : U8 { INTERRUPT_STACK_TABLE_ENUM(ENUM_STANDARD_VARIANT) } IST;
 static constexpr auto INTERRUPT_STACK_TABLE_COUNT =
     INTERRUPT_STACK_TABLE_ENUM(PLUS_ONE);
 
-// NOTE: Add it here !!! And below!
-// TODO: constexpr / compile-time calculation of the full size of this.
-
-static constexpr U64 IST_STACK_SIZES[INTERRUPT_STACK_TABLE_COUNT] = {
-    4 * KiB, 1 * KiB, 1 * KiB, 1 * KiB, 1 * KiB,
-};
-
-// NOTE: And here!!
-static constexpr auto TOTAL_IST_STACKS_BYTES = 8 * KiB;
+static constexpr U64 IST_STACK_SIZE = 4 * KiB;
+static_assert(IST_STACK_SIZE % KERNEL_STACK_ALIGNMENT == 0);
+static constexpr auto TOTAL_IST_STACKS_BYTES =
+    IST_STACK_SIZE * INTERRUPT_STACK_TABLE_COUNT;
+static_assert(TOTAL_IST_STACKS_BYTES % KERNEL_STACK_ALIGNMENT == 0);
 
 #define CPU_FAULT_ENUM(VARIANT)                                                \
     VARIANT(FAULT_DIVIDE_ERROR, 0)                                             \

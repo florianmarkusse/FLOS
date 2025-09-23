@@ -20,6 +20,7 @@ void insertMMNodeAndAddToFreelist(RedBlackMMTreeWithFreeList *allocator,
 void *allocVirtualMemory(U64 size, U64_pow2 align);
 void freeVirtualMemory(Memory memory);
 
+void *allocPhysicalMemoryTest(U64 bytes, U64_pow2 align, U8 *temp, U8 *now);
 void *allocPhysicalMemory(U64 bytes, U64_pow2 align);
 void freePhysicalMemory(Memory memory);
 

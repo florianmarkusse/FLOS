@@ -1,7 +1,9 @@
 #include "abstraction/interrupts.h"
 
 #include "abstraction/log.h"
+#include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/map.h"
+#include "abstraction/text/converter/converter.h"
 #include "abstraction/thread.h"
 #include "shared/enum.h"
 #include "shared/log.h"
@@ -17,6 +19,7 @@
 static String faultToString[CPU_FAULT_COUNT] = {CPU_FAULT_ENUM(ENUM_TO_STRING)};
 
 U8 *XSAVESpace;
+__attribute__((aligned(64))) static U8 tempLocation[832] = {0};
 
 typedef struct {
     U64 r15;
@@ -105,10 +108,32 @@ static void kernelPanic(Registers *regs) {
     __builtin_unreachable();
 }
 
+void simdStart() { memcpy(tempLocation, XSAVESpace, 832); }
+
+void simdEnd() {
+    if (memcmp(tempLocation, XSAVESpace, 832)) {
+        KFLUSH_AFTER {
+            INFO(STRING("They are not equal!\n"));
+            INFO(STRING("\n"));
+        }
+    } else {
+        KFLUSH_AFTER {
+            INFO(STRING("They are equal!\n"));
+            INFO(STRING("They are equal!\n"));
+            INFO(STRING("They are equal!\n"));
+        }
+    }
+}
+
 void faultHandler(Registers *regs) {
+    if (canLog) {
+        INFO(STRING("FAULT\n"));
+    }
     if (regs->interruptNumber == FAULT_PAGE_FAULT) {
         currentNumberOfPageFaults++;
-        PageFaultResult pageFaultResult = handlePageFault(CR2());
+        PageFaultResult pageFaultResult =
+            handlePageFault(CR2(), tempLocation, XSAVESpace);
+
         switch (pageFaultResult) {
         case PAGE_FAULT_RESULT_MAPPED: {
             return;

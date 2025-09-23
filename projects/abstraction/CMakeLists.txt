@@ -21,6 +21,7 @@ add_subdirectory("kernel/code")
 
 add_subdirectory("memory/manipulation/code")
 add_subdirectory("memory/virtual/code")
+add_subdirectory("memory/virtual/status/code")
 
 add_subdirectory("text/converter/code")
 
