@@ -433,8 +433,6 @@ kernelMain(KernelParameters *kernelParams) {
 
     // NOTE: from here, everything is initialized
 
-    canLog = true;
-
     KFLUSH_AFTER {
         KLOG(STRING("ITS WEDNESDAY MY DUDES\n"));
         KLOG(STRING("ITS WEDNESDAY MY DUDES\n"));

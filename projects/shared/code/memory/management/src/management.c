@@ -83,83 +83,6 @@ static void handleRemovedAllocator(MMNode *availableMemory, Memory memoryUsed,
     }
 }
 
-static void handleRemovedAllocatorTest(MMNode *availableMemory,
-                                       Memory memoryUsed,
-                                       RedBlackMMTreeWithFreeList *allocator,
-                                       U8 *temp, U8 *now) {
-    U64 beforeResultBytes = memoryUsed.start - availableMemory->memory.start;
-    U64 afterResultBytes =
-        availableMemory->memory.bytes - (beforeResultBytes + memoryUsed.bytes);
-
-    if (beforeResultBytes && afterResultBytes) {
-        availableMemory->memory.bytes = beforeResultBytes;
-        (void)insertMMNode(&allocator->tree, availableMemory);
-
-        insertMemory((Memory){.start = memoryUsed.start + memoryUsed.bytes,
-                              .bytes = afterResultBytes},
-                     allocator);
-    } else if (beforeResultBytes) {
-        availableMemory->memory.bytes = beforeResultBytes;
-        (void)insertMMNode(&allocator->tree, availableMemory);
-    } else if (afterResultBytes) {
-        availableMemory->memory =
-            (Memory){.start = memoryUsed.start + memoryUsed.bytes,
-                     .bytes = afterResultBytes};
-
-        // if (canLog) {
-        //     KFLUSH_AFTER {
-        //         INFO(STRING("allocator:  "));
-        //         INFO((void *)allocator->tree, .flags = NEWLINE);
-        //         INFO(STRING("allocator addr:  "));
-        //         INFO((void *)&allocator->tree, .flags = NEWLINE);
-        //     }
-        // }
-
-        (void)insertMMNodeTest(&allocator->tree, availableMemory, temp, now);
-
-        // if (canLog && temp && now) {
-        //     KFLUSH_AFTER {
-        //         for (U32 i = 0; i < 832; i++) {
-        //             if (temp[i] != now[i]) {
-        //                 INFO(STRING("Difference at i = "));
-        //                 INFO(i);
-        //                 INFO(STRING(" orig: "));
-        //                 INFO(temp[i]);
-        //                 INFO(STRING(" now: "));
-        //                 INFO(now[i], .flags = NEWLINE);
-        //             }
-        //         }
-        //     }
-        // }
-
-        // if (canLog) {
-        //     KFLUSH_AFTER { INFO(STRING(" AFTER INSERTING\n")); }
-        // }
-        //
-        // if (canLog && temp && now) {
-        //     KFLUSH_AFTER {
-        //         for (U32 i = 0; i < 832; i++) {
-        //             if (temp[i] != now[i]) {
-        //                 INFO(STRING("Difference at i = "));
-        //                 INFO(i);
-        //                 INFO(STRING(" orig: "));
-        //                 INFO(temp[i]);
-        //                 INFO(STRING(" now: "));
-        //                 INFO(now[i], .flags = NEWLINE);
-        //             }
-        //         }
-        //     }
-        // }
-        //
-        // if (canLog) {
-        //     KFLUSH_AFTER { INFO(STRING(" AFTER INSERTING AFTER CHECK\n")); }
-        // }
-
-    } else {
-        nodeAllocatorFree(&allocator->nodeAllocator, availableMemory);
-    }
-}
-
 static void *allocAlignedMemory(U64 bytes, U64_pow2 align,
                                 RedBlackMMTreeWithFreeList *allocator) {
     MMNode *availableMemory =
@@ -176,31 +99,6 @@ void *allocVirtualMemory(U64 bytes, U64_pow2 align) {
 
 void *allocPhysicalMemory(U64 bytes, U64_pow2 align) {
     return allocAlignedMemory(bytes, align, &physicalMA);
-}
-
-void *allocPhysicalMemoryTest(U64 bytes, U64_pow2 align, U8 *temp, U8 *now) {
-    MMNode *availableMemory =
-        getMemoryAllocation(&physicalMA, alignedToTotal(bytes, align));
-    U64 result = alignUp(availableMemory->memory.start, align);
-    handleRemovedAllocatorTest(availableMemory,
-                               (Memory){.start = result, .bytes = bytes},
-                               &physicalMA, temp, now);
-
-    // if (canLog && temp && now) {
-    //     KFLUSH_AFTER {
-    //         for (U32 i = 0; i < 832; i++) {
-    //             if (temp[i] != now[i]) {
-    //                 INFO(STRING("Difference at i = "));
-    //                 INFO(i);
-    //                 INFO(STRING(" orig: "));
-    //                 INFO(temp[i]);
-    //                 INFO(STRING(" now: "));
-    //                 INFO(now[i], .flags = NEWLINE);
-    //             }
-    //         }
-    //     }
-    // }
-    return (void *)result;
 }
 
 static void initMemoryAllocator(NodeAllocator *nodeAllocator, void **tree,
@@ -231,8 +129,7 @@ static void identityArrayToMappable(void_max_a *array, U32_pow2 alignBytes,
     U32 mapsToDo =
         (U32)ceilingDivide(bytesUsed, pageSizesSmallest()) + additionalMaps;
     for (typeof(mapsToDo) i = 0; i < mapsToDo; i++) {
-        (void)handlePageFault((U64)virtualBuffer + (i * pageSizesSmallest()), 0,
-                              0);
+        (void)handlePageFault((U64)virtualBuffer + (i * pageSizesSmallest()));
     }
 
     memcpy(virtualBuffer, array->buf, array->len * elementSizeBytes);

@@ -40,8 +40,6 @@ typedef struct {
 //  - a single merge with 1 other node: return 1 freed node
 //  - no merges with other nodes: return 0 freed nodes
 [[nodiscard]] InsertResult insertMMNode(MMNode **tree, MMNode *createdNode);
-[[nodiscard]] InsertResult insertMMNodeTest(MMNode **tree, MMNode *createdNode,
-                                            U8 *temp, U8 *now);
 [[nodiscard]] MMNode *deleteAtLeastMMNode(MMNode **tree, U64 bytes);
 
 #endif

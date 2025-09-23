@@ -11,7 +11,6 @@
 #include "shared/memory/sizes.h"
 
 VMMTreeWithFreeList virtualMemorySizeMapper = {0};
-bool canLog = false;
 
 static U64_pow2 pageSizeFromVMM(U64 faultingAddress) {
     VMMNode *result = findGreatestBelowOrEqualVMMNode(
@@ -40,13 +39,7 @@ void addPageMapping(Memory memory, U64_pow2 pageSize) {
     insertVMMNode(&virtualMemorySizeMapper.tree, newNode);
 }
 
-PageFaultResult handlePageFault(U64 faultingAddress, U8 *temp, U8 *now) {
-    if (canLog) {
-        // KFLUSH_AFTER {
-        //     KLOG(STRING("The faulting address is: "));
-        //     KLOG((void *)faultingAddress, .flags = NEWLINE);
-        // }
-    }
+PageFaultResult handlePageFault(U64 faultingAddress) {
     U64_pow2 pageSizeForFault = pageSizeFromVMM(faultingAddress);
 
     if (!pageSizeForFault) {
@@ -64,46 +57,9 @@ PageFaultResult handlePageFault(U64 faultingAddress, U8 *temp, U8 *now) {
 
     U32_pow2 mapsToDo = (U32)divideByPowerOf2(pageSizeForFault, pageSizeToUse);
     for (U32 i = 0; i < mapsToDo; i++) {
-        U8 *address =
-            allocPhysicalMemoryTest(pageSizeToUse, pageSizeToUse, temp, now);
+        U8 *address = allocPhysicalMemory(pageSizeToUse, pageSizeToUse);
 
-        // if (canLog && temp && now) {
-        //     KFLUSH_AFTER {
-        //         for (U32 i = 0; i < 832; i++) {
-        //             if (temp[i] != now[i]) {
-        //                 INFO(STRING("Difference at i = "));
-        //                 INFO(i);
-        //                 INFO(STRING(" orig: "));
-        //                 INFO(temp[i]);
-        //                 INFO(STRING(" now: "));
-        //                 INFO(now[i], .flags = NEWLINE);
-        //             }
-        //         }
-        //     }
-        // }
-
-        if (canLog) {
-            INFO(STRING("mapping "));
-            INFO((void *)(startingMap + (i * pageSizeToUse)));
-            INFO(STRING(" to "));
-            INFO(address);
-        }
         mapPage(startingMap + (i * pageSizeToUse), (U64)address, pageSizeToUse);
-    }
-
-    if (canLog && temp && now) {
-        KFLUSH_AFTER {
-            for (U32 i = 0; i < 832; i++) {
-                if (temp[i] != now[i]) {
-                    INFO(STRING("Difference at i = "));
-                    INFO(i);
-                    INFO(STRING(" orig: "));
-                    INFO(temp[i]);
-                    INFO(STRING(" now: "));
-                    INFO(now[i], .flags = NEWLINE);
-                }
-            }
-        }
     }
 
     return PAGE_FAULT_RESULT_MAPPED;

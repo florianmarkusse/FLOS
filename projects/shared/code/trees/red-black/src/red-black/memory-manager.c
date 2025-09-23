@@ -1,7 +1,4 @@
 #include "shared/trees/red-black/memory-manager.h"
-#include "abstraction/log.h"
-#include "abstraction/text/converter/converter.h"
-#include "shared/log.h"
 #include "shared/maths.h"
 #include "shared/memory/allocator/macros.h"
 #include "shared/memory/management/page.h"
@@ -203,98 +200,6 @@ static MMNode *afterRegionMerge(MMNode *current, MMNode *createdNode,
 
     propogateInsertIfRequired(current, visitedNodes, len);
     return nullptr;
-}
-
-[[nodiscard]] InsertResult insertMMNodeTest(MMNode **tree, MMNode *createdNode,
-                                            U8 *temp, U8 *now) {
-    InsertResult result = {0};
-
-    createdNode->children[RB_TREE_LEFT] = nullptr;
-    createdNode->children[RB_TREE_RIGHT] = nullptr;
-
-    if (!(*tree)) {
-        createdNode->color = RB_TREE_BLACK;
-        createdNode->mostBytesInSubtree = createdNode->memory.bytes;
-        *tree = createdNode;
-        return result;
-    }
-
-    // Search
-    MMVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
-
-    visitedNodes[0].node = (MMNode *)tree;
-    visitedNodes[0].direction = RB_TREE_LEFT;
-    U32 len = 1;
-
-    MMNode *current = *tree;
-    U64 createdEnd = createdNode->memory.start + createdNode->memory.bytes;
-    while (1) {
-        U64 currentEnd = current->memory.start + current->memory.bytes;
-        // | created | current |
-        if (createdEnd == current->memory.start) {
-            result.freed[0] = createdNode;
-            result.freed[1] =
-                beforeRegionMerge(current, createdNode, visitedNodes, len);
-            return result;
-        }
-        // | current | created |
-        else if (currentEnd == createdNode->memory.start) {
-            result.freed[0] = createdNode;
-            result.freed[1] = afterRegionMerge(current, createdNode, createdEnd,
-                                               visitedNodes, len);
-            return result;
-        }
-
-        visitedNodes[len].node = current;
-        visitedNodes[len].direction = calculateDirection(
-            createdNode->memory.start, current->memory.start);
-        len++;
-
-        MMNode *next = current->children[visitedNodes[len - 1].direction];
-        if (!next) {
-            break;
-        }
-        current = next;
-    }
-
-    // Insert
-    createdNode->color = RB_TREE_RED;
-    createdNode->mostBytesInSubtree = createdNode->memory.bytes;
-    current->children[visitedNodes[len - 1].direction] = createdNode;
-    propagateInsertUpwards(createdNode->memory.bytes, visitedNodes, len);
-
-    // NOTE: we should never be looking at [len - 1].direction!
-    visitedNodes[len].node = createdNode;
-    len++;
-
-    // Check for violations
-    while (len >= 4 && visitedNodes[len - 2].node->color == RB_TREE_RED) {
-        len = rebalanceInsert(visitedNodes[len - 3].direction, visitedNodes,
-                              len, setMostBytesAfterRotation);
-    }
-
-    (*tree)->color = RB_TREE_BLACK;
-
-    // if (canLog) {
-    //     INFO(STRING("Doing check now!\n"));
-    // }
-    //
-    // if (canLog && temp && now) {
-    //     KFLUSH_AFTER {
-    //         for (U32 i = 0; i < 832; i++) {
-    //             if (temp[i] != now[i]) {
-    //                 INFO(STRING("Difference at i = "));
-    //                 INFO(i);
-    //                 INFO(STRING(" orig: "));
-    //                 INFO(temp[i]);
-    //                 INFO(STRING(" now: "));
-    //                 INFO(now[i], .flags = NEWLINE);
-    //             }
-    //         }
-    //     }
-    // }
-
-    return result;
 }
 
 InsertResult insertMMNode(MMNode **tree, MMNode *createdNode) {
