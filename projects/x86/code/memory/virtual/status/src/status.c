@@ -1,5 +1,6 @@
 #include "abstraction/memory/virtual/status.h"
 #include "shared/log.h"
+#include "shared/memory/management/status.h"
 #include "shared/types/numeric.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/virtual.h"
@@ -18,7 +19,7 @@ static void mappingAppend(U64 addressVirtual[4], U64 physical,
     INFO(mappingSize, .flags = NEWLINE);
 }
 
-void memoryVirtualMappingStatusAppend() {
+static void memoryVirtualMappingTableAppend() {
     for (U32 i = 0; i < PageTableFormat.ENTRIES; i++) {
         VirtualPageTable *pageTable = rootPageTable;
         U64 entries[4] = {0};
@@ -93,4 +94,9 @@ void memoryVirtualMappingStatusAppend() {
             }
         }
     }
+}
+
+void memoryVirtualMappingStatusAppend() {
+    memoryVirtualMappingTableAppend();
+    memoryVirtualGuardPageStatusAppend();
 }

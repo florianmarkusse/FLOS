@@ -4,4 +4,6 @@
 void appendPhysicalMemoryManagerStatus();
 void appendVirtualMemoryManagerStatus();
 
+void memoryVirtualGuardPageStatusAppend();
+
 #endif

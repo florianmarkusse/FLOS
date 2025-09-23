@@ -1,4 +1,5 @@
 #include "shared/memory/policy/status.h"
+#include "shared/memory/management/page.h"
 #include "shared/memory/management/status.h"
 
 #include "abstraction/log.h"
@@ -46,6 +47,24 @@ void appendPhysicalMemoryManagerStatus() {
 
 void appendVirtualMemoryManagerStatus() {
     appendMemoryManagerStatus(&virtualMA, STRING("[VIRT]"));
+}
+
+void memoryVirtualGuardPageStatusAppend() {
+    U8 *buffer = physicalMA.nodeAllocator.nodes.buf;
+    for (typeof(virtualMemorySizeMapper.nodeAllocator.nodes.len) i = 0;
+         i < virtualMemorySizeMapper.nodeAllocator.nodes.len; i++) {
+        VMMNode *node =
+            (VMMNode *)(buffer + (virtualMemorySizeMapper.nodeAllocator
+                                      .elementSizeBytes *
+                                  i));
+        // if (!node->bytes) {
+        INFO(STRING("["));
+        INFO((void *)node->basic.value);
+        INFO(STRING(", "));
+        INFO((void *)(node->basic.value + node->bytes));
+        INFO(STRING("] mapping size: GUARD PAGE\n"));
+        // }
+    }
 }
 
 static AvailableMemoryState getAvailableMemory(MMNode *tree) {
