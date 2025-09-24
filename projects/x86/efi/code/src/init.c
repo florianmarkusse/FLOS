@@ -10,6 +10,7 @@
 #include "efi/firmware/system.h" // for PhysicalAddress
 #include "efi/globals.h"
 #include "efi/memory/physical.h"
+#include "efi/memory/virtual.h"
 #include "shared/log.h"
 #include "shared/maths.h"
 #include "shared/memory/allocator/macros.h"
@@ -36,6 +37,7 @@ static constexpr auto MAX_BYTES_GDT = 64 * KiB;
 // performance reasons.
 // So, we align the GDT to 16 bytes, so everything is at least self-aligned.
 static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
+                               U64 memoryVirtualAddressAvailable,
                                Arena scratch) {
     U32 requiredBytesForDescriptorTable =
         CODE_SEGMENTS_BYTES + numberOfProcessors * sizeof(TSSDescriptor);
@@ -104,10 +106,8 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
     U8 *TSSes =
         NEW(&globals.kernelPermanent, U8,
             .count = bytesPerTSS * numberOfProcessors, .align = bytesPerTSS);
-    U64 interruptStacksRegion =
-        (U64)NEW(&globals.kernelPermanent, U8,
-                 .count = TOTAL_IST_STACKS_BYTES * numberOfProcessors,
-                 .align = KERNEL_STACK_ALIGNMENT);
+
+    U64 stackVirtual = memoryVirtualAddressAvailable + IST_STACK_SIZE;
 
     for (typeof(numberOfProcessors) i = 0; i < numberOfProcessors; i++) {
         TaskStateSegment *perCPUTSS =
@@ -118,17 +118,31 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
                                 // permission bitmap.
 
         KFLUSH_AFTER {
-            U64 stackAddress =
-                interruptStacksRegion + (TOTAL_IST_STACKS_BYTES * i);
             for (typeof_unqual(INTERRUPT_STACK_TABLE_COUNT) j = 0;
                  j < INTERRUPT_STACK_TABLE_COUNT; j++) {
+                U64 stackPhysical = (U64)findAlignedMemoryBlock(
+                    IST_STACK_SIZE, KERNEL_STACK_ALIGNMENT, scratch, false);
+
+                stackVirtual =
+                    alignVirtual(stackVirtual, stackPhysical, IST_STACK_SIZE);
+                U64 stackGuardPage = stackVirtual - IST_STACK_SIZE;
+                addPageMapping(
+                    (Memory){.start = stackGuardPage, .bytes = IST_STACK_SIZE},
+                    GUARD_PAGE_SIZE);
+
+                mapMemory(stackVirtual, stackPhysical, IST_STACK_SIZE,
+                          pageFlagsReadWrite() | pageFlagsNoCacheEvict());
+
                 // Stack grows down
-                stackAddress += IST_STACK_SIZE;
-                perCPUTSS->ists[j] = stackAddress;
+                stackPhysical += IST_STACK_SIZE;
+                stackVirtual += IST_STACK_SIZE;
+                perCPUTSS->ists[j] = stackVirtual;
                 INFO(STRING("TSS ist["));
                 INFO(j);
-                INFO(STRING("]stack: "));
-                INFO((void *)perCPUTSS->ists[j], .flags = NEWLINE);
+                INFO(STRING("]stack phys: "));
+                INFO((void *)stackPhysical);
+                INFO(STRING(" virt: "));
+                INFO((void *)stackVirtual, .flags = NEWLINE);
             }
         }
 
@@ -156,12 +170,14 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
         .limit = ((U16)requiredBytesForDescriptorTable) - 1, .base = (U64)GDT};
 }
 
-void bootstrapProcessorWork(U16 cacheLineSizeBytes, Arena scratch) {
+void bootstrapProcessorWork(U16 cacheLineSizeBytes,
+                            U64 memoryVirtualAddressAvailable, Arena scratch) {
     // NOTE: What the fuck does this do and why?
     disablePIC();
 
     // TODO: Find out number of processors!
-    prepareDescriptors(1, cacheLineSizeBytes, scratch);
+    prepareDescriptors(1, cacheLineSizeBytes, memoryVirtualAddressAvailable,
+                       scratch);
 
     // Maybe when there is other CPUs in here??
     //    // NOTE: WHY????
@@ -268,7 +284,8 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress) {
         alignof(*virtualMemorySizeMapper.tree));
 }
 
-void fillArchParams(void *archParams, Arena scratch) {
+void fillArchParams(void *archParams, Arena scratch,
+                    U64 memoryVirtualAddressAvailable) {
     X86ArchParams *x86ArchParams = (X86ArchParams *)archParams;
 
     U32 maxBasicCPUID = CPUID(0x0).eax;
@@ -397,7 +414,8 @@ void fillArchParams(void *archParams, Arena scratch) {
     }
 
     KFLUSH_AFTER { INFO(STRING("Bootstrap processor work\n")); }
-    bootstrapProcessorWork(cacheLineSizeBytes, scratch);
+    bootstrapProcessorWork(cacheLineSizeBytes, memoryVirtualAddressAvailable,
+                           scratch);
 
     KFLUSH_AFTER { INFO(STRING("Calibrating timer\n")); }
     x86ArchParams->tscFrequencyPerMicroSecond = calibrateWait();

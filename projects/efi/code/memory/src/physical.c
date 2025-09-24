@@ -190,7 +190,7 @@ void *findAlignedMemoryBlock(U64_pow2 bytes, U64_pow2 alignment, Arena scratch,
         }
     }
 
-    if (bestDescriptor.address != U64_MAX) {
+    if (bestDescriptor.address != MAX_VALUE(bestDescriptor.address)) {
         allocatePagesAll(ALLOCATE_ADDRESS, bestDescriptor.padding + bytes,
                          &bestDescriptor.address);
 

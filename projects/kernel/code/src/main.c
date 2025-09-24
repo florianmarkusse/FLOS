@@ -25,7 +25,7 @@
 
 static constexpr auto INIT_MEMORY = (16 * MiB);
 
-static constexpr auto TEST_MEMORY_AMOUNT = 4 * KiB;
+static constexpr auto TEST_MEMORY_AMOUNT = 32 * MiB;
 static constexpr auto MAX_TEST_ENTRIES = TEST_MEMORY_AMOUNT / (sizeof(U64));
 
 static constexpr U64 PRNG_SEED = 15466503514872390148ULL;
@@ -107,54 +107,12 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
     } else {
         buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT,
                                         sizeof(alignof(U64)), pageSize);
-        // KFLUSH_AFTER {
-        //     KLOG(STRING("mappable address is: "));
-        //     KLOG(buffer, .flags = NEWLINE);
-        // }
-
         beforePageFaults = currentNumberOfPageFaults;
         U64 startCycleCount = currentCycleCounter(true, false);
 
-        // KFLUSH_AFTER {
-        //     appendVirtualMemoryMapping();
-        //     INFO(STRING("Writing to: "));
-        //     INFO(buffer, .flags = NEWLINE);
-        // }
-
         for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
             buffer[i] = i;
-            // if (i >= 6 && buffer[6] != 6) {
-            //     KFLUSH_AFTER {
-            //         INFO(STRING("hmmmm error at i="));
-            //         INFO(i);
-            //         INFO(STRING(", expected="));
-            //         INFO(6);
-            //         INFO(STRING(", actual="));
-            //         INFO(buffer[6], .flags = NEWLINE);
-            //     }
-            //     return 0;
-            // }
         }
-
-        // KFLUSH_AFTER {
-        //     appendVirtualMemoryMapping();
-        //     INFO(STRING("Written to: "));
-        //     INFO(buffer, .flags = NEWLINE);
-        // }
-        //
-        // for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
-        //     if (buffer[i] != i) {
-        //         KFLUSH_AFTER {
-        //             INFO(STRING("AAAAarithmetic error at i="));
-        //             INFO(i);
-        //             INFO(STRING(", expected="));
-        //             INFO(i);
-        //             INFO(STRING(", actual="));
-        //             INFO(buffer[i], .flags = NEWLINE);
-        //         }
-        //         return 0;
-        //     }
-        // }
 
         U64 endCycleCount = currentCycleCounter(false, true);
         afterPageFaults = currentNumberOfPageFaults;
@@ -420,123 +378,19 @@ kernelMain(KernelParameters *kernelParams) {
     initLogger(&arena);
     initScreen(&kernelParams->window, &arena);
 
-    // TODO: free me
-    // freeIdentityMemory((Memory){.start = (U64)arena.curFree,
-    //                             .bytes = (U64)(arena.end -
-    //                             arena.curFree)});
-
     enableInterrupts();
-    // TODO: Need to free the kernel temporary memory from uefi here!
-    // freeIdentityMemory(
-    //     (Memory){.start = (U64)kernelParams, .bytes =
-    //     sizeof(*kernelParams)});
+
+    freeIdentityMemory((Memory){.start = (U64)arena.curFree,
+                                .bytes = (U64)(arena.end - arena.curFree)});
+    freeIdentityMemory(kernelParams->permanentLeftoverFree);
+    freeIdentityMemory(kernelParams->selfAndOtherTemps);
 
     // NOTE: from here, everything is initialized
 
     KFLUSH_AFTER {
-        KLOG(STRING("ITS WEDNESDAY MY DUDES\n"));
-        KLOG(STRING("ITS WEDNESDAY MY DUDES\n"));
         appendMemoryManagementStatus();
+        memoryVirtualMappingStatusAppend();
     }
-
-    KFLUSH_AFTER { memoryVirtualMappingStatusAppend(); }
-
-    hangThread();
-
-    // KFLUSH_AFTER {
-    //     for (U32 i = 0; i < PageTableFormat.ENTRIES; i++) {
-    //         U64 addressVirtual[4] = {0};
-    //         VirtualPageTable *pageTable = rootPageTable;
-    //         U64 pageSize = PAGE_ROOT_ENTRY_MAX_SIZE;
-    //         addressVirtual[0] = 0;
-    //         if (i >= 256) {
-    //             addressVirtual[0] += 0xFFFF000000000000;
-    //         }
-    //         U64 addressPhysical = 0;
-    //
-    //         addressVirtual[0] += i * pageSize;
-    //         U64 entryValue = pageTable->pages[i];
-    //         if (!entryValue) {
-    //             continue;
-    //         }
-    //
-    //         pageSize /= 512;
-    //
-    //         pageTable =
-    //             (VirtualPageTable *)(entryValue &
-    //                                  VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE);
-    //         for (U32 j = 0; j < PageTableFormat.ENTRIES; j++) {
-    //             addressVirtual[1] = i * pageSize;
-    //             U64 entryValue = pageTable->pages[i];
-    //             if (!entryValue) {
-    //                 continue;
-    //             }
-    //
-    //             if (entryValue & (VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
-    //                 addressPhysical =
-    //                     entryValue &
-    //                     VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
-    //                 appendMapping(addressVirtual, addressPhysical);
-    //             }
-    //         }
-    //
-    //         pageSize /= 512;
-    //
-    //         pageTable =
-    //             (VirtualPageTable *)(entryValue &
-    //                                  VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE);
-    //         for (U32 j = 0; j < PageTableFormat.ENTRIES; j++) {
-    //             addressVirtual[2] = i * pageSize;
-    //             U64 entryValue = pageTable->pages[i];
-    //             if (!entryValue) {
-    //                 continue;
-    //             }
-    //
-    //             if (entryValue & (VirtualPageMasks.PAGE_EXTENDED_SIZE)) {
-    //                 addressPhysical =
-    //                     entryValue &
-    //                     VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
-    //                 appendMapping(addressVirtual, addressPhysical);
-    //             }
-    //         }
-    //
-    //         pageSize /= 512;
-    //
-    //         pageTable =
-    //             (VirtualPageTable *)(entryValue &
-    //                                  VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE);
-    //         for (U32 j = 0; j < PageTableFormat.ENTRIES; j++) {
-    //             addressVirtual[3] = i * pageSize;
-    //             U64 entryValue = pageTable->pages[i];
-    //             if (!entryValue) {
-    //                 continue;
-    //             }
-    //
-    //             appendMapping(addressVirtual, addressPhysical);
-    //         }
-    //     }
-    // }
-
-    // for (typeof(physicalMA.nodeAllocator.nodes.len) i = 0;
-    //      i < physicalMA.nodeAllocator.nodes.len; i++) {
-    //     MMNode *node = &((MMNode
-    //     *)physicalMA.nodeAllocator.nodes.buf)[i]; volatile U8 *address =
-    //     (U8 *)node->memory.start; for (U64 j = 0; j < node->memory.bytes;
-    //     j++) {
-    //         address[j] = 0x69;
-    //     }
-    //
-    //     for (U64 j = 0; j < node->memory.bytes; j++) {
-    //         if (address[j] != 0x69) {
-    //             KFLUSH_AFTER { KLOG(STRING("Ruh roh\n")); }
-    //
-    //             hangThread();
-    //         }
-    //     }
-    // }
-    //
-    // KFLUSH_AFTER { KLOG(STRING("Succ?\n")); }
-    // hangThread();
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 
@@ -567,6 +421,7 @@ kernelMain(KernelParameters *kernelParams) {
     KFLUSH_AFTER {
         KLOG(STRING("TESTING IS OVER MY DUDES\n"));
         appendMemoryManagementStatus();
+        memoryVirtualMappingStatusAppend();
     }
 
     while (1) {

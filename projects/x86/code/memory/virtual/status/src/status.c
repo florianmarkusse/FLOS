@@ -10,8 +10,11 @@ static void mappingAppend(U64 addressVirtual[4], U64 physical,
     U64 virtualAddress = addressVirtual[0] + addressVirtual[1] +
                          addressVirtual[2] + addressVirtual[3];
 
+    INFO(STRING("["));
     INFO((void *)virtualAddress);
-    INFO(STRING(" -> ["));
+    INFO(STRING(", "));
+    INFO((void *)virtualAddress + mappingSize);
+    INFO(STRING("] -> ["));
     INFO((void *)physical);
     INFO(STRING(", "));
     INFO((void *)physical + mappingSize);

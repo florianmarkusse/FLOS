@@ -41,8 +41,7 @@ void addPageMapping(Memory memory, U64_pow2 pageSize) {
 
 PageFaultResult handlePageFault(U64 faultingAddress) {
     U64_pow2 pageSizeForFault = pageSizeFromVMM(faultingAddress);
-
-    if (!pageSizeForFault) {
+    if (pageSizeForFault == GUARD_PAGE_SIZE) {
         return PAGE_FAULT_RESULT_STACK_OVERFLOW;
     }
 

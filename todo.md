@@ -2,6 +2,7 @@
   - Look into color OFFSETOF trick to get rid of slop
   - Look into optimizing the struct by using indices instead of pointers
 - how to hide extern variables from showing up everywhere
+- Look into MAX / MIN usage and replace with MAX_VALUE / MIN_VALUE
 - merger getFromNodes
 - maybe see if removing gnu statement expressions is possible? so we can use those macros in other for/while macros
 - nodeLocation base thing is duplicated for no reason in the trees.

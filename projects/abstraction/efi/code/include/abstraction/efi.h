@@ -17,7 +17,8 @@ typedef struct {
 } ArchParamsRequirements;
 ArchParamsRequirements getArchParamsRequirements();
 
-void fillArchParams(void *archParams, Arena scratch);
+void fillArchParams(void *archParams, Arena scratch,
+                    U64 memoryVirtualAddressAvailable);
 
 void jumpIntoKernel(U64 newStackPointer, U16 processorID,
                     KernelParameters *kernelParameters);

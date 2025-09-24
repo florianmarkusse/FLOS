@@ -1,5 +1,4 @@
 #include "shared/memory/policy/status.h"
-// TODO: Use FRAME_OR_NEXT_PAGE_TABLE mask isntead?
 
 #include "abstraction/log.h"
 #include "shared/log.h"

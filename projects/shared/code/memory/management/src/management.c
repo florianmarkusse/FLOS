@@ -188,16 +188,6 @@ static void treeWithFreeListToMappable(NodeAllocator *nodeAllocator,
                             sizeof(*nodeAllocator->nodesFreeList.buf), 0);
 }
 
-static void freePackedNodeAllocator(NodeAllocator *nodeAllocatorParam) {
-    freePhysicalMemory((Memory){.start = (U64)nodeAllocatorParam->nodes.buf,
-                                .bytes = nodeAllocatorParam->nodes.cap *
-                                         nodeAllocatorParam->elementSizeBytes});
-    freePhysicalMemory(
-        (Memory){.start = (U64)nodeAllocatorParam->nodesFreeList.buf,
-                 .bytes = nodeAllocatorParam->nodesFreeList.cap *
-                          sizeof(*nodeAllocatorParam->nodesFreeList.buf)});
-}
-
 void initMemoryManagers(KernelMemory *kernelMemory) {
     initMemoryAllocator(&physicalMA.nodeAllocator, (void **)&physicalMA.tree,
                         &kernelMemory->physicalPMA.nodeAllocator,
@@ -219,10 +209,4 @@ void initMemoryManagers(KernelMemory *kernelMemory) {
 
     treeWithFreeListToMappable(&virtualMemorySizeMapper.nodeAllocator,
                                (void **)&virtualMemorySizeMapper.tree, 0);
-
-    // TODO: FREE ME!!!
-    // freePackedNodeAllocator(&kernelMemory->physicalPMA.nodeAllocator);
-    // freePackedNodeAllocator(&kernelMemory->virtualPMA.nodeAllocator);
-    // freePackedNodeAllocator(
-    //     &kernelMemory->virtualMemorySizeMapper.nodeAllocator);
 }

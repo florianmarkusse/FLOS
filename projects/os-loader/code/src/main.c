@@ -16,6 +16,7 @@
 #include "efi/firmware/system.h"             // for PhysicalAddress
 #include "efi/globals.h"                     // for globals
 #include "efi/memory/physical.h"
+#include "efi/memory/virtual.h"
 #include "os-loader/data-reading.h" // for getKernelInfo
 #include "os-loader/memory.h"       // for mapMemoryAt
 #include "shared/log.h"
@@ -204,7 +205,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     U64 stackGuardPageAddress = virtualForKernel - KERNEL_STACK_SIZE;
     addPageMapping(
         (Memory){.start = stackGuardPageAddress, .bytes = KERNEL_STACK_SIZE},
-        0);
+        GUARD_PAGE_SIZE);
 
     KFLUSH_AFTER {
         INFO(STRING("mapped guard page address: \n"));
@@ -266,7 +267,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                  .scanline = gop->mode->info->pixelsPerScanLine};
 
     KFLUSH_AFTER { INFO(STRING("Filling specific arch params\n")); }
-    fillArchParams(kernelParams->archParams, arena);
+    fillArchParams(kernelParams->archParams, arena, virtualForKernel);
 
     RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
                               globals.st->configuration_table);
@@ -288,6 +289,15 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     kernelParams->memory.virtualMemorySizeMapper = virtualMemorySizeMapper;
 
     KFLUSH_AFTER {
+        INFO(STRING("start: "));
+        INFO(globals.kernelPermanent.beg, .flags = NEWLINE);
+        INFO(STRING("Current free: "));
+        INFO(globals.kernelPermanent.curFree, .flags = NEWLINE);
+        INFO(STRING("Current end: "));
+        INFO(globals.kernelPermanent.end, .flags = NEWLINE);
+    }
+
+    KFLUSH_AFTER {
         INFO(STRING("Finished set-up. Collecting physical memory and jumping "
                     "to the kernel. Setting up a square in the top-left corner "
                     "that indicates the status.\nGreen: Good\nRed: Bad\n"));
@@ -296,6 +306,14 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     kernelParams->memory.physicalPMA.tree = nullptr;
     allocateSpaceForKernelMemory(&kernelParams->memory.physicalPMA, arena);
+
+    kernelParams->permanentLeftoverFree =
+        (Memory){.start = (U64)globals.kernelPermanent.curFree,
+                 .bytes = (U64)(globals.kernelPermanent.end -
+                                globals.kernelPermanent.curFree)};
+    kernelParams->selfAndOtherTemps =
+        (Memory){.start = (U64)globals.kernelTemporary.beg,
+                 .bytes = KERNEL_TEMPORARY_MEMORY};
 
     /* NOTE: Keep this call in between the stub and the creation of available */
     /* memory! The stub allocates memory and logs on failure which is not */

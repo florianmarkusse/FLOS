@@ -43,6 +43,11 @@ typedef struct {
 typedef struct {
     Window window;
     KernelMemory memory;
+    // TODO: On new computer with newer UEFI, we can remove permanent free
+    // because we can use custom memory types
+    Memory permanentLeftoverFree; // NOTE: Immediately free upon entering
+                                  // kernelmain
+    Memory selfAndOtherTemps;     // NOTE: Freeable once init code is complete
     void *archParams;
 } KernelParameters;
 
