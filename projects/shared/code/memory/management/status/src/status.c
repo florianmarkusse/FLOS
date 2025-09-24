@@ -50,21 +50,23 @@ void appendVirtualMemoryManagerStatus() {
 }
 
 void memoryVirtualGuardPageStatusAppend() {
-    U8 *buffer = physicalMA.nodeAllocator.nodes.buf;
+    U8 *buffer = virtualMemorySizeMapper.nodeAllocator.nodes.buf;
+    INFO(STRING("--- GUARD PAGES ---\n"));
     for (typeof(virtualMemorySizeMapper.nodeAllocator.nodes.len) i = 0;
          i < virtualMemorySizeMapper.nodeAllocator.nodes.len; i++) {
         VMMNode *node =
             (VMMNode *)(buffer + (virtualMemorySizeMapper.nodeAllocator
                                       .elementSizeBytes *
                                   i));
-        // if (!node->bytes) {
-        INFO(STRING("["));
-        INFO((void *)node->basic.value);
-        INFO(STRING(", "));
-        INFO((void *)(node->basic.value + node->bytes));
-        INFO(STRING("] mapping size: GUARD PAGE\n"));
-        // }
+        if (!node->mappingSize) {
+            INFO(STRING("["));
+            INFO((void *)node->basic.value);
+            INFO(STRING(", "));
+            INFO((void *)(node->basic.value + node->bytes));
+            INFO(STRING("]\n"));
+        }
     }
+    INFO(STRING("--- ----------- ---\n"));
 }
 
 static AvailableMemoryState getAvailableMemory(MMNode *tree) {
