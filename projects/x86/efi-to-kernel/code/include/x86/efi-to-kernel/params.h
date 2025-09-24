@@ -6,23 +6,21 @@
 
 // NOTE: Used for crossing ABI boundaries here, so ensuring that both
 // targets agree on the size of the struct!
-// So, only use this struct for transfering data. Convert this data into native
-// structs for processing. Otherwise, performance will suffer.
 
-typedef struct __attribute__((packed)) {
+typedef struct {
     U16 entriesMapped;
     U16 entriesMappedWithSmallerGranularity;
 } PackedPageMetaData;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
     struct PackedPageMetaDataNode *children;
     PackedPageMetaData metaData;
 } PackedPageMetaDataNode;
 
-typedef struct __attribute__((packed)) {
+typedef struct {
     U64 tscFrequencyPerMicroSecond;
-    PackedPageMetaDataNode rootPageMetaData;
     U8 *XSAVELocation;
+    PackedPageMetaDataNode rootPageMetaData;
 } X86ArchParams;
 
 #endif

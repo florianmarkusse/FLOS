@@ -16,6 +16,7 @@
 #include "shared/memory/allocator/macros.h"
 #include "shared/memory/management/management.h"
 #include "shared/memory/management/page.h"
+#include "shared/memory/management/status.h"
 #include "shared/text/string.h"
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
@@ -233,9 +234,11 @@ void initRootVirtualMemoryInKernel() {
     rootPageTable = getZeroedPageTable();
 
     KFLUSH_AFTER {
-        INFO(STRING("root page table memory location: "));
-        /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-        INFO((void *)rootPageTable, .flags = NEWLINE);
+        INFO(STRING("root page table memory: "));
+        memoryAppend((Memory){
+            .start = (U64)rootPageTable,
+            .bytes = virtualStructReqs[VIRTUAL_PAGE_TABLE_ALLOCATION].bytes});
+        INFO(STRING("\n"));
     }
 }
 

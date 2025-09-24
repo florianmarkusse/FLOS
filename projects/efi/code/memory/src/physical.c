@@ -47,13 +47,6 @@ allocatePagesAll(AllocateType allocateType, U64 bytes, U64 *address) {
         ERROR(STRING("allocating pages for memory failed!\n"));
     }
 
-    KFLUSH_AFTER {
-        INFO(STRING("Allocated addres: "));
-        INFO((void *)(*address));
-        INFO(STRING(" size: "));
-        INFO((void *)bytes, .flags = NEWLINE);
-    }
-
     return (void *)*address;
 }
 

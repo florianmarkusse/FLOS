@@ -25,6 +25,7 @@
 #include "shared/memory/management/definitions.h"
 #include "shared/memory/management/management.h"
 #include "shared/memory/management/page.h"
+#include "shared/memory/management/status.h"
 #include "shared/memory/policy.h"
 #include "shared/memory/policy/status.h"
 #include "shared/text/string.h"   // for CEILING_DIV_V...
@@ -83,35 +84,42 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     KFLUSH_AFTER {
-        INFO(STRING("Scratch: "));
-        INFO(memoryForArena, .flags = NEWLINE);
-        INFO(STRING("kernel Permanent: "));
-        INFO(memoryKernelPermanent, .flags = NEWLINE);
-        INFO(STRING("kernel Temporary: "));
-        INFO(memoryKernelTemporary, .flags = NEWLINE);
+        INFO(STRING("Scratch memory:          "));
+        memoryAppend((Memory){.start = (U64)memoryForArena,
+                              .bytes = DYNAMIC_MEMORY_CAPACITY});
+        INFO(STRING("\n"));
+
+        INFO(STRING("Kernel permanent memory: "));
+        memoryAppend((Memory){.start = (U64)memoryKernelPermanent,
+                              .bytes = KERNEL_PERMANENT_MEMORY});
+        INFO(STRING("\n"));
+
+        INFO(STRING("Kernel temporary memory: "));
+        memoryAppend((Memory){.start = (U64)memoryKernelTemporary,
+                              .bytes = KERNEL_TEMPORARY_MEMORY});
+        INFO(STRING("\n"));
     }
 
-    KFLUSH_AFTER { INFO(STRING("Going to fetch kernel bytes\n")); }
+    initRootVirtualMemoryInKernel();
+
+    KFLUSH_AFTER { INFO(STRING("Loading kernel...")); }
     U32 kernelBytes = getKernelBytes(arena);
     if (kernelBytes > kernelCodeSizeMax()) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING(
-                "the kernel is too large!\nMaximum allowed kernel size: "));
+                "\nthe kernel is too large!\nMaximum allowed kernel size: "));
             ERROR(kernelCodeSizeMax(), .flags = NEWLINE);
             ERROR(STRING("Current kernel size: "));
             ERROR(kernelBytes, .flags = NEWLINE);
         }
     }
     KFLUSH_AFTER {
-        INFO(STRING("Loading kernel into memory\n"));
-        INFO(STRING("Bytes: "));
+        INFO(STRING(" bytes: "));
         INFO(kernelBytes, .flags = NEWLINE);
     }
 
     String kernelContent = readKernelFromCurrentLoadedImage(kernelBytes, arena);
 
-    initRootVirtualMemoryInKernel();
-    KFLUSH_AFTER { INFO(STRING("Mapping kernel into location\n")); }
     if (mapMemory(kernelCodeStart(), (U64)kernelContent.buf, kernelContent.len,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict()) <
         kernelCodeStart()) {
@@ -122,15 +130,12 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     KFLUSH_AFTER {
-        INFO(STRING("The phyiscal kernel:\nstart: "));
-        INFO((void *)kernelContent.buf, .flags = NEWLINE);
-        INFO(STRING("stop:  "));
-        INFO((void *)(kernelContent.buf + kernelContent.len), .flags = NEWLINE);
+        mappingMemoryAppend(kernelCodeStart(), (U64)kernelContent.buf,
+                            kernelContent.len);
+    }
 
-        INFO(STRING("The virtual kernel:\nstart: "));
-        INFO((void *)kernelCodeStart(), .flags = NEWLINE);
-        INFO(STRING("stop:  "));
-        INFO((void *)(kernelCodeStart() + kernelContent.len), .flags = NEWLINE);
+    KFLUSH_AFTER {
+        INFO(STRING("Locating highest physical memory address...\n"));
     }
 
     GraphicsOutputProtocol *gop = nullptr;
@@ -166,7 +171,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     // NOTE: Virtual memory active from this point!
 
-    KFLUSH_AFTER { INFO(STRING("Mapping screen memory into location\n")); }
+    KFLUSH_AFTER { INFO(STRING("Mapping output window...\n")); }
     virtualForKernel =
         alignVirtual(virtualForKernel, gop->mode->frameBufferBase,
                      gop->mode->frameBufferSize);
@@ -178,26 +183,14 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                       pageFlagsScreenMemory());
 
     KFLUSH_AFTER {
-        INFO(STRING("The graphics buffer physical location:\nstart: "));
-        INFO((void *)gop->mode->frameBufferBase, .flags = NEWLINE);
-        INFO(STRING("stop:  "));
-        INFO((void *)(gop->mode->frameBufferBase + gop->mode->frameBufferSize),
-             .flags = NEWLINE);
-
-        INFO(STRING("The graphics buffer virtual location:\nstart: "));
-        INFO((void *)screenMemoryVirtualStart, .flags = NEWLINE);
-        INFO(STRING("stop:  "));
-        INFO((void *)(screenMemoryVirtualStart + gop->mode->frameBufferSize),
-             .flags = NEWLINE);
-        INFO(STRING("virt free memory is now at:     "));
-        INFO((void *)virtualForKernel, .flags = NEWLINE);
+        mappingMemoryAppend(virtualForKernel, gop->mode->frameBufferBase,
+                            gop->mode->frameBufferSize);
     }
 
-    KFLUSH_AFTER { INFO(STRING("Allocating space for stack\n")); }
+    KFLUSH_AFTER { INFO(STRING("Setting up thread stack...\n")); }
     U64 stackAddress = (U64)findAlignedMemoryBlock(
         KERNEL_STACK_SIZE, KERNEL_STACK_ALIGNMENT, arena, true);
 
-    KFLUSH_AFTER { INFO(STRING("Mapping stack into location\n")); }
     // NOTE: Overflow precaution
     virtualForKernel += KERNEL_STACK_SIZE;
     virtualForKernel =
@@ -208,8 +201,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         GUARD_PAGE_SIZE);
 
     KFLUSH_AFTER {
-        INFO(STRING("mapped guard page address: \n"));
-        INFO((void *)stackGuardPageAddress, .flags = NEWLINE);
+        mappingVirtualGuardPageAppend(stackGuardPageAddress, KERNEL_STACK_SIZE);
     }
 
     U64 stackVirtualStart = virtualForKernel;
@@ -218,21 +210,10 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict());
 
     KFLUSH_AFTER {
-        INFO(STRING("The phyiscal stack:\ndown from: "));
-        INFO((void *)stackAddress + KERNEL_STACK_SIZE, .flags = NEWLINE);
-        INFO(STRING("until:     "));
-        INFO((void *)stackAddress, .flags = NEWLINE);
-
-        INFO(STRING("The virtual stack:\ndown from: "));
-        INFO((void *)stackVirtualStart + KERNEL_STACK_SIZE, .flags = NEWLINE);
-        INFO(STRING("until:     "));
-        INFO((void *)stackVirtualStart, .flags = NEWLINE);
-        INFO(STRING("virt free memory is now at:     "));
-        INFO((void *)virtualForKernel, .flags = NEWLINE);
+        mappingMemoryAppend(stackVirtualStart, stackAddress, KERNEL_STACK_SIZE);
     }
 
-    KFLUSH_AFTER { INFO(STRING("Allocating space for kernel parameters\n")); }
-
+    KFLUSH_AFTER { INFO(STRING("Setting up kernel parameters...\n")); }
     ArchParamsRequirements archParamsRequirements = getArchParamsRequirements();
     U32 kernelParamsAlignment =
         MAX(alignof(KernelParameters), archParamsRequirements.align);
@@ -249,7 +230,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     KFLUSH_AFTER {
         INFO(STRING("phyiscal kernel params\n"));
-        INFO(STRING("The common phyiscal kernel params:\nstart: "));
+        INFO(STRING("The common phyiscal kernel params:\n"));
         INFO((void *)kernelParams, .flags = NEWLINE);
         INFO(STRING("The arch-specific phyiscal kernel params:\nstart: "));
         INFO((void *)archParams, .flags = NEWLINE);
@@ -257,8 +238,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(kernelParamsEnd, .flags = NEWLINE);
     }
 
-    kernelParams->archParams =
-        (void **)((U8 *)kernelParams) + archKernelParamsOffset;
+    kernelParams->archParams = archParams;
     kernelParams->window =
         (Window){.pixels = (U32 *)screenMemoryVirtualStart,
                  .size = gop->mode->frameBufferSize,

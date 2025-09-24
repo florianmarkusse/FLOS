@@ -51,7 +51,6 @@ void appendVirtualMemoryManagerStatus() {
 
 void memoryVirtualGuardPageStatusAppend() {
     U8 *buffer = virtualMemorySizeMapper.nodeAllocator.nodes.buf;
-    INFO(STRING("--- GUARD PAGES ---\n"));
     for (typeof(virtualMemorySizeMapper.nodeAllocator.nodes.len) i = 0;
          i < virtualMemorySizeMapper.nodeAllocator.nodes.len; i++) {
         VMMNode *node =
@@ -59,14 +58,9 @@ void memoryVirtualGuardPageStatusAppend() {
                                       .elementSizeBytes *
                                   i));
         if (!node->mappingSize) {
-            INFO(STRING("["));
-            INFO((void *)node->basic.value);
-            INFO(STRING(", "));
-            INFO((void *)(node->basic.value + node->bytes));
-            INFO(STRING("]\n"));
+            mappingVirtualGuardPageAppend(node->basic.value, node->bytes);
         }
     }
-    INFO(STRING("--- ----------- ---\n"));
 }
 
 static AvailableMemoryState getAvailableMemory(MMNode *tree) {
@@ -80,4 +74,25 @@ AvailableMemoryState getAvailablePhysicalMemory() {
 }
 AvailableMemoryState getAvailableVirtualMemory() {
     return getAvailableMemory(virtualMA.tree);
+}
+
+void memoryAppend(Memory memory) {
+    INFO(STRING("["));
+    INFO((void *)memory.start);
+    INFO(STRING(", "));
+    INFO((void *)memory.start + memory.bytes);
+    INFO(STRING("]"));
+}
+
+void mappingMemoryAppend(U64 virtualAddress, U64 physicalAddress, U64 size) {
+    memoryAppend((Memory){.start = virtualAddress, .bytes = size});
+    INFO(STRING(" -> "));
+    memoryAppend((Memory){.start = physicalAddress, .bytes = size});
+    INFO(STRING(" size: "));
+    INFO(size, .flags = NEWLINE);
+}
+
+void mappingVirtualGuardPageAppend(U64 virtualAddress, U64 size) {
+    memoryAppend((Memory){.start = virtualAddress, .bytes = size});
+    INFO(STRING(" -> [XXXXXXXXXXXXXXXXXX, XXXXXXXXXXXXXXXXXX] GUARD PAGE\n"));
 }

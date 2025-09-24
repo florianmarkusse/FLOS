@@ -151,10 +151,10 @@ void buddyStatusAppend(Buddy *buddy) {
 
 void buddyFreeRegionAdd(Buddy *buddy, U64 addressStart, U64 addressEndExclusive,
                         NodeAllocator *nodeAllocator) {
-    U64_pow2 blockSizeSmallest = 1 << buddy->blockSizeSmallest;
-    ASSERT(addressStart == alignUp(addressStart, blockSizeSmallest));
+    ASSERT(addressStart ==
+           alignUp(addressStart, 1 << buddy->blockSizeSmallest));
     ASSERT(addressEndExclusive ==
-           alignDown(addressEndExclusive, blockSizeSmallest));
+           alignDown(addressEndExclusive, 1 << buddy->blockSizeSmallest));
 
     Exponent maxOrder = buddy->blockSizeLargest - buddy->blockSizeSmallest;
     Exponent bias = maxOrder + ((sizeof(U64) * BITS_PER_BYTE) -

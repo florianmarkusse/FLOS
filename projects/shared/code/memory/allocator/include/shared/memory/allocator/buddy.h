@@ -13,7 +13,6 @@ typedef struct {
     JumpBuffer jmpBuf;
     Exponent blockSizeSmallest;
     Exponent blockSizeLargest;
-
 } Buddy;
 
 void buddyInit(Buddy *buddy, U64 addressSpace);

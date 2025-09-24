@@ -5,21 +5,11 @@
 #include "x86/memory/definitions.h"
 #include "x86/memory/virtual.h"
 
-static void mappingAppend(U64 addressVirtual[4], U64 physical,
+static void mappingAppend(U64 addressVirtual[4], U64 physicalAddress,
                           U64_pow2 mappingSize) {
     U64 virtualAddress = addressVirtual[0] + addressVirtual[1] +
                          addressVirtual[2] + addressVirtual[3];
-
-    INFO(STRING("["));
-    INFO((void *)virtualAddress);
-    INFO(STRING(", "));
-    INFO((void *)virtualAddress + mappingSize);
-    INFO(STRING("] -> ["));
-    INFO((void *)physical);
-    INFO(STRING(", "));
-    INFO((void *)physical + mappingSize);
-    INFO(STRING("] mapping size: "));
-    INFO(mappingSize, .flags = NEWLINE);
+    mappingMemoryAppend(virtualAddress, physicalAddress, mappingSize);
 }
 
 static void memoryVirtualMappingTableAppend() {

@@ -15,6 +15,8 @@
 
 void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
     StructReq structReq = virtualStructReqs[type];
+    // TODO: Make this use uefi directly findAlignedMemory and not kernel
+    // permanent!
     void *result = NEW(&globals.kernelPermanent, U8, .count = structReq.bytes,
                        .align = structReq.align, .flags = ZERO_MEMORY);
     return result;

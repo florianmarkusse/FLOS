@@ -392,6 +392,8 @@ kernelMain(KernelParameters *kernelParams) {
         memoryVirtualMappingStatusAppend();
     }
 
+    hangThread();
+
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 
     for (U32 i = 0; i < 2; i++) {
@@ -418,11 +420,7 @@ kernelMain(KernelParameters *kernelParams) {
         baselineTest();
     }
 
-    KFLUSH_AFTER {
-        KLOG(STRING("TESTING IS OVER MY DUDES\n"));
-        appendMemoryManagementStatus();
-        memoryVirtualMappingStatusAppend();
-    }
+    KFLUSH_AFTER { KLOG(STRING("TESTING IS OVER MY DUDES\n")); }
 
     while (1) {
         ;
