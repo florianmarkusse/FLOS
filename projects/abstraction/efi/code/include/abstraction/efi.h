@@ -1,7 +1,6 @@
 #ifndef ABSTRACTION_EFI_H
 #define ABSTRACTION_EFI_H
 
-#include "efi-to-kernel/kernel-parameters.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/types/numeric.h"
 
@@ -11,15 +10,10 @@
 void initRootVirtualMemoryInKernel();
 void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress);
 
-typedef struct {
-    U32 bytes;
-    U32_pow2 align;
-} ArchParamsRequirements;
-ArchParamsRequirements getArchParamsRequirements();
-
 void fillArchParams(void *archParams, Arena scratch,
                     U64 memoryVirtualAddressAvailable);
 
+typedef struct KernelParameters KernelParameters;
 void jumpIntoKernel(U64 newStackPointer, U16 processorID,
                     KernelParameters *kernelParameters);
 U64 initScreenMemory(U64 physicalScreenAddress, U64 bytes);

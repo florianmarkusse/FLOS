@@ -5,6 +5,7 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     include(${REPO_PROJECTS}/setup.cmake)
     add_project("shared")
     add_project("abstraction/jmp")
+    add_project("abstraction/efi-to-kernel")
     add_project("abstraction/memory/virtual")
     include(${REPO_PROJECTS}/print-configuration.cmake)
 endif()
@@ -17,6 +18,7 @@ target_include_directories(
 
 target_link_libraries(${PROJECT_NAME} INTERFACE shared-i)
 
+target_link_libraries(${PROJECT_NAME} INTERFACE abstraction-efi-to-kernel-i)
 target_link_libraries(${PROJECT_NAME} INTERFACE abstraction-jmp-i)
 target_link_libraries(${PROJECT_NAME} INTERFACE abstraction-memory-virtual-i)
 

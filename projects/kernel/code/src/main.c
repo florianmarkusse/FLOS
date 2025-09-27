@@ -359,7 +359,7 @@ static void mappingTests() {
 }
 
 __attribute__((section("kernel-start"))) int
-kernelMain(KernelParameters *kernelParams) {
+kernelMain(struct KernelParameters *kernelParams) {
     archInit(kernelParams->archParams);
     initMemoryManagers(&kernelParams->memory);
 

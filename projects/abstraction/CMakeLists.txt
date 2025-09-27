@@ -7,6 +7,7 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
 endif()
 
 add_subdirectory("efi/code")
+add_subdirectory("efi-to-kernel/code")
 
 add_subdirectory("interrupts/code")
 

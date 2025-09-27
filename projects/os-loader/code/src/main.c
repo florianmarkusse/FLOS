@@ -213,31 +213,18 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     KFLUSH_AFTER { INFO(STRING("Setting up kernel parameters...\n")); }
-    ArchParamsRequirements archParamsRequirements = getArchParamsRequirements();
-    U32 kernelParamsAlignment =
-        MAX(alignof(KernelParameters), archParamsRequirements.align);
-    U32 archKernelParamsOffset =
-        (U32)alignUp(sizeof(KernelParameters), kernelParamsAlignment);
-    U32 kernelParamsSize =
-        archKernelParamsOffset + archParamsRequirements.bytes;
 
+    U64 kernelParamsSize = sizeof(KernelParameters) + ARCH_PARAMS_SIZE;
     KernelParameters *kernelParams = (KernelParameters *)NEW(
         &globals.kernelTemporary, U8, .count = kernelParamsSize,
-        .align = kernelParamsAlignment);
-    void *archParams = ((U8 *)kernelParams) + archKernelParamsOffset;
-    void *kernelParamsEnd = ((U8 *)kernelParams) + kernelParamsSize;
+        .align = alignof(KernelParameters));
 
     KFLUSH_AFTER {
-        INFO(STRING("phyiscal kernel params\n"));
-        INFO(STRING("The common phyiscal kernel params:\n"));
-        INFO((void *)kernelParams, .flags = NEWLINE);
-        INFO(STRING("The arch-specific phyiscal kernel params:\nstart: "));
-        INFO((void *)archParams, .flags = NEWLINE);
-        INFO(STRING("stop:  "));
-        INFO(kernelParamsEnd, .flags = NEWLINE);
+        memoryAppend(
+            (Memory){.start = (U64)kernelParams, .bytes = kernelParamsSize});
+        INFO(STRING("\n"));
     }
 
-    kernelParams->archParams = archParams;
     kernelParams->window =
         (Window){.pixels = (U32 *)screenMemoryVirtualStart,
                  .size = gop->mode->frameBufferSize,
@@ -245,7 +232,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                  .height = gop->mode->info->verticalResolution,
                  .scanline = gop->mode->info->pixelsPerScanLine};
 
-    KFLUSH_AFTER { INFO(STRING("Filling specific arch params\n")); }
+    KFLUSH_AFTER { INFO(STRING("Filling specific arch params...\n")); }
     fillArchParams(kernelParams->archParams, globals.uefiMemory,
                    virtualForKernel);
 
@@ -267,15 +254,6 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     // onward.
     kernelParams->memory.virtualPMA = virtualMA;
     kernelParams->memory.virtualMemorySizeMapper = virtualMemorySizeMapper;
-
-    KFLUSH_AFTER {
-        INFO(STRING("start: "));
-        INFO(globals.kernelPermanent.beg, .flags = NEWLINE);
-        INFO(STRING("Current free: "));
-        INFO(globals.kernelPermanent.curFree, .flags = NEWLINE);
-        INFO(STRING("Current end: "));
-        INFO(globals.kernelPermanent.end, .flags = NEWLINE);
-    }
 
     KFLUSH_AFTER {
         INFO(STRING("Finished set-up. Collecting physical memory and jumping "

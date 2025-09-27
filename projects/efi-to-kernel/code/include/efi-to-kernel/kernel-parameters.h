@@ -1,6 +1,7 @@
 #ifndef EFI_TO_KERNEL_KERNEL_PARAMETERS_H
 #define EFI_TO_KERNEL_KERNEL_PARAMETERS_H
 
+#include "abstraction/efi-to-kernel.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/allocator/node.h"
 #include "shared/memory/management/definitions.h"
@@ -26,29 +27,20 @@ typedef struct {
 static_assert(sizeof(Window) == 32);
 
 typedef struct {
-    U8 *curFree;
-    U8 *beg;
-    U8 *end;
-} PackedArena;
-static_assert(sizeof(PackedArena) == 24);
-
-typedef struct {
     RedBlackMMTreeWithFreeList physicalPMA;
     RedBlackMMTreeWithFreeList virtualPMA;
     VMMTreeWithFreeList virtualMemorySizeMapper;
 } KernelMemory;
 
-U64 suckDick();
-
-typedef struct {
+struct KernelParameters {
     Window window;
     KernelMemory memory;
     // TODO: On new computer with newer UEFI, we can remove permanent free
     // because we can use custom memory types
-    Memory permanentLeftoverFree; // NOTE: Immediately free upon entering
+    Memory permanentLeftoverFree; // NOTE: Immediately freeable upon entering
                                   // kernelmain
     Memory self;                  // NOTE: Freeable once init code is complete
-    void *archParams;
-} KernelParameters;
+    alignas(ARCH_PARAMS_ALIGNMENT) U8 archParams[];
+};
 
 #endif

@@ -108,7 +108,7 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
         NEW(&globals.kernelPermanent, U8,
             .count = bytesPerTSS * numberOfProcessors, .align = bytesPerTSS);
 
-    U64 stackVirtual = memoryVirtualAddressAvailable + IST_STACK_SIZE;
+    U64 stackVirtual = memoryVirtualAddressAvailable;
 
     for (typeof(numberOfProcessors) i = 0; i < numberOfProcessors; i++) {
         TaskStateSegment *perCPUTSS =
@@ -121,6 +121,8 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
         KFLUSH_AFTER {
             for (typeof_unqual(INTERRUPT_STACK_TABLE_COUNT) j = 0;
                  j < INTERRUPT_STACK_TABLE_COUNT; j++) {
+                // NOTE: for guard memory
+                stackVirtual += IST_STACK_SIZE;
                 U64 stackPhysical = (U64)findAlignedMemoryBlock(
                     IST_STACK_SIZE, KERNEL_STACK_ALIGNMENT, scratch, false);
 
@@ -130,20 +132,17 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
                 addPageMapping(
                     (Memory){.start = stackGuardPage, .bytes = IST_STACK_SIZE},
                     GUARD_PAGE_SIZE);
+                mappingVirtualGuardPageAppend(stackGuardPage, IST_STACK_SIZE);
 
-                mapMemory(stackVirtual, stackPhysical, IST_STACK_SIZE,
-                          pageFlagsReadWrite() | pageFlagsNoCacheEvict());
+                U64 virtualMappedStart = stackVirtual;
+                stackVirtual =
+                    mapMemory(stackVirtual, stackPhysical, IST_STACK_SIZE,
+                              pageFlagsReadWrite() | pageFlagsNoCacheEvict());
+                mappingMemoryAppend(virtualMappedStart, stackPhysical,
+                                    IST_STACK_SIZE);
 
                 // Stack grows down
-                stackPhysical += IST_STACK_SIZE;
-                stackVirtual += IST_STACK_SIZE;
-                perCPUTSS->ists[j] = stackVirtual;
-                INFO(STRING("TSS ist["));
-                INFO(j);
-                INFO(STRING("]stack phys: "));
-                INFO((void *)stackPhysical);
-                INFO(STRING(" virt: "));
-                INFO((void *)stackVirtual, .flags = NEWLINE);
+                perCPUTSS->ists[j] = stackVirtual + IST_STACK_SIZE;
             }
         }
 
@@ -225,11 +224,6 @@ static U64 calibrateWait() {
     return (endCycles - currentCycles) / CALIBRATION_MICROSECONDS;
 }
 
-ArchParamsRequirements getArchParamsRequirements() {
-    return (ArchParamsRequirements){.bytes = sizeof(X86ArchParams),
-                                    .align = alignof(X86ArchParams)};
-}
-
 void initRootVirtualMemoryInKernel() {
     rootPageTable = getZeroedPageTable();
 
@@ -309,7 +303,7 @@ void fillArchParams(void *archParams, Arena scratch,
 
     U16 cacheLineSizeBytes = (processorInfoAndFeatureBits.ebx >> 8 & 0xFF) * 8;
     KFLUSH_AFTER {
-        INFO(STRING("Cache line size is: \n"));
+        INFO(STRING("Cache line size is: "));
         INFO(cacheLineSizeBytes, .flags = NEWLINE);
     }
 
@@ -390,17 +384,14 @@ void fillArchParams(void *archParams, Arena scratch,
         XSAVESize = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 0).ebx;
         KFLUSH_AFTER { INFO(STRING("No Support for XSAVES found!\n")); }
     }
-    KFLUSH_AFTER {
-        INFO(STRING(
-            "Maximum required size in bytes for storing state components "
-            "with current components: "));
-        INFO(XSAVESize, .flags = NEWLINE);
-    }
 
     U8 *XSAVEAddress = NEW(&globals.kernelPermanent, U8, .count = XSAVESize,
                            .align = XSAVE_ALIGNMENT, .flags = ZERO_MEMORY);
-    INFO(STRING("XSAVE space location: "));
-    INFO(XSAVEAddress, .flags = NEWLINE);
+    KFLUSH_AFTER {
+        INFO(STRING("XSAVE space location: "));
+        memoryAppend((Memory){.start = (U64)XSAVEAddress, .bytes = XSAVESize});
+        INFO(STRING("\n"));
+    }
 
     U32 maxExtendedCPUID = CPUID(EXTENDED_MAX_VALUE_PARAMETER).eax;
     if (maxExtendedCPUID < EXTENDED_MAX_REQUIRED_PARAMETER) {
@@ -416,11 +407,11 @@ void fillArchParams(void *archParams, Arena scratch,
         EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support Huge Pages!")); }
     }
 
-    KFLUSH_AFTER { INFO(STRING("Bootstrap processor work\n")); }
+    KFLUSH_AFTER { INFO(STRING("Bootstrap processor work...\n")); }
     bootstrapProcessorWork(cacheLineSizeBytes, memoryVirtualAddressAvailable,
                            scratch);
 
-    KFLUSH_AFTER { INFO(STRING("Calibrating timer\n")); }
+    KFLUSH_AFTER { INFO(STRING("Calibrating timer...\n")); }
     x86ArchParams->tscFrequencyPerMicroSecond = calibrateWait();
 
     x86ArchParams->XSAVELocation = XSAVEAddress;

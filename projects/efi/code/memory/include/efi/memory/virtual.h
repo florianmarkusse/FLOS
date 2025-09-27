@@ -5,6 +5,6 @@
 
 U64 alignVirtual(U64 virtualAddress, U64 physicalAddress, U64 bytes);
 
-U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags);
+[[nodiscard]] U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags);
 
 #endif
