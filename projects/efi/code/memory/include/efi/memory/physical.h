@@ -11,7 +11,7 @@
 
 static constexpr U64 UEFI_PAGE_SIZE = 1 << 12;
 
-static constexpr auto MAX_KERNEL_STRUCTURES = 16;
+static constexpr auto MAX_KERNEL_STRUCTURES = 32;
 
 typedef struct {
     Memory buf[MAX_KERNEL_STRUCTURES];

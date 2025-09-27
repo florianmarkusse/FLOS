@@ -38,6 +38,8 @@ typedef struct {
     VMMTreeWithFreeList virtualMemorySizeMapper;
 } KernelMemory;
 
+U64 suckDick();
+
 typedef struct {
     Window window;
     KernelMemory memory;
@@ -45,7 +47,7 @@ typedef struct {
     // because we can use custom memory types
     Memory permanentLeftoverFree; // NOTE: Immediately free upon entering
                                   // kernelmain
-    Memory selfAndOtherTemps;     // NOTE: Freeable once init code is complete
+    Memory self;                  // NOTE: Freeable once init code is complete
     void *archParams;
 } KernelParameters;
 

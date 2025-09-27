@@ -8,6 +8,7 @@
 typedef struct {
     Handle h;
     SystemTable *st;
+    Arena uefiMemory;
     Arena kernelPermanent;
     Arena kernelTemporary; // Memory that is jettisoned after kernel is up and
                            // running. E.g., the memory used for the kernel

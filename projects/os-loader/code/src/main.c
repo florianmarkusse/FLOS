@@ -48,18 +48,19 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     void *memoryForArena = allocatePages(DYNAMIC_MEMORY_CAPACITY);
 
-    Arena arena = (Arena){.curFree = memoryForArena,
-                          .beg = memoryForArena,
-                          .end = memoryForArena + DYNAMIC_MEMORY_CAPACITY};
-    if (setjmp(arena.jmpBuf)) {
+    globals.uefiMemory =
+        (Arena){.curFree = memoryForArena,
+                .beg = memoryForArena,
+                .end = memoryForArena + DYNAMIC_MEMORY_CAPACITY};
+    if (setjmp(globals.uefiMemory.jmpBuf)) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING("Ran out of dynamic memory capacity\n"));
         }
     }
 
-    U8 *memoryKernelPermanent =
-        findAlignedMemoryBlock(KERNEL_PERMANENT_MEMORY,
-                               KERNEL_PERMANENT_MEMORY_ALIGNMENT, arena, false);
+    U8 *memoryKernelPermanent = findAlignedMemoryBlock(
+        KERNEL_PERMANENT_MEMORY, KERNEL_PERMANENT_MEMORY_ALIGNMENT,
+        globals.uefiMemory, false);
 
     globals.kernelPermanent =
         (Arena){.curFree = memoryKernelPermanent,
@@ -72,7 +73,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     U8 *memoryKernelTemporary = findAlignedMemoryBlock(
-        KERNEL_TEMPORARY_MEMORY, UEFI_PAGE_SIZE, arena, false);
+        KERNEL_TEMPORARY_MEMORY, UEFI_PAGE_SIZE, globals.uefiMemory, false);
     globals.kernelTemporary =
         (Arena){.curFree = memoryKernelTemporary,
                 .beg = memoryKernelTemporary,
@@ -102,8 +103,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     initRootVirtualMemoryInKernel();
 
-    KFLUSH_AFTER { INFO(STRING("Loading kernel...")); }
-    U32 kernelBytes = getKernelBytes(arena);
+    KFLUSH_AFTER { INFO(STRING("Loading kernel...\n")); }
+    U32 kernelBytes = getKernelBytes(globals.uefiMemory);
     if (kernelBytes > kernelCodeSizeMax()) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING(
@@ -113,12 +114,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
             ERROR(kernelBytes, .flags = NEWLINE);
         }
     }
-    KFLUSH_AFTER {
-        INFO(STRING(" bytes: "));
-        INFO(kernelBytes, .flags = NEWLINE);
-    }
 
-    String kernelContent = readKernelFromCurrentLoadedImage(kernelBytes, arena);
+    String kernelContent =
+        readKernelFromCurrentLoadedImage(kernelBytes, globals.uefiMemory);
 
     if (mapMemory(kernelCodeStart(), (U64)kernelContent.buf, kernelContent.len,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict()) <
@@ -146,12 +144,12 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     U64 highestLowerHalfAddress = findHighestMemoryAddress(
-        gop->mode->frameBufferBase + gop->mode->frameBufferSize, arena);
+        gop->mode->frameBufferBase + gop->mode->frameBufferSize,
+        globals.uefiMemory);
     KFLUSH_AFTER {
         INFO(STRING("Identity mapping all memory, highest address found: "));
         INFO((void *)highestLowerHalfAddress, .flags = NEWLINE);
     }
-
     U64 firstFreeVirtual =
         mapMemory(0, 0, highestLowerHalfAddress,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict());
@@ -163,10 +161,10 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     U64 endVirtualForKernel = virtualForKernel + MIN_VIRTUAL_MEMORY_REQUIRED;
 
     KFLUSH_AFTER {
-        INFO(STRING("Got "));
-        INFO(MIN_VIRTUAL_MEMORY_REQUIRED);
-        INFO(STRING(" virtual memory to use in kernel. Address starts at "));
-        INFO((void *)virtualForKernel, .flags = NEWLINE);
+        INFO(STRING("Virtual memory for UEFI: "));
+        memoryAppend((Memory){.start = (U64)virtualForKernel,
+                              .bytes = MIN_VIRTUAL_MEMORY_REQUIRED});
+        INFO(STRING("\n"));
     }
 
     // NOTE: Virtual memory active from this point!
@@ -183,13 +181,14 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                       pageFlagsScreenMemory());
 
     KFLUSH_AFTER {
-        mappingMemoryAppend(virtualForKernel, gop->mode->frameBufferBase,
+        mappingMemoryAppend(screenMemoryVirtualStart,
+                            gop->mode->frameBufferBase,
                             gop->mode->frameBufferSize);
     }
 
     KFLUSH_AFTER { INFO(STRING("Setting up thread stack...\n")); }
     U64 stackAddress = (U64)findAlignedMemoryBlock(
-        KERNEL_STACK_SIZE, KERNEL_STACK_ALIGNMENT, arena, true);
+        KERNEL_STACK_SIZE, KERNEL_STACK_ALIGNMENT, globals.uefiMemory, true);
 
     // NOTE: Overflow precaution
     virtualForKernel += KERNEL_STACK_SIZE;
@@ -247,7 +246,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                  .scanline = gop->mode->info->pixelsPerScanLine};
 
     KFLUSH_AFTER { INFO(STRING("Filling specific arch params\n")); }
-    fillArchParams(kernelParams->archParams, arena, virtualForKernel);
+    fillArchParams(kernelParams->archParams, globals.uefiMemory,
+                   virtualForKernel);
 
     RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
                               globals.st->configuration_table);
@@ -285,20 +285,20 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     drawStatusRectangle(gop->mode, GREEN_COLOR);
 
     kernelParams->memory.physicalPMA.tree = nullptr;
-    allocateSpaceForKernelMemory(&kernelParams->memory.physicalPMA, arena);
+    allocateSpaceForKernelMemory(&kernelParams->memory.physicalPMA,
+                                 globals.uefiMemory);
 
     kernelParams->permanentLeftoverFree =
         (Memory){.start = (U64)globals.kernelPermanent.curFree,
                  .bytes = (U64)(globals.kernelPermanent.end -
                                 globals.kernelPermanent.curFree)};
-    kernelParams->selfAndOtherTemps =
-        (Memory){.start = (U64)globals.kernelTemporary.beg,
-                 .bytes = KERNEL_TEMPORARY_MEMORY};
+    kernelParams->self = (Memory){.start = (U64)globals.kernelTemporary.beg,
+                                  .bytes = KERNEL_TEMPORARY_MEMORY};
 
     /* NOTE: Keep this call in between the stub and the creation of available */
     /* memory! The stub allocates memory and logs on failure which is not */
     /* permissible after we have exited boot services */
-    MemoryInfo memoryInfo = getMemoryInfo(&arena);
+    MemoryInfo memoryInfo = getMemoryInfo(&globals.uefiMemory);
     status = globals.st->boot_services->exit_boot_services(globals.h,
                                                            memoryInfo.mapKey);
     EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {

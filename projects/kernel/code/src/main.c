@@ -383,7 +383,7 @@ kernelMain(KernelParameters *kernelParams) {
     freeIdentityMemory((Memory){.start = (U64)arena.curFree,
                                 .bytes = (U64)(arena.end - arena.curFree)});
     freeIdentityMemory(kernelParams->permanentLeftoverFree);
-    freeIdentityMemory(kernelParams->selfAndOtherTemps);
+    freeIdentityMemory(kernelParams->self);
 
     // NOTE: from here, everything is initialized
 
