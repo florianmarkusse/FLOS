@@ -108,8 +108,6 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
         NEW(&globals.kernelPermanent, U8,
             .count = bytesPerTSS * numberOfProcessors, .align = bytesPerTSS);
 
-    U64 stackVirtual = memoryVirtualAddressAvailable;
-
     for (typeof(numberOfProcessors) i = 0; i < numberOfProcessors; i++) {
         TaskStateSegment *perCPUTSS =
             (TaskStateSegment *)(TSSes + (bytesPerTSS * i));
@@ -121,28 +119,11 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
         KFLUSH_AFTER {
             for (typeof_unqual(INTERRUPT_STACK_TABLE_COUNT) j = 0;
                  j < INTERRUPT_STACK_TABLE_COUNT; j++) {
-                // NOTE: for guard memory
-                stackVirtual += IST_STACK_SIZE;
-                U64 stackPhysical = (U64)findAlignedMemoryBlock(
-                    IST_STACK_SIZE, KERNEL_STACK_ALIGNMENT, scratch, false);
-
-                stackVirtual =
-                    alignVirtual(stackVirtual, stackPhysical, IST_STACK_SIZE);
-                U64 stackGuardPage = stackVirtual - IST_STACK_SIZE;
-                addPageMapping(
-                    (Memory){.start = stackGuardPage, .bytes = IST_STACK_SIZE},
-                    GUARD_PAGE_SIZE);
-                mappingVirtualGuardPageAppend(stackGuardPage, IST_STACK_SIZE);
-
-                U64 virtualMappedStart = stackVirtual;
-                stackVirtual =
-                    mapMemory(stackVirtual, stackPhysical, IST_STACK_SIZE,
-                              pageFlagsReadWrite() | pageFlagsNoCacheEvict());
-                mappingMemoryAppend(virtualMappedStart, stackPhysical,
-                                    IST_STACK_SIZE);
-
-                // Stack grows down
-                perCPUTSS->ists[j] = stackVirtual + IST_STACK_SIZE;
+                StackResult stackResult = stackCreateAndMap(
+                    memoryVirtualAddressAvailable, IST_STACK_SIZE, false);
+                memoryVirtualAddressAvailable =
+                    stackResult.virtualMemoryFirstAvailable;
+                perCPUTSS->ists[j] = stackResult.stackVirtualTop;
             }
         }
 

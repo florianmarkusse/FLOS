@@ -187,30 +187,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     KFLUSH_AFTER { INFO(STRING("Setting up thread stack...\n")); }
-    U64 stackAddress = (U64)findAlignedMemoryBlock(
-        KERNEL_STACK_SIZE, KERNEL_STACK_ALIGNMENT, globals.uefiMemory, true);
-
-    // NOTE: Overflow precaution
-    virtualForKernel += KERNEL_STACK_SIZE;
-    virtualForKernel =
-        alignVirtual(virtualForKernel, stackAddress, KERNEL_STACK_SIZE);
-    U64 stackGuardPageAddress = virtualForKernel - KERNEL_STACK_SIZE;
-    addPageMapping(
-        (Memory){.start = stackGuardPageAddress, .bytes = KERNEL_STACK_SIZE},
-        GUARD_PAGE_SIZE);
-
-    KFLUSH_AFTER {
-        mappingVirtualGuardPageAppend(stackGuardPageAddress, KERNEL_STACK_SIZE);
-    }
-
-    U64 stackVirtualStart = virtualForKernel;
-    virtualForKernel =
-        mapMemory(virtualForKernel, stackAddress, KERNEL_STACK_SIZE,
-                  pageFlagsReadWrite() | pageFlagsNoCacheEvict());
-
-    KFLUSH_AFTER {
-        mappingMemoryAppend(stackVirtualStart, stackAddress, KERNEL_STACK_SIZE);
-    }
+    StackResult stackResult =
+        stackCreateAndMap(virtualForKernel, KERNEL_STACK_SIZE, true);
+    virtualForKernel = stackResult.virtualMemoryFirstAvailable;
 
     KFLUSH_AFTER { INFO(STRING("Setting up kernel parameters...\n")); }
 
@@ -287,7 +266,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     convertToKernelMemory(&memoryInfo, &kernelParams->memory.physicalPMA,
                           gop->mode);
-    jumpIntoKernel(stackVirtualStart + KERNEL_STACK_SIZE, 0, kernelParams);
+    jumpIntoKernel(stackResult.stackVirtualTop, 0, kernelParams);
 
     __builtin_unreachable();
 }

@@ -4,13 +4,17 @@
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/map.h"
 
+#include "efi-to-kernel/memory/definitions.h"
 #include "efi/error.h"
 #include "efi/globals.h"
 #include "efi/memory/physical.h"
+#include "efi/memory/virtual.h"
 #include "shared/log.h"
 #include "shared/maths.h"
 #include "shared/memory/allocator/macros.h"
 #include "shared/memory/converter.h"
+#include "shared/memory/management/page.h"
+#include "shared/memory/management/status.h"
 #include "shared/types/numeric.h"
 
 void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
@@ -51,4 +55,36 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
         mapPage(virt, physical, mappingSize, .flags = flags);
     }
     return virt;
+}
+
+StackResult stackCreateAndMap(U64 virtualMemoryFirstAvailable, U64 stackSize,
+                              bool attemptLargestMapping) {
+    U64 stackAddress =
+        (U64)findAlignedMemoryBlock(stackSize, KERNEL_STACK_ALIGNMENT,
+                                    globals.uefiMemory, attemptLargestMapping);
+
+    // NOTE: Overflow precaution
+    virtualMemoryFirstAvailable += stackSize;
+    virtualMemoryFirstAvailable =
+        alignVirtual(virtualMemoryFirstAvailable, stackAddress, stackSize);
+    U64 stackGuardPageAddress = virtualMemoryFirstAvailable - stackSize;
+    addPageMapping((Memory){.start = stackGuardPageAddress, .bytes = stackSize},
+                   GUARD_PAGE_SIZE);
+
+    KFLUSH_AFTER {
+        mappingVirtualGuardPageAppend(stackGuardPageAddress, KERNEL_STACK_SIZE);
+    }
+
+    U64 stackVirtualStart = virtualMemoryFirstAvailable;
+    virtualMemoryFirstAvailable =
+        mapMemory(virtualMemoryFirstAvailable, stackAddress, stackSize,
+                  pageFlagsReadWrite() | pageFlagsNoCacheEvict());
+
+    KFLUSH_AFTER {
+        mappingMemoryAppend(stackVirtualStart, stackAddress, stackSize);
+    }
+
+    return (StackResult){.stackVirtualTop = stackVirtualStart + stackSize,
+                         .virtualMemoryFirstAvailable =
+                             virtualMemoryFirstAvailable};
 }
