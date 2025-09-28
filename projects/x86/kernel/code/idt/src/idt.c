@@ -691,8 +691,11 @@ void triggerFault(Fault fault) {
     case FAULT_NO_MORE_VIRTUAL_MEMORY:
         asm volatile("int $0x23" :::);
         break;
-    case FAULT_UNEXPECTED_FAILURE:
+    case FAULT_NO_MORE_VIRTUAL_MEMORY_MAPPER:
         asm volatile("int $0x24" :::);
+        break;
+    case FAULT_UNEXPECTED_FAILURE:
+        asm volatile("int $0x25" :::);
         break;
     default:
         asm volatile("int $0xFF" :::);

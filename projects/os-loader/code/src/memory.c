@@ -33,35 +33,42 @@ static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     }
 }
 
-void allocateSpaceForKernelMemory(
-    RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList, Arena scratch) {
+static constexpr auto RED_COLOR = 0xFF0000;
+
+void kernelPhysicalBuddyPrepare(BuddyWithNodeAllocator *kernelBuddyPhysical,
+                                GraphicsOutputProtocolMode *mode,
+                                Arena scratch) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
     U32 numberOfDescriptors =
         (U32)(memoryInfo.memoryMapSize / memoryInfo.descriptorSize);
     // NOTE: just to hold the initial descriptors before moved into final kernel
     // state.
-    U32 expectedNumberOfDescriptors = numberOfDescriptors * 2;
+    U32 expectedNumberOfDescriptors = numberOfDescriptors * 8;
 
     nodeAllocatorInit(
-        &redBlackMMTreeWithFreeList->nodeAllocator,
-        (void_a){.buf = NEW(&globals.kernelTemporary,
-                            typeof(*redBlackMMTreeWithFreeList->tree),
-                            .count = expectedNumberOfDescriptors),
+        &kernelBuddyPhysical->nodeAllocator,
+        (void_a){.buf =
+                     NEW(&globals.kernelTemporary,
+                         typeof(*kernelBuddyPhysical->buddy.data.blocksFree[0]),
+                         .count = expectedNumberOfDescriptors),
                  .len = expectedNumberOfDescriptors *
-                        sizeof(*redBlackMMTreeWithFreeList->tree)},
+                        sizeof(*kernelBuddyPhysical->buddy.data.blocksFree[0])},
         (void_a){.buf = NEW(&globals.kernelTemporary, void *,
                             .count = expectedNumberOfDescriptors),
                  .len = expectedNumberOfDescriptors * sizeof(void *)},
-        sizeof(*redBlackMMTreeWithFreeList->tree),
-        alignof(*redBlackMMTreeWithFreeList->tree));
+        sizeof(*kernelBuddyPhysical->buddy.data.blocksFree[0]),
+        alignof(*kernelBuddyPhysical->buddy.data.blocksFree[0]));
+
+    buddyInit(&kernelBuddyPhysical->buddy, 40);
+
+    if (setjmp(kernelBuddyPhysical->buddy.jmpBuf)) {
+        drawStatusRectangle(mode, RED_COLOR);
+        hangThread();
+    }
 }
 
-static constexpr auto RED_COLOR = 0xFF0000;
-
-void convertToKernelMemory(
-    MemoryInfo *memoryInfo,
-    RedBlackMMTreeWithFreeList *redBlackMMTreeWithFreeList,
-    GraphicsOutputProtocolMode *mode) {
+void convertToKernelMemory(MemoryInfo *memoryInfo,
+                           BuddyWithNodeAllocator *kernelBuddyPhysical) {
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
         if (memoryTypeCanBeUsedByKernel(desc->type)) {
             if (desc->physicalStart == 0) {
@@ -109,14 +116,11 @@ void convertToKernelMemory(
 
             for (typeof(availableMemory.len) i = 0; i < availableMemory.len;
                  i++) {
-                MMNode *node = nodeAllocatorGet(
-                    &redBlackMMTreeWithFreeList->nodeAllocator);
-                if (!node) {
-                    drawStatusRectangle(mode, RED_COLOR);
-                    hangThread();
-                }
-                node->memory = availableMemory.buf[i];
-                insertMMNodeAndAddToFreelist(redBlackMMTreeWithFreeList, node);
+                U64 addressEnd =
+                    availableMemory.buf[i].start + availableMemory.buf[i].bytes;
+                buddyFreeRegionAdd(&kernelBuddyPhysical->buddy,
+                                   availableMemory.buf[i].start, addressEnd,
+                                   &kernelBuddyPhysical->nodeAllocator);
             }
         }
     }

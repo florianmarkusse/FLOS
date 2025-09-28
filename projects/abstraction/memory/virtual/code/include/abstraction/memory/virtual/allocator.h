@@ -18,13 +18,7 @@ typedef enum {
 static constexpr auto VIRTUAL_ALLOCATION_TYPE_COUNT =
     (0 VIRTUAL_ALLOCATION_TYPE_ENUM(PLUS_ONE));
 
-typedef struct {
-    U32 bytes;
-    U32_pow2 align;
-} StructReq;
-
-// NOTE: here as config keys!
-extern StructReq virtualStructReqs[VIRTUAL_ALLOCATION_TYPE_COUNT];
+extern U32 virtualStructBytes[VIRTUAL_ALLOCATION_TYPE_COUNT];
 
 void *getZeroedMemoryForVirtual(VirtualAllocationType type);
 void freeZeroedMemoryForVirtual(U64 address, VirtualAllocationType type);

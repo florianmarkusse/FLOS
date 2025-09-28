@@ -8,21 +8,30 @@
 #include "shared/memory/management/management.h"
 #include "shared/memory/management/page.h"
 
-void *allocateIdentityMemory(U64 bytes, U64_pow2 align) {
-    return allocPhysicalMemory(bytes, align);
+void *allocateIdentityMemory(U64_pow2 blockSize) {
+    ASSERT(blockSize >= pageSizesSmallest());
+    ASSERT(isPowerOf2(blockSize));
+
+    return allocPhysicalMemory(blockSize);
 }
 
-void freeIdentityMemory(Memory memory) { freePhysicalMemory(memory); }
+void freeIdentityMemory(Memory memory) {
+    ASSERT(isAlignedTo(memory.start, pageSizesSmallest()));
+    ASSERT(isPowerOf2(memory.bytes));
 
-void *allocateMappableMemory(U64 bytes, U64_pow2 align, U64_pow2 mappingSize) {
-    ASSERT(isPowerOf2(align));
+    freePhysicalMemory(memory);
+}
+
+void *allocateMappableMemory(U64_pow2 blockSize, U64_pow2 mappingSize) {
+    ASSERT(isPowerOf2(blockSize));
+    ASSERT(blockSize >= pageSizesSmallest());
     ASSERT(isPowerOf2(mappingSize));
     ASSERT(mappingSize >= pageSizesSmallest());
-    ASSERT(isAlignedTo(bytes, align));
-    ASSERT(isAlignedTo(bytes, mappingSize));
+    ASSERT(blockSize >= mappingSize);
 
-    void *result = allocVirtualMemory(bytes, MAX(align, mappingSize));
-    addPageMapping((Memory){.start = (U64)result, .bytes = bytes}, mappingSize);
+    void *result = allocVirtualMemory(blockSize);
+    addPageMapping((Memory){.start = (U64)result, .bytes = blockSize},
+                   mappingSize);
     return result;
 }
 
@@ -31,7 +40,7 @@ static constexpr auto MAX_PAGE_FLUSHES = 64;
 
 void freeMappableMemory(Memory memory) {
     ASSERT(isAlignedTo(memory.start, pageSizesSmallest()));
-    ASSERT(isAlignedTo(memory.bytes, pageSizesSmallest()));
+    ASSERT(isPowerOf2(memory.bytes));
 
     U64 virtualAddresses[MAX_PAGE_FLUSHES];
     U32 virtualAddressesLen = 0;

@@ -212,54 +212,54 @@ void initRootVirtualMemoryInKernel() {
         INFO(STRING("root page table memory: "));
         memoryAppend((Memory){
             .start = (U64)rootPageTable,
-            .bytes = virtualStructReqs[VIRTUAL_PAGE_TABLE_ALLOCATION].bytes});
+            .bytes = virtualStructBytes[VIRTUAL_PAGE_TABLE_ALLOCATION]});
         INFO(STRING("\n"));
     }
 }
 
 // NOTE: Should be enough until put into final kernel position.
-static constexpr auto INITIAL_VIRTUAL_MEMORY_REGIONS = 16;
+static constexpr auto INITIAL_VIRTUAL_MEMORY_REGIONS = 128;
 static constexpr auto INITIAL_VIRTUAL_MAPPING_SIZES = 128;
 
 void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress) {
-    physicalMA = (RedBlackMMTreeWithFreeList){0};
-
-    virtualMA.tree = nullptr;
     nodeAllocatorInit(
-        &virtualMA.nodeAllocator,
-        (void_a){.buf = NEW(&globals.kernelTemporary, typeof(*virtualMA.tree),
+        &buddyVirtual.nodeAllocator,
+        (void_a){.buf = NEW(&globals.kernelTemporary,
+                            typeof(*buddyVirtual.buddy.data.blocksFree[0]),
                             .count = INITIAL_VIRTUAL_MEMORY_REGIONS),
-                 .len =
-                     INITIAL_VIRTUAL_MEMORY_REGIONS * sizeof(*virtualMA.tree)},
+                 .len = INITIAL_VIRTUAL_MEMORY_REGIONS *
+                        sizeof(*buddyVirtual.buddy.data.blocksFree[0])},
         (void_a){.buf = NEW(&globals.kernelTemporary, void *,
                             .count = INITIAL_VIRTUAL_MEMORY_REGIONS),
                  .len = INITIAL_VIRTUAL_MEMORY_REGIONS * sizeof(void *)},
-        sizeof(*virtualMA.tree), alignof(*virtualMA.tree));
+        sizeof(*buddyVirtual.buddy.data.blocksFree[0]),
+        alignof(*buddyVirtual.buddy.data.blocksFree[0]));
 
-    // Initial size > 2 so no bounds checking here.
-    MMNode *node = nodeAllocatorGet(&virtualMA.nodeAllocator);
-    node->memory = (Memory){.start = startingAddress,
-                            .bytes = LOWER_HALF_END - startingAddress};
-    (void)insertMMNode(&virtualMA.tree, node);
+    buddyInit(&buddyVirtual.buddy, 57);
+    if (setjmp(buddyVirtual.buddy.jmpBuf)) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("Buddy is empty or node allocator full!\n"));
+        }
+    }
 
-    node = nodeAllocatorGet(&virtualMA.nodeAllocator);
-    node->memory = (Memory){.start = HIGHER_HALF_START,
-                            .bytes = endingAddress - HIGHER_HALF_START};
-    (void)insertMMNode(&virtualMA.tree, node);
+    buddyFreeRegionAdd(&buddyVirtual.buddy, startingAddress, LOWER_HALF_END,
+                       &buddyVirtual.nodeAllocator);
 
-    virtualMemorySizeMapper.tree = nullptr;
+    buddyFreeRegionAdd(&buddyVirtual.buddy, HIGHER_HALF_START, endingAddress,
+                       &buddyVirtual.nodeAllocator);
+
+    memoryMapperSizes.tree = nullptr;
     nodeAllocatorInit(
-        &virtualMemorySizeMapper.nodeAllocator,
+        &memoryMapperSizes.nodeAllocator,
         (void_a){.buf = NEW(&globals.kernelTemporary,
-                            typeof(*virtualMemorySizeMapper.tree),
+                            typeof(*memoryMapperSizes.tree),
                             .count = INITIAL_VIRTUAL_MAPPING_SIZES),
                  .len = INITIAL_VIRTUAL_MAPPING_SIZES *
-                        sizeof(*virtualMemorySizeMapper.tree)},
+                        sizeof(*memoryMapperSizes.tree)},
         (void_a){.buf = NEW(&globals.kernelTemporary, typeof(void *),
                             .count = INITIAL_VIRTUAL_MAPPING_SIZES),
                  .len = INITIAL_VIRTUAL_MAPPING_SIZES * sizeof(void *)},
-        sizeof(*virtualMemorySizeMapper.tree),
-        alignof(*virtualMemorySizeMapper.tree));
+        sizeof(*memoryMapperSizes.tree), alignof(*memoryMapperSizes.tree));
 }
 
 void fillArchParams(void *archParams, Arena scratch,

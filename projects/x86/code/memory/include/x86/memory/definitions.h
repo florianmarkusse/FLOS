@@ -3,6 +3,7 @@
 
 #include "shared/types/numeric.h"
 
+// TODO: This will chage once 5-level paging is enabled!
 static constexpr auto LOWER_HALF_END = 0x0000800000000000;
 static constexpr auto HIGHER_HALF_START = 0xFFFF800000000000;
 

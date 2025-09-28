@@ -18,12 +18,8 @@
 #include "shared/types/numeric.h"
 
 void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
-    StructReq structReq = virtualStructReqs[type];
-    // TODO: Make this use uefi directly findAlignedMemory and not kernel
-    // permanent!
-    void *result = findAlignedMemoryBlock(structReq.bytes, structReq.align,
-                                          globals.uefiMemory, false);
-
+    void *result = findAlignedMemoryBlock(
+        virtualStructBytes[type], UEFI_PAGE_SIZE, globals.uefiMemory, false);
     return result;
 }
 

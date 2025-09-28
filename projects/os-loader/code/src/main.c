@@ -156,8 +156,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     initKernelMemoryManagement(firstFreeVirtual, kernelVirtualMemoryEnd());
 
-    U64 virtualForKernel =
-        (U64)allocVirtualMemory(MIN_VIRTUAL_MEMORY_REQUIRED, 1);
+    U64 virtualForKernel = (U64)allocVirtualMemory(MIN_VIRTUAL_MEMORY_REQUIRED);
     U64 endVirtualForKernel = virtualForKernel + MIN_VIRTUAL_MEMORY_REQUIRED;
 
     KFLUSH_AFTER {
@@ -231,8 +230,10 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     // NOTE: Don't use virtual memory allocations anymore from this point
     // onward.
-    kernelParams->memory.virtualPMA = virtualMA;
-    kernelParams->memory.virtualMemorySizeMapper = virtualMemorySizeMapper;
+    kernelParams->memory.buddyVirtual.data = buddyVirtual.buddy.data;
+    kernelParams->memory.buddyVirtual.nodeAllocator =
+        buddyVirtual.nodeAllocator;
+    kernelParams->memory.memoryMapperSizes = memoryMapperSizes;
 
     KFLUSH_AFTER {
         INFO(STRING("Finished set-up. Collecting physical memory and jumping "
@@ -241,9 +242,9 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
     drawStatusRectangle(gop->mode, GREEN_COLOR);
 
-    kernelParams->memory.physicalPMA.tree = nullptr;
-    allocateSpaceForKernelMemory(&kernelParams->memory.physicalPMA,
-                                 globals.uefiMemory);
+    BuddyWithNodeAllocator uefiBuddyPhysical;
+    kernelPhysicalBuddyPrepare(&uefiBuddyPhysical, gop->mode,
+                               globals.uefiMemory);
 
     kernelParams->permanentLeftoverFree =
         (Memory){.start = (U64)globals.kernelPermanent.curFree,
@@ -264,8 +265,11 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                      "call exit boot services twice?\n"));
     }
 
-    convertToKernelMemory(&memoryInfo, &kernelParams->memory.physicalPMA,
-                          gop->mode);
+    convertToKernelMemory(&memoryInfo, &uefiBuddyPhysical);
+    kernelParams->memory.buddyPhysical.data = uefiBuddyPhysical.buddy.data;
+    kernelParams->memory.buddyPhysical.nodeAllocator =
+        uefiBuddyPhysical.nodeAllocator;
+
     jumpIntoKernel(stackResult.stackVirtualTop, 0, kernelParams);
 
     __builtin_unreachable();

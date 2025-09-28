@@ -78,6 +78,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE shared-prng)
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-log)
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-trees-red-black)
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-allocator)
+target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-allocator-status)
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-converter)
 
 set(BINARIZER "${PROJECT_NAME}.bin")

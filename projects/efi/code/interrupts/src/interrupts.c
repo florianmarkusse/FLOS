@@ -15,6 +15,14 @@ void interruptNoMoreVirtualMemory() {
     EXIT_WITH_MESSAGE { ERROR(STRING("Interrupts: No More Virtual Memory\n")); }
     __builtin_unreachable();
 }
+
+void interruptNoMoreVirtualMemoryMapper() {
+    EXIT_WITH_MESSAGE {
+        ERROR(STRING("Interrupts: No More Virtual Memory Mapper\n"));
+    }
+    __builtin_unreachable();
+}
+
 void interruptUnexpectedError() {
     EXIT_WITH_MESSAGE { ERROR(STRING("Interrupts: Unexpected Error\n")); }
     __builtin_unreachable();

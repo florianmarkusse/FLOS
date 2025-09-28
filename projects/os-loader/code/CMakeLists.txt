@@ -40,6 +40,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-converter)
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-management)
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-management-status)
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-allocator)
+target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-allocator-status)
 target_link_libraries(${PROJECT_NAME} PRIVATE shared-trees-red-black)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE efi-i)

@@ -26,12 +26,12 @@
 VirtualPageTable *rootPageTable;
 PageMetaDataNode rootPageMetaData = {0};
 
-StructReq virtualStructReqs[VIRTUAL_ALLOCATION_TYPE_COUNT] = {
-    [VIRTUAL_PAGE_TABLE_ALLOCATION] = {.bytes = X86_4KIB_PAGE,
-                                       .align = X86_4KIB_PAGE},
-    [META_DATA_PAGE_ALLOCATION] = {.bytes = PageTableFormat.ENTRIES *
-                                            sizeof(rootPageMetaData),
-                                   .align = alignof(rootPageMetaData)}
+// NOTE: These are at most self-aligned, so works with the buddy allocator just
+// fine
+U32 virtualStructBytes[VIRTUAL_ALLOCATION_TYPE_COUNT] = {
+    [VIRTUAL_PAGE_TABLE_ALLOCATION] = X86_4KIB_PAGE,
+    [META_DATA_PAGE_ALLOCATION] =
+        PageTableFormat.ENTRIES * sizeof(rootPageMetaData)
 
 };
 

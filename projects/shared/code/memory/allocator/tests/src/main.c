@@ -5,7 +5,9 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/allocator/buddy.h"
 #include "shared/memory/allocator/node.h"
+#include "shared/memory/allocator/status/buddy.h"
 #include "shared/memory/sizes.h"
+#include "x86/memory/definitions.h"
 
 #include <errno.h>
 #include <stddef.h>
@@ -37,9 +39,8 @@ int main() {
 
     PFLUSH_AFTER(STDOUT) { INFO(STRING("hello trehrethr\n")); }
 
-    U64 totalSize = 4 * (1ULL << 30ULL) - 465468;
     Buddy myBuddy;
-    buddyInit(&myBuddy, totalSize);
+    buddyInit(&myBuddy, 57);
     if (setjmp(myBuddy.jmpBuf)) {
         PFLUSH_AFTER(STDOUT) {
             ERROR(STRING("Buddy is empty or node allocator full!\n"));
@@ -57,38 +58,11 @@ int main() {
                  .len = 1000 * sizeof(void *)},
         sizeof(*myBuddy.blocksFree[0]), alignof(*myBuddy.blocksFree[0]));
 
-    U64 start = 1ULL << 23ULL;
-    U64 end = (1ULL << 24ULL);
-    for (U32 i = 0; i < 1; i++) {
-        buddyFreeRegionAdd(&myBuddy, alignUp(start, pageSizesSmallest()),
-                           alignDown(end, pageSizesSmallest()), &nodeAllocator);
-        start = end * 2;
-        end = end * 3;
-
-        PFLUSH_AFTER(STDOUT) {
-            buddyStatusAppend(&myBuddy);
-            INFO(STRING("--------------\n"));
-        }
-    }
-
-    void *address = buddyAllocate(&myBuddy, 4096, &nodeAllocator);
-    PFLUSH_AFTER(STDOUT) {
-        buddyStatusAppend(&myBuddy);
-        INFO(STRING("--------------\n"));
-    }
-
-    buddyFree(&myBuddy, address, 4096, &nodeAllocator);
+    buddyFreeRegionAdd(&myBuddy, 0x0000000100000000, LOWER_HALF_END,
+                       &nodeAllocator);
 
     PFLUSH_AFTER(STDOUT) {
         buddyStatusAppend(&myBuddy);
         INFO(STRING("--------------\n"));
     }
-
-    address = buddyAllocate(&myBuddy, 8388608, &nodeAllocator);
-    PFLUSH_AFTER(STDOUT) {
-        buddyStatusAppend(&myBuddy);
-        INFO(STRING("--------------\n"));
-    }
-
-    address = buddyAllocate(&myBuddy, 4096, &nodeAllocator);
 }

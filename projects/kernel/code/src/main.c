@@ -77,8 +77,8 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
     U64 *buffer;
     U64 cycles;
     if (memoryWritableType == IDENTITY_MEMORY) {
-        buffer = allocateIdentityMemory(START_ENTRIES_COUNT * sizeof(U64),
-                                        alignof(U64));
+        buffer = allocateIdentityMemory(
+            MAX(pageSizesSmallest(), START_ENTRIES_COUNT * sizeof(U64)));
 
         U64_max_a dynamicArray = {
             .buf = buffer, .len = 0, .cap = START_ENTRIES_COUNT};
@@ -87,8 +87,8 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
         for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
             if (dynamicArray.len >= dynamicArray.cap) {
                 U64 currentBytes = dynamicArray.cap * sizeof(U64);
-                U64 *temp = allocateIdentityMemory(currentBytes * GROWTH_RATE,
-                                                   alignof(U64));
+                U64 *temp = allocateIdentityMemory(
+                    MAX(pageSizesSmallest(), currentBytes * GROWTH_RATE));
                 memcpy(temp, dynamicArray.buf, currentBytes);
 
                 freeIdentityMemory((Memory){.start = (U64)dynamicArray.buf,
@@ -105,8 +105,7 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
 
         cycles = endCycleCount - startCycleCount;
     } else {
-        buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT,
-                                        sizeof(alignof(U64)), pageSize);
+        buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT, pageSize);
         beforePageFaults = currentNumberOfPageFaults;
         U64 startCycleCount = currentCycleCounter(true, false);
 
@@ -279,8 +278,7 @@ static void baselineTest() {
 
     for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
          iteration++) {
-        U64 *buffer = allocateIdentityMemory(MAX_TEST_ENTRIES * sizeof(U64),
-                                             alignof(U64));
+        U64 *buffer = allocateIdentityMemory(MAX_TEST_ENTRIES * sizeof(U64));
 
         U64 startCycleCount = currentCycleCounter(true, false);
 
@@ -310,8 +308,7 @@ static void baselineTest() {
 
     for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
          iteration++) {
-        U64 *buffer = allocateIdentityMemory(MAX_TEST_ENTRIES * sizeof(U64),
-                                             alignof(U64));
+        U64 *buffer = allocateIdentityMemory(MAX_TEST_ENTRIES * sizeof(U64));
         U64 entriesToWrite =
             ringBufferIndex(biskiNext(&state), MAX_TEST_ENTRIES);
 
@@ -363,7 +360,7 @@ kernelMain(struct KernelParameters *kernelParams) {
     archInit(kernelParams->archParams);
     initMemoryManagers(&kernelParams->memory);
 
-    void *initMemory = (void *)allocateIdentityMemory(INIT_MEMORY, 1);
+    void *initMemory = (void *)allocateIdentityMemory(INIT_MEMORY);
     Arena arena = (Arena){.curFree = initMemory,
                           .beg = initMemory,
                           .end = initMemory + INIT_MEMORY};

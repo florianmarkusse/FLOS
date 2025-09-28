@@ -6,24 +6,28 @@
 #include "shared/trees/red-black/basic.h"
 #include "shared/types/array-types.h"
 
-static constexpr auto BUDDY_ORDERS_MAX = 54;
+static constexpr auto BUDDY_ORDERS_MAX = 52; // in general, 4096 up until 2^63
 
 typedef struct {
     RedBlackNodeBasic *blocksFree[BUDDY_ORDERS_MAX];
-    JumpBuffer jmpBuf;
     Exponent blockSizeSmallest;
     Exponent blockSizeLargest;
+} BuddyData;
+
+typedef struct {
+    JumpBuffer jmpBuf;
+    BuddyData data;
 } Buddy;
 
-void buddyInit(Buddy *buddy, U64 addressSpace);
+void buddyInit(Buddy *buddy, Exponent blockSizeLargest);
+
+[[nodiscard]] U64_pow2 buddyBlockSize(Buddy *buddy, U8 order);
 
 [[nodiscard]] __attribute__((malloc, alloc_align(2))) void *
 buddyAllocate(Buddy *buddy, U64_pow2 blockSize, NodeAllocator *nodeAllocator);
 
 void buddyFree(Buddy *buddy, void *address, U64_pow2 blockSize,
                NodeAllocator *nodeAllocator);
-
-void buddyStatusAppend(Buddy *buddy);
 
 // Ensure these addresses are at least aligned to the buddy's smallest block
 // size size! addressStart up and addressEndExclusive down

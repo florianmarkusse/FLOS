@@ -27,9 +27,14 @@ typedef struct {
 static_assert(sizeof(Window) == 32);
 
 typedef struct {
-    RedBlackMMTreeWithFreeList physicalPMA;
-    RedBlackMMTreeWithFreeList virtualPMA;
-    VMMTreeWithFreeList virtualMemorySizeMapper;
+    NodeAllocator nodeAllocator;
+    BuddyData data;
+} BuddyDataWithNodeAllocator;
+
+typedef struct {
+    BuddyDataWithNodeAllocator buddyPhysical;
+    BuddyDataWithNodeAllocator buddyVirtual;
+    VMMTreeWithFreeList memoryMapperSizes;
 } KernelMemory;
 
 struct KernelParameters {

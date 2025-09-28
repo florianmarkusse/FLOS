@@ -14,9 +14,9 @@
 // fault. Any potential page faults must be anticipated and solved manually!
 
 void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
-    StructReq structReq = virtualStructReqs[type];
-    void *result = allocateIdentityMemory(structReq.bytes, structReq.align);
-    memset(result, 0, structReq.bytes);
+    U32 bytes = virtualStructBytes[type];
+    void *result = allocateIdentityMemory(bytes);
+    memset(result, 0, bytes);
 
     return result;
 }
@@ -26,5 +26,5 @@ void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
 // immediately be used.
 void freeZeroedMemoryForVirtual(U64 address, VirtualAllocationType type) {
     freeIdentityMemory(
-        (Memory){.start = address, .bytes = virtualStructReqs[type].bytes});
+        (Memory){.start = address, .bytes = virtualStructBytes[type]});
 }

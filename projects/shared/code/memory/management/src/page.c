@@ -10,11 +10,11 @@
 #include "shared/memory/management/management.h"
 #include "shared/memory/sizes.h"
 
-VMMTreeWithFreeList virtualMemorySizeMapper = {0};
+VMMTreeWithFreeList memoryMapperSizes = {0};
 
 static U64_pow2 pageSizeFromVMM(U64 faultingAddress) {
-    VMMNode *result = findGreatestBelowOrEqualVMMNode(
-        &virtualMemorySizeMapper.tree, faultingAddress);
+    VMMNode *result = findGreatestBelowOrEqualVMMNode(&memoryMapperSizes.tree,
+                                                      faultingAddress);
     if (result && result->basic.value + result->bytes > faultingAddress) {
         return result->mappingSize;
     }
@@ -23,20 +23,20 @@ static U64_pow2 pageSizeFromVMM(U64 faultingAddress) {
 }
 
 void removePageMapping(U64 address) {
-    VMMNode *deleted = deleteVMMNode(&virtualMemorySizeMapper.tree, address);
-    nodeAllocatorFree(&virtualMemorySizeMapper.nodeAllocator, deleted);
+    VMMNode *deleted = deleteVMMNode(&memoryMapperSizes.tree, address);
+    nodeAllocatorFree(&memoryMapperSizes.nodeAllocator, deleted);
 }
 
 void addPageMapping(Memory memory, U64_pow2 pageSize) {
-    VMMNode *newNode = nodeAllocatorGet(&virtualMemorySizeMapper.nodeAllocator);
+    VMMNode *newNode = nodeAllocatorGet(&memoryMapperSizes.nodeAllocator);
     if (!newNode) {
-        interruptUnexpectedError();
+        interruptNoMoreVirtualMemoryMapper();
     }
     newNode->basic.value = memory.start;
     newNode->bytes = memory.bytes;
     newNode->mappingSize = pageSize;
 
-    insertVMMNode(&virtualMemorySizeMapper.tree, newNode);
+    insertVMMNode(&memoryMapperSizes.tree, newNode);
 }
 
 PageFaultResult handlePageFault(U64 faultingAddress) {
@@ -56,7 +56,7 @@ PageFaultResult handlePageFault(U64 faultingAddress) {
 
     U32_pow2 mapsToDo = (U32)divideByPowerOf2(pageSizeForFault, pageSizeToUse);
     for (U32 i = 0; i < mapsToDo; i++) {
-        U8 *address = allocPhysicalMemory(pageSizeToUse, pageSizeToUse);
+        U8 *address = allocPhysicalMemory(pageSizeToUse);
 
         mapPage(startingMap + (i * pageSizeToUse), (U64)address, pageSizeToUse);
     }
