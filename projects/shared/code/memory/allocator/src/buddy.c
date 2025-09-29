@@ -7,53 +7,18 @@
 #include "shared/memory/allocator/node.h"
 #include "shared/memory/management/definitions.h"
 
+Exponent buddyOrderMax(Buddy *buddy) {
+    return buddy->data.blockSizeLargest - buddy->data.blockSizeSmallest;
+}
+
+Exponent buddyOrderCount(Buddy *buddy) { return buddyOrderMax(buddy) + 1; }
+
 U64_pow2 buddyBlockSize(Buddy *buddy, U8 order) {
     return ((1ULL << (buddy->data.blockSizeSmallest + order)));
 }
 
 static U64 getBuddyAddress(U64 address, U64_pow2 blockSize) {
     return (address ^ (blockSize));
-}
-
-void buddyFree(Buddy *buddy, void *address, U64_pow2 blockSize,
-               NodeAllocator *nodeAllocator) {
-    ASSERT(blockSize >= 1ULL << buddy->data.blockSizeSmallest);
-    ASSERT(blockSize <= 1ULL << buddy->data.blockSizeLargest);
-
-    Exponent order =
-        (Exponent)__builtin_ctzll(blockSize) - buddy->data.blockSizeSmallest;
-    U64 memoryAddress = (U64)address;
-
-    U64 buddyAddress = getBuddyAddress(memoryAddress, blockSize);
-    RedBlackNodeBasic *nodeFree =
-        deleteRedBlackNodeBasic(&buddy->data.blocksFree[order], buddyAddress);
-    if (!nodeFree) {
-        nodeFree = nodeAllocatorGet(nodeAllocator);
-        if (!nodeFree) {
-            longjmp(buddy->jmpBuf, 1);
-        }
-    } else {
-        while (1) {
-            // Turn off the order's bit, so we always have the "lowest" address
-            // buddy, so we can move up an order
-            memoryAddress &= (~blockSize);
-            blockSize *= 2;
-            order++;
-            buddyAddress = getBuddyAddress(memoryAddress, blockSize);
-
-            RedBlackNodeBasic *nodeHigherOrder = deleteRedBlackNodeBasic(
-                &buddy->data.blocksFree[order], buddyAddress);
-            if (nodeHigherOrder) {
-                nodeAllocatorFree(nodeAllocator, nodeFree);
-                nodeFree = nodeHigherOrder;
-            } else {
-                break;
-            }
-        }
-    }
-
-    nodeFree->value = memoryAddress;
-    insertRedBlackNodeBasic(&buddy->data.blocksFree[order], nodeFree);
 }
 
 void *buddyAllocate(Buddy *buddy, U64_pow2 blockSize,
@@ -92,28 +57,24 @@ void *buddyAllocate(Buddy *buddy, U64_pow2 blockSize,
     return (void *)pop->value;
 }
 
-void buddyFreeRegionAdd(Buddy *buddy, U64 addressStart, U64 addressEndExclusive,
-                        NodeAllocator *nodeAllocator) {
-    ASSERT(addressStart ==
-           alignUp(addressStart, 1 << buddy->data.blockSizeSmallest));
-    ASSERT(addressEndExclusive ==
-           alignDown(addressEndExclusive, 1 << buddy->data.blockSizeSmallest));
+void buddyFree(Buddy *buddy, Memory memory, NodeAllocator *nodeAllocator) {
+    ASSERT(memory.start ==
+           alignUp(memory.start, 1 << buddy->data.blockSizeSmallest));
+    ASSERT(isAlignedTo(memory.bytes, 1 << buddy->data.blockSizeSmallest));
 
-    Exponent maxOrder =
-        buddy->data.blockSizeLargest - buddy->data.blockSizeSmallest;
+    Exponent maxOrder = buddyOrderMax(buddy);
     Exponent bias = maxOrder + ((sizeof(U64) * BITS_PER_BYTE) -
                                 (buddy->data.blockSizeLargest) - 1);
 
-    U64 remaining = addressEndExclusive - addressStart;
-    while (remaining) {
+    while (memory.bytes) {
         // block size given the size of the region to add
         Exponent orderToAdd =
-            MIN(maxOrder, (Exponent)(bias - (__builtin_clzll(remaining))));
+            MIN(maxOrder, (Exponent)(bias - (__builtin_clzll(memory.bytes))));
 
         // block size given the alignment constraints
-        if (addressStart) {
+        if (memory.start) {
             orderToAdd =
-                MIN(orderToAdd, (Exponent)__builtin_ctzll(addressStart) -
+                MIN(orderToAdd, (Exponent)__builtin_ctzll(memory.start) -
                                     buddy->data.blockSizeSmallest);
         }
 
@@ -122,13 +83,13 @@ void buddyFreeRegionAdd(Buddy *buddy, U64 addressStart, U64 addressEndExclusive,
             longjmp(buddy->jmpBuf, 1);
         }
 
-        node->value = addressStart;
+        node->value = memory.start;
         insertRedBlackNodeBasic(&buddy->data.blocksFree[orderToAdd], node);
 
         U64_pow2 blockSize = buddyBlockSize(buddy, orderToAdd);
         ASSERT(isAlignedTo(node->value, blockSize));
-        addressStart += blockSize;
-        remaining -= blockSize;
+        memory.start += blockSize;
+        memory.bytes -= blockSize;
     }
 }
 

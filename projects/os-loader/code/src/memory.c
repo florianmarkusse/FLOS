@@ -116,11 +116,8 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
 
             for (typeof(availableMemory.len) i = 0; i < availableMemory.len;
                  i++) {
-                U64 addressEnd =
-                    availableMemory.buf[i].start + availableMemory.buf[i].bytes;
-                buddyFreeRegionAdd(&kernelBuddyPhysical->buddy,
-                                   availableMemory.buf[i].start, addressEnd,
-                                   &kernelBuddyPhysical->nodeAllocator);
+                buddyFree(&kernelBuddyPhysical->buddy, availableMemory.buf[i],
+                          &kernelBuddyPhysical->nodeAllocator);
             }
         }
     }

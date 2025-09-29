@@ -12,8 +12,11 @@
 // TODO: move to common/basic.c? and then use here and in test code and in
 // buddystatusappend
 static U32 nodesCount(RedBlackNode *tree) {
-    RedBlackNode *buffer[2 * RB_TREE_MAX_HEIGHT];
+    if (!tree) {
+        return 0;
+    }
 
+    RedBlackNode *buffer[2 * RB_TREE_MAX_HEIGHT];
     U32 result = 0;
 
     buffer[0] = tree;
@@ -78,7 +81,7 @@ void memoryVirtualGuardPageStatusAppend() {
 
 static AvailableMemoryState getAvailableMemory(Buddy *buddy) {
     AvailableMemoryState result = {0};
-    for (U8 i = 0; i < BUDDY_ORDERS_MAX; i++) {
+    for (U8 i = 0; i < buddyOrderCount(buddy); i++) {
         U32 nodes = nodesCount((RedBlackNode *)buddy->data.blocksFree[i]);
         result.nodes += nodes;
         result.memory += nodes * buddyBlockSize(buddy, i);

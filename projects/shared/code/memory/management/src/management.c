@@ -16,13 +16,11 @@ BuddyWithNodeAllocator buddyPhysical;
 BuddyWithNodeAllocator buddyVirtual;
 
 void freeVirtualMemory(Memory memory) {
-    buddyFree(&buddyVirtual.buddy, (void *)memory.start, memory.bytes,
-              &buddyVirtual.nodeAllocator);
+    buddyFree(&buddyVirtual.buddy, memory, &buddyVirtual.nodeAllocator);
 }
 
 void freePhysicalMemory(Memory memory) {
-    buddyFree(&buddyPhysical.buddy, (void *)memory.start, memory.bytes,
-              &buddyPhysical.nodeAllocator);
+    buddyFree(&buddyPhysical.buddy, memory, &buddyPhysical.nodeAllocator);
 }
 
 void *allocVirtualMemory(U64_pow2 blockSize) {
@@ -84,7 +82,7 @@ static void treeWithFreeListToMappable(NodeAllocator *nodeAllocator,
 
     for (typeof(treesLen) i = 0; i < treesLen; i++) {
         if (trees[i]) {
-            trees[i] = (RedBlackNodeBasic *)((U8 *)(*trees) + nodesBias);
+            trees[i] = (((U8 *)trees[i]) + nodesBias);
         }
     }
 
@@ -118,10 +116,10 @@ void initMemoryManagers(KernelMemory *kernelMemory) {
     // which will increase the physical memory usage
     treeWithFreeListToMappable(&buddyPhysical.nodeAllocator,
                                (void **)&buddyPhysical.buddy.data.blocksFree,
-                               BUDDY_ORDERS_MAX, 1);
+                               buddyOrderCount(&buddyPhysical.buddy), 1);
     treeWithFreeListToMappable(&buddyVirtual.nodeAllocator,
                                (void **)&buddyVirtual.buddy.data.blocksFree,
-                               BUDDY_ORDERS_MAX, 0);
+                               buddyOrderCount(&buddyVirtual.buddy), 0);
     treeWithFreeListToMappable(&memoryMapperSizes.nodeAllocator,
                                (void **)&memoryMapperSizes.tree, 1, 0);
 }

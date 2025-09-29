@@ -21,17 +21,16 @@ typedef struct {
 
 void buddyInit(Buddy *buddy, Exponent blockSizeLargest);
 
+[[nodiscard]] Exponent buddyOrderMax(Buddy *buddy);
+[[nodiscard]] Exponent buddyOrderCount(Buddy *buddy);
+
 [[nodiscard]] U64_pow2 buddyBlockSize(Buddy *buddy, U8 order);
 
 [[nodiscard]] __attribute__((malloc, alloc_align(2))) void *
 buddyAllocate(Buddy *buddy, U64_pow2 blockSize, NodeAllocator *nodeAllocator);
 
-void buddyFree(Buddy *buddy, void *address, U64_pow2 blockSize,
-               NodeAllocator *nodeAllocator);
-
 // Ensure these addresses are at least aligned to the buddy's smallest block
 // size size! addressStart up and addressEndExclusive down
-void buddyFreeRegionAdd(Buddy *buddy, U64 addressStart, U64 addressEndExclusive,
-                        NodeAllocator *nodeAllocator);
+void buddyFree(Buddy *buddy, Memory memory, NodeAllocator *nodeAllocator);
 
 #endif

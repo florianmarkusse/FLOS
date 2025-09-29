@@ -16,6 +16,8 @@
 
 static constexpr auto MEMORY_CAP = 8 * GiB;
 
+static constexpr auto NODES_TOTAL_COUNT = 1000;
+
 int main() {
     U8 *begin = mmap(NULL, MEMORY_CAP, PROT_READ | PROT_WRITE,
                      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -51,15 +53,27 @@ int main() {
     NodeAllocator nodeAllocator;
     nodeAllocatorInit(
         &nodeAllocator,
-        (void_a){.buf =
-                     NEW(&arena, typeof(*myBuddy.blocksFree[0]), .count = 1000),
-                 .len = 1000 * sizeof(*myBuddy.blocksFree[0])},
-        (void_a){.buf = NEW(&arena, void *, .count = 1000),
-                 .len = 1000 * sizeof(void *)},
-        sizeof(*myBuddy.blocksFree[0]), alignof(*myBuddy.blocksFree[0]));
+        (void_a){.buf = NEW(&arena, typeof(*myBuddy.data.blocksFree[0]),
+                            .count = NODES_TOTAL_COUNT),
+                 .len =
+                     NODES_TOTAL_COUNT * sizeof(*myBuddy.data.blocksFree[0])},
+        (void_a){.buf = NEW(&arena, void *, .count = NODES_TOTAL_COUNT),
+                 .len = NODES_TOTAL_COUNT * sizeof(void *)},
+        sizeof(*myBuddy.data.blocksFree[0]),
+        alignof(*myBuddy.data.blocksFree[0]));
 
-    buddyFreeRegionAdd(&myBuddy, 0x0000000100000000, LOWER_HALF_END,
-                       &nodeAllocator);
+    buddyFree(&myBuddy,
+              (Memory){.start = 0x0000000100000000,
+                       .bytes = LOWER_HALF_END - 0x0000000100000000},
+              &nodeAllocator);
+
+    PFLUSH_AFTER(STDOUT) {
+        buddyStatusAppend(&myBuddy);
+        INFO(STRING("--------------\n"));
+    }
+
+    buddyFree(&myBuddy, (Memory){.start = HIGHER_HALF_START, .bytes = 1044480},
+              &nodeAllocator);
 
     PFLUSH_AFTER(STDOUT) {
         buddyStatusAppend(&myBuddy);

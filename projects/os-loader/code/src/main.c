@@ -21,6 +21,7 @@
 #include "os-loader/memory.h"       // for mapMemoryAt
 #include "shared/log.h"
 #include "shared/maths.h" // for CEILING_DIV_V...
+#include "shared/memory/allocator/status/buddy.h"
 #include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/memory/management/management.h"

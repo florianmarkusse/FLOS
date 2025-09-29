@@ -7,6 +7,9 @@
 __attribute__((malloc, alloc_align(1))) void *
 allocateIdentityMemory(U64_pow2 blockSize);
 void freeIdentityMemory(Memory memory);
+// NOTE: Losing some memory here to the void, but okay, we are using a buddy
+// allocator with minimum size.
+void freeIdentityMemoryNotBlockSize(Memory memory);
 
 __attribute__((malloc, alloc_align(1))) void *
 allocateMappableMemory(U64_pow2 blockSize, U64_pow2 mappingSize);

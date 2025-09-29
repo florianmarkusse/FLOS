@@ -17,7 +17,14 @@ void *allocateIdentityMemory(U64_pow2 blockSize) {
 
 void freeIdentityMemory(Memory memory) {
     ASSERT(isAlignedTo(memory.start, pageSizesSmallest()));
-    ASSERT(isPowerOf2(memory.bytes));
+    ASSERT(isAlignedTo(memory.bytes, pageSizesSmallest()));
+
+    freePhysicalMemory(memory);
+}
+
+void freeIdentityMemoryNotBlockSize(Memory memory) {
+    memory.start = alignUp(memory.start, pageSizesSmallest());
+    memory.bytes = alignDown(memory.bytes, pageSizesSmallest());
 
     freePhysicalMemory(memory);
 }
@@ -40,7 +47,7 @@ static constexpr auto MAX_PAGE_FLUSHES = 64;
 
 void freeMappableMemory(Memory memory) {
     ASSERT(isAlignedTo(memory.start, pageSizesSmallest()));
-    ASSERT(isPowerOf2(memory.bytes));
+    ASSERT(isAlignedTo(memory.bytes, pageSizesSmallest()));
 
     U64 virtualAddresses[MAX_PAGE_FLUSHES];
     U32 virtualAddressesLen = 0;

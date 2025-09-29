@@ -372,15 +372,20 @@ kernelMain(struct KernelParameters *kernelParams) {
         }
     }
 
-    initLogger(&arena);
+    initLogger();
     initScreen(&kernelParams->window, &arena);
 
     enableInterrupts();
 
-    freeIdentityMemory((Memory){.start = (U64)arena.curFree,
-                                .bytes = (U64)(arena.end - arena.curFree)});
-    freeIdentityMemory(kernelParams->permanentLeftoverFree);
-    freeIdentityMemory(kernelParams->self);
+    freeIdentityMemoryNotBlockSize(
+        (Memory){.start = (U64)arena.curFree,
+                 .bytes = (U64)(arena.end - arena.curFree)});
+    freeIdentityMemoryNotBlockSize((Memory){
+        .start = kernelParams->permanentLeftoverFree.start,
+        .bytes = kernelParams->permanentLeftoverFree.bytes,
+    });
+    freeIdentityMemoryNotBlockSize((Memory){.start = kernelParams->self.start,
+                                            .bytes = kernelParams->self.bytes});
 
     // NOTE: from here, everything is initialized
 
@@ -388,8 +393,6 @@ kernelMain(struct KernelParameters *kernelParams) {
         appendMemoryManagementStatus();
         memoryVirtualMappingStatusAppend();
     }
-
-    hangThread();
 
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 

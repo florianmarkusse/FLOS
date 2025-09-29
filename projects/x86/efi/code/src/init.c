@@ -242,11 +242,13 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress) {
         }
     }
 
-    buddyFreeRegionAdd(&buddyVirtual.buddy, startingAddress, LOWER_HALF_END,
-                       &buddyVirtual.nodeAllocator);
+    Memory freeMemory = {.start = startingAddress,
+                         .bytes = LOWER_HALF_END - startingAddress};
+    buddyFree(&buddyVirtual.buddy, freeMemory, &buddyVirtual.nodeAllocator);
 
-    buddyFreeRegionAdd(&buddyVirtual.buddy, HIGHER_HALF_START, endingAddress,
-                       &buddyVirtual.nodeAllocator);
+    freeMemory = (Memory){.start = HIGHER_HALF_START,
+                          .bytes = endingAddress - HIGHER_HALF_START};
+    buddyFree(&buddyVirtual.buddy, freeMemory, &buddyVirtual.nodeAllocator);
 
     memoryMapperSizes.tree = nullptr;
     nodeAllocatorInit(

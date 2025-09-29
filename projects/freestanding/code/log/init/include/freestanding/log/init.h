@@ -6,6 +6,6 @@
 
 extern U8_max_a flushBuf;
 
-void initLogger(Arena *perm);
+void initLogger();
 
 #endif
