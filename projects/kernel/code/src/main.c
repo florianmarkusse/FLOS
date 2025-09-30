@@ -62,7 +62,7 @@ static void appendMemoryDelta(AvailableMemoryState startPhysicalMemory,
 }
 
 static constexpr auto GROWTH_RATE = 2;
-static constexpr auto START_ENTRIES_COUNT = 8;
+static constexpr auto START_ENTRIES_COUNT = 4096 / sizeof(U64);
 
 typedef enum { IDENTITY_MEMORY, MAPPABLE_MEMORY } MemoryWritableType;
 
@@ -71,8 +71,8 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
                             U64 expectedPageFaults) {
     AvailableMemoryState startPhysicalMemory = getAvailablePhysicalMemory();
     AvailableMemoryState startVirtualMemory = getAvailableVirtualMemory();
-    U64 beforePageFaults;
-    U64 afterPageFaults;
+    volatile U64 beforePageFaults;
+    volatile U64 afterPageFaults;
 
     U64 *buffer;
     U64 cycles;
@@ -201,9 +201,9 @@ static bool fullMappingTest(U64_pow2 pageSize) {
 
     for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
          iteration++) {
-        U64 cycles = arrayWritingTest(
-            pageSize, MAX_TEST_ENTRIES, MAPPABLE_MEMORY,
-            ceilingDivide((MAX_TEST_ENTRIES * sizeof(U64)), pageSize));
+        U64 cycles =
+            arrayWritingTest(pageSize, MAX_TEST_ENTRIES, MAPPABLE_MEMORY,
+                             divideByPowerOf2(TEST_MEMORY_AMOUNT, pageSize));
         if (!cycles) {
             return false;
         }
@@ -220,7 +220,7 @@ static bool fullMappingTest(U64_pow2 pageSize) {
 
 static void identityTests() {
     KFLUSH_AFTER {
-        INFO(STRING("Starting identity tests with\n\n"));
+        INFO(STRING("Starting identity tests...\n\n"));
         INFO(STRING("Starting full writing test...\n"));
     }
 
@@ -389,11 +389,6 @@ kernelMain(struct KernelParameters *kernelParams) {
 
     // NOTE: from here, everything is initialized
 
-    KFLUSH_AFTER {
-        appendMemoryManagementStatus();
-        memoryVirtualMappingStatusAppend();
-    }
-
     KFLUSH_AFTER { INFO(STRING("\n\n")); }
 
     for (U32 i = 0; i < 2; i++) {
@@ -401,6 +396,9 @@ kernelMain(struct KernelParameters *kernelParams) {
         biskiSeed(&state, PRNG_SEED);
 
         KFLUSH_AFTER {
+            appendMemoryManagementStatus();
+            memoryVirtualMappingStatusAppend();
+
             INFO(STRING("Iterations per test: "));
             INFO(TEST_ITERATIONS, .flags = NEWLINE);
             INFO(STRING("Max memory per test: "));

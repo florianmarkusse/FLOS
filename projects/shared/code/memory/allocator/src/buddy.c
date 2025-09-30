@@ -35,7 +35,7 @@ void *buddyAllocate(Buddy *buddy, U64_pow2 blockSize,
     while (!pop) {
         orderFound++;
         if (orderFound > buddy->data.blockSizeLargest) {
-            longjmp(buddy->jmpBuf, 1);
+            longjmp(buddy->memoryExhausted, 1);
         }
         blockSize *= 2;
         pop = popRedBlackNodeBasic(&buddy->data.blocksFree[orderFound]);
@@ -45,7 +45,7 @@ void *buddyAllocate(Buddy *buddy, U64_pow2 blockSize,
         RedBlackNodeBasic *splitNode = nodeAllocatorGet(nodeAllocator);
         if (!splitNode) {
             insertRedBlackNodeBasic(&buddy->data.blocksFree[orderFound], pop);
-            longjmp(buddy->jmpBuf, 1);
+            longjmp(buddy->backingBufferExhausted, 1);
         }
         orderFound--;
         blockSize /= 2;
@@ -54,7 +54,11 @@ void *buddyAllocate(Buddy *buddy, U64_pow2 blockSize,
         insertRedBlackNodeBasic(&buddy->data.blocksFree[orderFound], splitNode);
     }
 
-    return (void *)pop->value;
+    void *result = (void *)pop->value;
+
+    nodeAllocatorFree(nodeAllocator, pop);
+
+    return result;
 }
 
 void buddyFree(Buddy *buddy, Memory memory, NodeAllocator *nodeAllocator) {
@@ -66,30 +70,54 @@ void buddyFree(Buddy *buddy, Memory memory, NodeAllocator *nodeAllocator) {
     Exponent bias = maxOrder + ((sizeof(U64) * BITS_PER_BYTE) -
                                 (buddy->data.blockSizeLargest) - 1);
 
-    while (memory.bytes) {
+    U64 memoryAddress = memory.start;
+    U64 memoryEnd = memory.start + memory.bytes;
+
+    while (memoryAddress < memoryEnd) {
         // block size given the size of the region to add
-        Exponent orderToAdd =
-            MIN(maxOrder, (Exponent)(bias - (__builtin_clzll(memory.bytes))));
+        Exponent orderToAdd = MIN(
+            maxOrder,
+            (Exponent)(bias - (__builtin_clzll(memoryEnd - memoryAddress))));
 
         // block size given the alignment constraints
-        if (memory.start) {
+        if (memoryAddress) {
             orderToAdd =
-                MIN(orderToAdd, (Exponent)__builtin_ctzll(memory.start) -
+                MIN(orderToAdd, (Exponent)__builtin_ctzll(memoryAddress) -
                                     buddy->data.blockSizeSmallest);
         }
 
-        RedBlackNodeBasic *node = nodeAllocatorGet(nodeAllocator);
-        if (!node) {
-            longjmp(buddy->jmpBuf, 1);
+        U64_pow2 blockSize = buddyBlockSize(buddy, orderToAdd);
+        U64 buddyAddress = getBuddyAddress(memoryAddress, blockSize);
+        RedBlackNodeBasic *nodeFree = deleteRedBlackNodeBasic(
+            &buddy->data.blocksFree[orderToAdd], buddyAddress);
+        if (!nodeFree) {
+            nodeFree = nodeAllocatorGet(nodeAllocator);
+            if (!nodeFree) {
+                longjmp(buddy->backingBufferExhausted, 1);
+            }
+        } else {
+            while (1) {
+                // Turn off the order's bit, so we always have the "lowest"
+                // address buddy, so we can move up an order
+                memoryAddress &= (~blockSize);
+                blockSize *= 2;
+                orderToAdd++;
+                buddyAddress = getBuddyAddress(memoryAddress, blockSize);
+
+                RedBlackNodeBasic *nodeHigherOrder = deleteRedBlackNodeBasic(
+                    &buddy->data.blocksFree[orderToAdd], buddyAddress);
+                if (nodeHigherOrder) {
+                    nodeAllocatorFree(nodeAllocator, nodeHigherOrder);
+                } else {
+                    break;
+                }
+            }
         }
 
-        node->value = memory.start;
-        insertRedBlackNodeBasic(&buddy->data.blocksFree[orderToAdd], node);
+        nodeFree->value = memoryAddress;
+        insertRedBlackNodeBasic(&buddy->data.blocksFree[orderToAdd], nodeFree);
 
-        U64_pow2 blockSize = buddyBlockSize(buddy, orderToAdd);
-        ASSERT(isAlignedTo(node->value, blockSize));
-        memory.start += blockSize;
-        memory.bytes -= blockSize;
+        memoryAddress += blockSize;
     }
 }
 

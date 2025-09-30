@@ -60,15 +60,20 @@ void kernelPhysicalBuddyPrepare(BuddyWithNodeAllocator *kernelBuddyPhysical,
         alignof(*kernelBuddyPhysical->buddy.data.blocksFree[0]));
 
     buddyInit(&kernelBuddyPhysical->buddy, 40);
-
-    if (setjmp(kernelBuddyPhysical->buddy.jmpBuf)) {
+    if (setjmp(buddyPhysical.buddy.memoryExhausted)) {
+        drawStatusRectangle(mode, RED_COLOR);
+        hangThread();
+    }
+    if (setjmp(buddyPhysical.buddy.backingBufferExhausted)) {
         drawStatusRectangle(mode, RED_COLOR);
         hangThread();
     }
 }
 
 void convertToKernelMemory(MemoryInfo *memoryInfo,
-                           BuddyWithNodeAllocator *kernelBuddyPhysical) {
+                           BuddyWithNodeAllocator *kernelBuddyPhysical,
+                           U64 *physicalMemoryTotal) {
+    U64 physicalMemoryBytes = 0;
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
         if (memoryTypeCanBeUsedByKernel(desc->type)) {
             if (desc->physicalStart == 0) {
@@ -116,9 +121,12 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
 
             for (typeof(availableMemory.len) i = 0; i < availableMemory.len;
                  i++) {
+                physicalMemoryBytes += availableMemory.buf[i].bytes;
                 buddyFree(&kernelBuddyPhysical->buddy, availableMemory.buf[i],
                           &kernelBuddyPhysical->nodeAllocator);
             }
         }
     }
+
+    *physicalMemoryTotal = physicalMemoryBytes;
 }

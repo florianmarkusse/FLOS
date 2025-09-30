@@ -15,7 +15,8 @@ typedef struct {
 } BuddyData;
 
 typedef struct {
-    JumpBuffer jmpBuf;
+    JumpBuffer memoryExhausted;
+    JumpBuffer backingBufferExhausted;
     BuddyData data;
 } Buddy;
 

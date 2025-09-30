@@ -1,6 +1,7 @@
 #include "shared/memory/policy/status.h"
 #include "shared/memory/allocator/buddy.h"
 #include "shared/memory/allocator/status/buddy.h"
+#include "shared/memory/allocator/status/node.h"
 #include "shared/memory/management/page.h"
 #include "shared/memory/management/status.h"
 
@@ -60,10 +61,12 @@ static U32 nodesCount(RedBlackNode *tree) {
 
 void appendPhysicalMemoryManagerStatus() {
     buddyStatusAppend(&buddyPhysical.buddy);
+    nodeAllocatorStatusAppend(&buddyPhysical.nodeAllocator);
 }
 
 void appendVirtualMemoryManagerStatus() {
     buddyStatusAppend(&buddyVirtual.buddy);
+    nodeAllocatorStatusAppend(&buddyVirtual.nodeAllocator);
 }
 
 void memoryVirtualGuardPageStatusAppend() {

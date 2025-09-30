@@ -1,5 +1,6 @@
 #include "abstraction/efi.h"
 
+#include "abstraction/interrupts.h"
 #include "abstraction/log.h"
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/allocator.h"
@@ -236,10 +237,11 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress) {
         alignof(*buddyVirtual.buddy.data.blocksFree[0]));
 
     buddyInit(&buddyVirtual.buddy, 57);
-    if (setjmp(buddyVirtual.buddy.jmpBuf)) {
-        EXIT_WITH_MESSAGE {
-            ERROR(STRING("Buddy is empty or node allocator full!\n"));
-        }
+    if (setjmp(buddyVirtual.buddy.memoryExhausted)) {
+        interruptNoMoreVirtualMemory();
+    }
+    if (setjmp(buddyVirtual.buddy.backingBufferExhausted)) {
+        interruptNoMoreBuffer();
     }
 
     Memory freeMemory = {.start = startingAddress,

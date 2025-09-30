@@ -23,6 +23,11 @@ void interruptNoMoreVirtualMemoryMapper() {
     __builtin_unreachable();
 }
 
+void interruptNoMoreBuffer() {
+    EXIT_WITH_MESSAGE { ERROR(STRING("Interrupts: No More Buffer\n")); }
+    __builtin_unreachable();
+}
+
 void interruptUnexpectedError() {
     EXIT_WITH_MESSAGE { ERROR(STRING("Interrupts: Unexpected Error\n")); }
     __builtin_unreachable();

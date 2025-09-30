@@ -266,7 +266,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                      "call exit boot services twice?\n"));
     }
 
-    convertToKernelMemory(&memoryInfo, &uefiBuddyPhysical);
+    convertToKernelMemory(&memoryInfo, &uefiBuddyPhysical,
+                          &kernelParams->memory.physicalMemoryTotal);
     kernelParams->memory.buddyPhysical.data = uefiBuddyPhysical.buddy.data;
     kernelParams->memory.buddyPhysical.nodeAllocator =
         uefiBuddyPhysical.nodeAllocator;

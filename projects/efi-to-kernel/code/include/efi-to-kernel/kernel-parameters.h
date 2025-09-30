@@ -32,6 +32,7 @@ typedef struct {
 } BuddyDataWithNodeAllocator;
 
 typedef struct {
+    U64 physicalMemoryTotal;
     BuddyDataWithNodeAllocator buddyPhysical;
     BuddyDataWithNodeAllocator buddyVirtual;
     VMMTreeWithFreeList memoryMapperSizes;

@@ -1,5 +1,5 @@
 project(shared-memory-allocator-status LANGUAGES C ASM)
-add_library(${PROJECT_NAME} OBJECT "src/buddy.c")
+add_library(${PROJECT_NAME} OBJECT "src/buddy.c" "src/node.c")
 
 add_includes_for_sublibrary()
 

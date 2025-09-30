@@ -6,6 +6,7 @@
 #include "shared/memory/allocator/buddy.h"
 #include "shared/memory/allocator/node.h"
 #include "shared/memory/allocator/status/buddy.h"
+#include "shared/memory/allocator/status/node.h"
 #include "shared/memory/sizes.h"
 #include "x86/memory/definitions.h"
 
@@ -43,9 +44,13 @@ int main() {
 
     Buddy myBuddy;
     buddyInit(&myBuddy, 57);
-    if (setjmp(myBuddy.jmpBuf)) {
+    if (setjmp(myBuddy.memoryExhausted)) {
+        PFLUSH_AFTER(STDOUT) { ERROR(STRING("Buddy is empty!\n")); }
+        return 1;
+    }
+    if (setjmp(myBuddy.backingBufferExhausted)) {
         PFLUSH_AFTER(STDOUT) {
-            ERROR(STRING("Buddy is empty or node allocator full!\n"));
+            ERROR(STRING("Backing buffer is exhausted!\n"));
         }
         return 1;
     }
@@ -62,21 +67,29 @@ int main() {
         sizeof(*myBuddy.data.blocksFree[0]),
         alignof(*myBuddy.data.blocksFree[0]));
 
-    buddyFree(&myBuddy,
-              (Memory){.start = 0x0000000100000000,
-                       .bytes = LOWER_HALF_END - 0x0000000100000000},
-              &nodeAllocator);
+    buddyFree(&myBuddy, (Memory){.start = 0, .bytes = 528384}, &nodeAllocator);
 
     PFLUSH_AFTER(STDOUT) {
         buddyStatusAppend(&myBuddy);
+        nodeAllocatorStatusAppend(&nodeAllocator);
         INFO(STRING("--------------\n"));
     }
 
-    buddyFree(&myBuddy, (Memory){.start = HIGHER_HALF_START, .bytes = 1044480},
+    buddyFree(&myBuddy, (Memory){.start = 540672, .bytes = 507904},
               &nodeAllocator);
 
     PFLUSH_AFTER(STDOUT) {
         buddyStatusAppend(&myBuddy);
+        nodeAllocatorStatusAppend(&nodeAllocator);
+        INFO(STRING("--------------\n"));
+    }
+
+    buddyFree(&myBuddy, (Memory){.start = 528384, .bytes = 12288},
+              &nodeAllocator);
+
+    PFLUSH_AFTER(STDOUT) {
+        buddyStatusAppend(&myBuddy);
+        nodeAllocatorStatusAppend(&nodeAllocator);
         INFO(STRING("--------------\n"));
     }
 }

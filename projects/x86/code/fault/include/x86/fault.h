@@ -64,7 +64,8 @@ static_assert(TOTAL_IST_STACKS_BYTES % KERNEL_STACK_ALIGNMENT == 0);
     VARIANT(FAULT_NO_MORE_PHYSICAL_MEMORY, 34)                                 \
     VARIANT(FAULT_NO_MORE_VIRTUAL_MEMORY, 35)                                  \
     VARIANT(FAULT_NO_MORE_VIRTUAL_MEMORY_MAPPER, 36)                           \
-    VARIANT(FAULT_UNEXPECTED_FAILURE, 37)
+    VARIANT(FAULT_NO_MORE_BUFFER, 37)                                          \
+    VARIANT(FAULT_UNEXPECTED_FAILURE, 38)
 
 typedef enum : U64 { CPU_FAULT_ENUM(ENUM_VALUES_VARIANT) } Fault;
 static constexpr auto CPU_FAULT_COUNT = (0 CPU_FAULT_ENUM(PLUS_ONE));

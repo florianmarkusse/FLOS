@@ -19,6 +19,7 @@ void kernelPhysicalBuddyPrepare(BuddyWithNodeAllocator *kernelBuddyPhysical,
                                 Arena scratch);
 
 void convertToKernelMemory(MemoryInfo *memoryInfo,
-                           BuddyWithNodeAllocator *kernelBuddyPhysical);
+                           BuddyWithNodeAllocator *kernelBuddyPhysical,
+                           U64 *physicalMemoryTotal);
 
 #endif

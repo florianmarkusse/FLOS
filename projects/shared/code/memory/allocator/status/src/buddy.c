@@ -2,19 +2,20 @@
 #include "shared/log.h"
 #include "shared/memory/allocator/buddy.h"
 
-void buddyNodesValueAppend(RedBlackNodeBasic *node) {
-    if (!node) {
-        return;
-    }
-
-    INFO(STRING("\t"));
-    INFO((void *)node->value);
-
-    buddyNodesValueAppend(node->children[RB_TREE_LEFT]);
-    buddyNodesValueAppend(node->children[RB_TREE_RIGHT]);
-}
+// static void buddyNodesValueAppend(RedBlackNodeBasic *node) {
+//     if (!node) {
+//         return;
+//     }
+//
+//     INFO(STRING("\t"));
+//     INFO((void *)node->value);
+//
+//     buddyNodesValueAppend(node->children[RB_TREE_LEFT]);
+//     buddyNodesValueAppend(node->children[RB_TREE_RIGHT]);
+// }
 
 void buddyStatusAppend(Buddy *buddy) {
+    U64 bytesTotal = 0;
     U32 iterations =
         buddy->data.blockSizeLargest - buddy->data.blockSizeSmallest + 1;
     U64 blockSize = (1 << buddy->data.blockSizeSmallest);
@@ -50,10 +51,14 @@ void buddyStatusAppend(Buddy *buddy) {
 
         INFO(STRING("Free: "));
         INFO(nodesFreeCount, .flags = NEWLINE);
+        bytesTotal += blockSize * nodesFreeCount;
 
-        if (tree) {
-            buddyNodesValueAppend(tree);
-            INFO(STRING("\n"));
-        }
+        // if (tree) {
+        //     buddyNodesValueAppend(tree);
+        //     INFO(STRING("\n"));
+        // }
     }
+
+    INFO(STRING("Total bytes: "));
+    INFO(bytesTotal, .flags = NEWLINE);
 }
