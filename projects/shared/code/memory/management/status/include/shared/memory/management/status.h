@@ -7,8 +7,6 @@
 void appendPhysicalMemoryManagerStatus();
 void appendVirtualMemoryManagerStatus();
 
-void memoryVirtualGuardPageStatusAppend();
-
 void memoryAppend(Memory memory);
 void mappingMemoryAppend(U64 virtualAddress, U64 physicalAddress, U64 size);
 void mappingVirtualGuardPageAppend(U64 virtualAddress, U64 size);

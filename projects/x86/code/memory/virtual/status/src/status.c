@@ -1,5 +1,6 @@
 #include "abstraction/memory/virtual/status.h"
 #include "shared/log.h"
+#include "shared/memory/management/page.h"
 #include "shared/memory/management/status.h"
 #include "shared/types/numeric.h"
 #include "x86/memory/definitions.h"
@@ -89,7 +90,25 @@ static void memoryVirtualMappingTableAppend() {
     }
 }
 
+static void memoryVirtualCustomMappingAppend() {
+    U8 *buffer = memoryMapperSizes.nodeAllocator.nodes.buf;
+    for (typeof(memoryMapperSizes.nodeAllocator.nodes.len) i = 0;
+         i < memoryMapperSizes.nodeAllocator.nodes.len; i++) {
+        VMMNode *node =
+            (VMMNode *)(buffer +
+                        (memoryMapperSizes.nodeAllocator.elementSizeBytes * i));
+        if (!node->mappingSize) {
+            mappingVirtualGuardPageAppend(node->basic.value, node->bytes);
+        } else {
+            memoryAppend(
+                (Memory){.start = node->basic.value, .bytes = node->bytes});
+            INFO(STRING(" -> [CUSTOM MAP REGIONS, CUSTOM MAP REGIONS] size: "));
+            INFO(node->mappingSize, .flags = NEWLINE);
+        }
+    }
+}
+
 void memoryVirtualMappingStatusAppend() {
     memoryVirtualMappingTableAppend();
-    memoryVirtualGuardPageStatusAppend();
+    memoryVirtualCustomMappingAppend();
 }

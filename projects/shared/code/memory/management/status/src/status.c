@@ -38,27 +38,6 @@ static U32 nodesCount(RedBlackNode *tree) {
     return result;
 }
 
-// static void appendMemoryManagerStatus(RedBlackMMTreeWithFreeList *allocator,
-//                                       String name) {
-//     INFO(name);
-//     AvailableMemoryState result = getAvailableMemory();
-//     countAvailable(allocator->tree, &result.memory, &result.nodes);
-//     INFO(STRING(" mem: "));
-//     INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(result.memory), 16));
-//     INFO(STRING(" nodes: "));
-//     INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(result.nodes), 3));
-//     INFO(STRING("freelist size: "));
-//     INFO(stringWithMinSizeDefault(
-//         CONVERT_TO_STRING(allocator->nodeAllocator.nodesFreeList.len), 3));
-//     INFO(STRING("nodes buf: "));
-//     INFO((void *)allocator->nodeAllocator.nodes.buf);
-//     INFO(STRING(" len: "));
-//     INFO(stringWithMinSizeDefault(
-//         CONVERT_TO_STRING(allocator->nodeAllocator.nodes.len), 3));
-//     INFO(STRING(" cap: "));
-//     INFO(allocator->nodeAllocator.nodes.cap, .flags = NEWLINE);
-// }
-
 void appendPhysicalMemoryManagerStatus() {
     buddyStatusAppend(&buddyPhysical.buddy);
     nodeAllocatorStatusAppend(&buddyPhysical.nodeAllocator);
@@ -67,19 +46,6 @@ void appendPhysicalMemoryManagerStatus() {
 void appendVirtualMemoryManagerStatus() {
     buddyStatusAppend(&buddyVirtual.buddy);
     nodeAllocatorStatusAppend(&buddyVirtual.nodeAllocator);
-}
-
-void memoryVirtualGuardPageStatusAppend() {
-    U8 *buffer = memoryMapperSizes.nodeAllocator.nodes.buf;
-    for (typeof(memoryMapperSizes.nodeAllocator.nodes.len) i = 0;
-         i < memoryMapperSizes.nodeAllocator.nodes.len; i++) {
-        VMMNode *node =
-            (VMMNode *)(buffer +
-                        (memoryMapperSizes.nodeAllocator.elementSizeBytes * i));
-        if (!node->mappingSize) {
-            mappingVirtualGuardPageAppend(node->basic.value, node->bytes);
-        }
-    }
 }
 
 static AvailableMemoryState getAvailableMemory(Buddy *buddy) {

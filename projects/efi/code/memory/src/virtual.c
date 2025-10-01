@@ -20,6 +20,7 @@
 void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
     void *result = findAlignedMemoryBlock(
         virtualStructBytes[type], UEFI_PAGE_SIZE, globals.uefiMemory, false);
+    memset(result, 0, virtualStructBytes[type]);
     return result;
 }
 
