@@ -91,19 +91,32 @@ static void memoryVirtualMappingTableAppend() {
 }
 
 static void memoryVirtualCustomMappingAppend() {
-    U8 *buffer = memoryMapperSizes.nodeAllocator.nodes.buf;
-    for (typeof(memoryMapperSizes.nodeAllocator.nodes.len) i = 0;
-         i < memoryMapperSizes.nodeAllocator.nodes.len; i++) {
-        VMMNode *node =
-            (VMMNode *)(buffer +
-                        (memoryMapperSizes.nodeAllocator.elementSizeBytes * i));
-        if (!node->mappingSize) {
-            mappingVirtualGuardPageAppend(node->basic.value, node->bytes);
-        } else {
-            memoryAppend(
-                (Memory){.start = node->basic.value, .bytes = node->bytes});
-            INFO(STRING(" -> [CUSTOM MAP REGIONS, CUSTOM MAP REGIONS] size: "));
-            INFO(node->mappingSize, .flags = NEWLINE);
+    VMMNode *tree = memoryMapperSizes.tree;
+    if (memoryMapperSizes.tree) {
+        VMMNode *buffer[2 * RB_TREE_MAX_HEIGHT];
+        buffer[0] = tree;
+        U32 len = 1;
+
+        while (len > 0) {
+            VMMNode *node = buffer[len - 1];
+
+            if (!node->mappingSize) {
+                mappingVirtualGuardPageAppend(node->basic.value, node->bytes);
+            } else {
+                memoryAppend(
+                    (Memory){.start = node->basic.value, .bytes = node->bytes});
+                INFO(STRING(
+                    " -> [CUSTOM MAP REGIONS, CUSTOM MAP REGIONS] size: "));
+                INFO(node->mappingSize, .flags = NEWLINE);
+            }
+
+            len--;
+            for (RedBlackDirection dir = 0; dir < RB_TREE_CHILD_COUNT; dir++) {
+                if (node->basic.children[dir]) {
+                    buffer[len] = (VMMNode *)node->basic.children[dir];
+                    len++;
+                }
+            }
         }
     }
 }

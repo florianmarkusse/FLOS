@@ -33,6 +33,6 @@ done
 
 
 FILE_REGEX="./projects/kernel/code/build/.*/${SERIAL_FOLDER}/DEBUG/kernel"
-x86_64-testos-elf-gdb -ex "target remote localhost:1234" \
+gdb -ex "target remote localhost:1234" \
     -ex "dashboard -layout source stack threads assembly variables breakpoints memory history !registers !expressions" \
     -ex "file $(find . -type f -regex "${FILE_REGEX}")"

@@ -19,20 +19,6 @@
 #include "shared/text/string.h"
 #include "shared/trees/red-black/memory-manager.h"
 
-static bool memoryTypeCanBeUsedByKernel(MemoryType type) {
-    switch (type) {
-    case LOADER_CODE:
-    case LOADER_DATA:
-    case BOOT_SERVICES_CODE:
-    case BOOT_SERVICES_DATA:
-    case CONVENTIONAL_MEMORY:
-    case PERSISTENT_MEMORY:
-        return true;
-    default:
-        return false;
-    }
-}
-
 static constexpr auto RED_COLOR = 0xFF0000;
 
 void kernelPhysicalBuddyPrepare(BuddyWithNodeAllocator *kernelBuddyPhysical,

@@ -355,20 +355,14 @@ void fillArchParams(void *archParams, Arena scratch,
     }
 
     CPUIDResult XSAVECPUSupport = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 1);
-    if (XSAVECPUSupport.eax & (1 << 0)) {
-        KFLUSH_AFTER { INFO(STRING("Support for XSAVEOPT found!\n")); }
-    } else {
-        EXIT_WITH_MESSAGE { ERROR(STRING("No Support for XSAVEOPT found!\n")); }
+    if (!(XSAVECPUSupport.eax & (1 << 1))) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("No Support for XSAVEC/XRSTORC found!\n"));
+        }
     }
+    KFLUSH_AFTER { INFO(STRING("Support for XSAVEC/XRSTORC found!\n")); }
 
-    U32 XSAVESize;
-    if (XSAVECPUSupport.eax & (1 << 3)) {
-        XSAVESize = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 2).ebx;
-        KFLUSH_AFTER { INFO(STRING("Support for XSAVES found!\n")); }
-    } else {
-        XSAVESize = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 0).ebx;
-        KFLUSH_AFTER { INFO(STRING("No Support for XSAVES found!\n")); }
-    }
+    U32 XSAVESize = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 0).ebx;
 
     U8 *XSAVEAddress = NEW(&globals.kernelPermanent, U8, .count = XSAVESize,
                            .align = XSAVE_ALIGNMENT, .flags = ZERO_MEMORY);

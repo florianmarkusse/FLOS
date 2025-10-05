@@ -10,6 +10,7 @@
 #include "efi-to-kernel/memory/definitions.h" // for KERNEL_PARAMS_START
 #include "freestanding/log/init.h"
 #include "freestanding/peripheral/screen.h"
+#include "shared/assert.h"
 #include "shared/log.h"
 #include "shared/maths.h"
 #include "shared/memory/allocator/arena.h"
@@ -357,6 +358,7 @@ static void mappingTests() {
 
 __attribute__((section("kernel-start"))) int
 kernelMain(struct KernelParameters *kernelParams) {
+    BREAKPOINT;
     archInit(kernelParams->archParams);
     initMemoryManagers(&kernelParams->memory);
 

@@ -45,12 +45,10 @@ asm_lidt:
     pushq %r14
     pushq %r15
 
-
-    # TODO: On upgrade to newer CPU, use xsaves and xrstors respectively
-    mov XSAVESpace(%rip), %rcx
+    mov XSAVESpace(%rip), %rdi
     mov $0xFFFFFFFF, %eax
     mov $0xFFFFFFFF, %edx
-    xsaveopt (%rcx)
+    xsavec (%rdi)
 .endm
 
 .macro push_dirtied_registers
@@ -64,11 +62,10 @@ asm_lidt:
     # NOTE: Careful, need to be 16-byte aligned! pushing 22 8-byte registers
     # from a more-than 16-byte aligned stack, so it's okay
     call faultHandler
-    # TODO: On upgrade to newer CPU, use xsaves and xrstors respectively
-    mov XSAVESpace(%rip), %rcx
+    mov XSAVESpace(%rip), %rdi
     mov $0xFFFFFFFF, %eax
     mov $0xFFFFFFFF, %edx
-    xrstor (%rcx)
+    xrstor (%rdi)
 
     popq %r15
     popq %r14

@@ -83,5 +83,6 @@ void mappingMemoryAppend(U64 virtualAddress, U64 physicalAddress, U64 size) {
 
 void mappingVirtualGuardPageAppend(U64 virtualAddress, U64 size) {
     memoryAppend((Memory){.start = virtualAddress, .bytes = size});
-    INFO(STRING(" -> [XXXXXXXXXXXXXXXXXX, XXXXXXXXXXXXXXXXXX] GUARD PAGE\n"));
+    INFO(STRING(" -> [GUARD PAGE MAPPING, GUARD PAGE MAPPING] size: "));
+    INFO(size, .flags = NEWLINE);
 }

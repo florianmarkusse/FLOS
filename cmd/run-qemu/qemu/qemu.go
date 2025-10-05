@@ -47,6 +47,7 @@ func Run(args *QemuArgs) {
 	argument.AddArgument(&qemuOptions, "-smp 1")
 	argument.AddArgument(&qemuOptions, "-usb")
 	argument.AddArgument(&qemuOptions, "-vga std")
+	argument.AddArgument(&qemuOptions, "-enable-kvm")
 
 	if args.Verbose {
 		argument.AddArgument(&qemuOptions, "-d int,cpu_reset")
@@ -56,12 +57,11 @@ func Run(args *QemuArgs) {
 		argument.AddArgument(&qemuOptions, "-s -S")
 		// NOTE: Ensure this is the same architecture as what you are trying to
 		// build for :)))
-		argument.AddArgument(&qemuOptions, "-cpu Haswell-v4,pdpe1gb=on,tsc-frequency=2500000000")
-		argument.AddArgument(&qemuOptions, "-accel \"tcg\"")
+		argument.AddArgument(&qemuOptions,
+			"-cpu EPYC-Genoa-v1,pdpe1gb=on,tsc-frequency=4000000000")
 	} else {
 		// TODO: When upgraded, add the xsavec , xsaves, xrstors
 		argument.AddArgument(&qemuOptions, "-cpu host,+xsave,+avx,+xsaveopt")
-		argument.AddArgument(&qemuOptions, "-enable-kvm")
 	}
 
 	if args.OutputToFile {

@@ -56,11 +56,7 @@ PageFaultResult handlePageFault(U64 faultingAddress) {
 
     U32_pow2 mapsToDo = (U32)divideByPowerOf2(pageSizeForFault, pageSizeToUse);
     for (U32 i = 0; i < mapsToDo; i++) {
-        U8 *nodesCurrent = (U8 *)buddyPhysical.nodeAllocator.nodes.buf +
-                           (buddyPhysical.nodeAllocator.nodes.len *
-                            buddyPhysical.nodeAllocator.elementSizeBytes);
         U8 *address = allocPhysicalMemory(pageSizeToUse);
-
         mapPage(startingMap + (i * pageSizeToUse), (U64)address, pageSizeToUse);
     }
 

@@ -12,6 +12,31 @@
 #include "shared/memory/sizes.h"
 #include "shared/trees/red-black/memory-manager.h"
 
+bool memoryTypeCanBeUsedByKernel(MemoryType type) {
+    switch (type) {
+    case LOADER_CODE:
+    case LOADER_DATA:
+    case BOOT_SERVICES_CODE:
+    case BOOT_SERVICES_DATA:
+    case CONVENTIONAL_MEMORY:
+    case PERSISTENT_MEMORY:
+        return true;
+    default:
+        return false;
+    }
+}
+
+static bool needsToBeMappedByKernel(MemoryType type) {
+    return memoryTypeCanBeUsedByKernel(type) || type == RUNTIME_SERVICES_CODE ||
+           type == RUNTIME_SERVICES_DATA || type == ACPI_RECLAIM_MEMORY ||
+           type == ACPI_MEMORY_NVS || type == MEMORY_MAPPED_IO ||
+           type == MEMORY_MAPPED_IO_PORT_SPACE || type == PAL_CODE;
+}
+
+static bool canBeUsedInEFI(MemoryType type) {
+    return type == CONVENTIONAL_MEMORY;
+}
+
 static MemoryInfo prepareMemoryInfo() {
     MemoryInfo memoryInfo = {0};
 
@@ -76,17 +101,16 @@ U64 findHighestMemoryAddress(U64 currentHighestAddress, Arena scratch) {
     MemoryInfo memoryInfo = getMemoryInfo(&scratch);
 
     FOR_EACH_DESCRIPTOR(&memoryInfo, desc) {
-        U64 end = desc->physicalStart + (desc->numberOfPages * UEFI_PAGE_SIZE);
-        if (end > currentHighestAddress) {
-            currentHighestAddress = end;
+        if (needsToBeMappedByKernel(desc->type)) {
+            U64 end =
+                desc->physicalStart + (desc->numberOfPages * UEFI_PAGE_SIZE);
+            if (end > currentHighestAddress) {
+                currentHighestAddress = end;
+            }
         }
     }
 
     return currentHighestAddress;
-}
-
-static bool canBeUsedInEFI(MemoryType type) {
-    return type == CONVENTIONAL_MEMORY;
 }
 
 typedef struct {
