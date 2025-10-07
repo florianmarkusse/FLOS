@@ -7,6 +7,7 @@
 #include "shared/memory/allocator/node.h"
 #include "shared/memory/allocator/status/buddy.h"
 #include "shared/memory/allocator/status/node.h"
+#include "shared/memory/management/management.h"
 #include "shared/memory/sizes.h"
 #include "x86/memory/definitions.h"
 
@@ -16,8 +17,6 @@
 #include <sys/mman.h>
 
 static constexpr auto MEMORY_CAP = 8 * GiB;
-
-static constexpr auto NODES_TOTAL_COUNT = 1000;
 
 int main() {
     U8 *begin = mmap(NULL, MEMORY_CAP, PROT_READ | PROT_WRITE,
@@ -42,8 +41,12 @@ int main() {
 
     PFLUSH_AFTER(STDOUT) { INFO(STRING("hello trehrethr\n")); }
 
+    Exponent orderCount =
+        buddyOrderCountOnLargestPageSize(BUDDY_VIRTUAL_PAGE_SIZE_MAX);
+    U32 blocksCapacity = 512;
+    U64 *backingBuffer = NEW(&arena, U64, .count = orderCount * blocksCapacity);
     Buddy myBuddy;
-    buddyInit(&myBuddy, 57);
+    buddyInit(&myBuddy, backingBuffer, blocksCapacity, orderCount);
     if (setjmp(myBuddy.memoryExhausted)) {
         PFLUSH_AFTER(STDOUT) { ERROR(STRING("Buddy is empty!\n")); }
         return 1;
@@ -55,41 +58,29 @@ int main() {
         return 1;
     }
 
-    NodeAllocator nodeAllocator;
-    nodeAllocatorInit(
-        &nodeAllocator,
-        (void_a){.buf = NEW(&arena, typeof(*myBuddy.data.blocksFree[0]),
-                            .count = NODES_TOTAL_COUNT),
-                 .len =
-                     NODES_TOTAL_COUNT * sizeof(*myBuddy.data.blocksFree[0])},
-        (void_a){.buf = NEW(&arena, void *, .count = NODES_TOTAL_COUNT),
-                 .len = NODES_TOTAL_COUNT * sizeof(void *)},
-        sizeof(*myBuddy.data.blocksFree[0]),
-        alignof(*myBuddy.data.blocksFree[0]));
-
-    buddyFree(&myBuddy, (Memory){.start = 0, .bytes = 528384}, &nodeAllocator);
-
     PFLUSH_AFTER(STDOUT) {
         buddyStatusAppend(&myBuddy);
-        nodeAllocatorStatusAppend(&nodeAllocator);
         INFO(STRING("--------------\n"));
     }
 
-    buddyFree(&myBuddy, (Memory){.start = 540672, .bytes = 507904},
-              &nodeAllocator);
+    buddyFree(&myBuddy, (Memory){.start = 540672, .bytes = 507904});
 
     PFLUSH_AFTER(STDOUT) {
         buddyStatusAppend(&myBuddy);
-        nodeAllocatorStatusAppend(&nodeAllocator);
         INFO(STRING("--------------\n"));
     }
 
-    buddyFree(&myBuddy, (Memory){.start = 528384, .bytes = 12288},
-              &nodeAllocator);
+    buddyFree(&myBuddy, (Memory){.start = 528384, .bytes = 12288});
 
     PFLUSH_AFTER(STDOUT) {
         buddyStatusAppend(&myBuddy);
-        nodeAllocatorStatusAppend(&nodeAllocator);
+        INFO(STRING("--------------\n"));
+    }
+
+    buddyFree(&myBuddy, (Memory){.start = 528384 + 12288, .bytes = 4096});
+
+    PFLUSH_AFTER(STDOUT) {
+        buddyStatusAppend(&myBuddy);
         INFO(STRING("--------------\n"));
     }
 }

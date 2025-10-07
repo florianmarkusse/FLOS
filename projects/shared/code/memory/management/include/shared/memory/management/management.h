@@ -1,24 +1,16 @@
 #ifndef SHARED_MEMORY_MANAGEMENT_MANAGEMENT_H
 #define SHARED_MEMORY_MANAGEMENT_MANAGEMENT_H
 
-#include "shared/memory/allocator/arena.h"
 #include "shared/memory/allocator/buddy.h"
 #include "shared/memory/allocator/node.h"
-#include "shared/trees/red-black/memory-manager.h"
 
-typedef struct {
-    MMNode *tree;
-    NodeAllocator nodeAllocator;
-} RedBlackMMTreeWithFreeList;
-static_assert(sizeof(RedBlackMMTreeWithFreeList) == 48);
+static constexpr auto BUDDY_BLOCKS_CAPACITY_PER_ORDER_DEFAULT = 512;
 
-typedef struct {
-    NodeAllocator nodeAllocator;
-    Buddy buddy;
-} BuddyWithNodeAllocator;
+extern Buddy buddyPhysical;
+static constexpr auto BUDDY_PHYSICAL_PAGE_SIZE_MAX = 30;
 
-extern BuddyWithNodeAllocator buddyPhysical;
-extern BuddyWithNodeAllocator buddyVirtual;
+extern Buddy buddyVirtual;
+static constexpr auto BUDDY_VIRTUAL_PAGE_SIZE_MAX = 57;
 
 void *allocVirtualMemory(U64_pow2 blockSize);
 void freeVirtualMemory(Memory memory);

@@ -21,43 +21,32 @@
 
 static constexpr auto RED_COLOR = 0xFF0000;
 
-void kernelPhysicalBuddyPrepare(BuddyWithNodeAllocator *kernelBuddyPhysical,
-                                GraphicsOutputProtocolMode *mode,
-                                Arena scratch) {
-    MemoryInfo memoryInfo = getMemoryInfo(&scratch);
-    U32 numberOfDescriptors =
-        (U32)(memoryInfo.memoryMapSize / memoryInfo.descriptorSize);
-    // NOTE: just to hold the initial descriptors before moved into final kernel
-    // state.
-    U32 expectedNumberOfDescriptors = numberOfDescriptors * 8;
+void kernelPhysicalBuddyPrepare(Buddy *kernelBuddyPhysical,
+                                U64 physicalAddressMaxExclusive,
+                                GraphicsOutputProtocolMode *mode) {
+    U32 slotsRequired =
+        MAX((U32)ceilingDivide(physicalAddressMaxExclusive,
+                               1 << BUDDY_PHYSICAL_PAGE_SIZE_MAX) *
+                2,
+            BUDDY_BLOCKS_CAPACITY_PER_ORDER_DEFAULT);
 
-    nodeAllocatorInit(
-        &kernelBuddyPhysical->nodeAllocator,
-        (void_a){.buf =
-                     NEW(&globals.kernelTemporary,
-                         typeof(*kernelBuddyPhysical->buddy.data.blocksFree[0]),
-                         .count = expectedNumberOfDescriptors),
-                 .len = expectedNumberOfDescriptors *
-                        sizeof(*kernelBuddyPhysical->buddy.data.blocksFree[0])},
-        (void_a){.buf = NEW(&globals.kernelTemporary, void *,
-                            .count = expectedNumberOfDescriptors),
-                 .len = expectedNumberOfDescriptors * sizeof(void *)},
-        sizeof(*kernelBuddyPhysical->buddy.data.blocksFree[0]),
-        alignof(*kernelBuddyPhysical->buddy.data.blocksFree[0]));
+    Exponent orderCount =
+        buddyOrderCountOnLargestPageSize(BUDDY_PHYSICAL_PAGE_SIZE_MAX);
+    U64 *backingBuffer =
+        NEW(&globals.kernelPermanent, U64, .count = orderCount * slotsRequired);
+    buddyInit(kernelBuddyPhysical, backingBuffer, slotsRequired, orderCount);
 
-    buddyInit(&kernelBuddyPhysical->buddy, 40);
-    if (setjmp(buddyPhysical.buddy.memoryExhausted)) {
+    if (setjmp(kernelBuddyPhysical->memoryExhausted)) {
         drawStatusRectangle(mode, RED_COLOR);
         hangThread();
     }
-    if (setjmp(buddyPhysical.buddy.backingBufferExhausted)) {
+    if (setjmp(kernelBuddyPhysical->backingBufferExhausted)) {
         drawStatusRectangle(mode, RED_COLOR);
         hangThread();
     }
 }
 
-void convertToKernelMemory(MemoryInfo *memoryInfo,
-                           BuddyWithNodeAllocator *kernelBuddyPhysical,
+void convertToKernelMemory(MemoryInfo *memoryInfo, Buddy *kernelBuddyPhysical,
                            U64 *physicalMemoryTotal) {
     U64 physicalMemoryBytes = 0;
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {
@@ -108,8 +97,7 @@ void convertToKernelMemory(MemoryInfo *memoryInfo,
             for (typeof(availableMemory.len) i = 0; i < availableMemory.len;
                  i++) {
                 physicalMemoryBytes += availableMemory.buf[i].bytes;
-                buddyFree(&kernelBuddyPhysical->buddy, availableMemory.buf[i],
-                          &kernelBuddyPhysical->nodeAllocator);
+                buddyFree(kernelBuddyPhysical, availableMemory.buf[i]);
             }
         }
     }

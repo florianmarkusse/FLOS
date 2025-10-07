@@ -36,20 +36,21 @@ static U64 TEST_ITERATIONS = 32;
 static void appendMemoryDeltaType(AvailableMemoryState startMemory,
                                   AvailableMemoryState endMemory) {
     if (endMemory.memory != startMemory.memory ||
-        endMemory.nodes != startMemory.nodes) {
+        endMemory.addresses != startMemory.addresses) {
         INFO(STRING(
             "Difference in available memory detected!\n[BEGIN  ] memory: "));
         INFO(startMemory.memory);
-        INFO(STRING(" nodes: "));
-        INFO(startMemory.nodes, .flags = NEWLINE);
+        INFO(STRING("addresses: "));
+        INFO(startMemory.addresses, .flags = NEWLINE);
         INFO(STRING("[CURRENT] memory: "));
         INFO(endMemory.memory);
-        INFO(STRING(" nodes: "));
-        INFO(endMemory.nodes, .flags = NEWLINE);
+        INFO(STRING("addresses: "));
+        INFO(endMemory.addresses, .flags = NEWLINE);
         INFO(STRING("[DELTA  ] memory: "));
         INFO((I64)endMemory.memory - (I64)startMemory.memory);
-        INFO(STRING(" nodes: "));
-        INFO((I64)endMemory.nodes - (I64)startMemory.nodes, .flags = NEWLINE);
+        INFO(STRING("addresses: "));
+        INFO((I64)endMemory.addresses - (I64)startMemory.addresses,
+             .flags = NEWLINE);
     }
 }
 

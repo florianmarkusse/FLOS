@@ -27,14 +27,9 @@ typedef struct {
 static_assert(sizeof(Window) == 32);
 
 typedef struct {
-    NodeAllocator nodeAllocator;
-    BuddyData data;
-} BuddyDataWithNodeAllocator;
-
-typedef struct {
     U64 physicalMemoryTotal;
-    BuddyDataWithNodeAllocator buddyPhysical;
-    BuddyDataWithNodeAllocator buddyVirtual;
+    BuddyData buddyPhysical;
+    BuddyData buddyVirtual;
     VMMTreeWithFreeList memoryMapperSizes;
 } KernelMemory;
 

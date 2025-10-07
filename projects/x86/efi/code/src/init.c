@@ -219,48 +219,42 @@ void initRootVirtualMemoryInKernel() {
 }
 
 // NOTE: Should be enough until put into final kernel position.
-static constexpr auto INITIAL_VIRTUAL_MEMORY_REGIONS = 128;
 static constexpr auto INITIAL_VIRTUAL_MAPPING_SIZES = 128;
 
 void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress) {
-    nodeAllocatorInit(
-        &buddyVirtual.nodeAllocator,
-        (void_a){.buf = NEW(&globals.kernelTemporary,
-                            typeof(*buddyVirtual.buddy.data.blocksFree[0]),
-                            .count = INITIAL_VIRTUAL_MEMORY_REGIONS),
-                 .len = INITIAL_VIRTUAL_MEMORY_REGIONS *
-                        sizeof(*buddyVirtual.buddy.data.blocksFree[0])},
-        (void_a){.buf = NEW(&globals.kernelTemporary, void *,
-                            .count = INITIAL_VIRTUAL_MEMORY_REGIONS),
-                 .len = INITIAL_VIRTUAL_MEMORY_REGIONS * sizeof(void *)},
-        sizeof(*buddyVirtual.buddy.data.blocksFree[0]),
-        alignof(*buddyVirtual.buddy.data.blocksFree[0]));
-
-    buddyInit(&buddyVirtual.buddy, 57);
-    if (setjmp(buddyVirtual.buddy.memoryExhausted)) {
+    Exponent orderCount =
+        buddyOrderCountOnLargestPageSize(BUDDY_VIRTUAL_PAGE_SIZE_MAX);
+    U64 *backingBuffer =
+        NEW(&globals.kernelPermanent, U64,
+            .count = orderCount * BUDDY_BLOCKS_CAPACITY_PER_ORDER_DEFAULT);
+    KFLUSH_AFTER { ERROR(STRING("IN here\n")); }
+    buddyInit(&buddyVirtual, backingBuffer,
+              BUDDY_BLOCKS_CAPACITY_PER_ORDER_DEFAULT, orderCount);
+    KFLUSH_AFTER { ERROR(STRING("Out oof here\n")); }
+    if (setjmp(buddyVirtual.memoryExhausted)) {
         interruptNoMoreVirtualMemory();
     }
-    if (setjmp(buddyVirtual.buddy.backingBufferExhausted)) {
+    if (setjmp(buddyVirtual.backingBufferExhausted)) {
         interruptNoMoreBuffer();
     }
 
     Memory freeMemory = {.start = startingAddress,
                          .bytes = LOWER_HALF_END - startingAddress};
-    buddyFree(&buddyVirtual.buddy, freeMemory, &buddyVirtual.nodeAllocator);
+    buddyFree(&buddyVirtual, freeMemory);
 
     freeMemory = (Memory){.start = HIGHER_HALF_START,
                           .bytes = endingAddress - HIGHER_HALF_START};
-    buddyFree(&buddyVirtual.buddy, freeMemory, &buddyVirtual.nodeAllocator);
+    buddyFree(&buddyVirtual, freeMemory);
 
     memoryMapperSizes.tree = nullptr;
     nodeAllocatorInit(
         &memoryMapperSizes.nodeAllocator,
-        (void_a){.buf = NEW(&globals.kernelTemporary,
+        (void_a){.buf = NEW(&globals.kernelPermanent,
                             typeof(*memoryMapperSizes.tree),
                             .count = INITIAL_VIRTUAL_MAPPING_SIZES),
                  .len = INITIAL_VIRTUAL_MAPPING_SIZES *
                         sizeof(*memoryMapperSizes.tree)},
-        (void_a){.buf = NEW(&globals.kernelTemporary, typeof(void *),
+        (void_a){.buf = NEW(&globals.kernelPermanent, typeof(void *),
                             .count = INITIAL_VIRTUAL_MAPPING_SIZES),
                  .len = INITIAL_VIRTUAL_MAPPING_SIZES * sizeof(void *)},
         sizeof(*memoryMapperSizes.tree), alignof(*memoryMapperSizes.tree));

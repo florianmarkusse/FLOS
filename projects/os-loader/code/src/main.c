@@ -231,9 +231,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     // NOTE: Don't use virtual memory allocations anymore from this point
     // onward.
-    kernelParams->memory.buddyVirtual.data = buddyVirtual.buddy.data;
-    kernelParams->memory.buddyVirtual.nodeAllocator =
-        buddyVirtual.nodeAllocator;
+    kernelParams->memory.buddyVirtual = buddyVirtual.data;
     kernelParams->memory.memoryMapperSizes = memoryMapperSizes;
 
     KFLUSH_AFTER {
@@ -243,9 +241,8 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
     drawStatusRectangle(gop->mode, GREEN_COLOR);
 
-    BuddyWithNodeAllocator uefiBuddyPhysical;
-    kernelPhysicalBuddyPrepare(&uefiBuddyPhysical, gop->mode,
-                               globals.uefiMemory);
+    Buddy uefiBuddyPhysical;
+    kernelPhysicalBuddyPrepare(&uefiBuddyPhysical, firstFreeVirtual, gop->mode);
 
     kernelParams->permanentLeftoverFree =
         (Memory){.start = (U64)globals.kernelPermanent.curFree,
@@ -268,9 +265,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     convertToKernelMemory(&memoryInfo, &uefiBuddyPhysical,
                           &kernelParams->memory.physicalMemoryTotal);
-    kernelParams->memory.buddyPhysical.data = uefiBuddyPhysical.buddy.data;
-    kernelParams->memory.buddyPhysical.nodeAllocator =
-        uefiBuddyPhysical.nodeAllocator;
+    kernelParams->memory.buddyPhysical = uefiBuddyPhysical.data;
 
     jumpIntoKernel(stackResult.stackVirtualTop, 0, kernelParams);
 

@@ -7,8 +7,24 @@
 #include "shared/memory/allocator/node.h"
 #include "shared/memory/management/definitions.h"
 
+static Exponent smallestPageSizeExponent() {
+    return (Exponent)__builtin_ctzll(pageSizesSmallest());
+}
+
+static Exponent buddyOrderMaxOnDifference(Exponent blockSizeLargest,
+                                          Exponent blockSizeSmallest) {
+    return blockSizeLargest - blockSizeSmallest;
+}
+
 Exponent buddyOrderMax(Buddy *buddy) {
-    return buddy->data.blockSizeLargest - buddy->data.blockSizeSmallest;
+    return buddyOrderMaxOnDifference(buddy->data.blockSizeLargest,
+                                     buddy->data.blockSizeSmallest);
+}
+
+Exponent buddyOrderCountOnLargestPageSize(Exponent blockSizeLargest) {
+    return buddyOrderMaxOnDifference(blockSizeLargest,
+                                     smallestPageSizeExponent()) +
+           1;
 }
 
 Exponent buddyOrderCount(Buddy *buddy) { return buddyOrderMax(buddy) + 1; }
@@ -17,12 +33,27 @@ U64_pow2 buddyBlockSize(Buddy *buddy, U8 order) {
     return ((1ULL << (buddy->data.blockSizeSmallest + order)));
 }
 
+static bool buddyBlockRemoveTry(Exponent order, U64 buddyAddress,
+                                BuddyData *buddy) {
+    U64 *blockBuf = buddy->blocks[order].buf;
+    U32 *blockLen = &buddy->blocks[order].len;
+
+    for (typeof(*blockLen) i = 0; i < *blockLen; i++) {
+        if (blockBuf[i] == buddyAddress) {
+            blockBuf[i] = blockBuf[*blockLen - 1];
+            (*blockLen)--;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static U64 getBuddyAddress(U64 address, U64_pow2 blockSize) {
     return (address ^ (blockSize));
 }
 
-void *buddyAllocate(Buddy *buddy, U64_pow2 blockSize,
-                    NodeAllocator *nodeAllocator) {
+void *buddyAllocate(Buddy *buddy, U64_pow2 blockSize) {
     ASSERT(blockSize >= 1ULL << buddy->data.blockSizeSmallest);
     ASSERT(blockSize <= 1ULL << buddy->data.blockSizeLargest);
 
@@ -30,38 +61,36 @@ void *buddyAllocate(Buddy *buddy, U64_pow2 blockSize,
         (Exponent)__builtin_ctzll(blockSize) - buddy->data.blockSizeSmallest;
     Exponent orderFound = orderRequested;
 
-    RedBlackNodeBasic *pop =
-        popRedBlackNodeBasic(&buddy->data.blocksFree[orderFound]);
-    while (!pop) {
-        orderFound++;
-        if (orderFound > buddy->data.blockSizeLargest) {
+    Exponent orderMax = buddyOrderMax(buddy);
+    while (!buddy->data.blocks[orderFound].len) {
+        if (orderFound == orderMax) {
             longjmp(buddy->memoryExhausted, 1);
         }
+
+        orderFound++;
         blockSize *= 2;
-        pop = popRedBlackNodeBasic(&buddy->data.blocksFree[orderFound]);
     }
+
+    U64_a *blocks = &buddy->data.blocks[orderFound];
+    U64 address = blocks->buf[blocks->len - 1];
+    blocks->len--;
 
     while (orderFound > orderRequested) {
-        RedBlackNodeBasic *splitNode = nodeAllocatorGet(nodeAllocator);
-        if (!splitNode) {
-            insertRedBlackNodeBasic(&buddy->data.blocksFree[orderFound], pop);
-            longjmp(buddy->backingBufferExhausted, 1);
-        }
         orderFound--;
+        blocks = &buddy->data.blocks[orderFound];
         blockSize /= 2;
 
-        splitNode->value = getBuddyAddress(pop->value, blockSize);
-        insertRedBlackNodeBasic(&buddy->data.blocksFree[orderFound], splitNode);
+        if (blocks->len == buddy->data.blocksCapacityPerOrder) {
+            longjmp(buddy->backingBufferExhausted, 1);
+        }
+        blocks->buf[blocks->len] = getBuddyAddress(address, blockSize);
+        blocks->len++;
     }
 
-    void *result = (void *)pop->value;
-
-    nodeAllocatorFree(nodeAllocator, pop);
-
-    return result;
+    return (void *)address;
 }
 
-void buddyFree(Buddy *buddy, Memory memory, NodeAllocator *nodeAllocator) {
+void buddyFree(Buddy *buddy, Memory memory) {
     ASSERT(memory.start ==
            alignUp(memory.start, 1 << buddy->data.blockSizeSmallest));
     ASSERT(isAlignedTo(memory.bytes, 1 << buddy->data.blockSizeSmallest));
@@ -88,45 +117,42 @@ void buddyFree(Buddy *buddy, Memory memory, NodeAllocator *nodeAllocator) {
 
         U64_pow2 blockSize = buddyBlockSize(buddy, orderToAdd);
         U64 buddyAddress = getBuddyAddress(memoryAddress, blockSize);
-        RedBlackNodeBasic *nodeFree = deleteRedBlackNodeBasic(
-            &buddy->data.blocksFree[orderToAdd], buddyAddress);
-        if (!nodeFree) {
-            nodeFree = nodeAllocatorGet(nodeAllocator);
-            if (!nodeFree) {
-                longjmp(buddy->backingBufferExhausted, 1);
-            }
-        } else {
-            while (1) {
-                // Turn off the order's bit, so we always have the "lowest"
-                // address buddy, so we can move up an order
-                memoryAddress &= (~blockSize);
-                blockSize *= 2;
-                orderToAdd++;
-                buddyAddress = getBuddyAddress(memoryAddress, blockSize);
 
-                RedBlackNodeBasic *nodeHigherOrder = deleteRedBlackNodeBasic(
-                    &buddy->data.blocksFree[orderToAdd], buddyAddress);
-                if (nodeHigherOrder) {
-                    nodeAllocatorFree(nodeAllocator, nodeHigherOrder);
-                } else {
-                    break;
-                }
-            }
+        while (buddyBlockRemoveTry(orderToAdd, buddyAddress, &buddy->data)) {
+            // Turn off the order's bit, so we always have the "lowest"
+            // address buddy, so we can move up an order
+            memoryAddress &= (~blockSize);
+
+            blockSize *= 2;
+            orderToAdd++;
+            buddyAddress = getBuddyAddress(memoryAddress, blockSize);
         }
 
-        nodeFree->value = memoryAddress;
-        insertRedBlackNodeBasic(&buddy->data.blocksFree[orderToAdd], nodeFree);
+        U32 *blockLen = &buddy->data.blocks[orderToAdd].len;
+        if (*blockLen == buddy->data.blocksCapacityPerOrder) {
+            longjmp(buddy->backingBufferExhausted, 1);
+        }
+        U64 *blockBuf = buddy->data.blocks[orderToAdd].buf;
+
+        blockBuf[*blockLen] = memoryAddress;
+        (*blockLen)++;
 
         memoryAddress += blockSize;
     }
 }
 
-void buddyInit(Buddy *buddy, Exponent blockSizeLargest) {
-    Exponent blockSizeLargestExponents = blockSizeLargest;
-    Exponent blockSizeSmallestExponents =
-        (U8)__builtin_ctzll(pageSizesSmallest());
+void buddyInit(Buddy *buddy, U64 *backingBuffer, U32 blocksCapacity,
+               Exponent orderCount) {
+    ASSERT(orderCount <= BUDDY_ORDERS_MAX);
 
-    *buddy = (Buddy){
-        .data = (BuddyData){.blockSizeSmallest = blockSizeSmallestExponents,
-                            .blockSizeLargest = blockSizeLargestExponents}};
+    buddy->data.blockSizeSmallest = smallestPageSizeExponent();
+    buddy->data.blockSizeLargest =
+        buddy->data.blockSizeSmallest + (orderCount - 1);
+
+    for (typeof(orderCount) i = 0; i < orderCount; i++) {
+        buddy->data.blocks[i].buf = backingBuffer + (i * blocksCapacity);
+        buddy->data.blocks[i].len = 0;
+    }
+
+    buddy->data.blocksCapacityPerOrder = blocksCapacity;
 }

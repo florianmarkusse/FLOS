@@ -10,6 +10,9 @@ typedef struct {
     SystemTable *st;
     Arena uefiMemory;
     Arena kernelPermanent;
+    // TODO: I think we can get rid of this tbh, only memory mapper size is
+    // using it, which can be put in permanent memory, the footprint isnt that
+    // big
     Arena kernelTemporary; // Memory that is jettisoned after kernel is up and
                            // running. E.g., the memory used for the kernel
                            // parameters.
