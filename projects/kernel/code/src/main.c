@@ -360,6 +360,7 @@ static void mappingTests() {
 __attribute__((section("kernel-start"))) int
 kernelMain(struct KernelParameters *kernelParams) {
     BREAKPOINT;
+
     archInit(kernelParams->archParams);
     initMemoryManagers(&kernelParams->memory);
 

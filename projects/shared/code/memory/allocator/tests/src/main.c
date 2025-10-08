@@ -42,7 +42,7 @@ int main() {
     PFLUSH_AFTER(STDOUT) { INFO(STRING("hello trehrethr\n")); }
 
     Exponent orderCount =
-        buddyOrderCountOnLargestPageSize(BUDDY_VIRTUAL_PAGE_SIZE_MAX);
+        buddyOrderCountOnLargestPageSize(BUDDY_PHYSICAL_PAGE_SIZE_MAX);
     U32 blocksCapacity = 512;
     U64 *backingBuffer = NEW(&arena, U64, .count = orderCount * blocksCapacity);
     Buddy myBuddy;
@@ -63,21 +63,22 @@ int main() {
         INFO(STRING("--------------\n"));
     }
 
-    buddyFree(&myBuddy, (Memory){.start = 540672, .bytes = 507904});
+    buddyFree(&myBuddy, (Memory){.start = 0, .bytes = (1 << 30) / 2});
 
     PFLUSH_AFTER(STDOUT) {
         buddyStatusAppend(&myBuddy);
         INFO(STRING("--------------\n"));
     }
 
-    buddyFree(&myBuddy, (Memory){.start = 528384, .bytes = 12288});
+    buddyFree(&myBuddy, (Memory){.start = 1 << 30, .bytes = 1 << 30});
 
     PFLUSH_AFTER(STDOUT) {
         buddyStatusAppend(&myBuddy);
         INFO(STRING("--------------\n"));
     }
 
-    buddyFree(&myBuddy, (Memory){.start = 528384 + 12288, .bytes = 4096});
+    buddyFree(&myBuddy,
+              (Memory){.start = (1 << 30) / 2, .bytes = (1 << 30) / 2});
 
     PFLUSH_AFTER(STDOUT) {
         buddyStatusAppend(&myBuddy);

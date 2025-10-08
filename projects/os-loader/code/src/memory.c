@@ -19,8 +19,6 @@
 #include "shared/text/string.h"
 #include "shared/trees/red-black/memory-manager.h"
 
-static constexpr auto RED_COLOR = 0xFF0000;
-
 void kernelPhysicalBuddyPrepare(Buddy *kernelBuddyPhysical,
                                 U64 physicalAddressMaxExclusive,
                                 GraphicsOutputProtocolMode *mode) {

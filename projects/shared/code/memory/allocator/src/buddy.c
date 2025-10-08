@@ -117,8 +117,10 @@ void buddyFree(Buddy *buddy, Memory memory) {
 
         U64_pow2 blockSize = buddyBlockSize(buddy, orderToAdd);
         U64 buddyAddress = getBuddyAddress(memoryAddress, blockSize);
+        Exponent orderMax = buddyOrderMax(buddy);
 
-        while (buddyBlockRemoveTry(orderToAdd, buddyAddress, &buddy->data)) {
+        while (orderToAdd < orderMax &&
+               buddyBlockRemoveTry(orderToAdd, buddyAddress, &buddy->data)) {
             // Turn off the order's bit, so we always have the "lowest"
             // address buddy, so we can move up an order
             memoryAddress &= (~blockSize);

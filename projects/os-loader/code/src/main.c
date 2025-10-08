@@ -38,8 +38,6 @@ static constexpr auto KERNEL_PERMANENT_MEMORY_ALIGNMENT =
 static constexpr auto KERNEL_TEMPORARY_MEMORY = 4 * MiB;
 static constexpr auto MIN_VIRTUAL_MEMORY_REQUIRED = 32 * GiB;
 
-static constexpr auto GREEN_COLOR = 0x00FF00;
-
 Status efi_main(Handle handle, SystemTable *systemtable) {
     globals.h = handle;
     globals.st = systemtable;
@@ -239,10 +237,12 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                     "to the kernel. Setting up a square in the top-left corner "
                     "that indicates the status.\nGreen: Good\nRed: Bad\n"));
     }
-    drawStatusRectangle(gop->mode, GREEN_COLOR);
+    statusStageUpdate(gop->mode, START);
 
     Buddy uefiBuddyPhysical;
     kernelPhysicalBuddyPrepare(&uefiBuddyPhysical, firstFreeVirtual, gop->mode);
+
+    statusStageUpdate(gop->mode, PHYSICAL_MEMORY_INITED);
 
     kernelParams->permanentLeftoverFree =
         (Memory){.start = (U64)globals.kernelPermanent.curFree,
@@ -263,9 +263,13 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                      "call exit boot services twice?\n"));
     }
 
+    statusStageUpdate(gop->mode, BOOT_SERVICES_EXITED);
+
     convertToKernelMemory(&memoryInfo, &uefiBuddyPhysical,
                           &kernelParams->memory.physicalMemoryTotal);
     kernelParams->memory.buddyPhysical = uefiBuddyPhysical.data;
+
+    statusStageUpdate(gop->mode, PHYSICAL_MEMORY_COLLECTED);
 
     jumpIntoKernel(stackResult.stackVirtualTop, 0, kernelParams);
 
