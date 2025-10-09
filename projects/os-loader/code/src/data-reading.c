@@ -2,7 +2,6 @@
 
 #include "abstraction/log.h"
 #include "abstraction/memory/manipulation.h"
-#include "efi-to-kernel/generated/kernel-magic.h"
 #include "efi-to-kernel/memory/definitions.h"
 #include "efi/error.h"
 #include "efi/firmware/base.h" // for ERROR, Handle
@@ -22,84 +21,57 @@
 
 // NOTE: Once my firmware supports a PartitionInformationProtocol, this function
 // can be used to check for the right block protocol. Until then, it cannot.
-static void checkForPartitionGUID(Handle handle) {
+static void kernelLoadWithGUID(Handle handle, U32 bytes, Arena scratch,
+                               String *result) {
     PartitionInformationProtocol *partitionInfo;
     Status status = globals.st->boot_services->open_protocol(
         handle, &PARTITION_INFO_PROTOCOL_GUID, (void **)&partitionInfo,
         globals.h, nullptr, OPEN_PROTOCOL_GET_PROTOCOL);
-
     EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not find partition info protocol."));
-    }
-
-    KFLUSH_AFTER {
-        INFO(STRING("resvision: "));
-        INFO(partitionInfo->revision, .flags = NEWLINE);
-        INFO(STRING("Type: "));
-        INFO(partitionInfo->type, .flags = NEWLINE);
-        INFO(STRING("System: "));
-        INFO(partitionInfo->system, .flags = NEWLINE);
-    }
-
-    if (partitionInfo->type == PARTITION_TYPE_MBR) {
-        KFLUSH_AFTER { INFO(STRING("Is MBR")); }
     }
 
     if (partitionInfo->type == PARTITION_TYPE_GPT) {
         GPTPartitionEntry *header = &partitionInfo->gpt;
         if (UUIDEquals(header->partitionTypeGUID, FLOS_BASIC_DATA_GUID)) {
-            KFLUSH_AFTER { INFO(STRING("Found one with my GUID!!!")); }
-        }
-    }
+            BlockIoProtocol *biop;
+            status = globals.st->boot_services->open_protocol(
+                handle, &BLOCK_IO_PROTOCOL_GUID, (void **)&biop, globals.h,
+                nullptr, OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+            EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+                ERROR(STRING("Could not Open Block IO protocol on handle\n"));
+            }
 
-    EXIT_WITH_MESSAGE {
-        ERROR(STRING("ALL BAD!"));
-        ERROR(STRING("ALL BAD!"));
-        ERROR(STRING("ALL BAD!"));
-        ERROR(STRING("ALL BAD!"));
-    }
-}
+            U32 alignedBytes = (U32)alignUp(bytes, biop->media->blockSize);
+            U64 *blockAddress = (U64 *)NEW(&scratch, U8, .count = alignedBytes,
+                                           .align = biop->media->blockSize);
 
-// We first read memory into scratch memory before copying it to the actual
-// memory location that we want it in. UEFI's readBlocks implementation has a
-// bug on my hardware with reading blocks into addresses that are above 4GiB and
-// the aligned memory address can end up being at this level. So we add an
-// intermediate step in between.
-static String fetchKernelThroughBIOP(Handle handle, U32 bytes, Arena scratch) {
-    String result;
-    result.len = 0;
+            status = biop->readBlocks(biop, biop->media->mediaID, 0,
+                                      alignedBytes, (void *)blockAddress);
+            EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+                ERROR(STRING("Could not read blocks from kernel GPT\n"));
+            }
 
-    BlockIoProtocol *biop;
-    Status status = globals.st->boot_services->open_protocol(
-        handle, &BLOCK_IO_PROTOCOL_GUID, (void **)&biop, globals.h, nullptr,
-        OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
-        ERROR(STRING("Could not Open Block IO protocol on handle\n"));
-    }
-
-    if (biop->media->blockSize > 0 && biop->media->logicalPartition) {
-        U32 alignedBytes = (U32)alignUp(bytes, biop->media->blockSize);
-
-        U64 *blockAddress = (U64 *)NEW(&scratch, U8, .count = alignedBytes,
-                                       .align = biop->media->blockSize);
-
-        status = biop->readBlocks(biop, biop->media->mediaID, 0, alignedBytes,
-                                  (void *)blockAddress);
-        if (!(EFI_ERROR(status)) && !memcmp(KERNEL_MAGIC, (void *)blockAddress,
-                                            COUNTOF(KERNEL_MAGIC))) {
             void *kernelAddress =
                 NEW(&globals.kernelPermanent, U8, .count = bytes,
                     .align = pageSizesSmallest());
 
             memcpy(kernelAddress, blockAddress, bytes);
-            result = (String){.buf = (void *)kernelAddress, .len = bytes};
+            *result = (String){.buf = (void *)kernelAddress, .len = bytes};
+
+            status = globals.st->boot_services->close_protocol(
+                handle, &BLOCK_IO_PROTOCOL_GUID, globals.h, nullptr);
+            EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+                ERROR(STRING("Could not close BLOCK_IO_PROTOCOL_GUID.\n"));
+            }
         }
     }
 
-    globals.st->boot_services->close_protocol(handle, &BLOCK_IO_PROTOCOL_GUID,
-                                              globals.h, nullptr);
-
-    return result;
+    status = globals.st->boot_services->close_protocol(
+        handle, &PARTITION_INFO_PROTOCOL_GUID, globals.h, nullptr);
+    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
+        ERROR(STRING("Could not close PARTITION_INFO_PROTOCOL_GUID.\n"));
+    }
 }
 
 String readKernelFromCurrentLoadedImage(U32 bytes, Arena scratch) {
@@ -117,10 +89,10 @@ String readKernelFromCurrentLoadedImage(U32 bytes, Arena scratch) {
     Handle *handleBuffer = nullptr;
 
     status = globals.st->boot_services->locate_handle_buffer(
-        BY_PROTOCOL, &BLOCK_IO_PROTOCOL_GUID, nullptr, &numberOfHandles,
+        BY_PROTOCOL, &PARTITION_INFO_PROTOCOL_GUID, nullptr, &numberOfHandles,
         &handleBuffer);
     EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
-        ERROR(STRING("Could not locate any Block IO Protocols.\n"));
+        ERROR(STRING("Could not locate any PARTITION_INFO_PROTOCOL_GUID.\n"));
     }
 
     String data;
@@ -128,11 +100,12 @@ String readKernelFromCurrentLoadedImage(U32 bytes, Arena scratch) {
 
     for (typeof(numberOfHandles) i = 0; data.len == 0 && i < numberOfHandles;
          i++) {
-        data = fetchKernelThroughBIOP(handleBuffer[i], bytes, scratch);
+        kernelLoadWithGUID(handleBuffer[i], bytes, scratch, &data);
     }
+
     if (data.len == 0) {
         EXIT_WITH_MESSAGE {
-            ERROR(STRING("Could not load kernel from any available block "
+            ERROR(STRING("Could not load kernel from any available partition "
                          "protocol!\nNumber of handles: "));
             ERROR(numberOfHandles, .flags = NEWLINE);
         }
@@ -142,12 +115,8 @@ String readKernelFromCurrentLoadedImage(U32 bytes, Arena scratch) {
     EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not free handle buffer.\n"));
     }
-    globals.st->boot_services->close_protocol(
-        lip->device_handle, &BLOCK_IO_PROTOCOL_GUID, globals.h, nullptr);
-    EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
-        ERROR(STRING("Could not close lip block io protocol.\n"));
-    }
-    globals.st->boot_services->close_protocol(
+
+    status = globals.st->boot_services->close_protocol(
         globals.h, &LOADED_IMAGE_PROTOCOL_GUID, globals.h, nullptr);
     EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
         ERROR(STRING("Could not close lip protocol.\n"));

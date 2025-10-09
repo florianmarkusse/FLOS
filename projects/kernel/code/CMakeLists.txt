@@ -83,10 +83,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE shared-memory-converter)
 
 set(BINARIZER "${PROJECT_NAME}.bin")
 set(PROJECT_NAME_BIN "${PROJECT_NAME}.bin")
-set(KERNEL_MAGIC_FOLDER
-    "${REPO_PROJECTS}/efi-to-kernel/code/include/efi-to-kernel/generated"
-)
-set(KERNEL_MAGIC_OUTPUT "${KERNEL_MAGIC_FOLDER}/kernel-magic.h")
 add_custom_target(
     ${BINARIZER}
     ALL
@@ -95,14 +91,8 @@ add_custom_target(
         --remove-section=.symtab --remove-section=.shstrtab
         --remove-section=.strtab ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME_BIN}
-    COMMAND
-        # TODO: remove this once moved on to better UEFI support, just reading it by GUID instead.
-        mkdir -p ${KERNEL_MAGIC_FOLDER} && python3
-        "${REPO_PROJECTS}/efi-to-kernel/code/create_magic.py"
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME_BIN}" ${KERNEL_MAGIC_OUTPUT}
     DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}
     COMMAND_EXPAND_LISTS
-    BYPRODUCTS ${KERNEL_MAGIC_OUTPUT}
     VERBATIM
     COMMENT "Transforming ${PROJECT_NAME} into ${PROJECT_NAME_BIN}"
 )

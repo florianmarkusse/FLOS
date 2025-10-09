@@ -5,9 +5,6 @@ run
 ```
 cmd/install-dependencies.sh
 cmd/build-go.sh
-# The below command is necessary to create the kernel magic file. This
-dependency will be removed once I have better hardware that has a more
-up-to-date UEFI implementation >2017 instead of 2015...
 cmd/compile.elf -p kernel
 cmd/compile-run.elf
 ```
