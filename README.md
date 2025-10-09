@@ -42,7 +42,6 @@ find code/build -type f -name *.c.o -exec pahole -a -d -R -S {} \; > ~/Desktop/F
 
 ### UEFI improvements once upgraded to new firmware !!
 
-1. Use `PartitionInformationProtocol`
 2. Use custom Memory Type to mark free kernel memory
 
 ### CPU improvements once upgraded to new firmware !!
