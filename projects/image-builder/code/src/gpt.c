@@ -7,7 +7,7 @@
 #include "shared/uuid.h"
 
 typedef struct __attribute__((packed)) {
-    U8 signature[8];
+    U8 signature[8] __attribute__((nonstring));
     U32 revision;
     U32 headerSize;
     U32 headerCRC32;

@@ -58,7 +58,7 @@ func main() {
 
 	uefiimage.CreateUefiImage(buildmode.DefaultBuildMode(), architecture.DefaultArchitecture(), false)
 
-	writeToUSBCommand := fmt.Sprintf("sudo dd if=%s/%s of=%s conv=notrunc", common.REPO_ROOT, common.FLOS_UEFI_IMAGE_FILE, outputFile)
+	writeToUSBCommand := fmt.Sprintf("sudo dd if=%s/%s of=%s status=progress conv=fsync", common.REPO_ROOT, common.FLOS_UEFI_IMAGE_FILE, outputFile)
 	argument.ExecCommand(writeToUSBCommand)
 }
 
