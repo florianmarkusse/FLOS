@@ -376,7 +376,7 @@ kernelMain(struct KernelParameters *kernelParams) {
         }
     }
 
-    initLogger();
+    initLogger(&arena);
     initScreen(&kernelParams->window, &arena);
 
     enableInterrupts();

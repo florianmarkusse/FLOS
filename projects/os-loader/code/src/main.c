@@ -237,12 +237,12 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                     "to the kernel. Setting up a square in the top-left corner "
                     "that indicates the status.\nGreen: Good\nRed: Bad\n"));
     }
-    statusStageUpdate(gop->mode, START);
+    stageStatusUpdate(gop->mode, START);
 
     Buddy uefiBuddyPhysical;
     kernelPhysicalBuddyPrepare(&uefiBuddyPhysical, firstFreeVirtual, gop->mode);
 
-    statusStageUpdate(gop->mode, PHYSICAL_MEMORY_INITED);
+    stageStatusUpdate(gop->mode, PHYSICAL_MEMORY_INITED);
 
     kernelParams->permanentLeftoverFree =
         (Memory){.start = (U64)globals.kernelPermanent.curFree,
@@ -263,13 +263,13 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                      "call exit boot services twice?\n"));
     }
 
-    statusStageUpdate(gop->mode, BOOT_SERVICES_EXITED);
+    stageStatusUpdate(gop->mode, BOOT_SERVICES_EXITED);
 
     convertToKernelMemory(&memoryInfo, &uefiBuddyPhysical,
                           &kernelParams->memory.physicalMemoryTotal);
     kernelParams->memory.buddyPhysical = uefiBuddyPhysical.data;
 
-    statusStageUpdate(gop->mode, PHYSICAL_MEMORY_COLLECTED);
+    stageStatusUpdate(gop->mode, PHYSICAL_MEMORY_COLLECTED);
 
     jumpIntoKernel(stackResult.stackVirtualTop, 0, kernelParams);
 

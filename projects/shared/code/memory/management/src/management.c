@@ -114,7 +114,6 @@ void initMemoryManagers(KernelMemory *kernelMemory) {
     }
 
     memoryMapperSizes = kernelMemory->memoryMapperSizes;
-
     treeWithFreeListToMappable(&memoryMapperSizes.nodeAllocator,
                                (void **)&memoryMapperSizes.tree);
 }

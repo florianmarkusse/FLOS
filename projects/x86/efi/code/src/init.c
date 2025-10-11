@@ -249,12 +249,12 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress) {
     memoryMapperSizes.tree = nullptr;
     nodeAllocatorInit(
         &memoryMapperSizes.nodeAllocator,
-        (void_a){.buf = NEW(&globals.kernelPermanent,
+        (void_a){.buf = NEW(&globals.kernelTemporary,
                             typeof(*memoryMapperSizes.tree),
                             .count = INITIAL_VIRTUAL_MAPPING_SIZES),
                  .len = INITIAL_VIRTUAL_MAPPING_SIZES *
                         sizeof(*memoryMapperSizes.tree)},
-        (void_a){.buf = NEW(&globals.kernelPermanent, typeof(void *),
+        (void_a){.buf = NEW(&globals.kernelTemporary, typeof(void *),
                             .count = INITIAL_VIRTUAL_MAPPING_SIZES),
                  .len = INITIAL_VIRTUAL_MAPPING_SIZES * sizeof(void *)},
         sizeof(*memoryMapperSizes.tree), alignof(*memoryMapperSizes.tree));
@@ -350,11 +350,9 @@ void fillArchParams(void *archParams, Arena scratch,
 
     CPUIDResult XSAVECPUSupport = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 1);
     if (!(XSAVECPUSupport.eax & (1 << 1))) {
-        EXIT_WITH_MESSAGE {
-            ERROR(STRING("No Support for XSAVEC/XRSTORC found!\n"));
-        }
+        EXIT_WITH_MESSAGE { ERROR(STRING("No Support for XSAVEC found!\n")); }
     }
-    KFLUSH_AFTER { INFO(STRING("Support for XSAVEC/XRSTORC found!\n")); }
+    KFLUSH_AFTER { INFO(STRING("Support for XSAVEC found!\n")); }
 
     U32 XSAVESize = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 0).ebx;
 

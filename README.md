@@ -41,15 +41,9 @@ Ensure you have built with debug mode on!
 find code/build -type f -name *.c.o -exec pahole -a -d -R -S {} \; > ~/Desktop/FLOS/pahole.txt
 ```
 
-### UEFI improvements once upgraded to new firmware !!
-
-2. Use custom Memory Type to mark free kernel memory
-
 ### CPU improvements once upgraded to new firmware !!
 
 1. Update calibrating timer code:
    - Use leaf 0x15 on Intel for timer
    - Use AMD extended info for timer
    - Instead of the waiting stuff it's doing now
-2. Use XSAVES instead of XSAVEOPT
-   - In idt.c / x86/init.c and run-qemu.go , all need updates

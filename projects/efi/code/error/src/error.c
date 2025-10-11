@@ -31,7 +31,7 @@ void drawStatusRectangle(GraphicsOutputProtocolMode *mode, U32 color) {
     callCount++;
 }
 
-void statusStageUpdate(GraphicsOutputProtocolMode *mode,
+void stageStatusUpdate(GraphicsOutputProtocolMode *mode,
                        StageNoConsoleOut stage) {
     drawStatusRectangle(mode, STAGE_COLOR_START +
                                   ((U32)stage * STAGE_COLOR_INCREMENT));

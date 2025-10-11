@@ -15,7 +15,7 @@ typedef enum {
 } StageNoConsoleOut;
 
 void drawStatusRectangle(GraphicsOutputProtocolMode *mode, U32 color);
-void statusStageUpdate(GraphicsOutputProtocolMode *mode,
+void stageStatusUpdate(GraphicsOutputProtocolMode *mode,
                        StageNoConsoleOut stage);
 
 static constexpr auto RED_COLOR = 0xFF0000;
