@@ -19,8 +19,9 @@ lsblk # You should see there your device if it is connected
 cmd/hardware.elf --file /dev/sdb1
 # Restart your computer with the device still in there
 # Go to the boot menu and you should find it there, may need to hit F12
+# or run sudo systemctl reboot --firmware-setup # that will reboot and you 'should' go to your firmware setup
 # In my case: UEFI: <name of the USB stick>
-# but motherboards do things in mysterious ways
+# but motherboards do things in mysterious ways and milage may vary sadly
 ```
 
 ## x86_64 only
