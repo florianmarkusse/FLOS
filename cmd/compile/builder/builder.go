@@ -6,6 +6,7 @@ import (
 	"cmd/common/cmake"
 	"cmd/common/flags/architecture"
 	"cmd/common/flags/buildmode"
+	"cmd/common/flags/vendor"
 	"cmd/common/project"
 	"fmt"
 	"io"
@@ -69,7 +70,7 @@ func buildProject(args *BuildArgs, proj *project.ProjectStructure) {
 
 	var buildDirectory = project.BuildDirectoryRoot(proj, args.BuildMode, args.Architecture, args.Serial)
 	var projectTargetsFile = project.BuildProjectTargetsFile(proj.CodeFolder)
-	cmake.AddDefaultConfigureOptions(&configureOptions, proj, buildDirectory, args.BuildMode, args.BuildTests, projectTargetsFile, args.Architecture, args.Serial)
+	cmake.AddDefaultConfigureOptions(&configureOptions, proj, buildDirectory, args.BuildMode, args.BuildTests, projectTargetsFile, args.Architecture, args.Serial, args.Vendor)
 	argument.ExecCommandWriteOutput(fmt.Sprintf("%s %s", cmake.EXECUTABLE, configureOptions.String()), errorWriters...)
 
 	buildOptions := strings.Builder{}
@@ -90,6 +91,7 @@ type BuildArgs struct {
 	BuildTests       bool
 	RunTests         bool
 	Architecture     string
+	Vendor           string
 	Verbose          bool
 }
 
@@ -111,6 +113,7 @@ var RunBuildArgs = BuildArgs{
 	BuildTests:       false,
 	RunTests:         false,
 	Architecture:     architecture.DefaultArchitecture(),
+	Vendor:           vendor.DefaultVendor(),
 	Verbose:          false,
 }
 
@@ -125,6 +128,7 @@ var DefaultBuildArgs = BuildArgs{
 	BuildTests:       false,
 	RunTests:         false,
 	Architecture:     architecture.DefaultArchitecture(),
+	Vendor:           vendor.DefaultVendor(),
 	Verbose:          false,
 }
 

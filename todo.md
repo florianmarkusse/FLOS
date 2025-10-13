@@ -1,6 +1,7 @@
 - clean up red-black tree mess somehow? This should be possible to abstract!
   - Look into color OFFSETOF trick to get rid of slop
   - Look into optimizing the struct by using indices instead of pointers
+- may want to split up init in intel / amd parts
 - how to hide extern variables from showing up everywhere
 - Look into MAX / MIN usage and replace with MAX_VALUE / MIN_VALUE
 - Set buddy orders based on how big our memory turns out to be
@@ -45,6 +46,7 @@
   - VERY_GOOD_TYPE_RESULT -> TYPE_RESULT_VERY_GOOD
   - basically directory structure kind of subject -> action -> x , makes it easier
 - c2y updates: Are constexpr functions possible???
+- the definitiosn we add to the c code, e.g., `X86`, can collide with actual source code, create a pattern to fix this somehow
 
 - run tests
   failing because includes... should be in a base layer

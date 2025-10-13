@@ -58,10 +58,10 @@ func Run(args *QemuArgs) {
 		// NOTE: Ensure this is the same architecture as what you are trying to
 		// build for :)))
 		argument.AddArgument(&qemuOptions,
-			"-cpu EPYC-Genoa-v1,pdpe1gb=on,tsc-frequency=4000000000")
+			"-cpu EPYC-Genoa-v1,pdpe1gb=on,tsc-frequency=4000000000,+invtsc")
 	} else {
 		// TODO: When upgraded, add the xsavec , xsaves, xrstors
-		argument.AddArgument(&qemuOptions, "-cpu host,+xsave,+avx,+xsaveopt")
+		argument.AddArgument(&qemuOptions, "-cpu host,+xsave,+avx,+xsaveopt,+invtsc")
 	}
 
 	if args.OutputToFile {

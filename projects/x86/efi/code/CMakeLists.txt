@@ -22,15 +22,20 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     include(${REPO_PROJECTS}/print-configuration.cmake)
 endif()
 
-add_library(
-    ${PROJECT_NAME}
-    OBJECT
+set(SOURCE_FILES
     "src/init.c"
     "src/jump.c"
     "src/gdt.c"
     "src/jmp.c"
     "src/kernel.c"
 )
+if(${VENDOR} STREQUAL "INTEL")
+    list(APPEND SOURCE_FILES "src/init/intel.c")
+elseif(${VENDOR} STREQUAL "AMD")
+    list(APPEND SOURCE_FILES "src/init/amd.c")
+endif()
+
+add_library(${PROJECT_NAME} OBJECT ${SOURCE_FILES})
 
 add_includes_for_sublibrary()
 

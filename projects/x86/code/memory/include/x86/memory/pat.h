@@ -17,7 +17,7 @@
 typedef enum { PAT_ENCODING_ENUM(ENUM_VALUES_VARIANT) } PATEncoding;
 static constexpr auto PAT_ENCODING_COUNT = (0 PAT_ENCODING_ENUM(PLUS_ONE));
 
-static constexpr auto PAT_LOCATION = 0x277;
+static constexpr U32 PAT_LOCATION = 0x277;
 
 typedef struct {
     U8 pat : 3;

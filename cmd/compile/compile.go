@@ -10,6 +10,7 @@ import (
 	"cmd/common/flags/environment"
 	"cmd/common/flags/help"
 	"cmd/common/flags/serial"
+	"cmd/common/flags/vendor"
 	"cmd/common/project"
 	"cmd/compile/builder"
 	"flag"
@@ -53,6 +54,7 @@ func main() {
 	project.AddProjectAsFlag(&projectsToBuild)
 	help.AddHelpAsFlag(&isHelp)
 	serial.AddSerialAsFlag(&buildArgs.Serial)
+	vendor.AddVendorAsFlag(&buildArgs.Vendor)
 
 	flag.StringVar(&targetsToBuild, SELECT_TARGETS_LONG_FLAG, "", "")
 	flag.StringVar(&targetsToBuild, SELECT_TARGETS_SHORT_FLAG, "", "")
@@ -88,6 +90,10 @@ func main() {
 		showHelpAndExit = true
 	}
 
+	if !vendor.IsValidVendor(buildArgs.Vendor) {
+		showHelpAndExit = true
+	}
+
 	if !project.ValidateAndConvertProjects(projectsToBuild, &buildArgs.SelectedProjects) {
 		showHelpAndExit = true
 	}
@@ -111,6 +117,7 @@ func main() {
 	configuration.DisplayConfiguration()
 	buildmode.DisplayBuildModeConfiguration(buildArgs.BuildMode)
 	architecture.DisplayArchitectureConfiguration(buildArgs.Architecture)
+	vendor.DisplayVendorConfiguration(buildArgs.Vendor)
 	environment.DisplayEnvironmentConfiguration(buildArgs.Environment)
 	project.DisplayProjectConfiguration(buildArgs.SelectedProjects)
 	serial.DisplaySerialConfiguration(buildArgs.Serial)

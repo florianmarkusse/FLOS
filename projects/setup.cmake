@@ -114,6 +114,21 @@ if(${ARCHITECTURE} STREQUAL "X86")
     add_compile_definitions(X86)
 endif()
 
+set(VALID_VENDORS "INTEL" "AMD")
+list(FIND VALID_VENDORS ${VENDOR} VALID_VENDOR_INDEX)
+if(VALID_VENDOR_INDEX EQUAL -1)
+    message(
+        FATAL_ERROR
+        "Invalid VENDOR specified. Please choose one of: ${VALID_VENDORS}"
+    )
+endif()
+if(${VENDOR} STREQUAL "INTEL")
+    add_compile_definitions(VENDOR_INTEL)
+endif()
+if(${VENDOR} STREQUAL "AMD")
+    add_compile_definitions(VENDOR_AMD)
+endif()
+
 set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS}")
 # NOTE: embed-dir is not a supported asm flag
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --embed-dir=${REPO_PROJECTS}")

@@ -1,3 +1,4 @@
+#include "x86/efi/init.h"
 #include "abstraction/efi.h"
 
 #include "abstraction/interrupts.h"
@@ -28,6 +29,36 @@
 #include "x86/gdt.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/virtual.h"
+
+typedef enum { INTEL, AMD } Manufacturer;
+
+static constexpr auto MANUFACTURER_STRING_LEN = 12;
+
+typedef struct {
+    Manufacturer manufacturer;
+    U8 *string;
+} Vendor;
+
+static Vendor VENDORS[] = {
+    {.manufacturer = INTEL, .string = (U8 *)"GenuineIntel"},
+    {.manufacturer = AMD, .string = (U8 *)"AuthenticAMD"}};
+
+static Manufacturer manufacturerGet(U8 manufacturer[MANUFACTURER_STRING_LEN]) {
+    KFLUSH_AFTER {
+        INFO(STRING("manufacturer: "));
+        INFO(STRING_LEN(manufacturer, MANUFACTURER_STRING_LEN),
+             .flags = NEWLINE);
+    }
+
+    for (U32 i = 0; i < COUNTOF(VENDORS); i++) {
+        if (!memcmp(VENDORS[i].string, manufacturer, MANUFACTURER_STRING_LEN)) {
+            return VENDORS[i].manufacturer;
+        }
+    }
+
+    EXIT_WITH_MESSAGE { ERROR(STRING("Unknown manufacturer!!!\n")); }
+    __builtin_unreachable();
+}
 
 static constexpr auto MAX_BYTES_GDT = 64 * KiB;
 // the GDT can contain up to 8192 descriptors 8-byte = 655365 bytes = 64 KiB
@@ -169,41 +200,80 @@ void bootstrapProcessorWork(U16 cacheLineSizeBytes,
     asm volatile("pause" : : : "memory"); // memory barrier
 }
 
-// Basic CPUID leafs
-static constexpr auto BASIC_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER = 1;
-static constexpr auto EXTENDED_FEATURES = 7;
+typedef struct {
+    U32 tscFreqToCrystalClockDenominator;
+    U32 tscFreqToCrystalClockNumerator;
+    U32 crystalClockFreqHertz;
+} Leaf0x15;
 
-static constexpr auto XSAVE_CPU_SUPPORT = 13;
+typedef struct {
+    U32 processorBaseFreqMHertz;
+    U32 processorMaxFreqMHertz;
+    U32 busFreqMHertz;
+} Leaf0x16;
 
-static constexpr auto XSAVE_ALIGNMENT = 64;
+// Time
+static constexpr auto MICROSECONDS_PER_SECOND = 1000000;
+static constexpr auto MEGAHERTZ_TO_HERTZ = 1000000;
+static constexpr auto HERTZ_MINIMUM_SPEED = 500000000;
+static constexpr auto MEGAHERTZ_MINIMUM_SPEED = 500;
 
-static constexpr auto BASIC_MAX_REQUIRED_PARAMETER =
-    BASIC_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER;
+static constexpr auto AMD_BASE_FREQUENCY = 5000000;
 
-// Extended CPUID leafs
-static constexpr auto EXTENDED_MAX_VALUE_PARAMETER = 0x80000000;
-static constexpr auto EXTENDED_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER =
-    EXTENDED_MAX_VALUE_PARAMETER + 1;
+// MSR
+static constexpr U32 PSTATE0_CORE = 0xC0010064;
 
-static constexpr auto EXTENDED_MAX_REQUIRED_PARAMETER =
-    EXTENDED_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER;
-
-static constexpr auto CALIBRATION_MICROSECONDS = 10000;
-static U64 calibrateWait() {
-    CPUIDResult leaf15 = CPUID(0x15);
-    if (leaf15.ebx && leaf15.ecx > 10000) {
-        return (leaf15.ecx * (leaf15.ebx / leaf15.eax)) / 1000000;
-    } else {
-        CPUIDResult leaf16 = CPUID(0x16);
-        if (leaf16.eax > 1000) {
-            return leaf16.eax;
+static U64 calibrateWait(Manufacturer manufacturer) {
+    switch (manufacturer) {
+    case INTEL: {
+        Leaf0x15 leaf0x15;
+        {
+            CPUIDResult leaf = CPUID(TSC_AND_CORE_CRYSTAL_FREQ);
+            leaf0x15 = (Leaf0x15){.tscFreqToCrystalClockDenominator = leaf.eax,
+                                  .tscFreqToCrystalClockNumerator = leaf.ebx,
+                                  .crystalClockFreqHertz = leaf.ecx};
+        }
+        // Not completely supported, sadly
+        if (leaf0x15.tscFreqToCrystalClockNumerator &&
+            leaf0x15.crystalClockFreqHertz > HERTZ_MINIMUM_SPEED) {
+            return (leaf0x15.crystalClockFreqHertz *
+                    (leaf0x15.tscFreqToCrystalClockNumerator /
+                     leaf0x15.tscFreqToCrystalClockDenominator)) /
+                   MICROSECONDS_PER_SECOND;
+        } else {
+            // Calculate it through other leaf if possible
+            Leaf0x16 leaf0x16;
+            {
+                CPUIDResult leaf = CPUID(PROCESSOR_AND_BUS_FREQ);
+                leaf0x16 = (Leaf0x16){.processorBaseFreqMHertz = leaf.eax,
+                                      .processorMaxFreqMHertz = leaf.ebx,
+                                      .busFreqMHertz = leaf.ecx};
+            }
+            if (leaf0x16.processorBaseFreqMHertz > MEGAHERTZ_MINIMUM_SPEED) {
+                // no-op, but for copletion's sake.
+                return (leaf0x16.processorBaseFreqMHertz * MEGAHERTZ_TO_HERTZ) /
+                       MICROSECONDS_PER_SECOND;
+            }
         }
     }
+    case AMD: {
+        U64 pState0 = rdmsr(PSTATE0_CORE);
 
-    U64 currentCycles = currentCycleCounter(false, false);
-    globals.st->boot_services->stall(CALIBRATION_MICROSECONDS);
-    U64 endCycles = currentCycleCounter(false, false);
-    return (endCycles - currentCycles) / CALIBRATION_MICROSECONDS;
+        U64 result =
+            ((AMD_BASE_FREQUENCY * (pState0 & 0x7FF)) * MEGAHERTZ_TO_HERTZ) /
+            MICROSECONDS_PER_SECOND;
+
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("AMD result: "));
+            ERROR(result, .flags = NEWLINE);
+        }
+
+        return result;
+    }
+    }
+
+    EXIT_WITH_MESSAGE { ERROR(STRING("Unable to calibrate timer!\n")); }
+    __builtin_unreachable();
 }
 
 void initRootVirtualMemoryInKernel() {
@@ -227,10 +297,8 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress) {
     U64 *backingBuffer =
         NEW(&globals.kernelPermanent, U64,
             .count = orderCount * BUDDY_BLOCKS_CAPACITY_PER_ORDER_DEFAULT);
-    KFLUSH_AFTER { ERROR(STRING("IN here\n")); }
     buddyInit(&buddyVirtual, backingBuffer,
               BUDDY_BLOCKS_CAPACITY_PER_ORDER_DEFAULT, orderCount);
-    KFLUSH_AFTER { ERROR(STRING("Out oof here\n")); }
     if (setjmp(buddyVirtual.memoryExhausted)) {
         interruptNoMoreVirtualMemory();
     }
@@ -260,29 +328,49 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress) {
         sizeof(*memoryMapperSizes.tree), alignof(*memoryMapperSizes.tree));
 }
 
+static constexpr auto XSAVE_ALIGNMENT = 64;
 void fillArchParams(void *archParams, Arena scratch,
                     U64 memoryVirtualAddressAvailable) {
     X86ArchParams *x86ArchParams = (X86ArchParams *)archParams;
 
-    U32 maxBasicCPUID = CPUID(0x0).eax;
-    if (maxBasicCPUID < BASIC_MAX_REQUIRED_PARAMETER) {
-        EXIT_WITH_MESSAGE {
-            ERROR(STRING("CPU does not support required CPUID of "));
-            ERROR(BASIC_MAX_REQUIRED_PARAMETER, .flags = NEWLINE);
-        }
-    }
+    U32 manufacturerString[3];
+    CPUIDResult CPUIDMaxAndManufacturer =
+        CPUID(BASIC_MAX_VALUE_AND_MANUFACTURER);
+    manufacturerString[0] = CPUIDMaxAndManufacturer.ebx;
+    manufacturerString[1] = CPUIDMaxAndManufacturer.edx;
+    manufacturerString[2] = CPUIDMaxAndManufacturer.ecx;
+
+    Manufacturer manufacturer = manufacturerGet((U8 *)manufacturerString);
 
     CPUIDResult processorInfoAndFeatureBits =
-        CPUID(BASIC_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER);
+        CPUID(BASIC_PROCESSOR_INFO_AND_FEATURE_BITS);
+
+    processorVersionCheck(&CPUIDMaxAndManufacturer,
+                          &processorInfoAndFeatureBits);
+
+    // TODO: Enable this once we split up this code into intel / amd parts
+    // if (CPUIDMaxAndManufacturer.eax < BASIC_MAX_REQUIRED) {
+    //     EXIT_WITH_MESSAGE {
+    //         ERROR(STRING("CPU does not support required CPUID of "));
+    //         ERROR(BASIC_MAX_REQUIRED, .flags = NEWLINE);
+    //     }
+    // }
+
+    // TODO: [AMD] required family level >= 26
+    U32 processorFamily = (processorInfoAndFeatureBits.eax >> 8) & (0xF);
+    if (processorFamily == 0xF) {
+        processorFamily += (processorInfoAndFeatureBits.eax >> 20) & (0xFF);
+    }
+
     BASICCPUFeatures features = {.ecx = processorInfoAndFeatureBits.ecx,
                                  .edx = processorInfoAndFeatureBits.edx};
     if (!features.APIC) {
-        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support APIC")); }
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support APIC\n")); }
     }
 
     U16 cacheLineSizeBytes = (processorInfoAndFeatureBits.ebx >> 8 & 0xFF) * 8;
     KFLUSH_AFTER {
-        INFO(STRING("Cache line size is: "));
+        INFO(STRING("Cache line size: "));
         INFO(cacheLineSizeBytes, .flags = NEWLINE);
     }
 
@@ -290,49 +378,54 @@ void fillArchParams(void *archParams, Arena scratch,
 
     if (!features.TSC) {
         EXIT_WITH_MESSAGE {
-            ERROR(STRING("CPU does not support Time Stamp Counter"));
+            ERROR(STRING("CPU does not support Time Stamp Counter\n"));
+        }
+    }
+
+    if (!features.TSC) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("CPU does not support model-specific registers and "
+                         "rdmsr/wrmsr!\n"));
         }
     }
 
     if (!features.PGE) {
         EXIT_WITH_MESSAGE {
-            ERROR(STRING("CPU does not support global memory paging!"));
+            ERROR(STRING("CPU does not support global memory paging!\n"));
         }
     }
     KFLUSH_AFTER { INFO(STRING("Enabling PGE\n")); }
     CPUEnablePGE();
 
     if (!features.FPU) {
-        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support FPU!")); }
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support FPU!\n")); }
     }
     KFLUSH_AFTER { INFO(STRING("Enabling FPU\n")); }
     CPUEnableFPU();
 
     if (!features.PAT) {
-        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support PAT!")); }
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support PAT!\n")); }
     }
     KFLUSH_AFTER { INFO(STRING("Configuring PAT\n")); }
     CPUConfigurePAT();
 
     if (!features.SSE) {
-        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support SSE!")); }
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support SSE!\n")); }
     }
     CPUEnableSSE();
 
     if (!features.XSAVE) {
-        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support XSAVE!")); }
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support XSAVE!\n")); }
     }
     if (!features.AVX) {
-        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support AVX256!")); }
+        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support AVX256!\n")); }
     }
+
     bool supportsAVX512 = false;
     CPUIDResult extendedProcessorFeatures = CPUID(EXTENDED_FEATURES);
     if (extendedProcessorFeatures.ebx & (1 << 16)) {
         supportsAVX512 = true;
-        KFLUSH_AFTER {
-            INFO(STRING("Support for AVX512 found\nCan set CR4.LA57 = 1 to "
-                        "turn it on."));
-        }
+        KFLUSH_AFTER { INFO(STRING("Support for AVX512 found\n")); }
     } else {
         KFLUSH_AFTER { INFO(STRING("No Support for AVX512 found\n")); }
     }
@@ -353,9 +446,7 @@ void fillArchParams(void *archParams, Arena scratch,
         EXIT_WITH_MESSAGE { ERROR(STRING("No Support for XSAVEC found!\n")); }
     }
     KFLUSH_AFTER { INFO(STRING("Support for XSAVEC found!\n")); }
-
     U32 XSAVESize = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 0).ebx;
-
     U8 *XSAVEAddress = NEW(&globals.kernelPermanent, U8, .count = XSAVESize,
                            .align = XSAVE_ALIGNMENT, .flags = ZERO_MEMORY);
     KFLUSH_AFTER {
@@ -363,29 +454,41 @@ void fillArchParams(void *archParams, Arena scratch,
         memoryAppend((Memory){.start = (U64)XSAVEAddress, .bytes = XSAVESize});
         INFO(STRING("\n"));
     }
+    x86ArchParams->XSAVELocation = XSAVEAddress;
 
-    U32 maxExtendedCPUID = CPUID(EXTENDED_MAX_VALUE_PARAMETER).eax;
-    if (maxExtendedCPUID < EXTENDED_MAX_REQUIRED_PARAMETER) {
+    U32 maxExtendedCPUID = CPUID(EXTENDED_MAX_VALUE).eax;
+    if (maxExtendedCPUID < EXTENDED_MAX_REQUIRED) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING("CPU does not support extended CPUID of "));
-            ERROR(EXTENDED_MAX_REQUIRED_PARAMETER, .flags = NEWLINE);
+            ERROR(EXTENDED_MAX_REQUIRED, .flags = NEWLINE);
         }
     }
 
     CPUIDResult extendedProcessorInfoAndFeatureBits =
         CPUID(EXTENDED_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER);
     if (!(extendedProcessorInfoAndFeatureBits.edx & (1 << 26))) {
-        EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support Huge Pages!")); }
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("CPU does not support Huge Pages!\n"));
+        }
     }
 
     KFLUSH_AFTER { INFO(STRING("Bootstrap processor work...\n")); }
     bootstrapProcessorWork(cacheLineSizeBytes, memoryVirtualAddressAvailable,
                            scratch);
 
-    KFLUSH_AFTER { INFO(STRING("Calibrating timer...\n")); }
-    x86ArchParams->tscFrequencyPerMicroSecond = calibrateWait();
+    U32 processorPowerManagement =
+        CPUID(EXTENDED_PROCESSOR_POWER_MANEGEMENT_OPERATION).edx;
+    if (!(processorPowerManagement & (1 << 8))) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("CPU does not support invariant TSC!\n"));
+        }
+    }
 
-    x86ArchParams->XSAVELocation = XSAVEAddress;
+    x86ArchParams->tscFrequencyPerMicroSecond = calibrateWait(manufacturer);
+    KFLUSH_AFTER {
+        INFO(STRING("tsc frequency per microsecond: "));
+        INFO(x86ArchParams->tscFrequencyPerMicroSecond, .flags = NEWLINE);
+    }
 
     x86ArchParams->rootPageMetaData.children =
         (struct PackedPageMetaDataNode *)rootPageMetaData.children;
