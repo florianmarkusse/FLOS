@@ -19,7 +19,6 @@ static constexpr CPUIDLeaf EXTENDED_FEATURES = 0x7;
 static constexpr CPUIDLeaf XSAVE_CPU_SUPPORT = 0xD;
 static constexpr CPUIDLeaf TSC_AND_CORE_CRYSTAL_FREQ = 0x15;
 static constexpr CPUIDLeaf PROCESSOR_AND_BUS_FREQ = 0x16;
-static constexpr CPUIDLeaf BASIC_MAX_REQUIRED = PROCESSOR_AND_BUS_FREQ;
 
 // NOTE: constexpr c26 for max calculation
 //

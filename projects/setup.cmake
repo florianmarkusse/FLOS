@@ -129,6 +129,32 @@ if(${VENDOR} STREQUAL "AMD")
     add_compile_definitions(VENDOR_AMD)
 endif()
 
+set(VALID_UNDERLYINGS "QEMU" "HARDWARE")
+list(FIND VALID_UNDERLYINGS ${UNDERLYING} VALID_UNDERLYING_INDEX)
+if(VALID_UNDERLYING_INDEX EQUAL -1)
+    message(
+        FATAL_ERROR
+        "Invalid UNDERLYING specified. Please choose one of: ${VALID_UNDERLYINGS}"
+    )
+endif()
+if(${UNDERLYING} STREQUAL "QEMU")
+    add_compile_definitions(UNDERLYING_QEMU)
+endif()
+if(${UNDERLYING} STREQUAL "HARDWARE")
+    add_compile_definitions(UNDERLYING_HARDWARE)
+endif()
+
+option(AVX_512 "Turn on/off AVX512" ON)
+if(${AVX_512})
+    add_compile_definitions(AVX_512)
+else()
+    # NOTE: This does not actually turn off the cflags!!!! so it will just
+    # mostly fail because we are not setting the state components in the IDT to
+    # store all the avx512 components but still building with avx512 support
+    # due to the c flags = BOOM
+    add_compile_definitions(NO_AVX_512)
+endif()
+
 set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS}")
 # NOTE: embed-dir is not a supported asm flag
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} --embed-dir=${REPO_PROJECTS}")

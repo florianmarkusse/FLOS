@@ -1,6 +1,9 @@
 message(STATUS "=== Configuration Settings ===")
 message(STATUS "Project:                ${PROJECT_NAME}")
 message(STATUS "Build type:             ${CMAKE_BUILD_TYPE}")
+message(STATUS "Architecture:           ${ARCHITECTURE}")
+message(STATUS "Vendor:                 ${VENDOR}")
+message(STATUS "Underlying:             ${UNDERLYING}")
 message(STATUS "C Compiler:             ${CMAKE_C_COMPILER}")
 message(STATUS "C flags:                ${CMAKE_C_FLAGS}")
 get_directory_property(

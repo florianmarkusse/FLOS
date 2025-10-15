@@ -58,6 +58,10 @@
     or
   - lots of add_project should be add_include instead...
 
+- After rewrite of cmake?
+  - Figure out a way to easily build and run for various x86 architectures with qemu...
+  - Also do the same for support for avx512 , no support for avx512, may mean turning off -march=native or something
+
 | IST  | sti | usage Kernel design rationale                     | Solution                                                                                                                                                                                 |
 | ---- | --- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | IST1 | Yes | (after prologue) Page fault?                      | Push registers, Check if inside guard page (stack-overflow?), Calculate 128 bytes down from RSP (Red-zone), then push all interesting vars to that new stack and call that fault handler |

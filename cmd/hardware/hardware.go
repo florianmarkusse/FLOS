@@ -23,6 +23,8 @@ var outputFile = ""
 
 var isHelp = false
 
+var buildArgs = builder.RunBuildArgs
+
 func main() {
 	help.AddHelpAsFlag(&isHelp)
 
@@ -50,7 +52,9 @@ func main() {
 		os.Exit(exit.EXIT_MISSING_ARGUMENT)
 	}
 
-	var result = builder.Build(&builder.RunBuildArgs)
+	buildArgs.Underlying = string(builder.HARDWARE)
+
+	var result = builder.Build(&buildArgs)
 	if result == builder.Failure {
 		fmt.Println("Failed to build project")
 		os.Exit(exit.EXIT_TARGET_ERROR)

@@ -40,19 +40,3 @@ Ensure you have built with debug mode on!
 ```
 find code/build -type f -name *.c.o -exec pahole -a -d -R -S {} \; > ~/Desktop/FLOS/pahole.txt
 ```
-
-### CPU improvements once upgraded to new firmware !!
-
-1. detected vendor
-2. intel - known
-3. amd: 1. check for invariant tsc
-   mov eax, 0x80000007
-   cpuid
-   test edx, (1 << 8)
-   jnz .tsc_invariant 2. check msr value and calculate tsc frequency through there
-   25 mhz? + 16? + 1? look at the AMD manual
-
-4. Update calibrating timer code:
-   - Use leaf 0x15 on Intel for timer
-   - Use AMD extended info for timer
-   - Instead of the waiting stuff iDt's doing now

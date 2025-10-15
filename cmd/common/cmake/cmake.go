@@ -17,7 +17,7 @@ func includeWhatYouUseFlag(flag string) string {
 	return fmt.Sprintf("-Xiwyu;%s;", flag)
 }
 
-func AddDefaultConfigureOptions(options *strings.Builder, proj *project.ProjectStructure, buildDirectory string, buildMode string, buildTests bool, projectTargetsFile string, architecture string, serial bool, vendor string) {
+func AddDefaultConfigureOptions(options *strings.Builder, proj *project.ProjectStructure, buildDirectory string, buildMode string, buildTests bool, projectTargetsFile string, architecture string, serial bool, vendor string, underlying string) {
 	argument.AddArgument(options, fmt.Sprintf("-S %s", proj.CodeFolder))
 	argument.AddArgument(options, fmt.Sprintf("-B %s", buildDirectory))
 
@@ -31,6 +31,8 @@ func AddDefaultConfigureOptions(options *strings.Builder, proj *project.ProjectS
 	argument.AddArgument(options, fmt.Sprintf("-D ENVIRONMENT=%s", proj.Environment))
 	argument.AddArgument(options, fmt.Sprintf("-D ARCHITECTURE=%s", architecture))
 	argument.AddArgument(options, fmt.Sprintf("-D VENDOR=%s", vendor))
+	argument.AddArgument(options, fmt.Sprintf("-D UNDERLYING=%s", underlying))
+	argument.AddArgument(options, fmt.Sprintf("-D AVX_512=%t", true))
 	argument.AddArgument(options, fmt.Sprintf("-D BUILD_OUTPUT_PATH=%s", buildDirectory))
 	argument.AddArgument(options, fmt.Sprintf("-D REPO_ROOT=%s", common.REPO_ROOT))
 	argument.AddArgument(options, fmt.Sprintf("-D REPO_DEPENDENCIES=%s", common.REPO_DEPENDENCIES))

@@ -70,7 +70,7 @@ func buildProject(args *BuildArgs, proj *project.ProjectStructure) {
 
 	var buildDirectory = project.BuildDirectoryRoot(proj, args.BuildMode, args.Architecture, args.Serial)
 	var projectTargetsFile = project.BuildProjectTargetsFile(proj.CodeFolder)
-	cmake.AddDefaultConfigureOptions(&configureOptions, proj, buildDirectory, args.BuildMode, args.BuildTests, projectTargetsFile, args.Architecture, args.Serial, args.Vendor)
+	cmake.AddDefaultConfigureOptions(&configureOptions, proj, buildDirectory, args.BuildMode, args.BuildTests, projectTargetsFile, args.Architecture, args.Serial, args.Vendor, args.Underlying)
 	argument.ExecCommandWriteOutput(fmt.Sprintf("%s %s", cmake.EXECUTABLE, configureOptions.String()), errorWriters...)
 
 	buildOptions := strings.Builder{}
@@ -79,6 +79,13 @@ func buildProject(args *BuildArgs, proj *project.ProjectStructure) {
 	}
 	copyCompileCommands(buildDirectory, proj.CodeFolder)
 }
+
+type Underlying string
+
+const (
+	QEMU     Underlying = "QEMU"
+	HARDWARE Underlying = "HARDWARE"
+)
 
 type BuildArgs struct {
 	BuildMode        string
@@ -92,6 +99,7 @@ type BuildArgs struct {
 	RunTests         bool
 	Architecture     string
 	Vendor           string
+	Underlying       string
 	Verbose          bool
 }
 
@@ -114,6 +122,7 @@ var RunBuildArgs = BuildArgs{
 	RunTests:         false,
 	Architecture:     architecture.DefaultArchitecture(),
 	Vendor:           vendor.DefaultVendor(),
+	Underlying:       string(QEMU),
 	Verbose:          false,
 }
 
@@ -129,6 +138,7 @@ var DefaultBuildArgs = BuildArgs{
 	RunTests:         false,
 	Architecture:     architecture.DefaultArchitecture(),
 	Vendor:           vendor.DefaultVendor(),
+	Underlying:       string(QEMU),
 	Verbose:          false,
 }
 

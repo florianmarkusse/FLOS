@@ -3,7 +3,13 @@
 
 #include "x86/configuration/cpu.h"
 
-void processorVersionCheck(CPUIDResult *CPUIDMaxAndManufacturer,
+typedef enum { INTEL, AMD } Manufacturer;
+
+void processorVersionCheck(Manufacturer manufacturer,
+                           CPUIDResult *CPUIDMaxAndManufacturer,
                            CPUIDResult *processorInfoAndFeatureBits);
+
+void manufacturerCheck(Manufacturer actual, Manufacturer expected);
+void CPUIDCheck(U32 actualMax, U32 expectedMax);
 
 #endif

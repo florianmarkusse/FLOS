@@ -1,5 +1,7 @@
 #include "x86/efi/init.h"
 #include "abstraction/efi.h"
+#include "x86/efi/avx512.h"
+#include "x86/efi/time.h"
 
 #include "abstraction/interrupts.h"
 #include "abstraction/log.h"
@@ -30,14 +32,32 @@
 #include "x86/memory/definitions.h"
 #include "x86/memory/virtual.h"
 
-typedef enum { INTEL, AMD } Manufacturer;
-
 static constexpr auto MANUFACTURER_STRING_LEN = 12;
 
 typedef struct {
     Manufacturer manufacturer;
     U8 *string;
 } Vendor;
+
+void manufacturerCheck(Manufacturer actual, Manufacturer expected) {
+    if (actual != expected) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("incompatible manufacturer! Detected "));
+            ERROR(expected);
+            ERROR(STRING(" while build is for "));
+            ERROR(actual, .flags = NEWLINE);
+        }
+    }
+}
+
+void CPUIDCheck(U32 actualMax, U32 expectedMax) {
+    if (actualMax < expectedMax) {
+        EXIT_WITH_MESSAGE {
+            ERROR(STRING("CPU does not support required CPUID of "));
+            ERROR(expectedMax, .flags = NEWLINE);
+        }
+    }
+}
 
 static Vendor VENDORS[] = {
     {.manufacturer = INTEL, .string = (U8 *)"GenuineIntel"},
@@ -200,82 +220,6 @@ void bootstrapProcessorWork(U16 cacheLineSizeBytes,
     asm volatile("pause" : : : "memory"); // memory barrier
 }
 
-typedef struct {
-    U32 tscFreqToCrystalClockDenominator;
-    U32 tscFreqToCrystalClockNumerator;
-    U32 crystalClockFreqHertz;
-} Leaf0x15;
-
-typedef struct {
-    U32 processorBaseFreqMHertz;
-    U32 processorMaxFreqMHertz;
-    U32 busFreqMHertz;
-} Leaf0x16;
-
-// Time
-static constexpr auto MICROSECONDS_PER_SECOND = 1000000;
-static constexpr auto MEGAHERTZ_TO_HERTZ = 1000000;
-static constexpr auto HERTZ_MINIMUM_SPEED = 500000000;
-static constexpr auto MEGAHERTZ_MINIMUM_SPEED = 500;
-
-static constexpr auto AMD_BASE_FREQUENCY = 5000000;
-
-// MSR
-static constexpr U32 PSTATE0_CORE = 0xC0010064;
-
-static U64 calibrateWait(Manufacturer manufacturer) {
-    switch (manufacturer) {
-    case INTEL: {
-        Leaf0x15 leaf0x15;
-        {
-            CPUIDResult leaf = CPUID(TSC_AND_CORE_CRYSTAL_FREQ);
-            leaf0x15 = (Leaf0x15){.tscFreqToCrystalClockDenominator = leaf.eax,
-                                  .tscFreqToCrystalClockNumerator = leaf.ebx,
-                                  .crystalClockFreqHertz = leaf.ecx};
-        }
-        // Not completely supported, sadly
-        if (leaf0x15.tscFreqToCrystalClockNumerator &&
-            leaf0x15.crystalClockFreqHertz > HERTZ_MINIMUM_SPEED) {
-            return (leaf0x15.crystalClockFreqHertz *
-                    (leaf0x15.tscFreqToCrystalClockNumerator /
-                     leaf0x15.tscFreqToCrystalClockDenominator)) /
-                   MICROSECONDS_PER_SECOND;
-        } else {
-            // Calculate it through other leaf if possible
-            Leaf0x16 leaf0x16;
-            {
-                CPUIDResult leaf = CPUID(PROCESSOR_AND_BUS_FREQ);
-                leaf0x16 = (Leaf0x16){.processorBaseFreqMHertz = leaf.eax,
-                                      .processorMaxFreqMHertz = leaf.ebx,
-                                      .busFreqMHertz = leaf.ecx};
-            }
-            if (leaf0x16.processorBaseFreqMHertz > MEGAHERTZ_MINIMUM_SPEED) {
-                // no-op, but for copletion's sake.
-                return (leaf0x16.processorBaseFreqMHertz * MEGAHERTZ_TO_HERTZ) /
-                       MICROSECONDS_PER_SECOND;
-            }
-        }
-    }
-    case AMD: {
-        U64 pState0 = rdmsr(PSTATE0_CORE);
-
-        U64 result =
-            ((AMD_BASE_FREQUENCY * (pState0 & 0x7FF)) * MEGAHERTZ_TO_HERTZ) /
-            MICROSECONDS_PER_SECOND;
-
-        EXIT_WITH_MESSAGE {
-            ERROR(STRING("AMD result: "));
-            ERROR(result, .flags = NEWLINE);
-        }
-
-        return result;
-    }
-    }
-
-    EXIT_WITH_MESSAGE { ERROR(STRING("Unable to calibrate timer!\n")); }
-    __builtin_unreachable();
-}
-
 void initRootVirtualMemoryInKernel() {
     rootPageTable = getZeroedPageTable();
 
@@ -345,22 +289,10 @@ void fillArchParams(void *archParams, Arena scratch,
     CPUIDResult processorInfoAndFeatureBits =
         CPUID(BASIC_PROCESSOR_INFO_AND_FEATURE_BITS);
 
-    processorVersionCheck(&CPUIDMaxAndManufacturer,
+    processorVersionCheck(manufacturer, &CPUIDMaxAndManufacturer,
                           &processorInfoAndFeatureBits);
 
-    // TODO: Enable this once we split up this code into intel / amd parts
-    // if (CPUIDMaxAndManufacturer.eax < BASIC_MAX_REQUIRED) {
-    //     EXIT_WITH_MESSAGE {
-    //         ERROR(STRING("CPU does not support required CPUID of "));
-    //         ERROR(BASIC_MAX_REQUIRED, .flags = NEWLINE);
-    //     }
-    // }
-
-    // TODO: [AMD] required family level >= 26
-    U32 processorFamily = (processorInfoAndFeatureBits.eax >> 8) & (0xF);
-    if (processorFamily == 0xF) {
-        processorFamily += (processorInfoAndFeatureBits.eax >> 20) & (0xFF);
-    }
+    CPUIDCheck(CPUID(EXTENDED_MAX_VALUE).eax, EXTENDED_MAX_REQUIRED);
 
     BASICCPUFeatures features = {.ecx = processorInfoAndFeatureBits.ecx,
                                  .edx = processorInfoAndFeatureBits.edx};
@@ -421,19 +353,19 @@ void fillArchParams(void *archParams, Arena scratch,
         EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support AVX256!\n")); }
     }
 
-    bool supportsAVX512 = false;
     CPUIDResult extendedProcessorFeatures = CPUID(EXTENDED_FEATURES);
-    if (extendedProcessorFeatures.ebx & (1 << 16)) {
-        supportsAVX512 = true;
-        KFLUSH_AFTER { INFO(STRING("Support for AVX512 found\n")); }
+    bool AVX512SupportByCPU = extendedProcessorFeatures.ebx & (1 << 16);
+    if (AVX512SupportByCPU) {
+        INFO(STRING("Support for AVX512 found\n"));
     } else {
-        KFLUSH_AFTER { INFO(STRING("No Support for AVX512 found\n")); }
+        STRING("No Support for AVX512 found\n");
     }
+    bool AVX512Support = kernelAVX512Support(AVX512SupportByCPU);
 
     KFLUSH_AFTER {
         INFO(STRING("Configuring XSAVE to enable FPU / SSE / AVX\n"));
     }
-    enableAndConfigureXSAVE(supportsAVX512);
+    enableAndConfigureXSAVE(AVX512Support);
 
     if (extendedProcessorFeatures.ecx & (1 << 16)) {
         KFLUSH_AFTER { INFO(STRING("Support for 5 level-paging found\n")); }
@@ -456,14 +388,6 @@ void fillArchParams(void *archParams, Arena scratch,
     }
     x86ArchParams->XSAVELocation = XSAVEAddress;
 
-    U32 maxExtendedCPUID = CPUID(EXTENDED_MAX_VALUE).eax;
-    if (maxExtendedCPUID < EXTENDED_MAX_REQUIRED) {
-        EXIT_WITH_MESSAGE {
-            ERROR(STRING("CPU does not support extended CPUID of "));
-            ERROR(EXTENDED_MAX_REQUIRED, .flags = NEWLINE);
-        }
-    }
-
     CPUIDResult extendedProcessorInfoAndFeatureBits =
         CPUID(EXTENDED_PROCESSOR_INFO_AND_FEATURE_BITS_PARAMETER);
     if (!(extendedProcessorInfoAndFeatureBits.edx & (1 << 26))) {
@@ -484,7 +408,8 @@ void fillArchParams(void *archParams, Arena scratch,
         }
     }
 
-    x86ArchParams->tscFrequencyPerMicroSecond = calibrateWait(manufacturer);
+    x86ArchParams->tscFrequencyPerMicroSecond =
+        timestampFrequencyGet() / MICROSECONDS_PER_SECOND;
     KFLUSH_AFTER {
         INFO(STRING("tsc frequency per microsecond: "));
         INFO(x86ArchParams->tscFrequencyPerMicroSecond, .flags = NEWLINE);
