@@ -1,4 +1,3 @@
-- nodeLocation base thing is duplicated for no reason in the trees.
 - ALl the exponents I am using inside non-constant structs can be converted to U8 instead to save memory?
 - look into struct x = {.y = 5} and check if it's actually necessary to zero initialize the rest of the struct, we can avoid this in most cases i think
 - add restrict to basically all pointers? look into aliasing again!!!

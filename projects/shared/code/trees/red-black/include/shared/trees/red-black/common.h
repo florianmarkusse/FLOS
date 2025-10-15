@@ -28,15 +28,15 @@ struct RedBlackNode {
 typedef struct {
     RedBlackNode *node;
     RedBlackDirection direction;
-} CommonVisitedNode;
+} CommonNodeVisited;
 
 typedef void (*RotationUpdater)(void *rotationNode, void *rotationChild);
 
 U32 rebalanceInsert(RedBlackDirection direction,
-                    CommonVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                    CommonNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                     RotationUpdater rotationUpdater);
 U32 rebalanceDelete(RedBlackDirection direction,
-                    CommonVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                    CommonNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                     RotationUpdater rotationUpdater);
 
 void rotateAround(RedBlackNode *rotationParent, RedBlackNode *rotationNode,
@@ -44,7 +44,7 @@ void rotateAround(RedBlackNode *rotationParent, RedBlackNode *rotationNode,
                   RedBlackDirection rotationDirection,
                   RedBlackDirection parentToChildDirection);
 
-U32 findAdjacentInSteps(RedBlackNode *node, CommonVisitedNode *visitedNodes,
+U32 findAdjacentInSteps(RedBlackNode *node, CommonNodeVisited *visitedNodes,
                         RedBlackDirection direction);
 
 #endif

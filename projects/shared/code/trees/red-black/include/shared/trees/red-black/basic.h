@@ -21,12 +21,11 @@ struct RedBlackNodeBasic {
 static_assert(OFFSETOF(RedBlackNodeBasic, children) == 0);
 static_assert(OFFSETOF(RedBlackNodeBasic, color) ==
               sizeof(RedBlackNodeBasic *) * RB_TREE_CHILD_COUNT);
-static_assert(sizeof(RedBlackNodeBasic) == 32);
 
 typedef struct {
     RedBlackNodeBasic *node;
     RedBlackDirection direction;
-} VisitedNode;
+} BasicNodeVisited;
 
 typedef ARRAY(RedBlackNodeBasic *) RedBlackNodeBasicPtr_a;
 

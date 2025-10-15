@@ -14,7 +14,7 @@ void archInit(void *archParams) {
     XSAVESpace = x86ArchParams->XSAVELocation;
     setupInterrupts();
 
-    cyclesPerMicroSecond = x86ArchParams->tscFrequencyPerMicroSecond;
+    tscCyclesPerMicroSecond = x86ArchParams->tscFrequencyPerMicroSecond;
 
     rootPageTable = (VirtualPageTable *)CR3();
 

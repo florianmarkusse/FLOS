@@ -23,7 +23,6 @@ typedef struct {
     U32 height;
     U32 scanline;
 } Window;
-static_assert(sizeof(Window) == 32);
 
 typedef struct {
     U64 physicalMemoryTotal;

@@ -31,7 +31,7 @@ void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
     }
 
     // Search
-    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
+    BasicNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT];
 
     visitedNodes[0].node = (RedBlackNodeBasic *)tree;
     visitedNodes[0].direction = RB_TREE_LEFT;
@@ -62,18 +62,18 @@ void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
 
     // Check for violations
     while (len >= 4 && visitedNodes[len - 2].node->color == RB_TREE_RED) {
-        len = rebalanceInsert(visitedNodes[len - 3].direction, visitedNodes,
-                              len, nullptr);
+        len = rebalanceInsert(visitedNodes[len - 3].direction,
+                              (CommonNodeVisited *)visitedNodes, len, nullptr);
     }
 
     (*tree)->color = RB_TREE_BLACK;
 }
 
 static RedBlackNodeBasic *
-deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+deleteNodeInPath(BasicNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                  RedBlackNodeBasic *toDelete) {
     U32 stepsToSuccessor = findAdjacentInSteps(
-        (RedBlackNode *)toDelete, (CommonVisitedNode *)&visitedNodes[len],
+        (RedBlackNode *)toDelete, (CommonNodeVisited *)&visitedNodes[len],
         RB_TREE_RIGHT);
     // If there is no right child, we can delete by having the parent of
     // toDelete now point to toDelete's left child instead of toDelete.
@@ -115,8 +115,9 @@ deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                 break;
             }
 
-            len = rebalanceDelete(visitedNodes[len - 1].direction, visitedNodes,
-                                  len, nullptr);
+            len = rebalanceDelete(visitedNodes[len - 1].direction,
+                                  (CommonNodeVisited *)visitedNodes, len,
+                                  nullptr);
         }
     }
 
@@ -125,7 +126,7 @@ deleteNodeInPath(VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
 
 RedBlackNodeBasic *deleteAtLeastRedBlackNodeBasic(RedBlackNodeBasic **tree,
                                                   U64 value) {
-    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
+    BasicNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT];
 
     visitedNodes[0].node = (RedBlackNodeBasic *)tree;
     visitedNodes[0].direction = RB_TREE_LEFT;
@@ -163,7 +164,7 @@ RedBlackNodeBasic *popRedBlackNodeBasic(RedBlackNodeBasic **tree) {
         return nullptr;
     }
 
-    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
+    BasicNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT];
 
     visitedNodes[0].node = (RedBlackNodeBasic *)tree;
     visitedNodes[0].direction = RB_TREE_LEFT;
@@ -177,7 +178,7 @@ RedBlackNodeBasic *deleteRedBlackNodeBasic(RedBlackNodeBasic **tree,
     if (!(*tree)) {
         return nullptr;
     }
-    VisitedNode visitedNodes[RB_TREE_MAX_HEIGHT];
+    BasicNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT];
 
     visitedNodes[0].node = (RedBlackNodeBasic *)tree;
     visitedNodes[0].direction = RB_TREE_LEFT;

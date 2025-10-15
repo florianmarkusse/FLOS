@@ -1,7 +1,7 @@
 #include "shared/trees/red-black/common.h"
 
 U32 rebalanceInsert(RedBlackDirection direction,
-                    CommonVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                    CommonNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                     RotationUpdater rotationUpdater) {
     RedBlackNode *grandParent = visitedNodes[len - 3].node;
     RedBlackNode *parent = visitedNodes[len - 2].node;
@@ -58,7 +58,7 @@ U32 rebalanceInsert(RedBlackDirection direction,
 // address that problem. On the other hand, coloring a node black in the
 // direction subtree immediately solves the deficiency in the whole tree.
 U32 rebalanceDelete(RedBlackDirection direction,
-                    CommonVisitedNode visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
+                    CommonNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                     RotationUpdater rotationUpdater) {
     RedBlackNode *node = visitedNodes[len - 1].node;
     RedBlackNode *childOtherDirection = node->children[!direction];
@@ -178,7 +178,7 @@ void rotateAround(RedBlackNode *rotationParent, RedBlackNode *rotationNode,
     rotationParent->children[parentToChildDirection] = rotationChild;
 }
 
-U32 findAdjacentInSteps(RedBlackNode *node, CommonVisitedNode *visitedNodes,
+U32 findAdjacentInSteps(RedBlackNode *node, CommonNodeVisited *visitedNodes,
                         RedBlackDirection direction) {
     if (!node->children[direction]) {
         return 0;

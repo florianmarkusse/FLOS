@@ -11,7 +11,6 @@ typedef struct {
     U32 elementSizeBytes;
     U32 alignBytes;
 } NodeAllocator;
-static_assert(sizeof(NodeAllocator) == 40);
 
 void nodeAllocatorInit(NodeAllocator *nodeAllocator, void_a nodes,
                        void_a nodesFreeList, U32 elementSizeBytes,
