@@ -10,7 +10,6 @@
 #include "shared/memory/converter.h"
 #include "shared/memory/management/definitions.h"
 #include "shared/memory/sizes.h"
-#include "shared/trees/red-black/memory-manager.h"
 
 bool memoryTypeCanBeUsedByKernel(MemoryType type) {
     switch (type) {

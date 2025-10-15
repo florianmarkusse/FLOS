@@ -4,7 +4,6 @@ add_library(
     OBJECT
     "src/red-black/common.c"
     "src/red-black/basic.c"
-    "src/red-black/memory-manager.c"
     "src/red-black/virtual-mapping-manager.c"
 )
 

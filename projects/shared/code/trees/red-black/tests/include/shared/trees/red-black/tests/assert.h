@@ -7,7 +7,7 @@
 
 static constexpr auto MAX_NODES_IN_TREE = 1024;
 
-typedef enum { RED_BLACK_BASIC, RED_BLACK_MEMORY_MANAGER } RedBlackTreeType;
+typedef enum { RED_BLACK_BASIC } RedBlackTreeType;
 
 void appendRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode,
                                    RedBlackTreeType treeType);

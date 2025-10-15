@@ -7,7 +7,6 @@
 #include "shared/memory/management/definitions.h"
 #include "shared/memory/management/management.h"
 #include "shared/memory/management/page.h"
-#include "shared/trees/red-black/memory-manager.h"
 #include "shared/trees/red-black/virtual-mapping-manager.h"
 #include "shared/types/array.h"
 #include "shared/types/numeric.h"

@@ -2,17 +2,12 @@
 #include "abstraction/log.h"
 #include "posix/test-framework/test.h"
 #include "shared/log.h"
-#include "shared/trees/red-black/memory-manager.h"
 
 static RedBlackColor getColor(RedBlackNode *node, RedBlackTreeType treeType) {
     switch (treeType) {
     case RED_BLACK_BASIC: {
         RedBlackNodeBasic *basicNode = (RedBlackNodeBasic *)node;
         return basicNode->color;
-    }
-    case RED_BLACK_MEMORY_MANAGER: {
-        MMNode *memoryManagerNode = (MMNode *)node;
-        return memoryManagerNode->color;
     }
     }
 }
@@ -40,16 +35,6 @@ static void printTreeIndented(RedBlackNode *node, int depth, String prefix,
         RedBlackNodeBasic *basicNode = (RedBlackNodeBasic *)node;
         INFO(STRING(" Value: "));
         INFO(basicNode->value);
-        break;
-    }
-    case RED_BLACK_MEMORY_MANAGER: {
-        MMNode *memoryManagerNode = (MMNode *)node;
-        INFO(STRING(" Start: "));
-        INFO(memoryManagerNode->memory.start);
-        INFO(STRING(" Bytes: "));
-        INFO(memoryManagerNode->memory.bytes);
-        INFO(STRING(" Most bytes in subtree: "));
-        INFO(memoryManagerNode->mostBytesInSubtree);
         break;
     }
     }

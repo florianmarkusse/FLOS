@@ -17,7 +17,6 @@
 #include "shared/memory/management/management.h"
 #include "shared/memory/management/status.h"
 #include "shared/text/string.h"
-#include "shared/trees/red-black/memory-manager.h"
 
 void kernelPhysicalBuddyPrepare(Buddy *kernelBuddyPhysical,
                                 U64 physicalAddressMaxExclusive,

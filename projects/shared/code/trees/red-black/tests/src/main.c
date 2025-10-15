@@ -5,7 +5,6 @@
 #include "shared/memory/sizes.h"
 #include "shared/trees/red-black/common.h"
 #include "shared/trees/red-black/tests/red-black/basic.h"
-#include "shared/trees/red-black/tests/red-black/memory-manager.h"
 
 #include <errno.h>
 #include <stddef.h>
@@ -37,7 +36,6 @@ int main() {
     testSuiteStart(STRING("Red-Black Trees"));
 
     testBasicRedBlackTrees(arena);
-    testMemoryManagerRedBlackTrees(arena);
 
     return testSuiteFinish();
 }

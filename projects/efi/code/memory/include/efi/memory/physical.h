@@ -5,7 +5,6 @@
 #include "efi/firmware/system.h"
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/definitions.h"
-#include "shared/trees/red-black/memory-manager.h"
 #include "shared/types/array-types.h"
 #include "shared/types/numeric.h"
 

@@ -1,7 +1,3 @@
-- clean up red-black tree mess somehow? This should be possible to abstract!
-  - Look into color OFFSETOF trick to get rid of slop
-  - Look into optimizing the struct by using indices instead of pointers
-- may want to split up init in intel / amd parts
 - how to hide extern variables from showing up everywhere
 - Look into MAX / MIN usage and replace with MAX_VALUE / MIN_VALUE
 - Set buddy orders based on how big our memory turns out to be
@@ -61,6 +57,7 @@
 - After rewrite of cmake?
   - Figure out a way to easily build and run for various x86 architectures with qemu...
   - Also do the same for support for avx512 , no support for avx512, may mean turning off -march=native or something
+- os-loader can make use of freestanding peripheral of screen, would enable us to log even after exiting boot services
 
 | IST  | sti | usage Kernel design rationale                     | Solution                                                                                                                                                                                 |
 | ---- | --- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

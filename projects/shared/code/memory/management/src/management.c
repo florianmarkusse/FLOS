@@ -10,7 +10,6 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/memory/management/page.h"
 #include "shared/memory/sizes.h"
-#include "shared/trees/red-black/memory-manager.h"
 
 Buddy buddyPhysical;
 Buddy buddyVirtual;
