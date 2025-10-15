@@ -3,6 +3,6 @@
 
 #include "shared/types/numeric.h"
 
-extern U64 cyclesPerMicroSecond;
+extern U64 tscCyclesPerMicroSecond;
 
 #endif

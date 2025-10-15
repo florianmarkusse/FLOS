@@ -18,14 +18,14 @@ U64 currentCycleCounter(bool previousFinished, bool blocksSubsequent) {
 
 // NOTE: 1 GigaHertz = 1000 cycles per microsecond default - really should
 // calibrate this!
-U64 cyclesPerMicroSecond = 1000;
+U64 tscCyclesPerMicroSecond = 1000;
 
-U64 getCyclesPerMicroSecond() { return cyclesPerMicroSecond; }
+U64 getCyclesPerMicroSecond() { return tscCyclesPerMicroSecond; }
 
 // 1 millionth of a second
 void blockingWait(U64 microSeconds) {
-    U64 endInCycles =
-        currentCycleCounter(false, false) + microSeconds * cyclesPerMicroSecond;
+    U64 endInCycles = currentCycleCounter(false, false) +
+                      microSeconds * tscCyclesPerMicroSecond;
     while (currentCycleCounter(false, false) < endInCycles) {
         asm volatile("" ::: "memory");
     }
