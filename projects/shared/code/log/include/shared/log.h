@@ -8,11 +8,11 @@
 static constexpr auto NEWLINE = 0x01;
 static constexpr auto FLUSH = 0x02;
 
-typedef void (*AppendFunction)(void *destination, const void *source,
-                               U64 bytes);
+typedef void (*AppendFunction)(void *restrict destination,
+                               void *restrict source, U64 bytes);
 
-void appendMemcpy(void *destination, const void *source, U64 bytes);
-void appendMemset(void *destination, const void *source, U64 bytes);
+void appendMemcpy(void *restrict destination, void *restrict source, U64 bytes);
+void appendMemset(void *restrict destination, void *restrict source, U64 bytes);
 
 void appendToBuffer(U8_a *buffer, String data);
 void appendToFlushBuffer(String data, U8 flags);

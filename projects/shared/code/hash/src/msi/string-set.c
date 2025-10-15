@@ -26,7 +26,8 @@ bool msi_containsString(String string, U64 hash, msi_string *index) {
     }
 }
 
-HashComparisonStatus msi_equalsStringSet(msi_string *set1, msi_string *set2) {
+HashComparisonStatus msi_equalsStringSet(msi_string *restrict set1,
+                                         msi_string *restrict set2) {
     if (set1->len != set2->len) {
         return HASH_COMPARISON_DIFFERENT_SIZES;
     }

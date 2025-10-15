@@ -5,7 +5,7 @@
 
 /* Copy N bytes of SRC to DEST.  */
 __attribute__((nothrow, nonnull(1, 2))) void *
-memcpy(void *__restrict dest, const void *__restrict src, U64 n);
+memcpy(void *restrict dest, const void *restrict src, U64 n);
 /* Copy N bytes of SRC to DEST, guaranteeing
    correct behavior for overlapping strings.  */
 __attribute__((nothrow, nonnull(1, 2))) void *memmove(void *dest,

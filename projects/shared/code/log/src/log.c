@@ -9,18 +9,21 @@ void appendToBuffer(U8_a *buffer, String data) {
     buffer->len += data.len;
 }
 
-void appendMemcpy(void *destination, const void *source, U64 bytes) {
+void appendMemcpy(void *restrict destination, void *restrict source,
+                  U64 bytes) {
     memcpy(destination, source, bytes);
 }
 
-void appendMemset(void *destination, const void *source, U64 bytes) {
+void appendMemset(void *restrict destination, void *restrict source,
+                  U64 bytes) {
     (void)source;
     memset(destination, 0, bytes);
 }
 
-static void appendDataCommon(void *data, U32 len, U8 flags, U8_max_a *buffer,
-                             AppendFunction appender, FlushFunction flusher,
-                             void *flushContext) {
+static void appendDataCommon(void *restrict data, U32 len, U8 flags,
+                             U8_max_a *buffer, AppendFunction appender,
+                             FlushFunction flusher,
+                             void *restrict flushContext) {
     for (U32 bytesWritten = 0; bytesWritten < len;) {
         U32 spaceInBuffer = buffer->cap - buffer->len;
         U32 dataToWrite = len - bytesWritten;

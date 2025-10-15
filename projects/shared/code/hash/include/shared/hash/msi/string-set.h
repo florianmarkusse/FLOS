@@ -21,7 +21,8 @@ bool msi_containsString(String string, U64 hash, msi_string *index);
  * Check if the same string hasher is used to compare as the hash functions that
  * were used to insert.
  */
-HashComparisonStatus msi_equalsStringSet(msi_string *set1, msi_string *set2);
+HashComparisonStatus msi_equalsStringSet(msi_string *restrict set1,
+                                         msi_string *restrict set2);
 
 #define FOR_EACH_MSI_STRING(element, msiSet)                                   \
     for (U32 MACRO_VAR(index) = 0; MACRO_VAR(index) < (1 << (msiSet)->exp);    \

@@ -1,13 +1,13 @@
+#include "x86/efi/init.h"
 #include "abstraction/log.h"
 #include "efi/error.h"
 #include "shared/log.h"
-#include "x86/efi/init.h"
 
 static constexpr auto MINIMUM_FAMILY_VERSION = 26;
 
 void processorVersionCheck(Manufacturer manufacturer,
-                           CPUIDResult *CPUIDMaxAndManufacturer,
-                           CPUIDResult *processorInfoAndFeatureBits) {
+                           CPUIDResult *restrict CPUIDMaxAndManufacturer,
+                           CPUIDResult *restrict processorInfoAndFeatureBits) {
     manufacturerCheck(manufacturer, AMD);
     CPUIDCheck(CPUIDMaxAndManufacturer->eax, XSAVE_CPU_SUPPORT);
 

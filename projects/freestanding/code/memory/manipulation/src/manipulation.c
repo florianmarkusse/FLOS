@@ -22,7 +22,7 @@ typedef U32 __attribute__((aligned(1))) u32;
 typedef U64 __attribute__((aligned(1))) u64;
 
 __attribute__((nothrow, nonnull(1, 2))) void *
-memcpy(void *__restrict dest, const void *__restrict src, U64 n) {
+memcpy(void *restrict dest, const void *restrict src, U64 n) {
     I8 *d = (I8 *)dest;
     const I8 *s = (I8 *)src;
 

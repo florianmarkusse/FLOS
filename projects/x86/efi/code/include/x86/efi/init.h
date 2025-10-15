@@ -6,8 +6,8 @@
 typedef enum { INTEL, AMD } Manufacturer;
 
 void processorVersionCheck(Manufacturer manufacturer,
-                           CPUIDResult *CPUIDMaxAndManufacturer,
-                           CPUIDResult *processorInfoAndFeatureBits);
+                           CPUIDResult *restrict CPUIDMaxAndManufacturer,
+                           CPUIDResult *restrict processorInfoAndFeatureBits);
 
 void manufacturerCheck(Manufacturer actual, Manufacturer expected);
 void CPUIDCheck(U32 actualMax, U32 expectedMax);
