@@ -87,10 +87,8 @@ void mapPage_(U64 virt, U64 physical, U64_pow2 mappingSize, U64 flags) {
         }
 
         // TODO: Use FRAME_OR_NEXT_PAGE_TABLE mask isntead?
-        pageTable =
-            /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
-            (VirtualPageTable *)alignDown(*tableEntryAddress,
-                                          pageSizesSmallest());
+        pageTable = (VirtualPageTable *)alignDown(*tableEntryAddress,
+                                                  pageSizesSmallest());
         metaDataTable = newMetaEntryAddress->children;
     }
 }
@@ -177,7 +175,6 @@ Memory unmapPage(U64 virt) {
         }
 
         pageTables[len] =
-            /* NOLINTNEXTLINE(performance-no-int-to-ptr) */
             (VirtualPageTable *)alignDown(tableEntry, pageSizesSmallest());
         newMeta[len] = newMeta[len - 1][newMetaIndex].children;
         len++;

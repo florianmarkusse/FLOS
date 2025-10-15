@@ -7,7 +7,10 @@
 #include "shared/uuid.h"
 
 typedef struct __attribute__((packed)) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-attributes"
     U8 signature[8] __attribute__((nonstring));
+#pragma GCC diagnostic pop
     U32 revision;
     U32 headerSize;
     U32 headerCRC32;

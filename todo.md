@@ -43,6 +43,7 @@
   - Figure out a way to easily build and run for various x86 architectures with qemu...
   - Also do the same for support for avx512 , no support for avx512, may mean turning off -march=native or something
 - os-loader can make use of freestanding peripheral of screen, would enable us to log even after exiting boot services
+- test out using gcc for kernel build too
 
 | IST  | sti | usage Kernel design rationale                     | Solution                                                                                                                                                                                 |
 | ---- | --- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
