@@ -7,7 +7,7 @@
 #include "shared/types/numeric.h" // for USize, U8, nullptr, U16, U64
 #include "shared/uuid.h"          // for Guid, ACPI_TABLE_GUID, EFI_ACPI_20_...
 
-bool ACPIChecksum(void *ptr, U64 size) {
+static bool ACPIChecksum(void *ptr, U64 size) {
     U8 sum = 0;
     for (typeof(size) i = 0; i < size; i++) {
         sum += ((U8 *)ptr)[i];

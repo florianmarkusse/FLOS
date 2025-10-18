@@ -1,4 +1,5 @@
 #include "abstraction/text/converter/base.h"
+#include "abstraction/text/converter/converter.h"
 
 #include "abstraction/memory/manipulation.h"
 #include "shared/assert.h"

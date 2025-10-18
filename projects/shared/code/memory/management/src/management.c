@@ -8,6 +8,7 @@
 #include "shared/log.h"
 #include "shared/maths.h"
 #include "shared/memory/allocator/arena.h"
+#include "shared/memory/management/init.h"
 #include "shared/memory/management/page.h"
 #include "shared/memory/sizes.h"
 

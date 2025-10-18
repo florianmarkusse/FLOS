@@ -30,7 +30,7 @@ typedef struct {
 static File efiFileInfo;
 static File kernelFileInfo;
 
-File openFile(char *name) {
+static File openFile(char *name) {
     File result;
     result.fileDescriptor = open(name, O_RDONLY | O_CLOEXEC);
     if (!result.fileDescriptor) {
@@ -65,7 +65,7 @@ File openFile(char *name) {
 }
 
 static constexpr auto READ_WRITE_OWNER_READ_OTHERS = 0644;
-int createUEFIImage() {
+static int createUEFIImage() {
     int fileDescriptor = open((char *)configuration.imageName,
                               O_CLOEXEC | O_TRUNC | O_CREAT | O_RDWR,
                               READ_WRITE_OWNER_READ_OTHERS);

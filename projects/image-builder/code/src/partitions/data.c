@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "image-builder/configuration.h"
+#include "image-builder/partitions/data.h"
 #include "posix/log.h"
 #include "shared/assert.h"
 #include "shared/log.h"

@@ -1,6 +1,5 @@
 #include "x86/configuration/cpu.h"
-
-U32 pageCacheFlushThreshold() { return 32; }
+#include "abstraction/memory/virtual/map.h"
 
 U64 rdmsr(U32 msr) {
     U32 edx;

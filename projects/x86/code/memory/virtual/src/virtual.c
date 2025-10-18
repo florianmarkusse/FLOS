@@ -3,6 +3,7 @@
 #include "abstraction/memory/manipulation.h"
 #include "abstraction/memory/virtual/allocator.h"
 #include "abstraction/memory/virtual/converter.h"
+#include "abstraction/memory/virtual/map.h"
 #include "shared/assert.h"
 #include "shared/maths.h"
 #include "shared/memory/converter.h"

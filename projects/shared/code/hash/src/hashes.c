@@ -1,3 +1,4 @@
+#include "shared/hash/hashes.h"
 #include "shared/types/numeric.h"
 
 #include "shared/text/string.h"

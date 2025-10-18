@@ -87,7 +87,7 @@ GPTPartitionEntry partitionEntries[GPT_PARTITION_TABLE_ENTRIES] = {
     },
 };
 
-void fillPartitionEntry(U32 index, U32 startLBA, U32 sizeLBA) {
+static void fillPartitionEntry(U32 index, U32 startLBA, U32 sizeLBA) {
     if (index == 0) {
         partitionEntries[index].uniquePartitionGUID = RANDOM_GUID_2;
     } else {

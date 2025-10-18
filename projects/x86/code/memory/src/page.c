@@ -1,3 +1,4 @@
+#include "abstraction/memory/virtual/converter.h"
 #include "x86/memory/definitions.h"
 
 U64 pageSizesAvailableMask() {
