@@ -13,6 +13,20 @@ Configuration configuration = {.imageName = (U8 *)"FLOS_UEFI_IMAGE.hdd",
                                .LBASizeBytes = 512,
                                .alignmentLBA = 1};
 
+static void lbaSizeAppend(U32 lbaSize) {
+    INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(lbaSize), 6));
+    INFO(STRING(" LBAs / "));
+    INFO(stringWithMinSizeDefault(
+        CONVERT_TO_STRING(lbaSize * configuration.LBASizeBytes), 10));
+    INFO(STRING(" bytes"), .flags = NEWLINE);
+}
+
+static void partitionAppend(U32 lbaStart, U32 lbaSize) {
+    INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(lbaStart), 6));
+    INFO(STRING(" + "));
+    lbaSizeAppend(lbaSize);
+}
+
 void setConfiguration(U32 efiApplicationSizeBytes, U32 kernelSizeBytes,
                       U32_pow2 alignmentSizeBytes) {
     if (alignmentSizeBytes > configuration.LBASizeBytes) {
@@ -50,39 +64,41 @@ void setConfiguration(U32 efiApplicationSizeBytes, U32 kernelSizeBytes,
     configuration.totalImageSizeBytes =
         configuration.totalImageSizeLBA * configuration.LBASizeBytes;
 
+    static constexpr auto TEXT_SIZE_CHARACTERS_MIN = 30;
     PFLUSH_AFTER(STDOUT) {
         INFO(STRING("Configuration\n"));
 
-        INFO(STRING("Image name: "));
+        INFO(stringWithMinSizeDefault(STRING("Image name: "),
+                                      TEXT_SIZE_CHARACTERS_MIN));
         INFO(STRING_LEN(configuration.imageName,
                         (U32)strlen((char *)configuration.imageName)),
              .flags = NEWLINE);
 
-        INFO(STRING("LBA size bytes: "));
-        INFO(configuration.LBASizeBytes, .flags = NEWLINE);
+        INFO(stringWithMinSizeDefault(STRING("LBA size: "),
+                                      TEXT_SIZE_CHARACTERS_MIN));
+        lbaSizeAppend(1);
 
-        INFO(STRING("Alignment in LBA: "));
-        INFO(configuration.alignmentLBA, .flags = NEWLINE);
+        INFO(stringWithMinSizeDefault(STRING("Alignment value: "),
+                                      TEXT_SIZE_CHARACTERS_MIN));
+        lbaSizeAppend(configuration.alignmentLBA);
 
-        INFO(STRING("total image size LBA: "));
-        INFO(configuration.totalImageSizeLBA, .flags = NEWLINE);
+        INFO(stringWithMinSizeDefault(STRING("total image: "),
+                                      TEXT_SIZE_CHARACTERS_MIN));
+        lbaSizeAppend(configuration.totalImageSizeLBA);
 
-        INFO(STRING("total image size bytes: "));
-        INFO(configuration.totalImageSizeBytes, .flags = NEWLINE);
+        INFO(stringWithMinSizeDefault(STRING("GPT partition table: "),
+                                      TEXT_SIZE_CHARACTERS_MIN));
+        lbaSizeAppend(configuration.GPTPartitionTableSizeLBA);
 
-        INFO(STRING("GPT partition table size LBA: "));
-        INFO(configuration.GPTPartitionTableSizeLBA, .flags = NEWLINE);
+        INFO(STRING("\n--- Partitions ---\n"));
+        INFO(stringWithMinSizeDefault(STRING("EFI partition: "),
+                                      TEXT_SIZE_CHARACTERS_MIN));
+        partitionAppend(configuration.EFISystemPartitionStartLBA,
+                        configuration.EFISystemPartitionSizeLBA);
 
-        INFO(STRING("EFI partition start LBA: "));
-        INFO(configuration.EFISystemPartitionStartLBA, .flags = NEWLINE);
-
-        INFO(STRING("EFI partition size LBA: "));
-        INFO(configuration.EFISystemPartitionSizeLBA, .flags = NEWLINE);
-
-        INFO(STRING("Data partition start LBA: "));
-        INFO(configuration.dataPartitionStartLBA, .flags = NEWLINE);
-
-        INFO(STRING("Data partition size LBA: "));
-        INFO(configuration.dataPartitionSizeLBA, .flags = NEWLINE);
+        INFO(stringWithMinSizeDefault(STRING("Data partition: "),
+                                      TEXT_SIZE_CHARACTERS_MIN));
+        partitionAppend(configuration.dataPartitionStartLBA,
+                        configuration.dataPartitionSizeLBA);
     }
 }

@@ -1,4 +1,3 @@
-- add some nicer logs to image-builder? i.e. more data about sizes in bytes and LBA, not one or the other.
 - rename abstraction/efi to abstraction/efi-to-kernel
 - get rid of lots of virtual stuff in policy
   - move some stuff in policy to virtual?
