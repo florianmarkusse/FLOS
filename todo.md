@@ -1,5 +1,3 @@
-- wfunction-prototype
-- look into caching page table / meta data tables anyway and see if it's faster since it avoids zeroing
 - add some nicer logs to image-builder? i.e. more data about sizes in bytes and LBA, not one or the other.
 - rename abstraction/efi to abstraction/efi-to-kernel
 - get rid of lots of virtual stuff in policy
