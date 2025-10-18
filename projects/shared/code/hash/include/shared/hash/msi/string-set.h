@@ -9,20 +9,21 @@
 
 typedef MSI_SET(String) msi_string;
 
-bool msi_insertString(String string, U64 hash, msi_string *index);
+[[nodiscard]] bool msi_insertString(String string, U64 hash, msi_string *index);
 
 /**
  * Assumes you know what hash function was used in this hash set. If you use the
  * wrong hash, you get wrong answers!!!
  */
-bool msi_containsString(String string, U64 hash, msi_string *index);
+[[nodiscard]] bool msi_containsString(String string, U64 hash,
+                                      msi_string *index);
 
 /**
  * Check if the same string hasher is used to compare as the hash functions that
  * were used to insert.
  */
-HashComparisonStatus msi_equalsStringSet(msi_string *restrict set1,
-                                         msi_string *restrict set2);
+[[nodiscard]] HashComparisonStatus
+msi_equalsStringSet(msi_string *restrict set1, msi_string *restrict set2);
 
 #define FOR_EACH_MSI_STRING(element, msiSet)                                   \
     for (U32 MACRO_VAR(index) = 0; MACRO_VAR(index) < (1 << (msiSet)->exp);    \

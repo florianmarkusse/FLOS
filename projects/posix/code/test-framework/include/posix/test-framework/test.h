@@ -9,7 +9,7 @@
 #include "shared/text/string.h" // for string
 
 void testSuiteStart(String mainTopic);
-int testSuiteFinish();
+[[nodiscard]] int testSuiteFinish();
 
 void testTopicStart(String testTopic);
 void testTopicFinish();

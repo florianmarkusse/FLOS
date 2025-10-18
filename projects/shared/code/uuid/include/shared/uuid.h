@@ -50,6 +50,6 @@ static constexpr UUID MAX_UUID = {
 
 void setUUIDType(UUID *uuid, U8 version, UUIDVariant variant);
 
-bool UUIDEquals(UUID a, UUID b);
+[[nodiscard]] bool UUIDEquals(UUID a, UUID b);
 
 #endif

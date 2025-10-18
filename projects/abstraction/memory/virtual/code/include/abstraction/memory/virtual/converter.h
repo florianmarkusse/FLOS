@@ -3,12 +3,12 @@
 
 #include "shared/types/numeric.h"
 
-U64 pageFlagsReadWrite();
-U64 pageFlagsNoCacheEvict();
-U64 pageFlagsScreenMemory();
+[[nodiscard]] U64 pageFlagsReadWrite();
+[[nodiscard]] U64 pageFlagsNoCacheEvict();
+[[nodiscard]] U64 pageFlagsScreenMemory();
 
-U64 pageSizesAvailableMask();
-U64_pow2 pageSizesSmallest();
-U64_pow2 pageSizesLargest();
+[[nodiscard]] U64 pageSizesAvailableMask();
+[[nodiscard]] U64_pow2 pageSizesSmallest();
+[[nodiscard]] U64_pow2 pageSizesLargest();
 
 #endif

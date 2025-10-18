@@ -12,7 +12,7 @@ struct trie_U16Set {
     U16 data;
 };
 
-bool trie_insertU16Set(U16 key, trie_U16Set **set, Arena *perm);
+[[nodiscard]] bool trie_insertU16Set(U16 key, trie_U16Set **set, Arena *perm);
 
 TRIE_ITERATOR_HEADER_FILE(trie_U16Set, trie_U16IterNode, trie_U16Iterator, U16,
                           createU16Iterator, nextU16Iterator)

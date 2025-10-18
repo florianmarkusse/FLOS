@@ -1,5 +1,3 @@
-- warning pointer cast turn on again? Maybe ask c_programming how to fix this better? Or whether this can be ignored?
-- Mark functions whose [[nodiscard]] return values should be used as such to avoid bugs.
 - remove getAvailableMemory from .h file, should not be called directly
 - Decision to flush cpu cache or invalidate should be done in the architecture it's running on, not common code
 - wfunction-prototype

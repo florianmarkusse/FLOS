@@ -20,8 +20,6 @@ U64 currentCycleCounter(bool previousFinished, bool blocksSubsequent) {
 // calibrate this!
 U64 tscCyclesPerMicroSecond = 1000;
 
-U64 getCyclesPerMicroSecond() { return tscCyclesPerMicroSecond; }
-
 // 1 millionth of a second
 void blockingWait(U64 microSeconds) {
     U64 endInCycles = currentCycleCounter(false, false) +

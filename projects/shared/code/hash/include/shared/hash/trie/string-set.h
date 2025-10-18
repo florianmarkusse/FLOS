@@ -12,7 +12,8 @@ struct trie_stringSet {
     String data;
 };
 
-bool trie_insertStringSet(String key, trie_stringSet **set, Arena *perm);
+[[nodiscard]] bool trie_insertStringSet(String key, trie_stringSet **set,
+                                        Arena *perm);
 
 TRIE_ITERATOR_HEADER_FILE(trie_stringSet, trie_stringIterNode,
                           trie_stringIterator, String, createStringIterator,

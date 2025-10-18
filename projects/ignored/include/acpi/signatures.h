@@ -14,6 +14,6 @@ typedef enum {
     ERROR_AND_NUM_TABLES
 } ACPITable;
 
-ACPITable ACPITablesToEnum(string signature);
+[[nodiscard]] ACPITable ACPITablesToEnum(string signature);
 
 #endif

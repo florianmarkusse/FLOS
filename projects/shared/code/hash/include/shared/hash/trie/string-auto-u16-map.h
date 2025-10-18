@@ -28,11 +28,12 @@ typedef struct {
     bool wasInserted;
 } NewStringInsert;
 
-NewStringInsert trie_insertStringAutoU16Map(String key,
-                                            trie_stringAutoU16Map *set,
-                                            Arena *perm);
+[[nodiscard]] NewStringInsert
+trie_insertStringAutoU16Map(String key, trie_stringAutoU16Map *set,
+                            Arena *perm);
 
-U16 trie_containsStringAutoU16Map(String key, trie_stringAutoU16Map *set);
+[[nodiscard]] U16 trie_containsStringAutoU16Map(String key,
+                                                trie_stringAutoU16Map *set);
 
 TRIE_ITERATOR_HEADER_FILE(trie_stringAutoU16Node, trie_stringAutoU16IterNode,
                           trie_stringAutoU16Iterator, trie_stringAutoU16Data,

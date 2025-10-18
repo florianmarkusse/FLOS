@@ -6,8 +6,8 @@
 #include "shared/text/string.h"
 #include "shared/types/numeric.h" // for U32, U64, USize
 
-String readKernelFromCurrentLoadedImage(U32 bytes, Arena scratch);
+[[nodiscard]] String readKernelFromCurrentLoadedImage(U32 bytes, Arena scratch);
 
-U32 getKernelBytes(Arena scratch);
+[[nodiscard]] U32 getKernelBytes(Arena scratch);
 
 #endif

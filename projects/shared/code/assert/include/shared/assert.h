@@ -8,7 +8,7 @@
 #define BREAKPOINT asm volatile("1: jmp 1b");
 #define ASSERT(c)                                                              \
     if (!(c)) {                                                                \
-        asm volatile("1: jmp 1b");                                     \
+        asm volatile("1: jmp 1b");                                             \
     }
 #elif POSIX
 

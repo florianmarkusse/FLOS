@@ -4,6 +4,6 @@
 #include "shared/types/numeric.h"
 
 static constexpr auto MICROSECONDS_PER_SECOND = 1000000;
-U64 timestampFrequencyGet();
+[[nodiscard]] U64 timestampFrequencyGet();
 
 #endif

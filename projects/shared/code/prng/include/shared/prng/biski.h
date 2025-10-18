@@ -13,6 +13,6 @@ typedef struct {
 } BiskiState;
 
 void biskiSeed(BiskiState *state, U64 seed);
-U64 biskiNext(BiskiState *state);
+[[nodiscard]] U64 biskiNext(BiskiState *state);
 
 #endif

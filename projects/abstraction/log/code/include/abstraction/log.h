@@ -16,9 +16,9 @@ void flushBuffer(U8_a *buffer, void *flushContext);
 
 typedef void (*FlushFunction)(U8_a *buffer, void *flushContext);
 
-U8_max_a *getFlushBuffer();
-FlushFunction getFlushFunction();
-void *getFlushContext();
+[[nodiscard]] U8_max_a *getFlushBuffer();
+[[nodiscard]] FlushFunction getFlushFunction();
+[[nodiscard]] void *getFlushContext();
 
 #define KFLUSH_AFTER                                                           \
     for (U32 MACRO_VAR(i) = 0; MACRO_VAR(i) < 1;                               \

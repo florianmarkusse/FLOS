@@ -4,8 +4,7 @@
 #include "shared/types/numeric.h"
 #include "x86/memory/virtual.h"
 
-// NOTE: Used for crossing ABI boundaries here, so ensuring that both
-// targets agree on the size of the struct!
+// NOTE: Used for crossing ABI boundaries.
 
 typedef struct {
     U16 entriesMapped;

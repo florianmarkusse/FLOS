@@ -3,7 +3,7 @@
 
 #include "shared/text/string.h"
 #include "shared/types/numeric.h"
-U32 parseU32(String value, U8 base);
-U16 parseU16(String value, U8 base);
+[[nodiscard]] U32 parseU32(String value, U8 base);
+[[nodiscard]] U16 parseU16(String value, U8 base);
 
 #endif

@@ -31,7 +31,7 @@ static U64 splitmix64_next(U64 *seed_state_ptr) {
  */
 static void biski64_warmup(BiskiState *state) {
     for (U32 i = 0; i < 16; ++i) {
-        biskiNext(state); // Assumes this function advances the state
+        (void)biskiNext(state); // Assumes this function advances the state
     }
 }
 

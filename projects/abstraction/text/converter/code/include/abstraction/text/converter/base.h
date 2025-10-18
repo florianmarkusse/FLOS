@@ -5,24 +5,24 @@
 #include "shared/types/array-types.h"
 #include "shared/types/numeric.h"
 
-String stringWithMinSize(String data, U8 minSize, U8_a tmp);
-String stringWithMinSizeDefault(String data, U8 minSize);
+[[nodiscard]] String stringWithMinSize(String data, U8 minSize, U8_a tmp);
+[[nodiscard]] String stringWithMinSizeDefault(String data, U8 minSize);
 
-String stringToString(String data);
+[[nodiscard]] String stringToString(String data);
 
-String charToString(char data, U8_a tmp);
-String charToStringDefault(char data);
+[[nodiscard]] String charToString(char data, U8_a tmp);
+[[nodiscard]] String charToStringDefault(char data);
 
-String boolToString(bool data);
+[[nodiscard]] String boolToString(bool data);
 
-String ptrToString(void *data, U8_a tmp);
-String ptrToStringDefault(void *data);
+[[nodiscard]] String ptrToString(void *data, U8_a tmp);
+[[nodiscard]] String ptrToStringDefault(void *data);
 
-String U64ToString(U64 data, U8_a tmp);
-String U64ToStringDefault(U64 data);
+[[nodiscard]] String U64ToString(U64 data, U8_a tmp);
+[[nodiscard]] String U64ToStringDefault(U64 data);
 
-String I64ToString(I64 data, U8_a tmp);
-String I64ToStringDefault(I64 data);
+[[nodiscard]] String I64ToString(I64 data, U8_a tmp);
+[[nodiscard]] String I64ToStringDefault(I64 data);
 
 // clang-format off
 #define CONVERT_TO_STRING_BASE \

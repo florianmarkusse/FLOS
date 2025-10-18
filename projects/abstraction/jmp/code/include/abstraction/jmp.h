@@ -17,7 +17,7 @@
 #endif
 // clang-format on
 
-__attribute__((naked, returns_twice)) int setjmp(JumpBuffer buf);
+[[nodiscard]] __attribute__((naked, returns_twice)) int setjmp(JumpBuffer buf);
 __attribute__((naked, noreturn)) void longjmp(JumpBuffer buf, int ret);
 
 #endif

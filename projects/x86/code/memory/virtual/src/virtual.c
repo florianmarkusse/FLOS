@@ -11,7 +11,6 @@
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
 #include "x86/memory/definitions.h"
-#include "x86/memory/flags.h"
 
 // NOTE: Currently, one should only consult the metadata table through a virtual
 // page. I.e., you can only go from page table to meta data.

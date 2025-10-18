@@ -1,6 +1,4 @@
-#ifndef X86_MEMORY_FLAGS_H
-#define X86_MEMORY_FLAGS_H
-
+#include "abstraction/memory/virtual/converter.h"
 #include "x86/memory/definitions.h"
 #include "x86/memory/pat.h"
 
@@ -9,5 +7,3 @@ U64 pageFlagsReadWrite() {
 }
 U64 pageFlagsNoCacheEvict() { return VirtualPageMasks.PAGE_GLOBAL; }
 U64 pageFlagsScreenMemory() { return PATMapping.MAP_3; }
-
-#endif

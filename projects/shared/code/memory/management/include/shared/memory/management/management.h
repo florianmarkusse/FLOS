@@ -12,10 +12,10 @@ static constexpr auto BUDDY_PHYSICAL_PAGE_SIZE_MAX = 30;
 extern Buddy buddyVirtual;
 static constexpr auto BUDDY_VIRTUAL_PAGE_SIZE_MAX = 57;
 
-void *allocVirtualMemory(U64_pow2 blockSize);
+[[nodiscard]] void *allocVirtualMemory(U64_pow2 blockSize);
 void freeVirtualMemory(Memory memory);
 
-void *allocPhysicalMemory(U64_pow2 blockSize);
+[[nodiscard]] void *allocPhysicalMemory(U64_pow2 blockSize);
 void freePhysicalMemory(Memory memory);
 
 #endif

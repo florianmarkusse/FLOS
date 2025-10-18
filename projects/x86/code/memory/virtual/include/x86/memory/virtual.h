@@ -16,8 +16,8 @@ typedef struct PageMetaDataNode {
 extern VirtualPageTable *rootPageTable;
 extern PageMetaDataNode rootPageMetaData;
 
-U64 getPhysicalAddressFrame(U64 virtualPage);
+[[nodiscard]] U64 getPhysicalAddressFrame(U64 virtualPage);
 
-VirtualPageTable *getZeroedPageTable();
+[[nodiscard]] VirtualPageTable *getZeroedPageTable();
 
 #endif

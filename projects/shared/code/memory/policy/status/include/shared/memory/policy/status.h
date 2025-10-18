@@ -10,7 +10,7 @@ typedef struct {
     U32 addresses;
 } AvailableMemoryState;
 
-AvailableMemoryState getAvailablePhysicalMemory();
-AvailableMemoryState getAvailableVirtualMemory();
+[[nodiscard]] AvailableMemoryState getAvailablePhysicalMemory();
+[[nodiscard]] AvailableMemoryState getAvailableVirtualMemory();
 
 #endif

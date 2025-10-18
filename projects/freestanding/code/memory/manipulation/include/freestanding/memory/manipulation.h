@@ -15,7 +15,7 @@ __attribute__((nothrow, nonnull(1, 2))) void *memmove(void *dest,
 __attribute__((nothrow, nonnull(1))) void *memset(void *s, int c, U64 n);
 
 /* Compare N bytes of S1 and S2.  */
-__attribute__((nothrow, pure, nonnull(1, 2))) int memcmp(const void *s1,
-                                                         const void *s2, U64 n);
+[[nodiscard]] __attribute__((nothrow, pure, nonnull(1, 2))) int
+memcmp(const void *s1, const void *s2, U64 n);
 
 #endif

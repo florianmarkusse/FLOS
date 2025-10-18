@@ -12,7 +12,7 @@ typedef enum { RED_BLACK_BASIC } RedBlackTreeType;
 void appendRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode,
                                    RedBlackTreeType treeType);
 
-U32 nodeCount(RedBlackNode *tree, RedBlackTreeType treeType);
+[[nodiscard]] U32 nodeCount(RedBlackNode *tree, RedBlackTreeType treeType);
 void assertNoRedNodeHasRedChild(RedBlackNode *tree, U32 nodes,
                                 RedBlackTreeType treeType, Arena scratch);
 void assertPathsFromNodeHaveSameBlackHeight(RedBlackNode *tree, U32 nodes,

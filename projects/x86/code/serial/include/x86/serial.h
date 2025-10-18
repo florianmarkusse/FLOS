@@ -5,7 +5,7 @@
 
 static constexpr auto COM1 = 0x3F8;
 
-U8 inb(U16 port);
+[[nodiscard]] U8 inb(U16 port);
 void outb(U16 port, U8 value);
 
 #endif

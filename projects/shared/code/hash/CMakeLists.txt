@@ -10,6 +10,7 @@ add_library(
     "src/trie/uint16-set.c"
     "src/trie/string-auto-u16-map.c"
     "src/hash-comparison-status.c"
+    "src/hashes.c"
 )
 
 add_includes_for_sublibrary()

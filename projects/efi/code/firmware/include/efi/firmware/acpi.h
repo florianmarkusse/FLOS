@@ -11,12 +11,9 @@ static constexpr auto ACPI_TABLE_PROTOCOL_GUID =
            .ms4 = {0x7b, 0xb2, 0x5a, 0x9c, 0x7e, 0xc5, 0x27, 0x5c}};
 
 typedef struct ACPITableProtocol {
-    Status(*installACPITable)(ACPITableProtocol *this_,
-                                      void *ACPITableBuffer,
-                                      USize ACPITableBufferSize,
-                                      USize *tableKey);
-    Status(*uninstallACPITable)(ACPITableProtocol *this_,
-                                        USize tableKey);
+    Status (*installACPITable)(ACPITableProtocol *this_, void *ACPITableBuffer,
+                               USize ACPITableBufferSize, USize *tableKey);
+    Status (*uninstallACPITable)(ACPITableProtocol *this_, USize tableKey);
 } ACPITableProtocol;
 
 #endif

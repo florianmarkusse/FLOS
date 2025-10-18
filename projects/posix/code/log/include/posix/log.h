@@ -35,7 +35,7 @@ void flushBufferWithWriter(BufferType bufferType);
 void appendColor(AnsiColor color, BufferType bufferType);
 void appendColorReset(BufferType bufferType);
 
-WriteBuffer *getWriteBuffer(BufferType bufferType);
+[[nodiscard]] WriteBuffer *getWriteBuffer(BufferType bufferType);
 
 typedef struct {
     WriteBuffer *writeBuffer;

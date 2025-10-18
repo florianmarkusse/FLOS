@@ -210,8 +210,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                  .scanline = gop->mode->info->pixelsPerScanLine};
 
     KFLUSH_AFTER { INFO(STRING("Filling specific arch params...\n")); }
-    fillArchParams(kernelParams->archParams, globals.uefiMemory,
-                   virtualForKernel);
+    fillArchParams(kernelParams->archParams, virtualForKernel);
 
     RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
                               globals.st->configuration_table);

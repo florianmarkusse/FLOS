@@ -17,8 +17,8 @@ typedef struct trie_stringU16Map {
     trie_stringU16Data data;
 } trie_stringU16Map;
 
-U16 trie_insertStringU16Map(String key, U16 value, trie_stringU16Map **set,
-                            Arena *perm);
+[[nodiscard]] U16 trie_insertStringU16Map(String key, U16 value,
+                                          trie_stringU16Map **set, Arena *perm);
 
 TRIE_ITERATOR_HEADER_FILE(trie_stringU16Map, trie_stringU16IterNode,
                           trie_stringU16Iterator, trie_stringU16Data,

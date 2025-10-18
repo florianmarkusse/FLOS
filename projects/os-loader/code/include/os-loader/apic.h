@@ -36,16 +36,16 @@ static constexpr auto APIC_ICR_DELIVERY_STATUS = (1 << 12);
          (APIC_IPI_ICR_LOW_RESERVED)) |                                        \
         (bottom3Bytes);
 
-// #define send_ipi(destination, bottom3Bytes)                                    \
-//     do {                                                                       \
+// #define send_ipi(destination, bottom3Bytes) \
+//     do { \
 //         while (*((volatile U32 *)(APIC_IPI_ICR_LOW)) &                     \
-//                (APIC_ICR_DELIVERY_STATUS)) {                                   \
+//                (APIC_ICR_DELIVERY_STATUS)) { \
 //             asm volatile("pause" : : : "memory");                      \
-//         }                                                                      \
-//         /* Setting high is not necessary when we are setting    */             \
-//         /* a desination shorthand */                                           \
-//         APIC_IPI_ICR_SET_HIGH(destination)                                     \
-//         APIC_IPI_ICR_SET_LOW(bottom3Bytes)                                     \
+//         } \
+//         /* Setting high is not necessary when we are setting    */ \
+//         /* a desination shorthand */ \
+//         APIC_IPI_ICR_SET_HIGH(destination) \
+//         APIC_IPI_ICR_SET_LOW(bottom3Bytes) \
 //     } while (0)
 
 #endif

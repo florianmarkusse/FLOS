@@ -4,8 +4,8 @@
 #include "shared/macros.h"
 #include "shared/types/numeric.h"
 
-U64 getCyclesPerMicroSecond();
-U64 currentCycleCounter(bool previousFinished, bool blocksSubsequent);
+[[nodiscard]] U64 currentCycleCounter(bool previousFinished,
+                                      bool blocksSubsequent);
 void blockingWait(U64 microSeconds);
 
 #define BENCHMARK(cycleCounter)                                                \

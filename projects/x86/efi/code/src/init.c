@@ -90,8 +90,7 @@ static constexpr auto MAX_BYTES_GDT = 64 * KiB;
 // performance reasons.
 // So, we align the GDT to 16 bytes, so everything is at least self-aligned.
 static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
-                               U64 memoryVirtualAddressAvailable,
-                               Arena scratch) {
+                               U64 memoryVirtualAddressAvailable) {
     U32 requiredBytesForDescriptorTable =
         CODE_SEGMENTS_BYTES + numberOfProcessors * sizeof(TSSDescriptor);
     if (requiredBytesForDescriptorTable > MAX_BYTES_GDT) {
@@ -203,14 +202,13 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
         .limit = ((U16)requiredBytesForDescriptorTable) - 1, .base = (U64)GDT};
 }
 
-void bootstrapProcessorWork(U16 cacheLineSizeBytes,
-                            U64 memoryVirtualAddressAvailable, Arena scratch) {
+static void bootstrapProcessorWork(U16 cacheLineSizeBytes,
+                                   U64 memoryVirtualAddressAvailable) {
     // NOTE: What the fuck does this do and why?
     disablePIC();
 
     // TODO: Find out number of processors!
-    prepareDescriptors(1, cacheLineSizeBytes, memoryVirtualAddressAvailable,
-                       scratch);
+    prepareDescriptors(1, cacheLineSizeBytes, memoryVirtualAddressAvailable);
 
     // Maybe when there is other CPUs in here??
     //    // NOTE: WHY????
@@ -273,8 +271,7 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress) {
 }
 
 static constexpr auto XSAVE_ALIGNMENT = 64;
-void fillArchParams(void *archParams, Arena scratch,
-                    U64 memoryVirtualAddressAvailable) {
+void fillArchParams(void *archParams, U64 memoryVirtualAddressAvailable) {
     X86ArchParams *x86ArchParams = (X86ArchParams *)archParams;
 
     U32 manufacturerString[3];
@@ -306,7 +303,7 @@ void fillArchParams(void *archParams, Arena scratch,
         INFO(cacheLineSizeBytes, .flags = NEWLINE);
     }
 
-    U32 BSPID = processorInfoAndFeatureBits.ebx >> 24;
+    // U32 BSPID = processorInfoAndFeatureBits.ebx >> 24;
 
     if (!features.TSC) {
         EXIT_WITH_MESSAGE {
@@ -397,8 +394,7 @@ void fillArchParams(void *archParams, Arena scratch,
     }
 
     KFLUSH_AFTER { INFO(STRING("Bootstrap processor work...\n")); }
-    bootstrapProcessorWork(cacheLineSizeBytes, memoryVirtualAddressAvailable,
-                           scratch);
+    bootstrapProcessorWork(cacheLineSizeBytes, memoryVirtualAddressAvailable);
 
     U32 processorPowerManagement =
         CPUID(EXTENDED_PROCESSOR_POWER_MANEGEMENT_OPERATION).edx;

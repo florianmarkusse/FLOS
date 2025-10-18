@@ -23,9 +23,11 @@ void freePool(PoolAllocator *pool);
 /*
  * Set up the pool allocator values, except for the jmp_buf!
  */
-PoolAllocator createPoolAllocator(I8 *buffer, I64 cap, I64 chunkSize);
+[[nodiscard]] PoolAllocator createPoolAllocator(I8 *buffer, I64 cap,
+                                                I64 chunkSize);
 
-__attribute__((malloc)) void *poolAlloc(PoolAllocator *pool, U8 flags);
+[[nodiscard]] __attribute__((malloc)) void *poolAlloc(PoolAllocator *pool,
+                                                      U8 flags);
 
 void freePoolNode(PoolAllocator *pool, void *ptr);
 

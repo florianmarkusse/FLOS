@@ -15,13 +15,9 @@ static constexpr String EMPTY_STRING = ((String){0, 0});
 #define STRING_PTRS(begin, end)                                                \
     ((String){(U8 *)(begin), (U32)(((U64)(end)) - ((U64)(begin)))})
 
-bool stringEquals(String a, String b);
-String stringCopy(String dest, String src);
-U8 getChar(String str, U32 index);
-U8 getCharOr(String str, U32 index, I8 or);
-U8 *getCharPtr(String str, U32 index);
-bool containsChar(String s, U8 ch);
-String splitString(String s, U8 token, U32 from);
+[[nodiscard]] bool stringEquals(String a, String b);
+[[nodiscard]] bool containsChar(String s, U8 ch);
+[[nodiscard]] String splitString(String s, U8 token, U32 from);
 
 typedef struct {
     String string;
@@ -38,7 +34,7 @@ typedef struct {
 typedef struct {
     U32 from;
 } OccurrenceStart;
-I64 firstOccurenceOf_(String s, U8 ch, U32 from);
+[[nodiscard]] I64 firstOccurenceOf_(String s, U8 ch, U32 from);
 #define firstOccurenceOf(string, ch, ...)                                      \
     ({                                                                         \
         OccurrenceStart MACRO_VAR(occurrenceStart) =                           \
@@ -46,6 +42,6 @@ I64 firstOccurenceOf_(String s, U8 ch, U32 from);
         firstOccurenceOf_(string, ch, MACRO_VAR(occurrenceStart).from);        \
     })
 
-I64 lastOccurenceOf(String s, U8 ch);
+[[nodiscard]] I64 lastOccurenceOf(String s, U8 ch);
 
 #endif

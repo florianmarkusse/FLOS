@@ -10,16 +10,14 @@
 void initRootVirtualMemoryInKernel();
 void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress);
 
-void fillArchParams(void *archParams, Arena scratch,
-                    U64 memoryVirtualAddressAvailable);
+void fillArchParams(void *archParams, U64 memoryVirtualAddressAvailable);
 
 typedef struct KernelParameters KernelParameters;
 void jumpIntoKernel(U64 newStackPointer, U16 processorID,
                     KernelParameters *kernelParameters);
-U64 initScreenMemory(U64 physicalScreenAddress, U64 bytes);
 
-U64 kernelCodeStart();
-U64 kernelCodeSizeMax();
-U64 kernelVirtualMemoryEnd();
+[[nodiscard]] U64 kernelCodeStart();
+[[nodiscard]] U64 kernelCodeSizeMax();
+[[nodiscard]] U64 kernelVirtualMemoryEnd();
 
 #endif
