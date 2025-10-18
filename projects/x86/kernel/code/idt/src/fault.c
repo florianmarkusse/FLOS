@@ -20,7 +20,7 @@ static String faultToString[CPU_FAULT_COUNT] = {CPU_FAULT_ENUM(ENUM_TO_STRING)};
 
 U8 *XSAVESpace;
 
-typedef struct {
+struct Registers {
     U64 r15;
     U64 r14;
     U64 r13;
@@ -49,7 +49,7 @@ typedef struct {
     // segment are pushed onto the stack on interrupt.
     U64 rsp;
     U64 ss;
-} Registers;
+};
 
 U64 currentNumberOfPageFaults = 0;
 

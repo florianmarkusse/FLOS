@@ -25,4 +25,7 @@ __attribute__((noreturn)) void interruptUnexpectedError();
 
 extern U64 currentNumberOfPageFaults;
 
+typedef struct Registers Registers;
+void faultHandler(Registers *regs);
+
 #endif

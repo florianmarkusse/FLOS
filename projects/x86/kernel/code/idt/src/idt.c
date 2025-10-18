@@ -13,6 +13,7 @@
 #include "shared/types/numeric.h"
 #include "x86/configuration/cpu.h"
 #include "x86/fault.h"
+#include "x86/kernel/idt.h"
 #include "x86/memory/definitions.h"
 
 extern void isr0();

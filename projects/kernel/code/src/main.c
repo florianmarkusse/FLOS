@@ -358,6 +358,8 @@ static void mappingTests() {
 }
 
 __attribute__((section("kernel-start"))) int
+kernelMain(struct KernelParameters *kernelParams);
+__attribute__((section("kernel-start"))) int
 kernelMain(struct KernelParameters *kernelParams) {
     BREAKPOINT;
 
