@@ -1,5 +1,3 @@
-- fix abstraction/memory/virtual/converter.h stuff. I think just define externals? Or maybe this is right too idk
-- Fix duplicate stuff in memory mappings
 - create macro for ctzl clzl stuff, so I dont need to pick the sizes?
 - Look into fixing todo's
 - policy is quite architecture-dependent. What's required to completely make it so?

@@ -13,6 +13,10 @@
 #include "x86/configuration/cpu.h"
 #include "x86/memory/definitions.h"
 
+static U64 getPhysicalAddressFrame(U64 virtualPage) {
+    return virtualPage & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
+}
+
 // NOTE: Currently, one should only consult the metadata table through a virtual
 // page. I.e., you can only go from page table to meta data.
 
@@ -87,14 +91,10 @@ void mapPage_(U64 virt, U64 physical, U64_pow2 mappingSize, U64 flags) {
         }
 
         // TODO: Use FRAME_OR_NEXT_PAGE_TABLE mask isntead?
-        pageTable = (VirtualPageTable *)alignDown(*tableEntryAddress,
-                                                  pageSizesSmallest());
+        pageTable =
+            (VirtualPageTable *)getPhysicalAddressFrame(*tableEntryAddress);
         metaDataTable = newMetaEntryAddress->children;
     }
-}
-
-U64 getPhysicalAddressFrame(U64 virtualPage) {
-    return virtualPage & VirtualPageMasks.FRAME_OR_NEXT_PAGE_TABLE;
 }
 
 static void updateMappingData(VirtualPageTable *pageTables[MAX_PAGING_LEVELS],
@@ -148,7 +148,8 @@ Memory unmapPage(U64 virt) {
 
     U8 len = 1;
     U16 index = 0;
-    for (U64_pow2 entrySize = X86_512GIB_PAGE; entrySize >= pageSizesSmallest();
+    for (U64_pow2 entrySize = PAGE_ROOT_ENTRY_MAX_SIZE;
+         entrySize >= pageSizesSmallest();
          entrySize /= PageTableFormat.ENTRIES) {
         U16 newMetaIndex = index; // Lagging behind index by 1 iteration
         index = calculateTableIndex(virt, entrySize);
