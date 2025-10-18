@@ -10,34 +10,6 @@
 #include "shared/memory/management/management.h"
 #include "shared/text/string.h"
 
-// TODO: move to common/basic.c? and then use here and in test code and in
-// buddystatusappend
-// static U32 nodesCount(RedBlackNode *tree) {
-//     if (!tree) {
-//         return 0;
-//     }
-//
-//     RedBlackNode *buffer[2 * RB_TREE_MAX_HEIGHT];
-//     U32 result = 0;
-//
-//     buffer[0] = tree;
-//     U32 len = 1;
-//     while (len > 0) {
-//         RedBlackNode *node = buffer[len - 1];
-//         len--;
-//         result++;
-//
-//         for (RedBlackDirection dir = 0; dir < RB_TREE_CHILD_COUNT; dir++) {
-//             if (node->children[dir]) {
-//                 buffer[len] = node->children[dir];
-//                 len++;
-//             }
-//         }
-//     }
-//
-//     return result;
-// }
-
 void appendPhysicalMemoryManagerStatus() { buddyStatusAppend(&buddyPhysical); }
 
 void appendVirtualMemoryManagerStatus() { buddyStatusAppend(&buddyVirtual); }

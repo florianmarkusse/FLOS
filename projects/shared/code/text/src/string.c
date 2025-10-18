@@ -39,7 +39,6 @@ I64 firstOccurenceOf_(String s, U8 ch, U32 from) {
 }
 
 I64 lastOccurenceOf(String s, U8 ch) {
-    // NOTE: postdecrement in the guard check here
     for (typeof(s.len) i = s.len; i-- > 0;) {
         if (s.buf[i] == ch) {
             return (I64)i;

@@ -57,32 +57,15 @@ void appendRedBlackTreeWithBadNode(RedBlackNode *root, RedBlackNode *badNode,
     printTreeIndented(root, 0, STRING("Root---"), badNode, treeType);
 }
 
-U32 nodeCount(RedBlackNode *tree, RedBlackTreeType treeType) {
-    RedBlackNode *buffer[RB_TREE_MAX_HEIGHT];
-
+U32 nodeCount(RedBlackNode *tree) {
     U32 result = 0;
 
+    RedBlackNode *buffer[2 * RB_TREE_MAX_HEIGHT];
     buffer[0] = tree;
     U32 len = 1;
-    while (len > 0) {
-        RedBlackNode *node = buffer[len - 1];
-        len--;
-        result++;
+    RedBlackNode *node;
 
-        for (RedBlackDirection dir = 0; dir < RB_TREE_CHILD_COUNT; dir++) {
-            if (node->children[dir]) {
-                if (len > RB_TREE_MAX_HEIGHT) {
-                    TEST_FAILURE {
-                        INFO(STRING(
-                            "Tree has too many nodes to assert correctness!"));
-                        appendRedBlackTreeWithBadNode(tree, tree, treeType);
-                    }
-                }
-                buffer[len] = node->children[dir];
-                len++;
-            }
-        }
-    }
+    TREE_TRAVERSAL_PRE_ORDER(node, len, buffer) { result++; }
 
     return result;
 }

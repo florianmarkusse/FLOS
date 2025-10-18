@@ -50,4 +50,12 @@ void rotateAround(RedBlackNode *rotationParent, RedBlackNode *rotationNode,
                                       CommonNodeVisited *visitedNodes,
                                       RedBlackDirection direction);
 
+void childrenAddPreOrder(RedBlackNode *current, RedBlackNode **buffer,
+                         U32 *currentLen);
+
+#define TREE_TRAVERSAL_PRE_ORDER(node, len, buffer)                                 \
+    for (; (len) > 0 && ((node) = (buffer)[(len) - 1]);                        \
+         (len) -= 1, childrenAddPreOrder((RedBlackNode *)(node),               \
+                                         (RedBlackNode **)(buffer), &(len)))
+
 #endif

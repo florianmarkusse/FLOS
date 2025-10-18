@@ -1,8 +1,3 @@
-- rename abstraction/efi to abstraction/efi-to-kernel
-- get rid of lots of virtual stuff in policy
-  - move some stuff in policy to virtual?
-  - Move policy & physical & (most of) virtual to be arch-independent?
-- maybe find some way to get a simple post-order tree iterator or something instead of defining it everywhere
 - fix abstraction/memory/virtual/converter.h stuff. I think just define externals? Or maybe this is right too idk
 - Fix duplicate stuff in memory mappings
 - create macro for ctzl clzl stuff, so I dont need to pick the sizes?

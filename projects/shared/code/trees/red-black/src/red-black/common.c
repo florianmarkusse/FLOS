@@ -206,3 +206,13 @@ U32 findAdjacentInSteps(RedBlackNode *node, CommonNodeVisited *visitedNodes,
 
     return traversals;
 }
+
+void childrenAddPreOrder(RedBlackNode *current, RedBlackNode **buffer,
+                         U32 *currentLen) {
+    for (RedBlackDirection dir = RB_TREE_CHILD_COUNT; dir-- > 0;) {
+        if (current->children[dir]) {
+            buffer[*currentLen] = current->children[dir];
+            (*currentLen)++;
+        }
+    }
+}

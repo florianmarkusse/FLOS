@@ -96,7 +96,7 @@ void assertBasicRedBlackTreeValid(RedBlackNodeBasic *tree,
         return;
     }
 
-    U64 nodes = nodeCount((RedBlackNode *)tree, RED_BLACK_BASIC);
+    U64 nodes = nodeCount((RedBlackNode *)tree);
 
     assertIsBSTWitExpectedValues(tree, nodes, expectedValues, scratch);
     assertNoRedNodeHasRedChild((RedBlackNode *)tree, nodes, RED_BLACK_BASIC,
