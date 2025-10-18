@@ -1,5 +1,3 @@
-- remove getAvailableMemory from .h file, should not be called directly
-- Decision to flush cpu cache or invalidate should be done in the architecture it's running on, not common code
 - wfunction-prototype
 - look into caching page table / meta data tables anyway and see if it's faster since it avoids zeroing
 - add some nicer logs to image-builder? i.e. more data about sizes in bytes and LBA, not one or the other.

@@ -42,14 +42,11 @@ void *allocateMappableMemory(U64_pow2 blockSize, U64_pow2 mappingSize) {
     return result;
 }
 
-// TODO: This should be decided by the underlying architecture, realistically.
-static constexpr auto MAX_PAGE_FLUSHES = 64;
-
 void freeMappableMemory(Memory memory) {
     ASSERT(isAlignedTo(memory.start, pageSizesSmallest()));
     ASSERT(isAlignedTo(memory.bytes, pageSizesSmallest()));
 
-    U64 virtualAddresses[MAX_PAGE_FLUSHES];
+    U64 virtualAddresses[PAGE_CACHE_FLUSH_THRESHOLD];
     U32 virtualAddressesLen = 0;
 
     Memory toFreePhysical = {0};
@@ -71,7 +68,7 @@ void freeMappableMemory(Memory memory) {
             }
         }
 
-        if (virtualAddressesLen < MAX_PAGE_FLUSHES) {
+        if (virtualAddressesLen < PAGE_CACHE_FLUSH_THRESHOLD) {
             virtualAddresses[virtualAddressesLen] = virtualPageStartAddress;
             virtualAddressesLen++;
         }
@@ -81,7 +78,7 @@ void freeMappableMemory(Memory memory) {
         freePhysicalMemory(toFreePhysical);
     }
 
-    if (virtualAddressesLen < MAX_PAGE_FLUSHES) {
+    if (virtualAddressesLen < PAGE_CACHE_FLUSH_THRESHOLD) {
         for (typeof(virtualAddressesLen) i = 0; i < virtualAddressesLen; i++) {
             flushPageCacheEntry(virtualAddresses[i]);
         }

@@ -27,4 +27,12 @@ void mapPage_(U64 virt, U64 physical, U64_pow2 mappingSize, U64 flags);
 void flushPageCacheEntry(U64 virt);
 void flushPageCache();
 
+// NOTE: c26 please consteva0 or smth
+
+#ifdef X86
+#define PAGE_CACHE_FLUSH_THRESHOLD 32
+#else
+#error ABSTRACTION_MEMORY_VIRTUAL_MAP_H
+#endif
+
 #endif

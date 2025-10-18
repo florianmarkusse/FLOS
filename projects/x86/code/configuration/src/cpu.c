@@ -1,5 +1,7 @@
 #include "x86/configuration/cpu.h"
 
+U32 pageCacheFlushThreshold() { return 32; }
+
 U64 rdmsr(U32 msr) {
     U32 edx;
     U32 eax;
