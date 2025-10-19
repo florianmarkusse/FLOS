@@ -1,7 +1,4 @@
-- create macro for ctzl clzl stuff, so I dont need to pick the sizes?
 - Look into fixing todo's
-- policy is quite architecture-dependent. What's required to completely make it so?
-- Remove NOLINTNEXTLINE?
 - go over abstraction folders and find out if you can change the ifdefs into just function calls
 - Look into U8* usage, as it can alias everything? -> switch to void*??
 - Fix posix tests in physical memory

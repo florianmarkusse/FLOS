@@ -11,7 +11,6 @@ void processorVersionCheck(Manufacturer manufacturer,
     manufacturerCheck(manufacturer, AMD);
     CPUIDCheck(CPUIDMaxAndManufacturer->eax, XSAVE_CPU_SUPPORT);
 
-    // TODO: [AMD] required family level >= 26
     U32 processorFamily = (processorInfoAndFeatureBits->eax >> 8) & (0xF);
     if (processorFamily == 0xF) {
         processorFamily += (processorInfoAndFeatureBits->eax >> 20) & (0xFF);

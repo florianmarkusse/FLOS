@@ -35,7 +35,9 @@ struct KernelParameters {
     Window window;
     KernelMemory memory;
     // TODO: On new computer with newer UEFI, we can remove permanent free
-    // because we can use custom memory types
+    // because we can use custom memory types. If they have fixed the memory
+    // bug, which they currently havent on UEFI Gigabyte fitrmware 2025
+    // September release.
     Memory permanentLeftoverFree; // NOTE: Immediately freeable upon entering
                                   // kernelmain
     Memory self;                  // NOTE: Freeable once init code is complete

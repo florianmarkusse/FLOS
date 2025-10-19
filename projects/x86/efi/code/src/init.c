@@ -204,18 +204,11 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
 
 static void bootstrapProcessorWork(U16 cacheLineSizeBytes,
                                    U64 memoryVirtualAddressAvailable) {
-    // NOTE: What the fuck does this do and why?
+    // NOTE: Disabled the PIC so we can use local APIC and IOAPIC
     disablePIC();
 
     // TODO: Find out number of processors!
     prepareDescriptors(1, cacheLineSizeBytes, memoryVirtualAddressAvailable);
-
-    // Maybe when there is other CPUs in here??
-    //    // NOTE: WHY????
-    //    globals.st->boot_services->stall(100000);
-
-    // NOTE: Whaw the fuck is this and why are you here?
-    asm volatile("pause" : : : "memory"); // memory barrier
 }
 
 void initRootVirtualMemoryInKernel() {

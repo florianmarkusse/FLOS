@@ -60,7 +60,6 @@ func Run(args *QemuArgs) {
 		argument.AddArgument(&qemuOptions,
 			"-cpu EPYC-Genoa-v1,pdpe1gb=on,tsc-frequency=4000000000,+invtsc")
 	} else {
-		// TODO: When upgraded, add the xsavec , xsaves, xrstors
 		argument.AddArgument(&qemuOptions, "-cpu host,+xsave,+avx,+xsaveopt,+invtsc")
 	}
 

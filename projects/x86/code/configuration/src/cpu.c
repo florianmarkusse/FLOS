@@ -41,10 +41,9 @@ void disablePIC() {
     asm volatile("movb $0xFF, %%al;" // Set AL to 0xFF
                  "outb %%al, $0x21;" // Disable master PIC
                  "outb %%al, $0xA1;" // Disable slave PIC
-                 :                   // No output operands
-                 :                   // No input operands
-                 : "eax", "memory"   // Clobbered registers: eax and memory
-    );
+                 :
+                 :
+                 : "eax", "memory");
 }
 
 U64 CR3() {

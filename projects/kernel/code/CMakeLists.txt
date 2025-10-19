@@ -4,9 +4,8 @@ project(kernel LANGUAGES C ASM)
 set(AGGREGATED_INTERFACE "${PROJECT_NAME}-i")
 add_library(${AGGREGATED_INTERFACE} INTERFACE)
 
-# TODO: Afer integration red zone, we can remove this flag here :)
 set(CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -fno-pic -fno-pie -mcmodel=kernel -m64 -fno-stack-protector -mno-red-zone"
+    "${CMAKE_C_FLAGS} -fno-pic -fno-pie -mcmodel=kernel -m64 -fno-stack-protector"
 )
 set(CMAKE_ASM_FLAGS "${CMAKE_C_FLAGS}")
 
