@@ -26,6 +26,7 @@ void archInit(void *archParams) {
         x86ArchParams->rootPageMetaData.metaData
             .entriesMappedWithSmallerGranularity;
 
+#ifdef SERIAL
     // TODO: This is just for serial output, should we ifdef this or something?
     outb(COM1 + 1, 0x00); // Disable interrupts
     outb(COM1 + 3, 0x80); // Enable DLAB
@@ -34,4 +35,5 @@ void archInit(void *archParams) {
     outb(COM1 + 3, 0x03); // 8 bits, no parity, one stop bit
     outb(COM1 + 2, 0xC7); // Enable FIFO, clear them, 14-byte threshold
     outb(COM1 + 4, 0x0B); // IRQs enabled, RTS/DSR set
+#endif
 }
