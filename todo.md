@@ -1,16 +1,8 @@
-- Look into fixing todo's
-- go over abstraction folders and find out if you can change the ifdefs into just function calls
-- Look into U8* usage, as it can alias everything? -> switch to void*??
-- Fix posix tests in physical memory
-- if you ever decide to use unit tests in the kernel, need to create an abstraction for test-framework so it can be used in both posix and freestanding environments
-- use countof replacement instead of macro
-- small enums
 - update function calls?? enum names too
   - from createX to xCreate etc
   - VERY_GOOD_TYPE_RESULT -> TYPE_RESULT_VERY_GOOD
   - basically directory structure kind of subject -> action -> x , makes it easier
-- c2y updates: Are constexpr functions possible???
-- the definitiosn we add to the c code, e.g., `X86`, can collide with actual source code, create a pattern to fix this somehow
+- run iwyu
 
 - run tests
   failing because includes... should be in a base layer
@@ -21,6 +13,8 @@
   - just rewrite it all?
     or
   - lots of add_project should be add_include instead...
+
+- the definitiosn we add to the c code, e.g., `X86`, can collide with actual source code, create a pattern to fix this somehow
 
 - After rewrite of cmake?
   - Figure out a way to easily build and run for various x86 architectures with qemu...

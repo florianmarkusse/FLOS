@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.22)
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 project(os-loader LANGUAGES C ASM)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fshort-enums")
+
 include("${REPO_PROJECTS}/setup.cmake")
 add_project("shared")
 add_project("efi")

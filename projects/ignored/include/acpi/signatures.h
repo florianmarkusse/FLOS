@@ -3,7 +3,8 @@
 
 #include "shared/text/string.h"
 
-typedef enum {
+// TODO: is this U32?
+typedef enum : U32 {
     FIXED_ACPI_DESCRIPTION_TABLE,
     MULTIPLE_APIC_DESCRIPTION_TABLE,
     HIGH_PRECISION_EVENT_TIMER_TABLE,

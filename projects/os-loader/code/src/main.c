@@ -60,7 +60,6 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     U8 *memoryKernelPermanent = findAlignedMemoryBlock(
         KERNEL_PERMANENT_MEMORY, KERNEL_PERMANENT_MEMORY_ALIGNMENT,
         globals.uefiMemory, false);
-
     globals.kernelPermanent =
         (Arena){.curFree = memoryKernelPermanent,
                 .beg = memoryKernelPermanent,
