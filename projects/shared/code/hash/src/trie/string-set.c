@@ -5,19 +5,19 @@
 #include "shared/memory/allocator/macros.h"
 #include "shared/types/numeric.h"
 
-bool trie_insertStringSet(String key, trie_stringSet **set, Arena *perm) {
+bool trie_insertStringSet(String key, TrieSetString **set, Arena *perm) {
     ASSERT(key.len > 0);
-    for (U64 hash = hashStringSkeeto(key); *set != nullptr; hash <<= 2) {
+    for (U64 hash = stringSkeetoHash(key); *set != nullptr; hash <<= 2) {
         if (stringEquals(key, (*set)->data)) {
             return false;
         }
         set = &(*set)->child[hash >> 62];
     }
-    *set = NEW(perm, trie_stringSet, .flags = ZERO_MEMORY);
+    *set = NEW(perm, TrieSetString, .flags = ZERO_MEMORY);
     (*set)->data = key;
     return true;
 }
 
-TRIE_ITERATOR_SOURCE_FILE(trie_stringSet, trie_stringIterNode,
+TRIE_ITERATOR_SOURCE_FILE(TrieSetString, trie_stringIterNode,
                           trie_stringIterator, String, createStringIterator,
                           nextStringIterator)

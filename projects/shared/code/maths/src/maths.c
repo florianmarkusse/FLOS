@@ -48,7 +48,7 @@ U64_pow2 floorPowerOf2(U64 x) {
     return 1ULL << (((sizeof(U64) * BITS_PER_BYTE) - 1) -
                     (U64)__builtin_clzll(x));
 }
-bool isPowerOf2(U64 x) { return (x & (x - 1)) == 0; }
+bool powerOf2(U64 x) { return (x & (x - 1)) == 0; }
 
 U64 power(U64 base, Exponent exponent) {
     U64 result = 1;
@@ -73,8 +73,8 @@ U64 power(U64 base, Exponent exponent) {
     return result;
 }
 
-U64 divideByPowerOf2(U64 value, U64_pow2 divisor) {
+U64 dividePowerOf2(U64 value, U64_pow2 divisor) {
     return value >> (__builtin_ctzll(divisor));
 }
 
-bool isAlignedTo(U64 x, U64_pow2 align) { return (x & (align - 1)) == 0; }
+bool aligned(U64 x, U64_pow2 align) { return (x & (align - 1)) == 0; }

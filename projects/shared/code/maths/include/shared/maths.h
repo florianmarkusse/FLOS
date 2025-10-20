@@ -40,10 +40,10 @@
 // Moves value down to the closest power of 2. Unchanged if already a power of
 // 2
 [[nodiscard]] U64_pow2 floorPowerOf2(U64 x);
-[[nodiscard]] bool isPowerOf2(U64 x);
+[[nodiscard]] bool powerOf2(U64 x);
 [[nodiscard]] U64 power(U64 base, Exponent exponent);
-[[nodiscard]] U64 divideByPowerOf2(U64 value, U64_pow2 divisor);
+[[nodiscard]] U64 dividePowerOf2(U64 value, U64_pow2 divisor);
 
-[[nodiscard]] bool isAlignedTo(U64 x, U64_pow2 align);
+[[nodiscard]] bool aligned(U64 x, U64_pow2 align);
 
 #endif

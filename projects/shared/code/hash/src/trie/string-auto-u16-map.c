@@ -4,14 +4,13 @@
 #include "shared/hash/trie/common-iterator.h" // for TRIE_ITERATOR_SOURCE...
 #include "shared/memory/allocator/macros.h"
 
-NewStringInsert trie_insertStringAutoU16Map(String key,
-                                            trie_stringAutoU16Map *set,
-                                            Arena *perm) {
-    trie_stringAutoU16Node **currentNode = &set->node;
-    for (U64 hash = hashStringSkeeto(key); *currentNode != nullptr;
+StringU16Insert trieStringU16Insert(String key, TrieStringU16 *set,
+                                    Arena *perm) {
+    StringU16Node **currentNode = &set->node;
+    for (U64 hash = stringSkeetoHash(key); *currentNode != nullptr;
          hash <<= 2) {
         if (stringEquals(key, (*currentNode)->data.key)) {
-            return (NewStringInsert){.entryIndex = (*currentNode)->data.value,
+            return (StringU16Insert){.entryIndex = (*currentNode)->data.value,
                                      .wasInserted = false};
         }
         currentNode = &(*currentNode)->child[hash >> 62];
@@ -20,17 +19,17 @@ NewStringInsert trie_insertStringAutoU16Map(String key,
         ASSERT(false);
         longjmp(perm->jmpBuf, 1);
     }
-    *currentNode = NEW(perm, trie_stringAutoU16Node, .flags = ZERO_MEMORY);
+    *currentNode = NEW(perm, StringU16Node, .flags = ZERO_MEMORY);
     (*currentNode)->data.key = key;
     set->nodeCount++;
     (*currentNode)->data.value = set->nodeCount;
-    return (NewStringInsert){.wasInserted = true,
+    return (StringU16Insert){.wasInserted = true,
                              .entryIndex = (set)->nodeCount};
 }
 
-U16 trie_containsStringAutoU16Map(String key, trie_stringAutoU16Map *set) {
-    trie_stringAutoU16Node **currentNode = &set->node;
-    for (U64 hash = hashStringSkeeto(key); *currentNode != nullptr;
+U16 trieStringU16Contains(String key, TrieStringU16 *set) {
+    StringU16Node **currentNode = &set->node;
+    for (U64 hash = stringSkeetoHash(key); *currentNode != nullptr;
          hash <<= 2) {
         if (stringEquals(key, (*currentNode)->data.key)) {
             return (*currentNode)->data.value;
@@ -40,7 +39,7 @@ U16 trie_containsStringAutoU16Map(String key, trie_stringAutoU16Map *set) {
     return 0;
 }
 
-TRIE_ITERATOR_SOURCE_FILE(trie_stringAutoU16Node, trie_stringAutoU16IterNode,
-                          trie_stringAutoU16Iterator, trie_stringAutoU16Data,
+TRIE_ITERATOR_SOURCE_FILE(StringU16Node, trie_stringAutoU16IterNode,
+                          trie_stringAutoU16Iterator, StringU16,
                           createStringAutoU16Iterator,
                           nextStringAutoU16Iterator)

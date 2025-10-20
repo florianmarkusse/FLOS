@@ -93,7 +93,7 @@ void *buddyAllocate(Buddy *buddy, U64_pow2 blockSize) {
 void buddyFree(Buddy *buddy, Memory memory) {
     ASSERT(memory.start ==
            alignUp(memory.start, 1 << buddy->data.blockSizeSmallest));
-    ASSERT(isAlignedTo(memory.bytes, 1 << buddy->data.blockSizeSmallest));
+    ASSERT(aligned(memory.bytes, 1 << buddy->data.blockSizeSmallest));
 
     Exponent maxOrder = buddyOrderMax(buddy);
     Exponent bias = maxOrder + ((sizeof(U64) * BITS_PER_BYTE) -

@@ -205,7 +205,7 @@ static bool fullMappingTest(U64_pow2 pageSize) {
          iteration++) {
         U64 cycles =
             arrayWritingTest(pageSize, MAX_TEST_ENTRIES, MAPPABLE_MEMORY,
-                             divideByPowerOf2(TEST_MEMORY_AMOUNT, pageSize));
+                             dividePowerOf2(TEST_MEMORY_AMOUNT, pageSize));
         if (!cycles) {
             return false;
         }

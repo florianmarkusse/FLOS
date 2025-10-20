@@ -6,18 +6,18 @@
 #include "shared/memory/allocator/macros.h"
 #include "shared/types/numeric.h"
 
-bool trie_insertU16Set(U16 key, trie_U16Set **set, Arena *perm) {
+bool trieU16Insert(U16 key, TrieSetU16 **set, Arena *perm) {
     ASSERT(key != 0);
-    for (U16 hash = hashU16(key); *set != nullptr; (hash = (U16)(hash << 2))) {
+    for (U16 hash = U16Hash(key); *set != nullptr; (hash = (U16)(hash << 2))) {
         if (key == (*set)->data) {
             return false;
         }
         set = &(*set)->child[hash >> 14];
     }
-    *set = NEW(perm, trie_U16Set, .flags = ZERO_MEMORY);
+    *set = NEW(perm, TrieSetU16, .flags = ZERO_MEMORY);
     (*set)->data = key;
     return true;
 }
 
-TRIE_ITERATOR_SOURCE_FILE(trie_U16Set, trie_U16IterNode, trie_U16Iterator, U16,
+TRIE_ITERATOR_SOURCE_FILE(TrieSetU16, trie_U16IterNode, trie_U16Iterator, U16,
                           createU16Iterator, nextU16Iterator)

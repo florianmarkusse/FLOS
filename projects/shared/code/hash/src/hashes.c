@@ -3,7 +3,7 @@
 
 #include "shared/text/string.h"
 
-U64 hashStringSkeeto(String string) {
+U64 stringSkeetoHash(String string) {
     U64 h = 0x100;
     for (typeof(string.len) i = 0; i < string.len; i++) {
         h ^= string.buf[i];
@@ -13,7 +13,7 @@ U64 hashStringSkeeto(String string) {
 }
 
 // https://github.com/skeeto/hash-prospector
-U32 hashU32(U32 x) {
+U32 U32Hash(U32 x) {
     x ^= x >> 16;
     x *= 0x21f0aaad;
     x ^= x >> 15;
@@ -25,7 +25,7 @@ U32 hashU32(U32 x) {
 // https://github.com/skeeto/hash-prospector
 // 3-round xorshift-multiply (-Xn3)
 // bias = 0.0045976709018820602
-U16 hashU16(U16 x) {
+U16 U16Hash(U16 x) {
     x ^= x >> 7;
     x *= 0x2993U;
     x ^= x >> 5;

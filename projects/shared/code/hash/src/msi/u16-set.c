@@ -1,7 +1,7 @@
 #include "shared/hash/msi/u16-set.h"
 #include "shared/hash/msi/common.h" // for MSIIndex
 
-bool msi_insertU16(U16 value, U64 hash, msi_U16 *index) {
+bool MSIU16Insert(U16 value, U64 hash, MSIU16 *index) {
     for (U32 i = (U32)hash;;) {
         i = MSIIndex(hash, index->exp, i);
         if (index->buf[i] == 0) {
@@ -14,7 +14,7 @@ bool msi_insertU16(U16 value, U64 hash, msi_U16 *index) {
     }
 }
 
-bool msi_containsU16(U16 value, U64 hash, msi_U16 *index) {
+bool MSIU16Contains(U16 value, U64 hash, MSIU16 *index) {
     for (U32 i = (U32)hash;;) {
         i = MSIIndex(hash, index->exp, i);
         if (index->buf[i] == 0) {

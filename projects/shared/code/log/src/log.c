@@ -4,17 +4,17 @@
 #include "abstraction/memory/manipulation.h"
 #include "shared/maths.h"
 
-void appendToBuffer(U8_a *buffer, String data) {
+void bufferAppend(U8_a *buffer, String data) {
     memcpy(&buffer->buf[buffer->len], data.buf, data.len);
     buffer->len += data.len;
 }
 
-void appendMemcpy(void *restrict destination, void *restrict source,
+void memcpyAppend(void *restrict destination, void *restrict source,
                   U64 bytes) {
     memcpy(destination, source, bytes);
 }
 
-void appendMemset(void *restrict destination, void *restrict source,
+void memsetAppend(void *restrict destination, void *restrict source,
                   U64 bytes) {
     (void)source;
     memset(destination, 0, bytes);
@@ -52,17 +52,17 @@ static void appendDataCommon(void *restrict data, U32 len, U8 flags,
     }
 }
 
-void appendDataToFlushBuffer(void *data, U32 len, U8 flags, U8_max_a *buffer,
+void dataToFlushBufferAppend(void *data, U32 len, U8 flags, U8_max_a *buffer,
                              AppendFunction appender, void *flushContext) {
     appendDataCommon(data, len, flags, buffer, appender, flushFunctionGet(),
                      flushContext);
 }
 
-void appendToFlushBuffer(String data, U8 flags) {
-    appendDataToFlushBuffer(data.buf, data.len, flags, flushBufferGet(),
-                            appendMemcpy, flushContextGet());
+void flushBufferAppend(String data, U8 flags) {
+    dataToFlushBufferAppend(data.buf, data.len, flags, flushBufferGet(),
+                            memcpyAppend, flushContextGet());
 }
-void appendZeroToFlushBuffer(U32 bytes, U8 flags) {
-    appendDataToFlushBuffer(nullptr, bytes, flags, flushBufferGet(),
-                            appendMemset, flushContextGet());
+void zeroToFlushBufferApppend(U32 bytes, U8 flags) {
+    dataToFlushBufferAppend(nullptr, bytes, flags, flushBufferGet(),
+                            memsetAppend, flushContextGet());
 }

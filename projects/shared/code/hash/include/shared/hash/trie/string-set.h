@@ -6,16 +6,16 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/text/string.h" // for string
 
-typedef struct trie_stringSet trie_stringSet;
-struct trie_stringSet {
-    struct trie_stringSet *child[4];
+typedef struct TrieSetString TrieSetString;
+struct TrieSetString {
+    struct TrieSetString *child[4];
     String data;
 };
 
-[[nodiscard]] bool trie_insertStringSet(String key, trie_stringSet **set,
+[[nodiscard]] bool trie_insertStringSet(String key, TrieSetString **set,
                                         Arena *perm);
 
-TRIE_ITERATOR_HEADER_FILE(trie_stringSet, trie_stringIterNode,
+TRIE_ITERATOR_HEADER_FILE(TrieSetString, trie_stringIterNode,
                           trie_stringIterator, String, createStringIterator,
                           nextStringIterator)
 
@@ -44,7 +44,7 @@ TRIE_ITERATOR_HEADER_FILE(trie_stringSet, trie_stringIterNode,
 //     trie_IterNode *free;
 // } trie_Iter;
 
-// TRIE_NEW_ITERATOR(trie_StringSet, trie_Iter, trie_IterNode,
+// TRIE_ITERATOR_NEW(trie_StringSet, trie_Iter, trie_IterNode,
 // newIter);
 
 //__attribute__((unused)) static trie_Iter *newIter(trie_StringSet
@@ -58,7 +58,7 @@ TRIE_ITERATOR_HEADER_FILE(trie_stringSet, trie_stringIterNode,
 //    return it;
 //}
 
-// TRIE_NEXT_ITERATOR(string, trie_Iter, trie_IterNode,
+// TRIE_ITERATOR_NEXT(string, trie_Iter, trie_IterNode,
 // nextIter);
 
 //__attribute__((unused)) static string nextIter(trie_Iter *it,

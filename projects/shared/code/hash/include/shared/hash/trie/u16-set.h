@@ -6,15 +6,15 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/types/numeric.h"
 
-typedef struct trie_U16Set trie_U16Set;
-struct trie_U16Set {
-    struct trie_U16Set *child[4];
+typedef struct TrieSetU16 TrieSetU16;
+struct TrieSetU16 {
+    struct TrieSetU16 *child[4];
     U16 data;
 };
 
-[[nodiscard]] bool trie_insertU16Set(U16 key, trie_U16Set **set, Arena *perm);
+[[nodiscard]] bool trieU16Insert(U16 key, TrieSetU16 **set, Arena *perm);
 
-TRIE_ITERATOR_HEADER_FILE(trie_U16Set, trie_U16IterNode, trie_U16Iterator, U16,
+TRIE_ITERATOR_HEADER_FILE(TrieSetU16, trie_U16IterNode, trie_U16Iterator, U16,
                           createU16Iterator, nextU16Iterator)
 
 #define FOR_EACH_TRIE_U16(element, intSet, scratch)                            \

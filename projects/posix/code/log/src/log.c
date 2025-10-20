@@ -62,23 +62,23 @@ U8_max_a *flushBufferGet() { return &stdoutBuffer.array; }
 FlushFunction flushFunctionGet() { return bufferFlush; }
 void *flushContextGet() { return &stdoutBuffer.fileDescriptor; }
 
-static void appendDataToFlushBufferWithWriter(void *data, U32 len, U8 flags,
+static void dataToFlushBufferAppendWithWriter(void *data, U32 len, U8 flags,
                                               WriteBuffer *writeBuffer,
                                               AppendFunction appender) {
-    appendDataToFlushBuffer(data, len, flags, &writeBuffer->array, appender,
+    dataToFlushBufferAppend(data, len, flags, &writeBuffer->array, appender,
                             &writeBuffer->fileDescriptor);
 }
 
 void zeroToFlushBufferWithWriterAppend(U32 bytes, U8 flags,
                                        WriteBuffer *writeBuffer) {
-    appendDataToFlushBufferWithWriter(nullptr, bytes, flags, writeBuffer,
-                                      appendMemset);
+    dataToFlushBufferAppendWithWriter(nullptr, bytes, flags, writeBuffer,
+                                      memsetAppend);
 }
 
 void flushBufferWithWriterAppend(String data, U8 flags,
                                    WriteBuffer *writeBuffer) {
-    appendDataToFlushBufferWithWriter(data.buf, data.len, flags, writeBuffer,
-                                      appendMemcpy);
+    dataToFlushBufferAppendWithWriter(data.buf, data.len, flags, writeBuffer,
+                                      memcpyAppend);
 }
 
 static String ansiColorToCode[COLOR_NUMS] = {

@@ -10,14 +10,14 @@
 
 void *allocateIdentityMemory(U64_pow2 blockSize) {
     ASSERT(blockSize >= pageSizeSmallest());
-    ASSERT(isPowerOf2(blockSize));
+    ASSERT(powerOf2(blockSize));
 
     return allocPhysicalMemory(blockSize);
 }
 
 void freeIdentityMemory(Memory memory) {
-    ASSERT(isAlignedTo(memory.start, pageSizeSmallest()));
-    ASSERT(isAlignedTo(memory.bytes, pageSizeSmallest()));
+    ASSERT(aligned(memory.start, pageSizeSmallest()));
+    ASSERT(aligned(memory.bytes, pageSizeSmallest()));
 
     freePhysicalMemory(memory);
 }
@@ -30,9 +30,9 @@ void freeIdentityMemoryNotBlockSize(Memory memory) {
 }
 
 void *allocateMappableMemory(U64_pow2 blockSize, U64_pow2 mappingSize) {
-    ASSERT(isPowerOf2(blockSize));
+    ASSERT(powerOf2(blockSize));
     ASSERT(blockSize >= pageSizeSmallest());
-    ASSERT(isPowerOf2(mappingSize));
+    ASSERT(powerOf2(mappingSize));
     ASSERT(mappingSize >= pageSizeSmallest());
     ASSERT(blockSize >= mappingSize);
 
@@ -43,8 +43,8 @@ void *allocateMappableMemory(U64_pow2 blockSize, U64_pow2 mappingSize) {
 }
 
 void freeMappableMemory(Memory memory) {
-    ASSERT(isAlignedTo(memory.start, pageSizeSmallest()));
-    ASSERT(isAlignedTo(memory.bytes, pageSizeSmallest()));
+    ASSERT(aligned(memory.start, pageSizeSmallest()));
+    ASSERT(aligned(memory.bytes, pageSizeSmallest()));
 
     U64 virtualAddresses[PAGE_CACHE_FLUSH_THRESHOLD];
     U32 virtualAddressesLen = 0;

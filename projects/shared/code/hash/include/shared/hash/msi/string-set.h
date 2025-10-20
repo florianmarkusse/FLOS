@@ -7,23 +7,23 @@
 #include "shared/text/string.h"                 // for string
 #include "shared/types/numeric.h"
 
-typedef MSI_SET(String) msi_string;
+typedef MSI_SET(String) MSIString;
 
-[[nodiscard]] bool msi_insertString(String string, U64 hash, msi_string *index);
+[[nodiscard]] bool MSIStringInsert(String string, U64 hash, MSIString *index);
 
 /**
  * Assumes you know what hash function was used in this hash set. If you use the
  * wrong hash, you get wrong answers!!!
  */
-[[nodiscard]] bool msi_containsString(String string, U64 hash,
-                                      msi_string *index);
+[[nodiscard]] bool MSIStringContains(String string, U64 hash,
+                                      MSIString *index);
 
 /**
  * Check if the same string hasher is used to compare as the hash functions that
  * were used to insert.
  */
 [[nodiscard]] HashComparisonStatus
-msi_equalsStringSet(msi_string *restrict set1, msi_string *restrict set2);
+MSIStringSetEquals(MSIString *restrict set1, MSIString *restrict set2);
 
 #define FOR_EACH_MSI_STRING(element, msiSet)                                   \
     for (U32 MACRO_VAR(index) = 0; MACRO_VAR(index) < (1 << (msiSet)->exp);    \
@@ -33,8 +33,8 @@ msi_equalsStringSet(msi_string *restrict set1, msi_string *restrict set2);
 // Below an example of rehashing with the old set and a growth factor of 0.5.
 //
 //
-// void rehashIndex(msi_string *oldIndex,
-//                  msi_string *newIndex) {
+// void rehashIndex(MSIString *oldIndex,
+//                  MSIString *newIndex) {
 //     ASSERT(newIndex->len == 0);
 //     for (U32 i = 0; i < (1 << oldIndex->exp); i++) {
 //         string s = oldIndex->buf[i];

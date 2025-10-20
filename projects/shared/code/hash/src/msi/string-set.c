@@ -2,7 +2,7 @@
 #include "shared/hash/hashes.h"     // for hashStringDjb2
 #include "shared/hash/msi/common.h" // for MSIIndex
 
-bool msi_insertString(String string, U64 hash, msi_string *index) {
+bool MSIStringInsert(String string, U64 hash, MSIString *index) {
     for (U32 i = (U32)hash;;) {
         i = MSIIndex(hash, index->exp, i);
         if (index->buf[i].len == 0) {
@@ -15,7 +15,7 @@ bool msi_insertString(String string, U64 hash, msi_string *index) {
     }
 }
 
-bool msi_containsString(String string, U64 hash, msi_string *index) {
+bool MSIStringContains(String string, U64 hash, MSIString *index) {
     for (U32 i = (U32)hash;;) {
         i = MSIIndex(hash, index->exp, i);
         if (index->buf[i].len == 0) {
@@ -26,21 +26,21 @@ bool msi_containsString(String string, U64 hash, msi_string *index) {
     }
 }
 
-HashComparisonStatus msi_equalsStringSet(msi_string *restrict set1,
-                                         msi_string *restrict set2) {
+HashComparisonStatus MSIStringSetEquals(MSIString *restrict set1,
+                                         MSIString *restrict set2) {
     if (set1->len != set2->len) {
         return HASH_COMPARISON_DIFFERENT_SIZES;
     }
 
     String element;
     FOR_EACH_MSI_STRING(element, set1) {
-        if (!msi_containsString(element, hashStringSkeeto(element), set2)) {
+        if (!MSIStringContains(element, stringSkeetoHash(element), set2)) {
             return HASH_COMPARISON_DIFFERENT_CONTENT;
         }
     }
 
     FOR_EACH_MSI_STRING(element, set2) {
-        if (!msi_containsString(element, hashStringSkeeto(element), set1)) {
+        if (!MSIStringContains(element, stringSkeetoHash(element), set1)) {
             return HASH_COMPARISON_DIFFERENT_CONTENT;
         }
     }

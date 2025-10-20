@@ -54,7 +54,7 @@ PageFaultResult handlePageFault(U64 faultingAddress) {
     // mark which cores have accessed which memory so we can limit the
     // flushPage calls to all cores.
 
-    U32_pow2 mapsToDo = (U32)divideByPowerOf2(pageSizeForFault, pageSizeToUse);
+    U32_pow2 mapsToDo = (U32)dividePowerOf2(pageSizeForFault, pageSizeToUse);
     for (U32 i = 0; i < mapsToDo; i++) {
         U8 *address = allocPhysicalMemory(pageSizeToUse);
         pageMap(startingMap + (i * pageSizeToUse), (U64)address, pageSizeToUse);

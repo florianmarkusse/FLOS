@@ -11,32 +11,30 @@ static constexpr auto FLUSH = 0x02;
 typedef void (*AppendFunction)(void *restrict destination,
                                void *restrict source, U64 bytes);
 
-void appendMemcpy(void *restrict destination, void *restrict source, U64 bytes);
-void appendMemset(void *restrict destination, void *restrict source, U64 bytes);
+void memcpyAppend(void *restrict destination, void *restrict source, U64 bytes);
+void memsetAppend(void *restrict destination, void *restrict source, U64 bytes);
 
-void appendToBuffer(U8_a *buffer, String data);
-void appendToFlushBuffer(String data, U8 flags);
-void appendZeroToFlushBuffer(U32 bytes, U8 flags);
+void bufferAppend(U8_a *buffer, String data);
+void flushBufferAppend(String data, U8 flags);
+void zeroToFlushBufferApppend(U32 bytes, U8 flags);
 
-void appendDataToFlushBuffer(void *data, U32 len, U8 flags, U8_max_a *buffer,
+void dataToFlushBufferAppend(void *data, U32 len, U8 flags, U8_max_a *buffer,
                              AppendFunction appender, void *flushContext);
 
-#define KLOG_APPEND(buffer, data)                                              \
-    appendToBuffer(buffer, STRING_CONVERT(data))
+#define KLOG_APPEND(buffer, data) bufferAppend(buffer, STRING_CONVERT(data))
 
-#define KLOG_DATA(data, flags)                                                 \
-    appendToFlushBuffer(STRING_CONVERT(data), flags)
+#define KLOG_DATA(data, flags) flushBufferAppend(STRING_CONVERT(data), flags)
 
 typedef struct {
     U8 flags;
-} StandardLoggingParams;
+} LoggingParamsStandard;
 
 #define KLOG(data, ...)                                                        \
     ({                                                                         \
-        StandardLoggingParams MACRO_VAR(standardLoggingParams) =               \
-            (StandardLoggingParams){.flags = 0, __VA_ARGS__};                  \
-        appendToFlushBuffer(STRING_CONVERT(data),                           \
-                            MACRO_VAR(standardLoggingParams).flags);           \
+        LoggingParamsStandard MACRO_VAR(loggingParamsStandard) =               \
+            (LoggingParamsStandard){.flags = 0, __VA_ARGS__};                  \
+        flushBufferAppend(STRING_CONVERT(data),                                \
+                          MACRO_VAR(loggingParamsStandard).flags);             \
     })
 
 #define INFO(data, ...) KLOG(data, ##__VA_ARGS__)

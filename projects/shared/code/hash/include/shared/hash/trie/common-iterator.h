@@ -37,7 +37,7 @@
     returnType /* NOLINTNEXTLINE */                                            \
     nextIteratorFunctionName(iteratorType *it, Arena *perm);
 
-#define TRIE_NEW_ITERATOR(stringSetType, iteratorType, iterNodeType,           \
+#define TRIE_ITERATOR_NEW(stringSetType, iteratorType, iterNodeType,           \
                           functionName)                                        \
     /* NOLINTNEXTLINE */                                                       \
     iteratorType *functionName(/* NOLINTNEXTLINE */                            \
@@ -51,7 +51,7 @@
         return it;                                                             \
     }
 
-#define TRIE_NEXT_ITERATOR(returnType, iteratorType, iterNodeType,             \
+#define TRIE_ITERATOR_NEXT(returnType, iteratorType, iterNodeType,             \
                            functionName)                                       \
     /* NOLINTNEXTLINE */                                                       \
     returnType functionName(iteratorType *it, Arena *perm) {                   \
@@ -85,9 +85,9 @@
 #define TRIE_ITERATOR_SOURCE_FILE(setType, iterNodeType, iteratorType,         \
                                   returnType, createIteratorFunctionName,      \
                                   nextIteratorFunctionName)                    \
-    TRIE_NEW_ITERATOR(setType, iteratorType, iterNodeType,                     \
+    TRIE_ITERATOR_NEW(setType, iteratorType, iterNodeType,                     \
                       createIteratorFunctionName)                              \
-    TRIE_NEXT_ITERATOR(returnType, iteratorType, iterNodeType,                 \
+    TRIE_ITERATOR_NEXT(returnType, iteratorType, iterNodeType,                 \
                        nextIteratorFunctionName)
 
 #endif

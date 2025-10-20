@@ -34,3 +34,9 @@ void MSISetNew(void *setSlice, U64 size, U64_pow2 align, Arena *a) {
         replica->len = 0;
     }
 }
+
+U32 indexLookup(U64 hash, U16 exp, U32 idx) {
+    U32 mask = ((U32)1 << exp) - 1;
+    U32 step = (U32)(hash >> (64 - exp)) | 1;
+    return (idx + step) & mask;
+}

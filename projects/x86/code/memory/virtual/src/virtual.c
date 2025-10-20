@@ -48,14 +48,14 @@ static PageMetaDataNode *getZeroedMetaDataTable() {
 }
 
 static U16 calculateTableIndex(U64 virt, U64_pow2 pageSize) {
-    return (U16)ringBufferIndex(divideByPowerOf2(virt, pageSize),
+    return (U16)ringBufferIndex(dividePowerOf2(virt, pageSize),
                                 PageTableFormat.ENTRIES);
 }
 
 void pageMap_(U64 virt, U64 physical, U64_pow2 mappingSize, U64 flags) {
     ASSERT(rootPageTable);
     ASSERT(!(ringBufferIndex(physical, mappingSize)));
-    ASSERT(isPowerOf2(mappingSize));
+    ASSERT(powerOf2(mappingSize));
 
     PageMetaDataNode *metaDataTable = &rootPageMetaData;
     VirtualPageTable *pageTable = rootPageTable;

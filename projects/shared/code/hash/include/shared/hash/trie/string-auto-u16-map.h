@@ -9,34 +9,32 @@
 typedef struct {
     String key;
     U16 value;
-} trie_stringAutoU16Data;
+} StringU16;
 
-typedef struct trie_stringAutoU16Node trie_stringAutoU16Node;
-struct trie_stringAutoU16Node {
-    struct trie_stringAutoU16Node *child[4];
-    trie_stringAutoU16Data data;
+typedef struct StringU16Node StringU16Node;
+struct StringU16Node {
+    struct StringU16Node *child[4];
+    StringU16 data;
 };
 
 typedef struct {
-    trie_stringAutoU16Node *node;
+    StringU16Node *node;
     // Used as the auto-incrementing key
     U16 nodeCount;
-} trie_stringAutoU16Map;
+} TrieStringU16;
 
 typedef struct {
     U16 entryIndex;
     bool wasInserted;
-} NewStringInsert;
+} StringU16Insert;
 
-[[nodiscard]] NewStringInsert
-trie_insertStringAutoU16Map(String key, trie_stringAutoU16Map *set,
-                            Arena *perm);
+[[nodiscard]] StringU16Insert
+trieStringU16Insert(String key, TrieStringU16 *set, Arena *perm);
 
-[[nodiscard]] U16 trie_containsStringAutoU16Map(String key,
-                                                trie_stringAutoU16Map *set);
+[[nodiscard]] U16 trieStringU16Contains(String key, TrieStringU16 *set);
 
-TRIE_ITERATOR_HEADER_FILE(trie_stringAutoU16Node, trie_stringAutoU16IterNode,
-                          trie_stringAutoU16Iterator, trie_stringAutoU16Data,
+TRIE_ITERATOR_HEADER_FILE(StringU16Node, trie_stringAutoU16IterNode,
+                          trie_stringAutoU16Iterator, StringU16,
                           createStringAutoU16Iterator,
                           nextStringAutoU16Iterator)
 
