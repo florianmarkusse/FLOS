@@ -51,7 +51,7 @@ struct Registers {
     U64 ss;
 };
 
-U64 currentNumberOfPageFaults = 0;
+U64 pageFaultsCurrent = 0;
 
 static void kernelPanic(Registers *regs) {
     KFLUSH_AFTER {
@@ -109,7 +109,7 @@ static void kernelPanic(Registers *regs) {
 
 void faultHandler(Registers *regs) {
     if (regs->interruptNumber == FAULT_PAGE_FAULT) {
-        currentNumberOfPageFaults++;
+        pageFaultsCurrent++;
         PageFaultResult pageFaultResult = handlePageFault(CR2());
 
         switch (pageFaultResult) {

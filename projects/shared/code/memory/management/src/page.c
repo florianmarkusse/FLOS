@@ -19,7 +19,7 @@ static U64_pow2 pageSizeFromVMM(U64 faultingAddress) {
         return result->mappingSize;
     }
 
-    return pageSizesSmallest();
+    return pageSizeSmallest();
 }
 
 void removePageMapping(U64 address) {
@@ -30,7 +30,7 @@ void removePageMapping(U64 address) {
 void addPageMapping(Memory memory, U64_pow2 pageSize) {
     VMMNode *newNode = nodeAllocatorGet(&memoryMapperSizes.nodeAllocator);
     if (!newNode) {
-        interruptNoMoreVirtualMemoryMapper();
+        interruptVirtualMemoryMapper();
     }
     newNode->basic.value = memory.start;
     newNode->bytes = memory.bytes;

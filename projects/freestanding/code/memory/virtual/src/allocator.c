@@ -13,7 +13,7 @@
 // NOTE: Don't cause page faults in this code. The code is called inside a page
 // fault. Any potential page faults must be anticipated and solved manually!
 
-void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
+void *memoryZeroedForVirtualGet(VirtualAllocationType type) {
     U32 bytes = virtualStructBytes[type];
     void *result = allocateIdentityMemory(bytes);
     memset(result, 0, bytes);
@@ -24,7 +24,7 @@ void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
 // NOTE: When mapping more memory, it will potentially shrink the freelist since
 // it requires extra memory for the mapping. So the memory we map in might not
 // immediately be used.
-void freeZeroedMemoryForVirtual(U64 address, VirtualAllocationType type) {
+void memoryZeroedForVirtualFree(U64 address, VirtualAllocationType type) {
     freeIdentityMemory(
         (Memory){.start = address, .bytes = virtualStructBytes[type]});
 }

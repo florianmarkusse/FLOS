@@ -32,9 +32,9 @@ static void identityArrayToMappable(void_max_a *array, U32 elementSizeBytes,
     void *virtualBuffer = allocVirtualMemory(bytesNewBuffer);
 
     U64 bytesUsed = array->len * elementSizeBytes;
-    U32 mapsToDo = (U32)ceilingDivide(bytesUsed, pageSizesSmallest());
+    U32 mapsToDo = (U32)ceilingDivide(bytesUsed, pageSizeSmallest());
     for (typeof(mapsToDo) i = 0; i < mapsToDo; i++) {
-        (void)handlePageFault((U64)virtualBuffer + (i * pageSizesSmallest()));
+        (void)handlePageFault((U64)virtualBuffer + (i * pageSizeSmallest()));
     }
 
     memcpy(virtualBuffer, array->buf, array->len * elementSizeBytes);
@@ -99,18 +99,18 @@ static void treeWithFreeListToMappable(NodeAllocator *nodeAllocator,
 void initMemoryManagers(KernelMemory *kernelMemory) {
     buddyPhysical.data = kernelMemory->buddyPhysical;
     if (setjmp(buddyPhysical.memoryExhausted)) {
-        interruptNoMorePhysicalMemory();
+        interruptPhysicalMemory();
     }
     if (setjmp(buddyPhysical.backingBufferExhausted)) {
-        interruptNoMoreBuffer();
+        interruptBuffer();
     }
 
     buddyVirtual.data = kernelMemory->buddyVirtual;
     if (setjmp(buddyVirtual.memoryExhausted)) {
-        interruptNoMoreVirtualMemory();
+        interruptVirtualMemory();
     }
     if (setjmp(buddyVirtual.backingBufferExhausted)) {
-        interruptNoMoreBuffer();
+        interruptBuffer();
     }
 
     memoryMapperSizes = kernelMemory->memoryMapperSizes;

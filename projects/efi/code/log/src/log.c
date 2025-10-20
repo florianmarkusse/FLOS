@@ -14,7 +14,7 @@ U8_max_a flushBuf = (U8_max_a){
     .buf = (U8[FLUSH_BUFFER_SIZE]){0}, .len = 0, .cap = FLUSH_BUFFER_SIZE};
 
 static U16 convertedChar[2] = {0, '\0'};
-void flushBuffer(U8_a *buffer, void *flushContext) {
+void bufferFlush(U8_a *buffer, void *flushContext) {
     (void)flushContext;
 
     for (typeof(buffer->len) i = 0; i < buffer->len; i++) {
@@ -30,8 +30,8 @@ void flushBuffer(U8_a *buffer, void *flushContext) {
     buffer->len = 0;
 }
 
-void flushStandardBuffer() { flushBuffer((U8_a *)&flushBuf, nullptr); }
+void standardBufferFlush() { bufferFlush((U8_a *)&flushBuf, nullptr); }
 
-U8_max_a *getFlushBuffer() { return &flushBuf; }
-FlushFunction getFlushFunction() { return flushBuffer; }
-void *getFlushContext() { return nullptr; }
+U8_max_a *flushBufferGet() { return &flushBuf; }
+FlushFunction flushFunctionGet() { return bufferFlush; }
+void *flushContextGet() { return nullptr; }

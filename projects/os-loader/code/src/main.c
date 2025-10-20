@@ -99,7 +99,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO(STRING("\n"));
     }
 
-    initRootVirtualMemoryInKernel();
+    virtualMemoryRootPageInit();
 
     KFLUSH_AFTER { INFO(STRING("Loading kernel...\n")); }
     U32 kernelBytes = getKernelBytes(globals.uefiMemory);
@@ -152,7 +152,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         mapMemory(0, 0, highestLowerHalfAddress,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict());
 
-    initKernelMemoryManagement(firstFreeVirtual, kernelVirtualMemoryEnd());
+    kernelMemoryManagementInit(firstFreeVirtual, kernelVirtualMemoryEnd());
 
     U64 virtualForKernel = (U64)allocVirtualMemory(MIN_VIRTUAL_MEMORY_REQUIRED);
     U64 endVirtualForKernel = virtualForKernel + MIN_VIRTUAL_MEMORY_REQUIRED;
@@ -209,7 +209,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                  .scanline = gop->mode->info->pixelsPerScanLine};
 
     KFLUSH_AFTER { INFO(STRING("Filling specific arch params...\n")); }
-    fillArchParams(kernelParams->archParams, virtualForKernel);
+    archParamsFill(kernelParams->archParams, virtualForKernel);
 
     RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
                               globals.st->configuration_table);
@@ -269,7 +269,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     stageStatusUpdate(gop->mode, PHYSICAL_MEMORY_COLLECTED);
 
-    jumpIntoKernel(stackResult.stackVirtualTop, 0, kernelParams);
+    kernelJump(stackResult.stackVirtualTop, 0, kernelParams);
 
     __builtin_unreachable();
 }

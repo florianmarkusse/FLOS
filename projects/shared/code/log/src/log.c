@@ -54,15 +54,15 @@ static void appendDataCommon(void *restrict data, U32 len, U8 flags,
 
 void appendDataToFlushBuffer(void *data, U32 len, U8 flags, U8_max_a *buffer,
                              AppendFunction appender, void *flushContext) {
-    appendDataCommon(data, len, flags, buffer, appender, getFlushFunction(),
+    appendDataCommon(data, len, flags, buffer, appender, flushFunctionGet(),
                      flushContext);
 }
 
 void appendToFlushBuffer(String data, U8 flags) {
-    appendDataToFlushBuffer(data.buf, data.len, flags, getFlushBuffer(),
-                            appendMemcpy, getFlushContext());
+    appendDataToFlushBuffer(data.buf, data.len, flags, flushBufferGet(),
+                            appendMemcpy, flushContextGet());
 }
 void appendZeroToFlushBuffer(U32 bytes, U8 flags) {
-    appendDataToFlushBuffer(nullptr, bytes, flags, getFlushBuffer(),
-                            appendMemset, getFlushContext());
+    appendDataToFlushBuffer(nullptr, bytes, flags, flushBufferGet(),
+                            appendMemset, flushContextGet());
 }

@@ -36,7 +36,7 @@ typedef struct {
     int fileDescriptor;
 } PosixFlushContext;
 
-void flushBuffer(U8_a *buffer, void *flushContext) {
+void bufferFlush(U8_a *buffer, void *flushContext) {
     PosixFlushContext *posixFlushContext = (PosixFlushContext *)flushContext;
     for (typeof(buffer->len) bytesWritten = 0; bytesWritten < buffer->len;) {
         I64 partialBytesWritten =
@@ -50,17 +50,17 @@ void flushBuffer(U8_a *buffer, void *flushContext) {
     }
 }
 
-void flushBufferWithWriter(BufferType bufferType) {
+void bufferFlushWithWriter(BufferType bufferType) {
     WriteBuffer *writeBuffer = getWriteBuffer(bufferType);
-    flushBuffer((U8_a *)(&writeBuffer->array), &writeBuffer->fileDescriptor);
+    bufferFlush((U8_a *)(&writeBuffer->array), &writeBuffer->fileDescriptor);
     writeBuffer->array.len = 0;
 }
 
-void flushStandardBuffer() { flushBufferWithWriter(STDOUT); }
+void standardBufferFlush() { bufferFlushWithWriter(STDOUT); }
 
-U8_max_a *getFlushBuffer() { return &stdoutBuffer.array; }
-FlushFunction getFlushFunction() { return flushBuffer; }
-void *getFlushContext() { return &stdoutBuffer.fileDescriptor; }
+U8_max_a *flushBufferGet() { return &stdoutBuffer.array; }
+FlushFunction flushFunctionGet() { return bufferFlush; }
+void *flushContextGet() { return &stdoutBuffer.fileDescriptor; }
 
 static void appendDataToFlushBufferWithWriter(void *data, U32 len, U8 flags,
                                               WriteBuffer *writeBuffer,

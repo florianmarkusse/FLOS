@@ -211,7 +211,7 @@ static void bootstrapProcessorWork(U16 cacheLineSizeBytes,
     prepareDescriptors(1, cacheLineSizeBytes, memoryVirtualAddressAvailable);
 }
 
-void initRootVirtualMemoryInKernel() {
+void virtualMemoryRootPageInit() {
     rootPageTable = getZeroedPageTable();
 
     KFLUSH_AFTER {
@@ -226,7 +226,7 @@ void initRootVirtualMemoryInKernel() {
 // NOTE: Should be enough until put into final kernel position.
 static constexpr auto INITIAL_VIRTUAL_MAPPING_SIZES = 128;
 
-void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress) {
+void kernelMemoryManagementInit(U64 startingAddress, U64 endingAddress) {
     Exponent orderCount =
         buddyOrderCountOnLargestPageSize(BUDDY_VIRTUAL_PAGE_SIZE_MAX);
     U64 *backingBuffer =
@@ -235,10 +235,10 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress) {
     buddyInit(&buddyVirtual, backingBuffer,
               BUDDY_BLOCKS_CAPACITY_PER_ORDER_DEFAULT, orderCount);
     if (setjmp(buddyVirtual.memoryExhausted)) {
-        interruptNoMoreVirtualMemory();
+        interruptVirtualMemory();
     }
     if (setjmp(buddyVirtual.backingBufferExhausted)) {
-        interruptNoMoreBuffer();
+        interruptBuffer();
     }
 
     Memory freeMemory = {.start = startingAddress,
@@ -264,7 +264,7 @@ void initKernelMemoryManagement(U64 startingAddress, U64 endingAddress) {
 }
 
 static constexpr auto XSAVE_ALIGNMENT = 64;
-void fillArchParams(void *archParams, U64 memoryVirtualAddressAvailable) {
+void archParamsFill(void *archParams, U64 memoryVirtualAddressAvailable) {
     X86ArchParams *x86ArchParams = (X86ArchParams *)archParams;
 
     U32 manufacturerString[3];

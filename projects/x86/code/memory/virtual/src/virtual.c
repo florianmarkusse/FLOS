@@ -40,11 +40,11 @@ U32 virtualStructBytes[VIRTUAL_ALLOCATION_TYPE_COUNT] = {
 };
 
 VirtualPageTable *getZeroedPageTable() {
-    return getZeroedMemoryForVirtual(VIRTUAL_PAGE_TABLE_ALLOCATION);
+    return memoryZeroedForVirtualGet(VIRTUAL_PAGE_TABLE_ALLOCATION);
 }
 
 static PageMetaDataNode *getZeroedMetaDataTable() {
-    return getZeroedMemoryForVirtual(META_DATA_PAGE_ALLOCATION);
+    return memoryZeroedForVirtualGet(META_DATA_PAGE_ALLOCATION);
 }
 
 static U16 calculateTableIndex(U64 virt, U64_pow2 pageSize) {
@@ -52,7 +52,7 @@ static U16 calculateTableIndex(U64 virt, U64_pow2 pageSize) {
                                 PageTableFormat.ENTRIES);
 }
 
-void mapPage_(U64 virt, U64 physical, U64_pow2 mappingSize, U64 flags) {
+void pageMap_(U64 virt, U64 physical, U64_pow2 mappingSize, U64 flags) {
     ASSERT(rootPageTable);
     ASSERT(!(ringBufferIndex(physical, mappingSize)));
     ASSERT(isPowerOf2(mappingSize));
@@ -118,17 +118,17 @@ static void updateMappingData(VirtualPageTable *pageTables[MAX_PAGING_LEVELS],
         if (!(metaData[len - 2][metaDataTableIndices[len - 2]]
                   .metaData.entriesMappedWithSmallerGranularity)) {
             metaData[len - 2][metaDataTableIndices[len - 2]].children = 0;
-            freeZeroedMemoryForVirtual((U64)(metaData[len - 1]),
+            memoryZeroedForVirtualFree((U64)(metaData[len - 1]),
                                        META_DATA_PAGE_ALLOCATION);
         }
 
-        freeZeroedMemoryForVirtual((U64)pageTables[len - 1],
+        memoryZeroedForVirtualFree((U64)pageTables[len - 1],
                                    VIRTUAL_PAGE_TABLE_ALLOCATION);
         len--;
     }
 }
 
-Memory unmapPage(U64 virt) {
+Memory pageUnmap(U64 virt) {
     ASSERT(rootPageTable);
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
 
@@ -148,7 +148,7 @@ Memory unmapPage(U64 virt) {
     U8 len = 1;
     U16 index = 0;
     for (U64_pow2 entrySize = PAGE_ROOT_ENTRY_MAX_SIZE;
-         entrySize >= pageSizesSmallest();
+         entrySize >= pageSizeSmallest();
          entrySize /= PageTableFormat.ENTRIES) {
         U16 newMetaIndex = index; // Lagging behind index by 1 iteration
         index = calculateTableIndex(virt, entrySize);
@@ -156,7 +156,7 @@ Memory unmapPage(U64 virt) {
         indices[len] = index;
         U64 tableEntry = pageTables[len - 1]->pages[index];
 
-        if (!tableEntry || entrySize == pageSizesSmallest()) {
+        if (!tableEntry || entrySize == pageSizeSmallest()) {
             if (tableEntry) {
                 updateMappingData(pageTables, indices + 1, newMeta, indices,
                                   len);
@@ -175,7 +175,7 @@ Memory unmapPage(U64 virt) {
         }
 
         pageTables[len] =
-            (VirtualPageTable *)alignDown(tableEntry, pageSizesSmallest());
+            (VirtualPageTable *)alignDown(tableEntry, pageSizeSmallest());
         newMeta[len] = newMeta[len - 1][newMetaIndex].children;
         len++;
     }

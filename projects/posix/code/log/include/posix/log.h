@@ -30,7 +30,7 @@ void appendToFlushBufferWithWriter(String data, U8 flags,
                                    WriteBuffer *writeBuffer);
 void appendZeroToFlushBufferWithWriter(U32 bytes, U8 flags,
                                        WriteBuffer *writeBuffer);
-void flushBufferWithWriter(BufferType bufferType);
+void bufferFlushWithWriter(BufferType bufferType);
 
 void appendColor(AnsiColor color, BufferType bufferType);
 void appendColorReset(BufferType bufferType);
@@ -58,7 +58,7 @@ typedef struct {
 #define PERROR(data, ...)                                                      \
     PLOG_DATA(data, .writeBuffer = getWriteBuffer(STDERR), ##__VA_ARGS__)
 
-#define PFLUSH_TO(bufferType) flushBufferWithWriter(bufferType)
+#define PFLUSH_TO(bufferType) bufferFlushWithWriter(bufferType)
 
 #define PFLUSH_AFTER(bufferType)                                               \
     for (U64 MACRO_VAR(i) = 0; MACRO_VAR(i) < 1;                               \

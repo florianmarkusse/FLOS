@@ -30,7 +30,7 @@ static void toKernel(U64 newStackPointer, KernelParameters *kernelParams) {
     __builtin_unreachable();
 }
 
-void jumpIntoKernel(U64 newStackPointer, U16 processorID,
+void kernelJump(U64 newStackPointer, U16 processorID,
                     KernelParameters *kernelParams) {
     loadGDTAndSegments(&gdtDescriptor);
     loadTaskRegister(processorID);

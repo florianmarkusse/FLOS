@@ -17,14 +17,14 @@
 #include "shared/memory/management/status.h"
 #include "shared/types/numeric.h"
 
-void *getZeroedMemoryForVirtual(VirtualAllocationType type) {
+void *memoryZeroedForVirtualGet(VirtualAllocationType type) {
     void *result = findAlignedMemoryBlock(
         virtualStructBytes[type], UEFI_PAGE_SIZE, globals.uefiMemory, false);
     memset(result, 0, virtualStructBytes[type]);
     return result;
 }
 
-void freeZeroedMemoryForVirtual(U64 address, VirtualAllocationType type) {
+void memoryZeroedForVirtualFree(U64 address, VirtualAllocationType type) {
     (void)address;
     (void)type;
     EXIT_WITH_MESSAGE { ERROR(STRING("Not required for EFI implementation!")); }

@@ -10,8 +10,8 @@ static bool isPageSizeValid(U64_pow2 pageSize) {
 }
 
 U64_pow2 static pageAligned(U64 bytes) {
-    return MIN(MAX(ceilingPowerOf2(bytes), pageSizesSmallest()),
-               pageSizesLargest());
+    return MIN(MAX(ceilingPowerOf2(bytes), pageSizeSmallest()),
+               pageSizeLargest());
 }
 
 U64_pow2 increasePageSize(U64_pow2 pageSize) {
@@ -44,10 +44,10 @@ U64_pow2 pageSizeFitting(U64 bytes) {
 }
 
 static U64_pow2 largestAlignedPage(U64 address) {
-    ASSERT(!(ringBufferIndex(address, pageSizesSmallest())));
+    ASSERT(!(ringBufferIndex(address, pageSizeSmallest())));
 
     if (address == 0) {
-        return pageSizesLargest();
+        return pageSizeLargest();
     }
 
     U64_pow2 result = (1ULL << __builtin_ctzll(address));

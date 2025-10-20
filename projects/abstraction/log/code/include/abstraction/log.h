@@ -11,17 +11,17 @@
 // implement if they want to do any sort of logging. Additionally, each
 // environment is free to enhance their logging in any way they see fit.
 
-void flushStandardBuffer();
-void flushBuffer(U8_a *buffer, void *flushContext);
+void standardBufferFlush();
+void bufferFlush(U8_a *buffer, void *flushContext);
 
 typedef void (*FlushFunction)(U8_a *buffer, void *flushContext);
 
-[[nodiscard]] U8_max_a *getFlushBuffer();
-[[nodiscard]] FlushFunction getFlushFunction();
-[[nodiscard]] void *getFlushContext();
+[[nodiscard]] U8_max_a *flushBufferGet();
+[[nodiscard]] FlushFunction flushFunctionGet();
+[[nodiscard]] void *flushContextGet();
 
 #define KFLUSH_AFTER                                                           \
     for (U32 MACRO_VAR(i) = 0; MACRO_VAR(i) < 1;                               \
-         MACRO_VAR(i) = (flushStandardBuffer(), 1))
+         MACRO_VAR(i) = (standardBufferFlush(), 1))
 
 #endif

@@ -1,18 +1,18 @@
 #include "abstraction/interrupts.h"
 #include "x86/kernel/idt.h"
 
-void interruptNoMorePhysicalMemory() {
+void interruptPhysicalMemory() {
     triggerFault(FAULT_NO_MORE_PHYSICAL_MEMORY);
 }
 
-void interruptNoMoreVirtualMemory() {
+void interruptVirtualMemory() {
     triggerFault(FAULT_NO_MORE_VIRTUAL_MEMORY);
 }
 
-void interruptNoMoreVirtualMemoryMapper() {
+void interruptVirtualMemoryMapper() {
     triggerFault(FAULT_NO_MORE_VIRTUAL_MEMORY_MAPPER);
 }
 
-void interruptNoMoreBuffer() { triggerFault(FAULT_NO_MORE_BUFFER); }
+void interruptBuffer() { triggerFault(FAULT_NO_MORE_BUFFER); }
 
 void interruptUnexpectedError() { triggerFault(FAULT_UNEXPECTED_FAILURE); }

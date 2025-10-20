@@ -22,7 +22,7 @@ static constexpr auto RED_COLOR = 0xFF0000;
 
 #define EXIT_WITH_MESSAGE                                                      \
     for (auto MACRO_VAR(i) = 0; MACRO_VAR(i) < 1;                              \
-         MACRO_VAR(i) = 1, flushStandardBuffer(), waitKeyThenReset())
+         MACRO_VAR(i) = 1, standardBufferFlush(), waitKeyThenReset())
 
 #define EXIT_WITH_MESSAGE_IF_EFI_ERROR(status)                                 \
     if (EFI_ERROR(status))                                                     \

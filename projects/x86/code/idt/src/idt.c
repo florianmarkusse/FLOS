@@ -1,5 +1,5 @@
 #include "abstraction/interrupts.h"
 
-void enableInterrupts() { asm volatile("sti;"); }
+void interruptsEnable() { asm volatile("sti;"); }
 
-void disableInterrupts() { asm volatile("cli;"); }
+void interruptsDisable() { asm volatile("cli;"); }

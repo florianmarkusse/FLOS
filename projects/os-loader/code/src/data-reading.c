@@ -54,7 +54,7 @@ static void kernelLoadWithGUID(Handle handle, U32 bytes, Arena scratch,
 
             void *kernelAddress =
                 NEW(&globals.kernelPermanent, U8, .count = bytes,
-                    .align = pageSizesSmallest());
+                    .align = pageSizeSmallest());
 
             memcpy(kernelAddress, blockAddress, bytes);
             *result = (String){.buf = (void *)kernelAddress, .len = bytes};

@@ -80,7 +80,7 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
     U64 cycles;
     if (memoryWritableType == IDENTITY_MEMORY) {
         buffer = allocateIdentityMemory(
-            MAX(pageSizesSmallest(), START_ENTRIES_COUNT * sizeof(U64)));
+            MAX(pageSizeSmallest(), START_ENTRIES_COUNT * sizeof(U64)));
 
         U64_max_a dynamicArray = {
             .buf = buffer, .len = 0, .cap = START_ENTRIES_COUNT};
@@ -90,7 +90,7 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
             if (dynamicArray.len >= dynamicArray.cap) {
                 U64 currentBytes = dynamicArray.cap * sizeof(U64);
                 U64 *temp = allocateIdentityMemory(
-                    MAX(pageSizesSmallest(), currentBytes * GROWTH_RATE));
+                    MAX(pageSizeSmallest(), currentBytes * GROWTH_RATE));
                 memcpy(temp, dynamicArray.buf, currentBytes);
 
                 freeIdentityMemory((Memory){.start = (U64)dynamicArray.buf,
@@ -108,7 +108,7 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
         cycles = endCycleCount - startCycleCount;
     } else {
         buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT, pageSize);
-        beforePageFaults = currentNumberOfPageFaults;
+        beforePageFaults = pageFaultsCurrent;
         U64 startCycleCount = currentCycleCounter(true, false);
 
         for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
@@ -116,7 +116,7 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
         }
 
         U64 endCycleCount = currentCycleCounter(false, true);
-        afterPageFaults = currentNumberOfPageFaults;
+        afterPageFaults = pageFaultsCurrent;
 
         cycles = endCycleCount - startCycleCount;
     }
@@ -381,7 +381,7 @@ kernelMain(struct KernelParameters *kernelParams) {
     initLogger(&arena);
     initScreen(&kernelParams->window, &arena);
 
-    enableInterrupts();
+    interruptsEnable();
 
     freeIdentityMemoryNotBlockSize(
         (Memory){.start = (U64)arena.curFree,

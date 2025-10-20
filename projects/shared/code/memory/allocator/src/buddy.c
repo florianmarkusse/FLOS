@@ -8,7 +8,7 @@
 #include "shared/memory/management/definitions.h"
 
 static Exponent smallestPageSizeExponent() {
-    return (Exponent)__builtin_ctzll(pageSizesSmallest());
+    return (Exponent)__builtin_ctzll(pageSizeSmallest());
 }
 
 static Exponent buddyOrderMaxOnDifference(Exponent blockSizeLargest,

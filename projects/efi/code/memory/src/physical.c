@@ -163,7 +163,7 @@ void *findAlignedMemoryBlock(U64_pow2 bytes, U64_pow2 alignment, Arena scratch,
     }
 
     U64_pow2 largerPageSize;
-    if (pageSize == pageSizesLargest()) {
+    if (pageSize == pageSizeLargest()) {
         largerPageSize = pageSize;
     } else {
         largerPageSize = increasePageSize(pageSize);
@@ -199,7 +199,7 @@ void *findAlignedMemoryBlock(U64_pow2 bytes, U64_pow2 alignment, Arena scratch,
         }
 
         largerPageSize = pageSize;
-        if (pageSize > pageSizesSmallest()) {
+        if (pageSize > pageSizeSmallest()) {
             pageSize = decreasePageSize(pageSize);
         } else {
             pageSize = 0;

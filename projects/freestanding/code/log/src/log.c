@@ -13,7 +13,7 @@
 // We are going to flush to:
 // - The in-memory standin file buffer, this will be replaced by a file
 // buffer in the future.
-void flushBuffer(U8_a *buffer, void *flushContext) {
+void bufferFlush(U8_a *buffer, void *flushContext) {
     (void)flushContext;
 
     flushToScreen(*buffer);
@@ -27,8 +27,8 @@ void flushBuffer(U8_a *buffer, void *flushContext) {
     buffer->len = 0;
 }
 
-void flushStandardBuffer() { flushBuffer((U8_a *)&flushBuf, nullptr); }
+void standardBufferFlush() { bufferFlush((U8_a *)&flushBuf, nullptr); }
 
-U8_max_a *getFlushBuffer() { return &flushBuf; }
-FlushFunction getFlushFunction() { return flushBuffer; }
-void *getFlushContext() { return nullptr; }
+U8_max_a *flushBufferGet() { return &flushBuf; }
+FlushFunction flushFunctionGet() { return bufferFlush; }
+void *flushContextGet() { return nullptr; }

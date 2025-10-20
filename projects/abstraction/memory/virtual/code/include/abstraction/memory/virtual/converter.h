@@ -8,7 +8,7 @@
 [[nodiscard]] U64 pageFlagsScreenMemory();
 
 [[nodiscard]] U64 pageSizesAvailableMask();
-[[nodiscard]] U64_pow2 pageSizesSmallest();
-[[nodiscard]] U64_pow2 pageSizesLargest();
+[[nodiscard]] U64_pow2 pageSizeSmallest();
+[[nodiscard]] U64_pow2 pageSizeLargest();
 
 #endif

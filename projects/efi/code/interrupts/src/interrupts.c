@@ -4,26 +4,26 @@
 #include "shared/log.h"
 #include "shared/text/string.h"
 
-void interruptNoMorePhysicalMemory() {
+void interruptPhysicalMemory() {
     EXIT_WITH_MESSAGE {
         ERROR(STRING("Interrupts: No More Physical Memory\n"));
     }
 
     __builtin_unreachable();
 }
-void interruptNoMoreVirtualMemory() {
+void interruptVirtualMemory() {
     EXIT_WITH_MESSAGE { ERROR(STRING("Interrupts: No More Virtual Memory\n")); }
     __builtin_unreachable();
 }
 
-void interruptNoMoreVirtualMemoryMapper() {
+void interruptVirtualMemoryMapper() {
     EXIT_WITH_MESSAGE {
         ERROR(STRING("Interrupts: No More Virtual Memory Mapper\n"));
     }
     __builtin_unreachable();
 }
 
-void interruptNoMoreBuffer() {
+void interruptBuffer() {
     EXIT_WITH_MESSAGE { ERROR(STRING("Interrupts: No More Buffer\n")); }
     __builtin_unreachable();
 }

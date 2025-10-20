@@ -20,7 +20,7 @@ static constexpr auto VIRTUAL_ALLOCATION_TYPE_COUNT =
 
 extern U32 virtualStructBytes[VIRTUAL_ALLOCATION_TYPE_COUNT];
 
-[[nodiscard]] void *getZeroedMemoryForVirtual(VirtualAllocationType type);
-void freeZeroedMemoryForVirtual(U64 address, VirtualAllocationType type);
+[[nodiscard]] void *memoryZeroedForVirtualGet(VirtualAllocationType type);
+void memoryZeroedForVirtualFree(U64 address, VirtualAllocationType type);
 
 #endif

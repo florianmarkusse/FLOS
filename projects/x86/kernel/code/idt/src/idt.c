@@ -317,7 +317,7 @@ static void idt_set_gate(U8 num, U64 base, IST ist) {
     idt[num].zero = 0;
 }
 
-void setupInterrupts() {
+void interruptsInit() {
     idt_ptr idtp;
     idtp.limit = (sizeof(InterruptDescriptor) * 256) - 1;
     idtp.base = (U64)&idt;
