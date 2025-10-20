@@ -3,6 +3,6 @@
 
 #include "shared/types/numeric.h"
 
-void writeGPTs(U8 *fileBuffer);
+void GPTsWrite(U8 *fileBuffer);
 
 #endif

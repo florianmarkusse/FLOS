@@ -3,7 +3,7 @@
 
 #include "shared/types/numeric.h"
 
-[[nodiscard]] bool writeDataPartition(U8 *fileBuffer, int kernelfd,
+[[nodiscard]] bool dataPartitionWrite(U8 *fileBuffer, int kernelfd,
                                       U32 kernelSizeBytes);
 
 #endif

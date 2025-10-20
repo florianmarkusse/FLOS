@@ -37,7 +37,7 @@ typedef struct {
 
 extern Configuration configuration;
 
-void setConfiguration(U32 efiApplicationSizeBytes, U32 kernelSizeBytes,
+void configurationSet(U32 efiApplicationSizeBytes, U32 kernelSizeBytes,
                       U32_pow2 alignmentSizeBytes);
 
 #endif

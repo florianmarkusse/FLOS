@@ -98,7 +98,7 @@ static void fillPartitionEntry(U32 index, U32 startLBA, U32 sizeLBA) {
         partitionEntries[index].startingLBA + sizeLBA - 1;
 }
 
-void writeGPTs(U8 *fileBuffer) {
+void GPTsWrite(U8 *fileBuffer) {
     gptHeader.alternateLBA =
         configuration.totalImageSizeLBA - SectionsInLBASize.GPT_HEADER;
     gptHeader.firstUsableLBA = SectionsInLBASize.PROTECTIVE_MBR +
@@ -115,8 +115,8 @@ void writeGPTs(U8 *fileBuffer) {
                        configuration.dataPartitionSizeLBA);
 
     gptHeader.partitionTableCRC32 =
-        calculateCRC32(partitionEntries, sizeof(partitionEntries));
-    gptHeader.headerCRC32 = calculateCRC32(&gptHeader, gptHeader.headerSize);
+        CRC32(partitionEntries, sizeof(partitionEntries));
+    gptHeader.headerCRC32 = CRC32(&gptHeader, gptHeader.headerSize);
 
     U8 *primaryBuffer = fileBuffer;
     primaryBuffer +=
@@ -135,7 +135,7 @@ void writeGPTs(U8 *fileBuffer) {
                                   configuration.GPTPartitionTableSizeLBA;
 
     gptHeader.headerCRC32 = 0;
-    gptHeader.headerCRC32 = calculateCRC32(&gptHeader, sizeof(gptHeader));
+    gptHeader.headerCRC32 = CRC32(&gptHeader, sizeof(gptHeader));
 
     fileBuffer += gptHeader.partitionTableLBA * configuration.LBASizeBytes;
     memcpy(fileBuffer, partitionEntries, sizeof(partitionEntries));

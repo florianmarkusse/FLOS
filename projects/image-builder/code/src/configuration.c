@@ -27,7 +27,7 @@ static void partitionAppend(U32 lbaStart, U32 lbaSize) {
     lbaSizeAppend(lbaSize);
 }
 
-void setConfiguration(U32 efiApplicationSizeBytes, U32 kernelSizeBytes,
+void configurationSet(U32 efiApplicationSizeBytes, U32 kernelSizeBytes,
                       U32_pow2 alignmentSizeBytes) {
     if (alignmentSizeBytes > configuration.LBASizeBytes) {
         configuration.alignmentLBA =
@@ -45,7 +45,7 @@ void setConfiguration(U32 efiApplicationSizeBytes, U32 kernelSizeBytes,
 
     // EFI Partition
     configuration.EFISystemPartitionStartLBA = currentLBA;
-    U32 unalignedLBA = calculateEFIPartitionSize((U32)ceilingDivide(
+    U32 unalignedLBA = EFISystemPartitionSize((U32)ceilingDivide(
         efiApplicationSizeBytes, (U32)configuration.LBASizeBytes));
     configuration.EFISystemPartitionSizeLBA =
         (U32)alignUp(unalignedLBA, configuration.alignmentLBA);

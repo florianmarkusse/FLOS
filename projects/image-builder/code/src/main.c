@@ -114,14 +114,14 @@ static int createUEFIImage() {
         return 1;
     }
 
-    writeMBR(dataBuffer);
-    writeGPTs(dataBuffer);
-    if (!writeEFISystemPartition(dataBuffer, efiFileInfo.fileDescriptor,
+    MBRWrite(dataBuffer);
+    GPTsWrite(dataBuffer);
+    if (!EFISystemPartitionWrite(dataBuffer, efiFileInfo.fileDescriptor,
                                  efiFileInfo.size, kernelFileInfo.size)) {
         longjmp(errorHandler, 1);
         return 1;
     }
-    if (!writeDataPartition(dataBuffer, kernelFileInfo.fileDescriptor,
+    if (!dataPartitionWrite(dataBuffer, kernelFileInfo.fileDescriptor,
                             kernelFileInfo.size)) {
         longjmp(errorHandler, 1);
         return 1;
@@ -245,7 +245,7 @@ int main(int argc, char **argv) {
         GPTTableAlignmentSizeBytes =
             MAX(physicalBoundary, optimalTransferLengthGranularity);
     }
-    setConfiguration(efiFileInfo.size, kernelFileInfo.size,
+    configurationSet(efiFileInfo.size, kernelFileInfo.size,
                      GPTTableAlignmentSizeBytes);
 
     return createUEFIImage();

@@ -33,7 +33,7 @@ static MBR protectiveMBR = {
     .signature = BOOT_SIGNATURE,
 };
 
-void writeMBR(U8 *fileBuffer) {
+void MBRWrite(U8 *fileBuffer) {
     U32 totalImageSizeLBA = configuration.totalImageSizeLBA;
     if (totalImageSizeLBA > U32_MAX) {
         protectiveMBR.partitions[0].sizeLBA = U32_MAX;

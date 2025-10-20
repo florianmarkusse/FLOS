@@ -190,7 +190,7 @@ static FileSystemInformation FSInfo = {
     .reserved1 = {0},
     .trailSignature = 0xAA550000};
 
-U32 calculateEFIPartitionSize(U32 EFIApplicationSizeLBA) {
+U32 EFISystemPartitionSize(U32 EFIApplicationSizeLBA) {
     // No need for conversions here because values are set to equal each other
     // 1 cluster == 1 sector == 1 LBA
     parameterBlock.bytesPerSector = configuration.LBASizeBytes;
@@ -370,7 +370,7 @@ static Cluster createPath(String FAT32FilePath, Cluster startCluster) {
                   (U32)((&((bufferVariable).buf[(bufferVariable).len])) -      \
                         (((bufferVariable).buf)))))
 
-bool writeEFISystemPartition(U8 *fileBuffer, int efifd, U32 efiSizeBytes,
+bool EFISystemPartitionWrite(U8 *fileBuffer, int efifd, U32 efiSizeBytes,
                              U32 kernelSizeBytes) {
     parameterBlock.hiddenSectors = configuration.EFISystemPartitionStartLBA;
 

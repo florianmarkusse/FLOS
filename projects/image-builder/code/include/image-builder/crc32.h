@@ -5,6 +5,6 @@
 
 #include "shared/types/numeric.h"
 
-[[nodiscard]] U32 calculateCRC32(void *data, U32 size);
+[[nodiscard]] U32 CRC32(void *data, U32 size);
 
 #endif

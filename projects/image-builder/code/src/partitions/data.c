@@ -11,7 +11,7 @@
 #include "shared/text/string.h"
 #include "shared/types/numeric.h"
 
-bool writeDataPartition(U8 *fileBuffer, int kernelfd, U32 kernelSizeBytes) {
+bool dataPartitionWrite(U8 *fileBuffer, int kernelfd, U32 kernelSizeBytes) {
     fileBuffer +=
         configuration.dataPartitionStartLBA * configuration.LBASizeBytes;
 

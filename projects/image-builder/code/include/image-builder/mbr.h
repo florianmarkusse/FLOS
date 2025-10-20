@@ -2,5 +2,5 @@
 #define IMAGE_BUILDER_MBR_H
 
 #include "shared/types/numeric.h"
-void writeMBR(U8 *fileBuffer);
+void MBRWrite(U8 *fileBuffer);
 #endif

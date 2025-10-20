@@ -3,8 +3,8 @@
 
 #include "shared/types/numeric.h"
 
-[[nodiscard]] U32 calculateEFIPartitionSize(U32 EFIApplicationSizeLBA);
-[[nodiscard]] bool writeEFISystemPartition(U8 *fileBuffer, int efifd,
+[[nodiscard]] U32 EFISystemPartitionSize(U32 EFIApplicationSizeLBA);
+[[nodiscard]] bool EFISystemPartitionWrite(U8 *fileBuffer, int efifd,
                                            U32 efiSizeBytes,
                                            U32 kernelSizeBytes);
 
