@@ -19,17 +19,17 @@ void unitTestStart(String testName, JumpBuffer failureHandler);
 void testSuccess();
 
 void testFailure();
-void toCleanupHandler();
-void appendTestFailureStart();
-void appendTestFailureFinish();
+void cleanupHandler();
+void testFailureStartAppend();
+void testFailureFinishAppend();
 
 #define TEST_FAILURE                                                           \
-    for (auto MACRO_VAR(i) = (testFailure(), appendTestFailureStart(), 0);     \
+    for (auto MACRO_VAR(i) = (testFailure(), testFailureStartAppend(), 0);     \
          MACRO_VAR(i) < 1;                                                     \
-         MACRO_VAR(i) = (appendTestFailureFinish(),                            \
-                         appendToFlushBufferWithWriter(                        \
-                             STRING("\n\n"), NEWLINE, getWriteBuffer(STDOUT)), \
-                         toCleanupHandler(), 1))
+         MACRO_VAR(i) = (testFailureFinishAppend(),                            \
+                         flushBufferWithWriterAppend(                        \
+                             STRING("\n\n"), NEWLINE, writeBufferGet(STDOUT)), \
+                         cleanupHandler(), 1))
 
 #define TEST(testString, failureHandler)                                       \
     for (auto MACRO_VAR(i) = (unitTestStart(testString, failureHandler), 0);   \

@@ -26,16 +26,16 @@ typedef struct {
     int fileDescriptor;
 } WriteBuffer;
 
-void appendToFlushBufferWithWriter(String data, U8 flags,
+void flushBufferWithWriterAppend(String data, U8 flags,
                                    WriteBuffer *writeBuffer);
-void appendZeroToFlushBufferWithWriter(U32 bytes, U8 flags,
+void zeroToFlushBufferWithWriterAppend(U32 bytes, U8 flags,
                                        WriteBuffer *writeBuffer);
-void bufferFlushWithWriter(BufferType bufferType);
+void bufferWithWriterFlush(BufferType bufferType);
 
-void appendColor(AnsiColor color, BufferType bufferType);
-void appendColorReset(BufferType bufferType);
+void colorAppend(AnsiColor color, BufferType bufferType);
+void colorAppendReset(BufferType bufferType);
 
-[[nodiscard]] WriteBuffer *getWriteBuffer(BufferType bufferType);
+[[nodiscard]] WriteBuffer *writeBufferGet(BufferType bufferType);
 
 typedef struct {
     WriteBuffer *writeBuffer;
@@ -46,9 +46,9 @@ typedef struct {
     ({                                                                         \
         PosixLoggingParams MACRO_VAR(posixLoggingParams) =                     \
             (PosixLoggingParams){.flags = 0,                                   \
-                                 .writeBuffer = getWriteBuffer(STDOUT),        \
+                                 .writeBuffer = writeBufferGet(STDOUT),        \
                                  __VA_ARGS__};                                 \
-        appendToFlushBufferWithWriter(                                         \
+        flushBufferWithWriterAppend(                                         \
             STRING_CONVERT(data), MACRO_VAR(posixLoggingParams).flags,      \
             MACRO_VAR(posixLoggingParams).writeBuffer);                        \
     })
@@ -56,9 +56,9 @@ typedef struct {
 #define PLOG(data, ...) PLOG_DATA(data, ##__VA_ARGS__)
 #define PINFO(data, ...) PLOG_DATA(data, ##__VA_ARGS__)
 #define PERROR(data, ...)                                                      \
-    PLOG_DATA(data, .writeBuffer = getWriteBuffer(STDERR), ##__VA_ARGS__)
+    PLOG_DATA(data, .writeBuffer = writeBufferGet(STDERR), ##__VA_ARGS__)
 
-#define PFLUSH_TO(bufferType) bufferFlushWithWriter(bufferType)
+#define PFLUSH_TO(bufferType) bufferWithWriterFlush(bufferType)
 
 #define PFLUSH_AFTER(bufferType)                                               \
     for (U64 MACRO_VAR(i) = 0; MACRO_VAR(i) < 1;                               \

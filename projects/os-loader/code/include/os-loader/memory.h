@@ -14,11 +14,11 @@
 
 static constexpr auto DYNAMIC_MEMORY_CAPACITY = 1 * MiB;
 
-void kernelPhysicalBuddyPrepare(Buddy *kernelBuddyPhysical,
+void kernelPhysicalBuddyInit(Buddy *kernelBuddyPhysical,
                                 U64 physicalAddressMaxExclusive,
                                 GraphicsOutputProtocolMode *mode);
 
-void convertToKernelMemory(MemoryInfo *memoryInfo, Buddy *kernelBuddyPhysical,
+void EFIMemoryToKernelMemory(MemoryInfo *memoryInfo, Buddy *kernelBuddyPhysical,
                            U64 *physicalMemoryTotal);
 
 #endif

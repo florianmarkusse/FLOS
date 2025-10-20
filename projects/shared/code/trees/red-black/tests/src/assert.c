@@ -40,9 +40,9 @@ static void printTreeIndented(RedBlackNode *node, int depth, String prefix,
     }
 
     if (node == badNode) {
-        appendColor(COLOR_RED, STDOUT);
+        colorAppend(COLOR_RED, STDOUT);
         INFO(STRING("    !!!!    !!!!"));
-        appendColorReset(STDOUT);
+        colorAppendReset(STDOUT);
     }
 
     INFO(STRING("\n"));

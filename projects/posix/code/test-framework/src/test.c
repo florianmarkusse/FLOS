@@ -62,17 +62,17 @@ int testSuiteFinish() {
     if (globalFailures > 0) {
         PFLUSH_AFTER(STDOUT) {
             PLOG((STRING("\nTest suite ")));
-            appendColor(COLOR_RED, STDOUT);
+            colorAppend(COLOR_RED, STDOUT);
             PLOG((STRING("failed")));
-            appendColorReset(STDOUT);
+            colorAppendReset(STDOUT);
             PLOG((STRING(".\n")));
         }
     } else {
         PFLUSH_AFTER(STDOUT) {
             PLOG((STRING("\nTest suite ")));
-            appendColor(COLOR_GREEN, STDOUT);
+            colorAppend(COLOR_GREEN, STDOUT);
             PLOG((STRING("successful")));
-            appendColorReset(STDOUT);
+            colorAppendReset(STDOUT);
             PLOG((STRING(".\n")));
         }
     }
@@ -113,9 +113,9 @@ void testSuccess() {
     }
 
     PFLUSH_AFTER(STDOUT) {
-        appendColor(COLOR_GREEN, STDOUT);
+        colorAppend(COLOR_GREEN, STDOUT);
         PLOG(stringWithMinSizeDefault(STRING("Success"), 20));
-        appendColorReset(STDOUT);
+        colorAppendReset(STDOUT);
         PLOG((STRING("\n")));
     }
 }
@@ -125,22 +125,22 @@ void testFailure() {
         testTopics[i].failures++;
     }
 
-    appendColor(COLOR_RED, STDOUT);
+    colorAppend(COLOR_RED, STDOUT);
     PLOG(stringWithMinSizeDefault(STRING("Failure"), 20));
-    appendColorReset(STDOUT);
+    colorAppendReset(STDOUT);
     PLOG((STRING("\n")));
 }
 
-void toCleanupHandler() { longjmp(failureHandler, 1); }
+void cleanupHandler() { longjmp(failureHandler, 1); }
 
-void appendTestFailureStart() {
+void testFailureStartAppend() {
     PLOG((STRING("----------------------------------------------------"
                  "----------------------------\n")));
     PLOG((STRING("|                                    REASON         "
                  "                           |\n")));
 }
 
-void appendTestFailureFinish() {
+void testFailureFinishAppend() {
     PLOG((STRING("|                                                   "
                  "                           |\n")));
     PLOG((STRING("----------------------------------------------------"

@@ -74,7 +74,7 @@ static void kernelLoadWithGUID(Handle handle, U32 bytes, Arena scratch,
     }
 }
 
-String readKernelFromCurrentLoadedImage(U32 bytes, Arena scratch) {
+String kernelFromCurrentLoadedImageRead(U32 bytes, Arena scratch) {
     Status status;
 
     LoadedImageProtocol *lip = nullptr;
@@ -125,7 +125,7 @@ String readKernelFromCurrentLoadedImage(U32 bytes, Arena scratch) {
     return data;
 }
 
-U32 getKernelBytes(Arena scratch) {
+U32 kernelBytesFromPartition(Arena scratch) {
     LoadedImageProtocol *lip = 0;
     Status status = globals.st->boot_services->open_protocol(
         globals.h, &LOADED_IMAGE_PROTOCOL_GUID, (void **)&lip, globals.h,

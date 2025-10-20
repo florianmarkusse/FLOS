@@ -102,7 +102,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     virtualMemoryRootPageInit();
 
     KFLUSH_AFTER { INFO(STRING("Loading kernel...\n")); }
-    U32 kernelBytes = getKernelBytes(globals.uefiMemory);
+    U32 kernelBytes = kernelBytesFromPartition(globals.uefiMemory);
     if (kernelBytes > kernelCodeSizeMax()) {
         EXIT_WITH_MESSAGE {
             ERROR(STRING(
@@ -114,7 +114,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     }
 
     String kernelContent =
-        readKernelFromCurrentLoadedImage(kernelBytes, globals.uefiMemory);
+        kernelFromCurrentLoadedImageRead(kernelBytes, globals.uefiMemory);
 
     if (memoryMap(kernelCodeStart(), (U64)kernelContent.buf, kernelContent.len,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict()) <
@@ -238,7 +238,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     statusStageUpdate(gop->mode, START);
 
     Buddy uefiBuddyPhysical;
-    kernelPhysicalBuddyPrepare(&uefiBuddyPhysical, firstFreeVirtual, gop->mode);
+    kernelPhysicalBuddyInit(&uefiBuddyPhysical, firstFreeVirtual, gop->mode);
 
     statusStageUpdate(gop->mode, PHYSICAL_MEMORY_INITED);
 
@@ -263,7 +263,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     statusStageUpdate(gop->mode, BOOT_SERVICES_EXITED);
 
-    convertToKernelMemory(&memoryInfo, &uefiBuddyPhysical,
+    EFIMemoryToKernelMemory(&memoryInfo, &uefiBuddyPhysical,
                           &kernelParams->memory.physicalMemoryTotal);
     kernelParams->memory.buddyPhysical = uefiBuddyPhysical.data;
 

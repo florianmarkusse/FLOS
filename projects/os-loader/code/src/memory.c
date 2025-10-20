@@ -18,7 +18,7 @@
 #include "shared/memory/management/status.h"
 #include "shared/text/string.h"
 
-void kernelPhysicalBuddyPrepare(Buddy *kernelBuddyPhysical,
+void kernelPhysicalBuddyInit(Buddy *kernelBuddyPhysical,
                                 U64 physicalAddressMaxExclusive,
                                 GraphicsOutputProtocolMode *mode) {
     U32 slotsRequired =
@@ -43,7 +43,7 @@ void kernelPhysicalBuddyPrepare(Buddy *kernelBuddyPhysical,
     }
 }
 
-void convertToKernelMemory(MemoryInfo *memoryInfo, Buddy *kernelBuddyPhysical,
+void EFIMemoryToKernelMemory(MemoryInfo *memoryInfo, Buddy *kernelBuddyPhysical,
                            U64 *physicalMemoryTotal) {
     U64 physicalMemoryBytes = 0;
     FOR_EACH_DESCRIPTOR(memoryInfo, desc) {

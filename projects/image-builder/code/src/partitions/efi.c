@@ -349,7 +349,7 @@ static void createFileEntryAfterWritingData(U8 name[FAT32_SHORT_NAME_LEN],
     createContiguousSpaceForNewEntry(size);
 }
 
-static Cluster createPath(String FAT32FilePath, Cluster startCluster) {
+static Cluster pathCreate(String FAT32FilePath, Cluster startCluster) {
     StringIter parentDirectories;
 
     TOKENIZE_STRING(FAT32FilePath, parentDirectories, PATH_DELIMITER, 0) {
@@ -400,9 +400,9 @@ bool EFISystemPartitionWrite(U8 *fileBuffer, int efifd, U32 efiSizeBytes,
         ((U8 *)PRIMARY_FAT) + (FAT_SIZE_BYTES * parameterBlock.FATs);
 
     Cluster efiCluster =
-        createPath(STRING("EFI        "), ROOT_CLUSTER_FAT_INDEX);
-    Cluster efiBootCluster = createPath(STRING("BOOT       "), efiCluster);
-    Cluster efiFLOSCluster = createPath(STRING("FLOS       "), efiCluster);
+        pathCreate(STRING("EFI        "), ROOT_CLUSTER_FAT_INDEX);
+    Cluster efiBootCluster = pathCreate(STRING("BOOT       "), efiCluster);
+    Cluster efiFLOSCluster = pathCreate(STRING("FLOS       "), efiCluster);
 
     U8_a buffer;
 

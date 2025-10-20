@@ -25,7 +25,7 @@ static WriteBuffer stderrBuffer =
                             .len = 0},
                   .fileDescriptor = STDERR_FILENO};
 
-WriteBuffer *getWriteBuffer(BufferType bufferType) {
+WriteBuffer *writeBufferGet(BufferType bufferType) {
     if (bufferType == STDOUT) {
         return &stdoutBuffer;
     }
@@ -50,13 +50,13 @@ void bufferFlush(U8_a *buffer, void *flushContext) {
     }
 }
 
-void bufferFlushWithWriter(BufferType bufferType) {
-    WriteBuffer *writeBuffer = getWriteBuffer(bufferType);
+void bufferWithWriterFlush(BufferType bufferType) {
+    WriteBuffer *writeBuffer = writeBufferGet(bufferType);
     bufferFlush((U8_a *)(&writeBuffer->array), &writeBuffer->fileDescriptor);
     writeBuffer->array.len = 0;
 }
 
-void standardBufferFlush() { bufferFlushWithWriter(STDOUT); }
+void standardBufferFlush() { bufferWithWriterFlush(STDOUT); }
 
 U8_max_a *flushBufferGet() { return &stdoutBuffer.array; }
 FlushFunction flushFunctionGet() { return bufferFlush; }
@@ -69,13 +69,13 @@ static void appendDataToFlushBufferWithWriter(void *data, U32 len, U8 flags,
                             &writeBuffer->fileDescriptor);
 }
 
-void appendZeroToFlushBufferWithWriter(U32 bytes, U8 flags,
+void zeroToFlushBufferWithWriterAppend(U32 bytes, U8 flags,
                                        WriteBuffer *writeBuffer) {
     appendDataToFlushBufferWithWriter(nullptr, bytes, flags, writeBuffer,
                                       appendMemset);
 }
 
-void appendToFlushBufferWithWriter(String data, U8 flags,
+void flushBufferWithWriterAppend(String data, U8 flags,
                                    WriteBuffer *writeBuffer) {
     appendDataToFlushBufferWithWriter(data.buf, data.len, flags, writeBuffer,
                                       appendMemcpy);
@@ -87,16 +87,16 @@ static String ansiColorToCode[COLOR_NUMS] = {
     STRING("\x1b[0m"),
 };
 
-void appendColor(AnsiColor color, BufferType bufferType) {
-    WriteBuffer *buffer = getWriteBuffer(bufferType);
-    appendToFlushBufferWithWriter(
+void colorAppend(AnsiColor color, BufferType bufferType) {
+    WriteBuffer *buffer = writeBufferGet(bufferType);
+    flushBufferWithWriterAppend(
         isatty(buffer->fileDescriptor) ? ansiColorToCode[color] : EMPTY_STRING,
         0, buffer);
 }
 
-void appendColorReset(BufferType bufferType) {
-    WriteBuffer *buffer = getWriteBuffer(bufferType);
-    appendToFlushBufferWithWriter(isatty(buffer->fileDescriptor)
+void colorAppendReset(BufferType bufferType) {
+    WriteBuffer *buffer = writeBufferGet(bufferType);
+    flushBufferWithWriterAppend(isatty(buffer->fileDescriptor)
                                       ? ansiColorToCode[COLOR_RESET]
                                       : EMPTY_STRING,
                                   0, buffer);
