@@ -1,10 +1,10 @@
 #include "shared/hash/msi/string-set.h"
 #include "shared/hash/hashes.h"     // for hashStringDjb2
-#include "shared/hash/msi/common.h" // for indexLookup
+#include "shared/hash/msi/common.h" // for MSIIndex
 
 bool msi_insertString(String string, U64 hash, msi_string *index) {
     for (U32 i = (U32)hash;;) {
-        i = indexLookup(hash, index->exp, i);
+        i = MSIIndex(hash, index->exp, i);
         if (index->buf[i].len == 0) {
             index->len++;
             index->buf[i] = string;
@@ -17,7 +17,7 @@ bool msi_insertString(String string, U64 hash, msi_string *index) {
 
 bool msi_containsString(String string, U64 hash, msi_string *index) {
     for (U32 i = (U32)hash;;) {
-        i = indexLookup(hash, index->exp, i);
+        i = MSIIndex(hash, index->exp, i);
         if (index->buf[i].len == 0) {
             return false;
         } else if (stringEquals(index->buf[i], string)) {

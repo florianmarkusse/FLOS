@@ -50,23 +50,19 @@
 
 typedef MSI_SET(U8) SetSlice;
 
-#define NEW_MSI_SET(T, exponent, perm)                                         \
+#define MSI_SET_NEW(T, exponent, perm)                                         \
     ({                                                                         \
         T MACRO_VAR(newSet) = (T){.exp = (exponent)};                          \
-        msi_newSet(&MACRO_VAR(newSet), sizeof(*MACRO_VAR(newSet).buf),         \
-                   alignof(*MACRO_VAR(newSet).buf), perm);                     \
+        MSISetNew(&MACRO_VAR(newSet), sizeof(*MACRO_VAR(newSet).buf),          \
+                  alignof(*MACRO_VAR(newSet).buf), perm);                      \
         MACRO_VAR(newSet);                                                     \
     })
 
 // If this ever changes types because it's too small, make sure to test out that
 // it works.
 // This return typa used to be an I32, but U32 "should" be okay
-[[nodiscard]] static inline U32 indexLookup(U64 hash, U16 exp, U32 idx) {
-    U32 mask = ((U32)1 << exp) - 1;
-    U32 step = (U32)(hash >> (64 - exp)) | 1;
-    return (idx + step) & mask;
-}
+[[nodiscard]] U32 MSIIndex(U64 hash, U16 exp, U32 idx);
 
-void msi_newSet(void *setSlice, U64 size, U64 align, Arena *a);
+void MSISetNew(void *setSlice, U64 size, U64 align, Arena *a);
 
 #endif
