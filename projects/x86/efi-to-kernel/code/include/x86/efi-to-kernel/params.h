@@ -7,19 +7,9 @@
 // NOTE: Used for crossing ABI boundaries.
 
 typedef struct {
-    U16 entriesMapped;
-    U16 entriesMappedWithSmallerGranularity;
-} PackedPageMetaData;
-
-typedef struct {
-    struct PackedPageMetaDataNode *children;
-    PackedPageMetaData metaData;
-} PackedPageMetaDataNode;
-
-typedef struct {
     U64 tscFrequencyPerMicroSecond;
     U8 *XSAVELocation;
-    PackedPageMetaDataNode rootPageMetaData;
+    PageMetaDataNode rootPageMetaData;
 } X86ArchParams;
 
 #endif
