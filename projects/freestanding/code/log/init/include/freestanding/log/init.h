@@ -4,7 +4,7 @@
 #include "shared/memory/allocator/arena.h"
 #include "shared/types/array-types.h"
 
-extern U8_max_a flushBuf;
+extern U8_max_a loggingFlushBuffer;
 
 void initLogger(Arena *perm);
 

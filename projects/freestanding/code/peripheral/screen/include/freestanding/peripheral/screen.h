@@ -6,10 +6,10 @@
 #include "shared/types/array-types.h"
 #include "shared/types/numeric.h" // for U32, U8, U64, I64, I8, U16
 
-void initScreen(Window *window, Arena *perm);
+void screenInit(Window *window, Arena *perm);
 // TODO: needs buffer as argument when memory is set up
 void rewind(U16 numberOfScreenLines);
 void prowind(U16 numberOfScreenLines);
-void flushToScreen(U8_a buffer);
+void bufferToScreenFlush(U8_a buffer);
 
 #endif

@@ -16,7 +16,7 @@
 void bufferFlush(U8_a *buffer, void *flushContext) {
     (void)flushContext;
 
-    flushToScreen(*buffer);
+    bufferToScreenFlush(*buffer);
 
 #ifdef SERIAL
     serialFlush(*buffer);
@@ -27,8 +27,10 @@ void bufferFlush(U8_a *buffer, void *flushContext) {
     buffer->len = 0;
 }
 
-void standardBufferFlush() { bufferFlush((U8_a *)&flushBuf, nullptr); }
+void standardBufferFlush() {
+    bufferFlush((U8_a *)&loggingFlushBuffer, nullptr);
+}
 
-U8_max_a *flushBufferGet() { return &flushBuf; }
+U8_max_a *flushBufferGet() { return &loggingFlushBuffer; }
 FlushFunction flushFunctionGet() { return bufferFlush; }
 void *flushContextGet() { return nullptr; }

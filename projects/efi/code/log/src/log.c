@@ -10,7 +10,7 @@
 #include "shared/types/numeric.h"
 
 static constexpr auto FLUSH_BUFFER_SIZE = (2 * KiB);
-U8_max_a flushBuf = (U8_max_a){
+U8_max_a loggingFlushBuffer = (U8_max_a){
     .buf = (U8[FLUSH_BUFFER_SIZE]){0}, .len = 0, .cap = FLUSH_BUFFER_SIZE};
 
 static U16 convertedChar[2] = {0, '\0'};
@@ -30,8 +30,10 @@ void bufferFlush(U8_a *buffer, void *flushContext) {
     buffer->len = 0;
 }
 
-void standardBufferFlush() { bufferFlush((U8_a *)&flushBuf, nullptr); }
+void standardBufferFlush() {
+    bufferFlush((U8_a *)&loggingFlushBuffer, nullptr);
+}
 
-U8_max_a *flushBufferGet() { return &flushBuf; }
+U8_max_a *flushBufferGet() { return &loggingFlushBuffer; }
 FlushFunction flushFunctionGet() { return bufferFlush; }
 void *flushContextGet() { return nullptr; }

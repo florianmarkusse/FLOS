@@ -494,7 +494,7 @@ static void toTail() {
     switchToScreenDisplay();
 }
 
-void flushToScreen(U8_a buffer) {
+void bufferToScreenFlush(U8_a buffer) {
     U32 startIndex = 0;
     if (buffer.len > FILE_BUF_LEN) {
         startIndex = buffer.len - FILE_BUF_LEN;
@@ -533,7 +533,7 @@ void flushToScreen(U8_a buffer) {
     }
 }
 
-void initScreen(Window *window, Arena *perm) {
+void screenInit(Window *window, Arena *perm) {
     buf = NEW(perm, U8, .count = FILE_BUF_LEN);
     // Need correct alignment
     U32 *doubleBuffer = NEW(
