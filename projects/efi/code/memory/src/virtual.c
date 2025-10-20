@@ -18,7 +18,7 @@
 #include "shared/types/numeric.h"
 
 void *memoryZeroedForVirtualGet(VirtualAllocationType type) {
-    void *result = findAlignedMemoryBlock(
+    void *result = alignedMemoryBlockAlloc(
         virtualStructBytes[type], UEFI_PAGE_SIZE, globals.uefiMemory, false);
     memset(result, 0, virtualStructBytes[type]);
     return result;
@@ -30,7 +30,7 @@ void memoryZeroedForVirtualFree(U64 address, VirtualAllocationType type) {
     EXIT_WITH_MESSAGE { ERROR(STRING("Not required for EFI implementation!")); }
 }
 
-U64 alignVirtual(U64 virtualAddress, U64 physicalAddress, U64 bytes) {
+U64 virtualAlign(U64 virtualAddress, U64 physicalAddress, U64 bytes) {
     U64_pow2 alignment = pageSizeEncompassing(bytes);
 
     U64 result = alignUp(virtualAddress, alignment);
@@ -43,7 +43,7 @@ U64 alignVirtual(U64 virtualAddress, U64 physicalAddress, U64 bytes) {
     return result;
 }
 
-U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
+U64 memoryMap(U64 virt, U64 physical, U64 bytes, U64 flags) {
     U64_pow2 mappingSize;
     for (typeof(bytes) bytesMapped = 0; bytesMapped < bytes;
          virt += mappingSize, physical += mappingSize,
@@ -57,13 +57,13 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
 StackResult stackCreateAndMap(U64 virtualMemoryFirstAvailable, U64 stackSize,
                               bool attemptLargestMapping) {
     U64 stackAddress =
-        (U64)findAlignedMemoryBlock(stackSize, KERNEL_STACK_ALIGNMENT,
+        (U64)alignedMemoryBlockAlloc(stackSize, KERNEL_STACK_ALIGNMENT,
                                     globals.uefiMemory, attemptLargestMapping);
 
     // NOTE: Overflow precaution
     virtualMemoryFirstAvailable += stackSize;
     virtualMemoryFirstAvailable =
-        alignVirtual(virtualMemoryFirstAvailable, stackAddress, stackSize);
+        virtualAlign(virtualMemoryFirstAvailable, stackAddress, stackSize);
     U64 stackGuardPageAddress = virtualMemoryFirstAvailable - stackSize;
     addPageMapping((Memory){.start = stackGuardPageAddress, .bytes = stackSize},
                    GUARD_PAGE_SIZE);
@@ -74,7 +74,7 @@ StackResult stackCreateAndMap(U64 virtualMemoryFirstAvailable, U64 stackSize,
 
     U64 stackVirtualStart = virtualMemoryFirstAvailable;
     virtualMemoryFirstAvailable =
-        mapMemory(virtualMemoryFirstAvailable, stackAddress, stackSize,
+        memoryMap(virtualMemoryFirstAvailable, stackAddress, stackSize,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict());
 
     KFLUSH_AFTER {

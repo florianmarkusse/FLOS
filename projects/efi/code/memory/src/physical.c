@@ -55,7 +55,7 @@ static MemoryInfo prepareMemoryInfo() {
 }
 
 __attribute__((malloc, aligned(UEFI_PAGE_SIZE))) static void *
-allocatePagesAll(AllocateType allocateType, U64 bytes, U64 *address) {
+pagesAllocAll(AllocateType allocateType, U64 bytes, U64 *address) {
     Status status = globals.st->boot_services->allocate_pages(
         allocateType, LOADER_DATA, ceilingDivide(bytes, UEFI_PAGE_SIZE),
         address);
@@ -74,9 +74,9 @@ allocatePagesAll(AllocateType allocateType, U64 bytes, U64 *address) {
     return (void *)*address;
 }
 
-void *allocatePages(U64 bytes) {
+void *pagesAlloc(U64 bytes) {
     U64 address = 0;
-    return allocatePagesAll(ALLOCATE_ANY_PAGES, bytes, &address);
+    return pagesAllocAll(ALLOCATE_ANY_PAGES, bytes, &address);
 }
 
 static void fillMemoryInfo(MemoryInfo *memoryInfo) {
@@ -88,7 +88,7 @@ static void fillMemoryInfo(MemoryInfo *memoryInfo) {
     }
 }
 
-MemoryInfo getMemoryInfo(Arena *perm) {
+MemoryInfo memoryInfoGet(Arena *perm) {
     MemoryInfo memoryInfo = prepareMemoryInfo();
     memoryInfo.memoryMap = (MemoryDescriptor *)NEW(
         perm, U8, .count = memoryInfo.memoryMapSize, .align = UEFI_PAGE_SIZE);
@@ -96,8 +96,8 @@ MemoryInfo getMemoryInfo(Arena *perm) {
     return memoryInfo;
 }
 
-U64 findHighestMemoryAddress(U64 currentHighestAddress, Arena scratch) {
-    MemoryInfo memoryInfo = getMemoryInfo(&scratch);
+U64 highestMemoryAddressFind(U64 currentHighestAddress, Arena scratch) {
+    MemoryInfo memoryInfo = memoryInfoGet(&scratch);
 
     FOR_EACH_DESCRIPTOR(&memoryInfo, desc) {
         if (needsToBeMappedByKernel(desc->type)) {
@@ -153,9 +153,9 @@ static void addAddressToKernelStructure(U64 address, U64 bytes) {
     kernelStructureLocations.len++;
 }
 
-void *findAlignedMemoryBlock(U64_pow2 bytes, U64_pow2 alignment, Arena scratch,
+void *alignedMemoryBlockAlloc(U64_pow2 bytes, U64_pow2 alignment, Arena scratch,
                              bool attemptLargestMapping) {
-    MemoryInfo memoryInfo = getMemoryInfo(&scratch);
+    MemoryInfo memoryInfo = memoryInfoGet(&scratch);
 
     U64_pow2 pageSize = pageSizeEncompassing(alignment);
     if (attemptLargestMapping) {
@@ -207,7 +207,7 @@ void *findAlignedMemoryBlock(U64_pow2 bytes, U64_pow2 alignment, Arena scratch,
     }
 
     if (bestDescriptor.address != MAX_VALUE(bestDescriptor.address)) {
-        allocatePagesAll(ALLOCATE_ADDRESS, bestDescriptor.padding + bytes,
+        pagesAllocAll(ALLOCATE_ADDRESS, bestDescriptor.padding + bytes,
                          &bestDescriptor.address);
 
         if (bestDescriptor.padding) {

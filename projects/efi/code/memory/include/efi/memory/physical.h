@@ -26,18 +26,18 @@ typedef struct {
     U32 descriptorVersion;
 } MemoryInfo;
 
-[[nodiscard]] MemoryInfo getMemoryInfo(Arena *perm);
+[[nodiscard]] MemoryInfo memoryInfoGet(Arena *perm);
 
 [[nodiscard]] bool memoryTypeCanBeUsedByKernel(MemoryType type);
 
 [[nodiscard]] __attribute__((malloc, alloc_align(2))) void *
-findAlignedMemoryBlock(U64_pow2 bytes, U64_pow2 alignment, Arena scratch,
+alignedMemoryBlockAlloc(U64_pow2 bytes, U64_pow2 alignment, Arena scratch,
                        bool attemptLargestMapping);
 
 [[nodiscard]] __attribute__((malloc, aligned(UEFI_PAGE_SIZE))) void *
-allocatePages(U64 bytes);
+pagesAlloc(U64 bytes);
 
-[[nodiscard]] U64 findHighestMemoryAddress(U64 currentHighestAddress,
+[[nodiscard]] U64 highestMemoryAddressFind(U64 currentHighestAddress,
                                            Arena scratch);
 
 #define FOR_EACH_DESCRIPTOR(memoryInfoAddress, descriptorName)                 \

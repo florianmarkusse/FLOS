@@ -6,7 +6,7 @@
 #include "abstraction/thread.h"
 #include "efi-to-kernel/kernel-parameters.h"  // for KernelParameters
 #include "efi-to-kernel/memory/definitions.h" // for STACK_SIZE
-#include "efi/acpi/rdsp.h"                    // for getRSDP, RSDP...
+#include "efi/acpi/rdsp.h"                    // for RSDPGet, RSDP...
 #include "efi/error.h"
 #include "efi/firmware/base.h" // for PhysicalAddress
 #include "efi/firmware/block-io.h"
@@ -18,7 +18,7 @@
 #include "efi/memory/physical.h"
 #include "efi/memory/virtual.h"
 #include "os-loader/data-reading.h" // for getKernelInfo
-#include "os-loader/memory.h"       // for mapMemoryAt
+#include "os-loader/memory.h"       // for memoryMapAt
 #include "shared/log.h"
 #include "shared/maths.h" // for CEILING_DIV_V...
 #include "shared/memory/allocator/status/buddy.h"
@@ -45,7 +45,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     globals.st->con_out->set_attribute(globals.st->con_out,
                                        BACKGROUND_BLACK | WHITE);
 
-    void *memoryForArena = allocatePages(DYNAMIC_MEMORY_CAPACITY);
+    void *memoryForArena = pagesAlloc(DYNAMIC_MEMORY_CAPACITY);
 
     globals.uefiMemory =
         (Arena){.curFree = memoryForArena,
@@ -57,7 +57,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         }
     }
 
-    U8 *memoryKernelPermanent = findAlignedMemoryBlock(
+    U8 *memoryKernelPermanent = alignedMemoryBlockAlloc(
         KERNEL_PERMANENT_MEMORY, KERNEL_PERMANENT_MEMORY_ALIGNMENT,
         globals.uefiMemory, false);
     globals.kernelPermanent =
@@ -70,7 +70,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         }
     }
 
-    U8 *memoryKernelTemporary = findAlignedMemoryBlock(
+    U8 *memoryKernelTemporary = alignedMemoryBlockAlloc(
         KERNEL_TEMPORARY_MEMORY, UEFI_PAGE_SIZE, globals.uefiMemory, false);
     globals.kernelTemporary =
         (Arena){.curFree = memoryKernelTemporary,
@@ -116,7 +116,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     String kernelContent =
         readKernelFromCurrentLoadedImage(kernelBytes, globals.uefiMemory);
 
-    if (mapMemory(kernelCodeStart(), (U64)kernelContent.buf, kernelContent.len,
+    if (memoryMap(kernelCodeStart(), (U64)kernelContent.buf, kernelContent.len,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict()) <
         kernelCodeStart()) {
         EXIT_WITH_MESSAGE {
@@ -141,7 +141,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         ERROR(STRING("Could not locate locate GOP\n"));
     }
 
-    U64 highestLowerHalfAddress = findHighestMemoryAddress(
+    U64 highestLowerHalfAddress = highestMemoryAddressFind(
         gop->mode->frameBufferBase + gop->mode->frameBufferSize,
         globals.uefiMemory);
     KFLUSH_AFTER {
@@ -149,7 +149,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
         INFO((void *)highestLowerHalfAddress, .flags = NEWLINE);
     }
     U64 firstFreeVirtual =
-        mapMemory(0, 0, highestLowerHalfAddress,
+        memoryMap(0, 0, highestLowerHalfAddress,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict());
 
     kernelMemoryManagementInit(firstFreeVirtual, kernelVirtualMemoryEnd());
@@ -168,11 +168,11 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     KFLUSH_AFTER { INFO(STRING("Mapping output window...\n")); }
     virtualForKernel =
-        alignVirtual(virtualForKernel, gop->mode->frameBufferBase,
+        virtualAlign(virtualForKernel, gop->mode->frameBufferBase,
                      gop->mode->frameBufferSize);
     U64 screenMemoryVirtualStart = virtualForKernel;
     virtualForKernel =
-        mapMemory(virtualForKernel, gop->mode->frameBufferBase,
+        memoryMap(virtualForKernel, gop->mode->frameBufferBase,
                   gop->mode->frameBufferSize,
                   pageFlagsReadWrite() | pageFlagsNoCacheEvict() |
                       pageFlagsScreenMemory());
@@ -211,7 +211,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     KFLUSH_AFTER { INFO(STRING("Filling specific arch params...\n")); }
     archParamsFill(kernelParams->archParams, virtualForKernel);
 
-    RSDPResult rsdp = getRSDP(globals.st->number_of_table_entries,
+    RSDPResult rsdp = RSDPGet(globals.st->number_of_table_entries,
                               globals.st->configuration_table);
     if (!rsdp.rsdp) {
         EXIT_WITH_MESSAGE { ERROR(STRING("Could not find an RSDP!\n")); }
@@ -235,12 +235,12 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                     "to the kernel. Setting up a square in the top-left corner "
                     "that indicates the status.\nGreen: Good\nRed: Bad\n"));
     }
-    stageStatusUpdate(gop->mode, START);
+    statusStageUpdate(gop->mode, START);
 
     Buddy uefiBuddyPhysical;
     kernelPhysicalBuddyPrepare(&uefiBuddyPhysical, firstFreeVirtual, gop->mode);
 
-    stageStatusUpdate(gop->mode, PHYSICAL_MEMORY_INITED);
+    statusStageUpdate(gop->mode, PHYSICAL_MEMORY_INITED);
 
     kernelParams->permanentLeftoverFree =
         (Memory){.start = (U64)globals.kernelPermanent.curFree,
@@ -252,7 +252,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
     /* NOTE: Keep this call in between the stub and the creation of available */
     /* memory! The stub allocates memory and logs on failure which is not */
     /* permissible after we have exited boot services */
-    MemoryInfo memoryInfo = getMemoryInfo(&globals.uefiMemory);
+    MemoryInfo memoryInfo = memoryInfoGet(&globals.uefiMemory);
     status = globals.st->boot_services->exit_boot_services(globals.h,
                                                            memoryInfo.mapKey);
     EXIT_WITH_MESSAGE_IF_EFI_ERROR(status) {
@@ -261,13 +261,13 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
                      "call exit boot services twice?\n"));
     }
 
-    stageStatusUpdate(gop->mode, BOOT_SERVICES_EXITED);
+    statusStageUpdate(gop->mode, BOOT_SERVICES_EXITED);
 
     convertToKernelMemory(&memoryInfo, &uefiBuddyPhysical,
                           &kernelParams->memory.physicalMemoryTotal);
     kernelParams->memory.buddyPhysical = uefiBuddyPhysical.data;
 
-    stageStatusUpdate(gop->mode, PHYSICAL_MEMORY_COLLECTED);
+    statusStageUpdate(gop->mode, PHYSICAL_MEMORY_COLLECTED);
 
     kernelJump(stackResult.stackVirtualTop, 0, kernelParams);
 

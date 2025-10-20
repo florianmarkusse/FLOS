@@ -34,18 +34,18 @@ static RSDPStruct possibleRsdps[] = {
 };
 static constexpr auto POSSIBLE_RSDPS_LEN = COUNTOF(possibleRsdps);
 
-RSDPResult getRSDP(USize tableEntries, ConfigurationTable *tables) {
+RSDPResult RSDPGet(USize tableEntries, ConfigurationTable *tables) {
     RSDPResult rsdp = {.rsdp = nullptr};
     for (typeof(tableEntries) i = 0; i < tableEntries; i++) {
         ConfigurationTable *cur_table = &tables[i];
 
         for (typeof_unqual(POSSIBLE_RSDPS_LEN) i = 0; i < POSSIBLE_RSDPS_LEN;
              i++) {
-            if (memcmp(&cur_table->vendor_guid, &possibleRsdps[i].guid,
+            if (memcmp(&cur_table->vendorGUID, &possibleRsdps[i].guid,
                        sizeof(UUID)) != 0) {
                 continue;
             }
-            if (!ACPIChecksum(cur_table->vendor_table, possibleRsdps[i].size)) {
+            if (!ACPIChecksum(cur_table->vendorTable, possibleRsdps[i].size)) {
                 continue;
             }
 
@@ -53,7 +53,7 @@ RSDPResult getRSDP(USize tableEntries, ConfigurationTable *tables) {
             // returning the older version. We need to add a check for that
             // since the table entries are not in the same order for all EFI
             // systems.
-            rsdp.rsdp = (void *)cur_table->vendor_table;
+            rsdp.rsdp = (void *)cur_table->vendorTable;
             rsdp.revision = possibleRsdps[i].revision;
             if (rsdp.revision == RSDP_REVISION_2) {
                 return rsdp;

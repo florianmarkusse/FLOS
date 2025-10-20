@@ -5,7 +5,7 @@
 #include "efi/firmware/graphics-output.h"
 #include "shared/macros.h"
 
-void waitKeyThenReset();
+void keyWaitThenReset();
 
 typedef enum {
     START = 0,
@@ -14,15 +14,15 @@ typedef enum {
     PHYSICAL_MEMORY_COLLECTED,
 } StageNoConsoleOut;
 
-void drawStatusRectangle(GraphicsOutputProtocolMode *mode, U32 color);
-void stageStatusUpdate(GraphicsOutputProtocolMode *mode,
+void statusRectangleDraw(GraphicsOutputProtocolMode *mode, U32 color);
+void statusStageUpdate(GraphicsOutputProtocolMode *mode,
                        StageNoConsoleOut stage);
 
 static constexpr auto RED_COLOR = 0xFF0000;
 
 #define EXIT_WITH_MESSAGE                                                      \
     for (auto MACRO_VAR(i) = 0; MACRO_VAR(i) < 1;                              \
-         MACRO_VAR(i) = 1, standardBufferFlush(), waitKeyThenReset())
+         MACRO_VAR(i) = 1, standardBufferFlush(), keyWaitThenReset())
 
 #define EXIT_WITH_MESSAGE_IF_EFI_ERROR(status)                                 \
     if (EFI_ERROR(status))                                                     \

@@ -3,8 +3,8 @@
 
 #include "shared/uuid.h"
 typedef struct {
-    UUID vendor_guid;
-    void *vendor_table;
+    UUID vendorGUID;
+    void *vendorTable;
 } ConfigurationTable;
 
 #endif

@@ -6,9 +6,9 @@
 
 typedef struct __attribute__((packed)) {
     CAcpiSDT header;
-    U32 local_controller_addr;
+    U32 localControllerAddress;
     U32 flags;
-    I8 madt_entries_begin[];
+    I8 madtEntriesStart[];
 } CAcpiMADT;
 
 typedef struct __attribute__((packed)) {
@@ -18,23 +18,23 @@ typedef struct __attribute__((packed)) {
 
 typedef struct __attribute__((packed)) {
     CAcpiMADTHeader header;
-    U8 acpi_processor_uid;
-    U8 lapic_id;
+    U8 ACPIProcessorUID;
+    U8 LAPICID;
     U32 flags;
 } CAcpiMADTLAPIC;
 
 typedef struct __attribute__((packed)) {
     CAcpiMADTHeader header;
     U8 reserved[2];
-    U32 x2apic_id;
+    U32 X2APICID;
     U32 flags;
-    U32 acpi_processor_uid;
+    U32 ACPIProcessorUID;
 } CAcpiMADTX2APIC;
 
 typedef struct __attribute__((packed)) {
     U8 type;
     U8 length;
-    U8 apic_id;
+    U8 APICID;
     U8 reserved;
     U32 address;
     U32 gsib;

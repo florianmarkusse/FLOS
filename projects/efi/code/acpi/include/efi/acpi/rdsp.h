@@ -35,7 +35,7 @@ typedef struct {
     RSDPRevision revision;
 } RSDPResult;
 
-[[nodiscard]] RSDPResult getRSDP(USize tableEntries,
+[[nodiscard]] RSDPResult RSDPGet(USize tableEntries,
                                  ConfigurationTable *tables);
 
 #endif
