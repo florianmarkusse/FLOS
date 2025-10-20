@@ -66,13 +66,13 @@ static Timing runMappingTest(U64 arrayEntries, bool is2MiBPage,
     }
 
     U64 startNanos = currentTimeNanos();
-    U64 startCycleCount = currentCycleCounter(true, false);
+    U64 startCycleCount = cycleCounterGet(true, false);
 
     for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
         buffer[i] = i;
     }
 
-    U64 endCycleCount = currentCycleCounter(false, true);
+    U64 endCycleCount = cycleCounterGet(false, true);
     U64 endNanos = currentTimeNanos();
 
     for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
@@ -216,13 +216,13 @@ static void fullReallocWritingTest() {
         U64_max_a array = createDynamicArray();
 
         U64 startNanos = currentTimeNanos();
-        U64 startCycleCount = currentCycleCounter(true, false);
+        U64 startCycleCount = cycleCounterGet(true, false);
 
         for (typeof_unqual(MAX_TEST_ENTRIES) i = 0; i < MAX_TEST_ENTRIES; i++) {
             U64_MAX_A_APPEND(array, i);
         }
 
-        U64 endCycleCount = currentCycleCounter(false, true);
+        U64 endCycleCount = cycleCounterGet(false, true);
         U64 endNanos = currentTimeNanos();
 
         for (typeof_unqual(MAX_TEST_ENTRIES) i = 0; i < MAX_TEST_ENTRIES; i++) {
@@ -261,13 +261,13 @@ static void partialReallocWritingTest() {
         U64 arrayEntries = ringBufferIndex(biskiNext(&state), MAX_TEST_ENTRIES);
 
         U64 startNanos = currentTimeNanos();
-        U64 startCycleCount = currentCycleCounter(true, false);
+        U64 startCycleCount = cycleCounterGet(true, false);
 
         for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
             U64_MAX_A_APPEND(array, i);
         }
 
-        U64 endCycleCount = currentCycleCounter(false, true);
+        U64 endCycleCount = cycleCounterGet(false, true);
         U64 endNanos = currentTimeNanos();
 
         for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {

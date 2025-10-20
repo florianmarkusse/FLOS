@@ -19,7 +19,7 @@ void bufferFlush(U8_a *buffer, void *flushContext) {
     flushToScreen(*buffer);
 
 #ifdef SERIAL
-    flushToSerial(*buffer);
+    serialFlush(*buffer);
 #endif
 
     // TODO: Flush to file system here?

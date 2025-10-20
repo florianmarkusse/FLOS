@@ -102,7 +102,7 @@ static void kernelPanic(Registers *regs) {
         INFO((void *)regs->r15, .flags = NEWLINE);
     }
 
-    hangThread();
+    threadHang();
 
     __builtin_unreachable();
 }

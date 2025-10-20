@@ -22,10 +22,10 @@ void appendDataToFlushBuffer(void *data, U32 len, U8 flags, U8_max_a *buffer,
                              AppendFunction appender, void *flushContext);
 
 #define KLOG_APPEND(buffer, data)                                              \
-    appendToBuffer(buffer, CONVERT_TO_STRING(data))
+    appendToBuffer(buffer, STRING_CONVERT(data))
 
 #define KLOG_DATA(data, flags)                                                 \
-    appendToFlushBuffer(CONVERT_TO_STRING(data), flags)
+    appendToFlushBuffer(STRING_CONVERT(data), flags)
 
 typedef struct {
     U8 flags;
@@ -35,7 +35,7 @@ typedef struct {
     ({                                                                         \
         StandardLoggingParams MACRO_VAR(standardLoggingParams) =               \
             (StandardLoggingParams){.flags = 0, __VA_ARGS__};                  \
-        appendToFlushBuffer(CONVERT_TO_STRING(data),                           \
+        appendToFlushBuffer(STRING_CONVERT(data),                           \
                             MACRO_VAR(standardLoggingParams).flags);           \
     })
 

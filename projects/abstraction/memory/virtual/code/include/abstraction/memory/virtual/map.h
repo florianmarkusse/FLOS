@@ -12,7 +12,7 @@ typedef struct {
 
 void pageMap_(U64 virt, U64 physical, U64_pow2 mappingSize, U64 flags);
 
-#define mapPage(virt, physical, mappingSize, ...)                              \
+#define pageMap(virt, physical, mappingSize, ...)                              \
     ({                                                                         \
         MappingParams MACRO_VAR(mappingParams) =                               \
             (MappingParams){.flags = pageFlagsReadWrite(), __VA_ARGS__};       \

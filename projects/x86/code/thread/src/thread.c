@@ -1,3 +1,3 @@
 #include "abstraction/thread.h"
 
-void hangThread() { asm volatile("cli; hlt;"); }
+void threadHang() { asm volatile("cli; hlt;"); }

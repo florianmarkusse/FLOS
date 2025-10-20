@@ -57,7 +57,7 @@ PageFaultResult handlePageFault(U64 faultingAddress) {
     U32_pow2 mapsToDo = (U32)divideByPowerOf2(pageSizeForFault, pageSizeToUse);
     for (U32 i = 0; i < mapsToDo; i++) {
         U8 *address = allocPhysicalMemory(pageSizeToUse);
-        mapPage(startingMap + (i * pageSizeToUse), (U64)address, pageSizeToUse);
+        pageMap(startingMap + (i * pageSizeToUse), (U64)address, pageSizeToUse);
     }
 
     return PAGE_FAULT_RESULT_MAPPED;

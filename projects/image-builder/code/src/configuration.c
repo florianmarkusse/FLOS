@@ -14,15 +14,15 @@ Configuration configuration = {.imageName = (U8 *)"FLOS_UEFI_IMAGE.hdd",
                                .alignmentLBA = 1};
 
 static void lbaSizeAppend(U32 lbaSize) {
-    INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(lbaSize), 6));
+    INFO(stringWithMinSizeDefault(STRING_CONVERT(lbaSize), 6));
     INFO(STRING(" LBAs / "));
     INFO(stringWithMinSizeDefault(
-        CONVERT_TO_STRING(lbaSize * configuration.LBASizeBytes), 10));
+        STRING_CONVERT(lbaSize * configuration.LBASizeBytes), 10));
     INFO(STRING(" bytes"), .flags = NEWLINE);
 }
 
 static void partitionAppend(U32 lbaStart, U32 lbaSize) {
-    INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(lbaStart), 6));
+    INFO(stringWithMinSizeDefault(STRING_CONVERT(lbaStart), 6));
     INFO(STRING(" + "));
     lbaSizeAppend(lbaSize);
 }

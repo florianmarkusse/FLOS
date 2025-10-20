@@ -35,11 +35,11 @@ void kernelPhysicalBuddyPrepare(Buddy *kernelBuddyPhysical,
 
     if (setjmp(kernelBuddyPhysical->memoryExhausted)) {
         drawStatusRectangle(mode, RED_COLOR);
-        hangThread();
+        threadHang();
     }
     if (setjmp(kernelBuddyPhysical->backingBufferExhausted)) {
         drawStatusRectangle(mode, RED_COLOR);
-        hangThread();
+        threadHang();
     }
 }
 

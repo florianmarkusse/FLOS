@@ -4,15 +4,15 @@
 #include "shared/macros.h"
 #include "shared/types/numeric.h"
 
-[[nodiscard]] U64 currentCycleCounter(bool previousFinished,
+[[nodiscard]] U64 cycleCounterGet(bool previousFinished,
                                       bool blocksSubsequent);
-void blockingWait(U64 microSeconds);
+void waitBlock(U64 microSeconds);
 
 #define BENCHMARK(cycleCounter)                                                \
     for (U64 MACRO_VAR(i) = 0,                                                 \
-             MACRO_VAR(startCycles) = currentCycleCounter(false, false);       \
+             MACRO_VAR(startCycles) = cycleCounterGet(false, false);       \
          MACRO_VAR(i) < 1;                                                     \
-         MACRO_VAR(i) = 1, cycleCounter = currentCycleCounter(false, false) -  \
+         MACRO_VAR(i) = 1, cycleCounter = cycleCounterGet(false, false) -  \
                                           MACRO_VAR(startCycles))
 
 #endif

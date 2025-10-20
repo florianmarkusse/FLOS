@@ -9,19 +9,19 @@ void buddyStatusAppend(Buddy *buddy) {
     U64 blockSize = (1 << buddy->data.blockSizeSmallest);
     for (U32 i = 0; i < iterations; i++, blockSize *= 2) {
         INFO(STRING("order: "));
-        INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(i), 2));
+        INFO(stringWithMinSizeDefault(STRING_CONVERT(i), 2));
         INFO(STRING(" block size: "));
-        INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(blockSize), 20));
+        INFO(stringWithMinSizeDefault(STRING_CONVERT(blockSize), 20));
         INFO(
-            stringWithMinSizeDefault(CONVERT_TO_STRING((void *)blockSize), 19));
+            stringWithMinSizeDefault(STRING_CONVERT((void *)blockSize), 19));
 
         U64 nodesFreeCount = buddy->data.blocks[i].len;
         INFO(STRING("["));
         INFO(stringWithMinSizeDefault(
-            CONVERT_TO_STRING(buddy->data.blocks[i].len), 3));
+            STRING_CONVERT(buddy->data.blocks[i].len), 3));
         INFO(STRING("/"));
         INFO(stringWithMinSizeDefault(
-            CONVERT_TO_STRING(buddy->data.blocksCapacityPerOrder), 3));
+            STRING_CONVERT(buddy->data.blocksCapacityPerOrder), 3));
         INFO(STRING("]\n"));
 
         bytesTotal += blockSize * nodesFreeCount;

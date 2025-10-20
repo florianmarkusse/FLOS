@@ -49,7 +49,7 @@ typedef struct {
                                  .writeBuffer = getWriteBuffer(STDOUT),        \
                                  __VA_ARGS__};                                 \
         appendToFlushBufferWithWriter(                                         \
-            CONVERT_TO_STRING(data), MACRO_VAR(posixLoggingParams).flags,      \
+            STRING_CONVERT(data), MACRO_VAR(posixLoggingParams).flags,      \
             MACRO_VAR(posixLoggingParams).writeBuffer);                        \
     })
 

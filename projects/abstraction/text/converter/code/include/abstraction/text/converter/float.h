@@ -9,7 +9,7 @@
 [[nodiscard]] String F64ToStringDefault(F64 data);
 
 // clang-format off
-#define CONVERT_TO_STRING_FLOAT                                                \
+#define STRING_CONVERTER_FLOAT                                                \
         F32: F64ToStringDefault,                                               \
         F64: F64ToStringDefault,
 

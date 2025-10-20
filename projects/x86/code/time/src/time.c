@@ -1,7 +1,7 @@
 #include "abstraction/time.h"
 #include "shared/types/numeric.h"
 
-U64 currentCycleCounter(bool previousFinished, bool blocksSubsequent) {
+U64 cycleCounterGet(bool previousFinished, bool blocksSubsequent) {
     U32 edx;
     U32 eax;
     U32 ecx;
@@ -21,10 +21,10 @@ U64 currentCycleCounter(bool previousFinished, bool blocksSubsequent) {
 U64 tscCyclesPerMicroSecond = 1000;
 
 // 1 millionth of a second
-void blockingWait(U64 microSeconds) {
-    U64 endInCycles = currentCycleCounter(false, false) +
+void waitBlock(U64 microSeconds) {
+    U64 endInCycles = cycleCounterGet(false, false) +
                       microSeconds * tscCyclesPerMicroSecond;
-    while (currentCycleCounter(false, false) < endInCycles) {
+    while (cycleCounterGet(false, false) < endInCycles) {
         asm volatile("" ::: "memory");
     }
 }

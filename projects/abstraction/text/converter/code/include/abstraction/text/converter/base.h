@@ -25,7 +25,7 @@
 [[nodiscard]] String I64ToStringDefault(I64 data);
 
 // clang-format off
-#define CONVERT_TO_STRING_BASE \
+#define STRING_CONVERTER_BASE \
         String: stringToString,                                                \
         char: charToStringDefault,                                             \
         bool: boolToString,                                                    \

@@ -3,6 +3,6 @@
 
 #include "shared/types/array-types.h"
 
-void flushToSerial(U8_a buffer);
+void serialFlush(U8_a buffer);
 
 #endif

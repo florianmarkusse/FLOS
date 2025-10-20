@@ -85,7 +85,7 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
         U64_max_a dynamicArray = {
             .buf = buffer, .len = 0, .cap = START_ENTRIES_COUNT};
 
-        U64 startCycleCount = currentCycleCounter(true, false);
+        U64 startCycleCount = cycleCounterGet(true, false);
         for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
             if (dynamicArray.len >= dynamicArray.cap) {
                 U64 currentBytes = dynamicArray.cap * sizeof(U64);
@@ -101,7 +101,7 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
             dynamicArray.buf[dynamicArray.len] = i;
             dynamicArray.len++;
         }
-        U64 endCycleCount = currentCycleCounter(false, true);
+        U64 endCycleCount = cycleCounterGet(false, true);
 
         buffer = dynamicArray.buf;
 
@@ -109,13 +109,13 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
     } else {
         buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT, pageSize);
         beforePageFaults = pageFaultsCurrent;
-        U64 startCycleCount = currentCycleCounter(true, false);
+        U64 startCycleCount = cycleCounterGet(true, false);
 
         for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
             buffer[i] = i;
         }
 
-        U64 endCycleCount = currentCycleCounter(false, true);
+        U64 endCycleCount = cycleCounterGet(false, true);
         afterPageFaults = pageFaultsCurrent;
 
         cycles = endCycleCount - startCycleCount;
@@ -166,7 +166,7 @@ static bool partialMappingTest(U64_pow2 pageSize) {
 
     KFLUSH_AFTER {
         INFO(STRING("Page Size: "));
-        INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(pageSize), 10));
+        INFO(stringWithMinSizeDefault(STRING_CONVERT(pageSize), 10));
     }
 
     BiskiState state;
@@ -198,7 +198,7 @@ static bool fullMappingTest(U64_pow2 pageSize) {
 
     KFLUSH_AFTER {
         INFO(STRING("Page Size: "));
-        INFO(stringWithMinSizeDefault(CONVERT_TO_STRING(pageSize), 10));
+        INFO(stringWithMinSizeDefault(STRING_CONVERT(pageSize), 10));
     }
 
     for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
@@ -282,12 +282,12 @@ static void baselineTest() {
          iteration++) {
         U64 *buffer = allocateIdentityMemory(MAX_TEST_ENTRIES * sizeof(U64));
 
-        U64 startCycleCount = currentCycleCounter(true, false);
+        U64 startCycleCount = cycleCounterGet(true, false);
 
         for (typeof_unqual(MAX_TEST_ENTRIES) i = 0; i < MAX_TEST_ENTRIES; i++) {
             buffer[i] = i;
         }
-        U64 endCycleCount = currentCycleCounter(false, true);
+        U64 endCycleCount = cycleCounterGet(false, true);
 
         freeIdentityMemory((Memory){.start = (U64)buffer,
                                     .bytes = MAX_TEST_ENTRIES * sizeof(U64)});
@@ -314,12 +314,12 @@ static void baselineTest() {
         U64 entriesToWrite =
             ringBufferIndex(biskiNext(&state), MAX_TEST_ENTRIES);
 
-        U64 startCycleCount = currentCycleCounter(true, false);
+        U64 startCycleCount = cycleCounterGet(true, false);
 
         for (typeof(entriesToWrite) i = 0; i < entriesToWrite; i++) {
             buffer[i] = i;
         }
-        U64 endCycleCount = currentCycleCounter(false, true);
+        U64 endCycleCount = cycleCounterGet(false, true);
 
         freeIdentityMemory((Memory){.start = (U64)buffer,
                                     .bytes = MAX_TEST_ENTRIES * sizeof(U64)});

@@ -8,16 +8,16 @@
 #ifdef FLOAT_OPERATIONS
 #include "abstraction/text/converter/float.h"
 #else
-#define CONVERT_TO_STRING_FLOAT
+#define STRING_CONVERTER_FLOAT
 #endif
 
 [[nodiscard]] String noAppend();
 
 // clang-format off
-#define CONVERT_TO_STRING(data)                                                \
+#define STRING_CONVERT(data)                                                \
     _Generic((data),                                                           \
-        CONVERT_TO_STRING_BASE                                                 \
-        CONVERT_TO_STRING_FLOAT                                                \
+        STRING_CONVERTER_BASE                                                 \
+        STRING_CONVERTER_FLOAT                                                \
         default: noAppend)(data)
 // clang-format on
 

@@ -49,7 +49,7 @@ U64 mapMemory(U64 virt, U64 physical, U64 bytes, U64 flags) {
          virt += mappingSize, physical += mappingSize,
                        bytesMapped += mappingSize) {
         mappingSize = pageSizeLeastLargerThan(physical, bytes - bytesMapped);
-        mapPage(virt, physical, mappingSize, .flags = flags);
+        pageMap(virt, physical, mappingSize, .flags = flags);
     }
     return virt;
 }
