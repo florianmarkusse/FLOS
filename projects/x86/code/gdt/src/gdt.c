@@ -1,6 +1,6 @@
 #include "x86/gdt.h"
 
-void loadGDTAndSegments(DescriptorTableRegister *GDT) {
+void GDTAndSegmentsLoad(DescriptorTableRegister *GDT) {
     asm volatile("lgdt %0;" // Load new Global Descriptor Table
 
                  "movq $0x08, %%rax;"
@@ -22,7 +22,7 @@ void loadGDTAndSegments(DescriptorTableRegister *GDT) {
                  : "rax", "memory");
 }
 
-void loadTaskRegister(U16 processorID) {
+void taskRegisterLoad(U16 processorID) {
     U16 tssSelector = processorID * sizeof(TSSDescriptor) + CODE_SEGMENTS_BYTES;
     asm volatile("ltr %0;" : : "r"(tssSelector) : "memory");
 }

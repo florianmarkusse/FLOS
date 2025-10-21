@@ -40,7 +40,7 @@ typedef struct {
 [[nodiscard]] CPUIDResult CPUID(U32 leaf);
 
 [[nodiscard]] CPUIDResult CPUIDWithSubleaf(U32 leaf, U32 subleaf);
-void disablePIC();
+void PICDisable();
 [[nodiscard]] U64 CR3();
 [[nodiscard]] U64 CR2();
 

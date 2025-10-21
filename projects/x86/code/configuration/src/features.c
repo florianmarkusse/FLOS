@@ -84,7 +84,7 @@ typedef struct {
     };
 } XCR0;
 
-void CPUEnablePGE() {
+void PGEEnable() {
     CR4 cr4;
 
     // Read CR4 register
@@ -97,7 +97,7 @@ void CPUEnablePGE() {
     asm volatile("mov %%rax, %%cr4" : : "a"(cr4));
 }
 
-void CPUEnableFPU() {
+void FPUEnable() {
     CR0 cr0;
 
     // Read CR0 register
@@ -122,7 +122,7 @@ void CPUEnableFPU() {
     asm volatile("finit" : : : "st");
 }
 
-void enableAndConfigureXSAVE(bool supportsAVX512) {
+void XSAVEEnableAndConfigure(bool supportsAVX512) {
     CR4 cr4;
 
     asm volatile("mov %%cr4, %%rax" : "=a"(cr4));
@@ -149,7 +149,7 @@ void enableAndConfigureXSAVE(bool supportsAVX512) {
                    "d"((U32)(xcr0.value >> 32)));
 }
 
-void CPUEnableSSE() {
+void SSEEnable() {
     CR4 cr4;
 
     // Read CR4 register
@@ -166,7 +166,7 @@ void CPUEnableSSE() {
     asm volatile("mov %%rax, %%cr4" : : "a"(cr4));
 }
 
-void CPUConfigurePAT() {
+void PATConfigure() {
     PAT patValues = {.value = rdmsr(PAT_LOCATION)};
 
     patValues.pats[3].pat = PAT_WRITE_COMBINGING_WC;

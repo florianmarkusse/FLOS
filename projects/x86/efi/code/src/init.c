@@ -205,19 +205,19 @@ static void prepareDescriptors(U16 numberOfProcessors, U16 cacheLineSizeBytes,
 static void bootstrapProcessorWork(U16 cacheLineSizeBytes,
                                    U64 memoryVirtualAddressAvailable) {
     // NOTE: Disabled the PIC so we can use local APIC and IOAPIC
-    disablePIC();
+    PICDisable();
 
     // TODO: Find out number of processors!
     prepareDescriptors(1, cacheLineSizeBytes, memoryVirtualAddressAvailable);
 }
 
 void virtualMemoryRootPageInit() {
-    rootPageTable = getZeroedPageTable();
+    pageTableRoot = pageTableZeroedGet();
 
     KFLUSH_AFTER {
         INFO(STRING("root page table memory: "));
         memoryAppend((Memory){
-            .start = (U64)rootPageTable,
+            .start = (U64)pageTableRoot,
             .bytes = virtualStructBytes[VIRTUAL_PAGE_TABLE_ALLOCATION]});
         INFO(STRING("\n"));
     }
@@ -317,24 +317,24 @@ void archParamsFill(void *archParams, U64 memoryVirtualAddressAvailable) {
         }
     }
     KFLUSH_AFTER { INFO(STRING("Enabling PGE\n")); }
-    CPUEnablePGE();
+    PGEEnable();
 
     if (!features.FPU) {
         EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support FPU!\n")); }
     }
     KFLUSH_AFTER { INFO(STRING("Enabling FPU\n")); }
-    CPUEnableFPU();
+    FPUEnable();
 
     if (!features.PAT) {
         EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support PAT!\n")); }
     }
     KFLUSH_AFTER { INFO(STRING("Configuring PAT\n")); }
-    CPUConfigurePAT();
+    PATConfigure();
 
     if (!features.SSE) {
         EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support SSE!\n")); }
     }
-    CPUEnableSSE();
+    SSEEnable();
 
     if (!features.XSAVE) {
         EXIT_WITH_MESSAGE { ERROR(STRING("CPU does not support XSAVE!\n")); }
@@ -355,7 +355,7 @@ void archParamsFill(void *archParams, U64 memoryVirtualAddressAvailable) {
     KFLUSH_AFTER {
         INFO(STRING("Configuring XSAVE to enable FPU / SSE / AVX\n"));
     }
-    enableAndConfigureXSAVE(AVX512Support);
+    XSAVEEnableAndConfigure(AVX512Support);
 
     if (extendedProcessorFeatures.ecx & (1 << 16)) {
         KFLUSH_AFTER { INFO(STRING("Support for 5 level-paging found\n")); }
@@ -404,11 +404,11 @@ void archParamsFill(void *archParams, U64 memoryVirtualAddressAvailable) {
         INFO(x86ArchParams->tscFrequencyPerMicroSecond, .flags = NEWLINE);
     }
 
-    x86ArchParams->rootPageMetaData.children =
-        (struct PackedPageMetaDataNode *)rootPageMetaData.children;
-    x86ArchParams->rootPageMetaData.metaData.entriesMapped =
-        rootPageMetaData.metaData.entriesMapped;
-    x86ArchParams->rootPageMetaData.metaData
+    x86ArchParams->pageMetaDataRoot.children =
+        (struct PackedPageMetaDataNode *)pageMetaDataRoot.children;
+    x86ArchParams->pageMetaDataRoot.metaData.entriesMapped =
+        pageMetaDataRoot.metaData.entriesMapped;
+    x86ArchParams->pageMetaDataRoot.metaData
         .entriesMappedWithSmallerGranularity =
-        rootPageMetaData.metaData.entriesMappedWithSmallerGranularity;
+        pageMetaDataRoot.metaData.entriesMappedWithSmallerGranularity;
 }

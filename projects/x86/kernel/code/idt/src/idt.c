@@ -582,7 +582,7 @@ void interruptsInit() {
     asm_lidt(&idtp);
 }
 
-void triggerFault(Fault fault) {
+void faultTrigger(Fault fault) {
     switch (fault) {
     case FAULT_DIVIDE_ERROR:
         asm volatile("int $0x00" :::);

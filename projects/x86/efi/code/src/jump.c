@@ -6,7 +6,7 @@
 #include "x86/memory/virtual.h"
 
 static void enableNewMemoryMapping() {
-    asm volatile("mov %%rax, %%cr3" : : "a"(rootPageTable) : "memory");
+    asm volatile("mov %%rax, %%cr3" : : "a"(pageTableRoot) : "memory");
 }
 
 static void toKernel(U64 newStackPointer, KernelParameters *kernelParams) {
@@ -32,8 +32,8 @@ static void toKernel(U64 newStackPointer, KernelParameters *kernelParams) {
 
 void kernelJump(U64 newStackPointer, U16 processorID,
                     KernelParameters *kernelParams) {
-    loadGDTAndSegments(&gdtDescriptor);
-    loadTaskRegister(processorID);
+    GDTAndSegmentsLoad(&gdtDescriptor);
+    taskRegisterLoad(processorID);
     enableNewMemoryMapping();
     toKernel(newStackPointer, kernelParams);
 }

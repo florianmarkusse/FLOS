@@ -5,6 +5,6 @@
 
 extern U8 *XSAVESpace;
 
-__attribute__((noreturn)) void triggerFault(Fault fault);
+__attribute__((noreturn)) void faultTrigger(Fault fault);
 
 #endif

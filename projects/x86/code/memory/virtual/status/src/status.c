@@ -15,7 +15,7 @@ static void mappingAppend(U64 addressVirtual[4], U64 physicalAddress,
 
 static void memoryVirtualMappingTableAppend() {
     for (U32 i = 0; i < PageTableFormat.ENTRIES; i++) {
-        VirtualPageTable *pageTable = rootPageTable;
+        VirtualPageTable *pageTable = pageTableRoot;
         U64 entries[4] = {0};
         U64 addressVirtual[4] = {0};
         addressVirtual[0] = 0;

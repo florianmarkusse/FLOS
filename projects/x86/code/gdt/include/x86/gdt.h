@@ -55,7 +55,7 @@ typedef struct __attribute__((packed)) {
 
 static constexpr auto CODE_SEGMENTS_BYTES = 4 * sizeof(SegmentDescriptor);
 
-void loadGDTAndSegments(DescriptorTableRegister *GDT);
-void loadTaskRegister(U16 processorID);
+void GDTAndSegmentsLoad(DescriptorTableRegister *GDT);
+void taskRegisterLoad(U16 processorID);
 
 #endif

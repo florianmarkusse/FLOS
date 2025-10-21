@@ -27,19 +27,19 @@ static U64 getPhysicalAddressFrame(U64 virtualPage) {
 //     STRING("Write Back (WB)"),        STRING("Uncached (UC-)"),
 // };
 
-VirtualPageTable *rootPageTable;
-PageMetaDataNode rootPageMetaData = {0};
+VirtualPageTable *pageTableRoot;
+PageMetaDataNode pageMetaDataRoot = {0};
 
 // NOTE: These are at most self-aligned, so works with the buddy allocator just
 // fine
 U32 virtualStructBytes[VIRTUAL_ALLOCATION_TYPE_COUNT] = {
     [VIRTUAL_PAGE_TABLE_ALLOCATION] = X86_4KIB_PAGE,
     [META_DATA_PAGE_ALLOCATION] =
-        PageTableFormat.ENTRIES * sizeof(rootPageMetaData)
+        PageTableFormat.ENTRIES * sizeof(pageMetaDataRoot)
 
 };
 
-VirtualPageTable *getZeroedPageTable() {
+VirtualPageTable *pageTableZeroedGet() {
     return memoryZeroedForVirtualGet(VIRTUAL_PAGE_TABLE_ALLOCATION);
 }
 
@@ -53,12 +53,12 @@ static U16 calculateTableIndex(U64 virt, U64_pow2 pageSize) {
 }
 
 void pageMap_(U64 virt, U64 physical, U64_pow2 mappingSize, U64 flags) {
-    ASSERT(rootPageTable);
+    ASSERT(pageTableRoot);
     ASSERT(!(ringBufferIndex(physical, mappingSize)));
     ASSERT(powerOf2(mappingSize));
 
-    PageMetaDataNode *metaDataTable = &rootPageMetaData;
-    VirtualPageTable *pageTable = rootPageTable;
+    PageMetaDataNode *metaDataTable = &pageMetaDataRoot;
+    VirtualPageTable *pageTable = pageTableRoot;
 
     U16 index = 0;
     for (typeof(mappingSize) entrySize = PAGE_ROOT_ENTRY_MAX_SIZE;
@@ -81,7 +81,7 @@ void pageMap_(U64 virt, U64 physical, U64_pow2 mappingSize, U64 flags) {
 
         if (!(*tableEntryAddress)) {
             *tableEntryAddress =
-                (U64)getZeroedPageTable() | pageFlagsReadWrite();
+                (U64)pageTableZeroedGet() | pageFlagsReadWrite();
 
             newMetaEntryAddress->metaData.entriesMapped++;
             newMetaEntryAddress->metaData.entriesMappedWithSmallerGranularity++;
@@ -129,7 +129,7 @@ static void updateMappingData(VirtualPageTable *pageTables[MAX_PAGING_LEVELS],
 }
 
 Memory pageUnmap(U64 virt) {
-    ASSERT(rootPageTable);
+    ASSERT(pageTableRoot);
     ASSERT(((virt) >> 48L) == 0 || ((virt) >> 48L) == 0xFFFF);
 
     U16 indices[MAX_PAGING_LEVELS +
@@ -140,10 +140,10 @@ Memory pageUnmap(U64 virt) {
     indices[0] = 0;
 
     PageMetaDataNode *newMeta[MAX_PAGING_LEVELS];
-    newMeta[0] = &rootPageMetaData;
+    newMeta[0] = &pageMetaDataRoot;
 
     VirtualPageTable *pageTables[MAX_PAGING_LEVELS];
-    pageTables[0] = rootPageTable;
+    pageTables[0] = pageTableRoot;
 
     U8 len = 1;
     U16 index = 0;

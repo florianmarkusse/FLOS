@@ -16,14 +16,14 @@ void archInit(void *archParams) {
 
     tscCyclesPerMicroSecond = x86ArchParams->tscFrequencyPerMicroSecond;
 
-    rootPageTable = (VirtualPageTable *)CR3();
+    pageTableRoot = (VirtualPageTable *)CR3();
 
-    rootPageMetaData.children =
-        (PageMetaDataNode *)x86ArchParams->rootPageMetaData.children;
-    rootPageMetaData.metaData.entriesMapped =
-        x86ArchParams->rootPageMetaData.metaData.entriesMapped;
-    rootPageMetaData.metaData.entriesMappedWithSmallerGranularity =
-        x86ArchParams->rootPageMetaData.metaData
+    pageMetaDataRoot.children =
+        (PageMetaDataNode *)x86ArchParams->pageMetaDataRoot.children;
+    pageMetaDataRoot.metaData.entriesMapped =
+        x86ArchParams->pageMetaDataRoot.metaData.entriesMapped;
+    pageMetaDataRoot.metaData.entriesMappedWithSmallerGranularity =
+        x86ArchParams->pageMetaDataRoot.metaData
             .entriesMappedWithSmallerGranularity;
 
 #ifdef SERIAL

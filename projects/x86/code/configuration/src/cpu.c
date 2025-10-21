@@ -37,7 +37,7 @@ CPUIDResult CPUIDWithSubleaf(U32 leaf, U32 subleaf) {
 
 CPUIDResult CPUID(U32 leaf) { return CPUIDWithSubleaf(leaf, 0); }
 
-void disablePIC() {
+void PICDisable() {
     asm volatile("movb $0xFF, %%al;" // Set AL to 0xFF
                  "outb %%al, $0x21;" // Disable master PIC
                  "outb %%al, $0xA1;" // Disable slave PIC

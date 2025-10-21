@@ -183,10 +183,10 @@ typedef struct {
     };
 } BASICCPUFeatures;
 
-void CPUEnablePGE();
-void CPUEnableFPU();
-void enableAndConfigureXSAVE(bool supportsAVX512);
-void CPUEnableSSE();
-void CPUConfigurePAT();
+void PGEEnable();
+void FPUEnable();
+void XSAVEEnableAndConfigure(bool supportsAVX512);
+void SSEEnable();
+void PATConfigure();
 
 #endif

@@ -13,9 +13,9 @@ typedef struct PageMetaDataNode {
     PageMetaData metaData;
 } PageMetaDataNode;
 
-extern VirtualPageTable *rootPageTable;
-extern PageMetaDataNode rootPageMetaData;
+extern VirtualPageTable *pageTableRoot;
+extern PageMetaDataNode pageMetaDataRoot;
 
-[[nodiscard]] VirtualPageTable *getZeroedPageTable();
+[[nodiscard]] VirtualPageTable *pageTableZeroedGet();
 
 #endif

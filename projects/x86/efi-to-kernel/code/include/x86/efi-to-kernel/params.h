@@ -9,7 +9,7 @@
 typedef struct {
     U64 tscFrequencyPerMicroSecond;
     U8 *XSAVELocation;
-    PageMetaDataNode rootPageMetaData;
+    PageMetaDataNode pageMetaDataRoot;
 } X86ArchParams;
 
 #endif
