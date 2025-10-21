@@ -9,7 +9,7 @@
         U32 len;                                                               \
     }
 
-#define MAX_LENGTH_ARRAY(T)                                                    \
+#define ARRAY_MAX_LENGTH(T)                                                    \
     struct {                                                                   \
         T *buf;                                                                \
         U32 len;                                                               \

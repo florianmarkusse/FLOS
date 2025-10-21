@@ -1,7 +1,7 @@
 #include "shared/trees/red-black/basic.h"
 #include "shared/maths.h"
 
-RedBlackNodeBasic *findGreatestBelowOrEqual(RedBlackNodeBasic **tree,
+RedBlackNodeBasic *redBlackNodeBasicFindGreatestBelowOrEqual(RedBlackNodeBasic **tree,
                                             U64 value) {
     RedBlackNodeBasic *current = *tree;
     RedBlackNodeBasic *result = nullptr;
@@ -19,7 +19,7 @@ RedBlackNodeBasic *findGreatestBelowOrEqual(RedBlackNodeBasic **tree,
     return result;
 }
 
-void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
+void redBlackNodeBasicInsert(RedBlackNodeBasic **tree,
                              RedBlackNodeBasic *createdNode) {
     createdNode->children[RB_TREE_LEFT] = nullptr;
     createdNode->children[RB_TREE_RIGHT] = nullptr;
@@ -41,7 +41,7 @@ void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
     while (1) {
         visitedNodes[len].node = current;
         visitedNodes[len].direction =
-            calculateDirection(createdNode->value, current->value);
+            redBlackCalculateDirection(createdNode->value, current->value);
         len++;
 
         RedBlackNodeBasic *next =
@@ -62,7 +62,7 @@ void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
 
     // Check for violations
     while (len >= 4 && visitedNodes[len - 2].node->color == RB_TREE_RED) {
-        len = rebalanceInsert(visitedNodes[len - 3].direction,
+        len = redBlackRebalanceInsert(visitedNodes[len - 3].direction,
                               (CommonNodeVisited *)visitedNodes, len, nullptr);
     }
 
@@ -72,7 +72,7 @@ void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
 static RedBlackNodeBasic *
 deleteNodeInPath(BasicNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                  RedBlackNodeBasic *toDelete) {
-    U32 stepsToSuccessor = findAdjacentInSteps(
+    U32 stepsToSuccessor = redBlackfindAdjacentInSteps(
         (RedBlackNode *)toDelete, (CommonNodeVisited *)&visitedNodes[len],
         RB_TREE_RIGHT);
     // If there is no right child, we can delete by having the parent of
@@ -115,7 +115,7 @@ deleteNodeInPath(BasicNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                 break;
             }
 
-            len = rebalanceDelete(visitedNodes[len - 1].direction,
+            len = redBlackRebalanceDelete(visitedNodes[len - 1].direction,
                                   (CommonNodeVisited *)visitedNodes, len,
                                   nullptr);
         }
@@ -124,7 +124,7 @@ deleteNodeInPath(BasicNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
     return toDelete;
 }
 
-RedBlackNodeBasic *deleteAtLeastRedBlackNodeBasic(RedBlackNodeBasic **tree,
+RedBlackNodeBasic *redBlackNodeBasicDeleteAtLeast(RedBlackNodeBasic **tree,
                                                   U64 value) {
     BasicNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT];
 
@@ -143,7 +143,7 @@ RedBlackNodeBasic *deleteAtLeastRedBlackNodeBasic(RedBlackNodeBasic **tree,
             bestWithVisitedNodesLen = len;
         }
 
-        RedBlackDirection dir = calculateDirection(value, potential->value);
+        RedBlackDirection dir = redBlackCalculateDirection(value, potential->value);
         visitedNodes[len].node = potential;
         visitedNodes[len].direction = dir;
         len++;
@@ -159,7 +159,7 @@ RedBlackNodeBasic *deleteAtLeastRedBlackNodeBasic(RedBlackNodeBasic **tree,
                             visitedNodes[bestWithVisitedNodesLen].node);
 }
 
-RedBlackNodeBasic *popRedBlackNodeBasic(RedBlackNodeBasic **tree) {
+RedBlackNodeBasic *redBlackNodeBasicPop(RedBlackNodeBasic **tree) {
     if (!(*tree)) {
         return nullptr;
     }
@@ -173,7 +173,7 @@ RedBlackNodeBasic *popRedBlackNodeBasic(RedBlackNodeBasic **tree) {
     return deleteNodeInPath(visitedNodes, len, *tree);
 }
 
-RedBlackNodeBasic *deleteRedBlackNodeBasic(RedBlackNodeBasic **tree,
+RedBlackNodeBasic *redBlackNodeBasicDelete(RedBlackNodeBasic **tree,
                                            U64 value) {
     if (!(*tree)) {
         return nullptr;
@@ -187,7 +187,7 @@ RedBlackNodeBasic *deleteRedBlackNodeBasic(RedBlackNodeBasic **tree,
     RedBlackNodeBasic *current = *tree;
     while (current->value != value) {
         visitedNodes[len].node = current;
-        visitedNodes[len].direction = calculateDirection(value, current->value);
+        visitedNodes[len].direction = redBlackCalculateDirection(value, current->value);
         current = current->children[visitedNodes[len].direction];
 
         if (!current) {

@@ -101,7 +101,7 @@ static void memoryVirtualCustomMappingAppend() {
     buffer[0] = tree;
     U32 len = 1;
     VMMNode *node;
-    TREE_TRAVERSAL_PRE_ORDER(node, len, buffer) {
+    RB_TREE_TRAVERSAL_PRE_ORDER(node, len, buffer) {
         if (!node->mappingSize) {
             mappingVirtualGuardPageAppend(node->basic.value, node->bytes);
         } else {

@@ -154,7 +154,7 @@ Status efi_main(Handle handle, SystemTable *systemtable) {
 
     kernelMemoryManagementInit(firstFreeVirtual, kernelVirtualMemoryEnd());
 
-    U64 virtualForKernel = (U64)allocVirtualMemory(MIN_VIRTUAL_MEMORY_REQUIRED);
+    U64 virtualForKernel = (U64)virtualMemoryAlloc(MIN_VIRTUAL_MEMORY_REQUIRED);
     U64 endVirtualForKernel = virtualForKernel + MIN_VIRTUAL_MEMORY_REQUIRED;
 
     KFLUSH_AFTER {

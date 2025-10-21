@@ -5,7 +5,7 @@
 #include "shared/memory/management/status.h"
 #include "shared/text/string.h"
 
-void appendMemoryManagementStatus() {
-    appendVirtualMemoryManagerStatus();
-    appendPhysicalMemoryManagerStatus();
+void memoryManagementStatusAppend() {
+    virtualMemoryManagerStatusAppend();
+    physicalMemoryManagerStatusAppend();
 }

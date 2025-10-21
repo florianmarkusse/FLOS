@@ -7,7 +7,7 @@
 - run tests
   failing because includes... should be in a base layer
 
-- Find better way to get aligned memory from allocPhysicalMemory, not "just" finding the bytes + align as it causes nasty fracturing
+- Find better way to get aligned memory from physicalMemoryAlloc, not "just" finding the bytes + align as it causes nasty fracturing
 
 - cmake stuff??
   - just rewrite it all?

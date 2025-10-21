@@ -10,9 +10,9 @@
 #include "shared/memory/management/management.h"
 #include "shared/text/string.h"
 
-void appendPhysicalMemoryManagerStatus() { buddyStatusAppend(&buddyPhysical); }
+void physicalMemoryManagerStatusAppend() { buddyStatusAppend(&buddyPhysical); }
 
-void appendVirtualMemoryManagerStatus() { buddyStatusAppend(&buddyVirtual); }
+void virtualMemoryManagerStatusAppend() { buddyStatusAppend(&buddyVirtual); }
 
 static AvailableMemoryState getAvailableMemory(Buddy *buddy) {
     AvailableMemoryState result = {0};
@@ -24,10 +24,10 @@ static AvailableMemoryState getAvailableMemory(Buddy *buddy) {
     return result;
 }
 
-AvailableMemoryState getAvailablePhysicalMemory() {
+AvailableMemoryState physicalMemoryAvailableGet() {
     return getAvailableMemory(&buddyPhysical);
 }
-AvailableMemoryState getAvailableVirtualMemory() {
+AvailableMemoryState virtualMemoryAvailableGet() {
     return getAvailableMemory(&buddyVirtual);
 }
 

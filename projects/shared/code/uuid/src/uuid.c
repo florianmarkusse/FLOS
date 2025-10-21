@@ -1,7 +1,7 @@
 #include "shared/uuid.h"
 #include "shared/types/numeric.h"
 
-void setUUIDType(UUID *uuid, U8 version, UUIDVariant variant) {
+void UUIDTypeSet(UUID *uuid, U8 version, UUIDVariant variant) {
     // The first 4 bits indicate the version.
     // Move the version in while masking the bottom 12 bits
     uuid->timeHiAndVer = ((U8)(version << 12)) | (uuid->timeHiAndVer & 0x0FFF);

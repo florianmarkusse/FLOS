@@ -3,14 +3,14 @@
 
 #include "shared/types/numeric.h"
 
-void appendMemoryManagementStatus();
+void memoryManagementStatusAppend();
 
 typedef struct {
     U64 memory;
     U32 addresses;
 } AvailableMemoryState;
 
-[[nodiscard]] AvailableMemoryState getAvailablePhysicalMemory();
-[[nodiscard]] AvailableMemoryState getAvailableVirtualMemory();
+[[nodiscard]] AvailableMemoryState physicalMemoryAvailableGet();
+[[nodiscard]] AvailableMemoryState virtualMemoryAvailableGet();
 
 #endif

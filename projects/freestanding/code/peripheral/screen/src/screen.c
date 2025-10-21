@@ -559,11 +559,11 @@ void screenInit(Window *window, Arena *perm) {
         ringGlyphsPerColumn <<= 1;
     }
     screenLines =
-        NEW(perm, U32, .count = ringGlyphsPerColumn, .flags = ZERO_MEMORY);
+        NEW(perm, U32, .count = ringGlyphsPerColumn, .flags = ALLOCATOR_ZERO_MEMORY);
     logicalLineLens =
-        NEW(perm, U32, .count = ringGlyphsPerColumn, .flags = ZERO_MEMORY);
+        NEW(perm, U32, .count = ringGlyphsPerColumn, .flags = ALLOCATOR_ZERO_MEMORY);
     screenLinesCopy =
-        NEW(perm, U32, .count = ringGlyphsPerColumn, .flags = ZERO_MEMORY);
+        NEW(perm, U32, .count = ringGlyphsPerColumn, .flags = ALLOCATOR_ZERO_MEMORY);
 
     maxGlyphsOnScreen = glyphsPerLine * glyphsPerColumn;
     maxCharsToProcess = 2 * maxGlyphsOnScreen;

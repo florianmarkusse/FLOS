@@ -19,7 +19,7 @@ StringU16Insert trieStringU16Insert(String key, TrieStringU16 *set,
         ASSERT(false);
         longjmp(perm->jmpBuf, 1);
     }
-    *currentNode = NEW(perm, StringU16Node, .flags = ZERO_MEMORY);
+    *currentNode = NEW(perm, StringU16Node, .flags = ALLOCATOR_ZERO_MEMORY);
     (*currentNode)->data.key = key;
     set->nodeCount++;
     (*currentNode)->data.value = set->nodeCount;

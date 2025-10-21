@@ -55,7 +55,7 @@ void *poolAlloc(PoolAllocator *pool, U8 flags) {
 
     pool->head = pool->head->next;
 
-    return flags & ZERO_MEMORY ? memset(node, 0, pool->chunkSize) : node;
+    return flags & ALLOCATOR_ZERO_MEMORY ? memset(node, 0, pool->chunkSize) : node;
 }
 
 void freePoolNode(PoolAllocator *pool, void *ptr) {

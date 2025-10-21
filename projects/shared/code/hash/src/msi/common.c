@@ -21,14 +21,14 @@ void MSISetNew(void *setSlice, U64 size, U64_pow2 align, Arena *a) {
     U64 cap = 1 << replica->exp;
 
     if (replica->buf == nullptr) {
-        replica->buf = alloc(a, size, align, cap, ZERO_MEMORY);
+        replica->buf = alloc(a, size, align, cap, ALLOCATOR_ZERO_MEMORY);
     } else if (a->beg == replica->buf + size * cap) {
         memset(replica->buf, 0, size * cap);
-        (void)alloc(a, size, 1, cap, ZERO_MEMORY);
+        (void)alloc(a, size, 1, cap, ALLOCATOR_ZERO_MEMORY);
         replica->exp++;
         replica->len = 0;
     } else {
-        void *data = alloc(a, 2 * size, align, cap, ZERO_MEMORY);
+        void *data = alloc(a, 2 * size, align, cap, ALLOCATOR_ZERO_MEMORY);
         replica->buf = data;
         replica->exp++;
         replica->len = 0;

@@ -370,7 +370,7 @@ void archParamsFill(void *archParams, U64 memoryVirtualAddressAvailable) {
     KFLUSH_AFTER { INFO(STRING("Support for XSAVEC found!\n")); }
     U32 XSAVESize = CPUIDWithSubleaf(XSAVE_CPU_SUPPORT, 0).ebx;
     U8 *XSAVEAddress = NEW(&globals.kernelPermanent, U8, .count = XSAVESize,
-                           .align = XSAVE_ALIGNMENT, .flags = ZERO_MEMORY);
+                           .align = XSAVE_ALIGNMENT, .flags = ALLOCATOR_ZERO_MEMORY);
     KFLUSH_AFTER {
         INFO(STRING("XSAVE space location: "));
         memoryAppend((Memory){.start = (U64)XSAVEAddress, .bytes = XSAVESize});

@@ -110,7 +110,7 @@ static void kernelPanic(Registers *regs) {
 void faultHandler(Registers *regs) {
     if (regs->interruptNumber == FAULT_PAGE_FAULT) {
         pageFaultsCurrent++;
-        PageFaultResult pageFaultResult = handlePageFault(CR2());
+        PageFaultResult pageFaultResult = pageFaultHandle(CR2());
 
         switch (pageFaultResult) {
         case PAGE_FAULT_RESULT_MAPPED: {

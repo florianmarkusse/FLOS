@@ -272,7 +272,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         case INSERT: {
             RedBlackNodeBasic *createdNode = NEW(&scratch, RedBlackNodeBasic);
             createdNode->value = operations.buf[i].value;
-            insertRedBlackNodeBasic(&tree, createdNode);
+            redBlackNodeBasicInsert(&tree, createdNode);
 
             if (expectedValues.len >= MAX_NODES_IN_TREE) {
                 TEST_FAILURE {
@@ -290,7 +290,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         }
         case DELETE: {
             RedBlackNodeBasic *deleted =
-                deleteRedBlackNodeBasic(&tree, operations.buf[i].value);
+                redBlackNodeBasicDelete(&tree, operations.buf[i].value);
             if (deleted->value != operations.buf[i].value) {
                 TEST_FAILURE {
                     INFO(STRING("Deleted value does not equal the value that "
@@ -317,7 +317,7 @@ static void testTree(TreeOperation_a operations, Arena scratch) {
         }
         case DELETE_AT_LEAST: {
             RedBlackNodeBasic *deleted =
-                deleteAtLeastRedBlackNodeBasic(&tree, operations.buf[i].value);
+                redBlackNodeBasicDeleteAtLeast(&tree, operations.buf[i].value);
             if (!deleted) {
                 for (U64 j = 0; j < expectedValues.len; j++) {
                     if (expectedValues.buf[j] >= operations.buf[i].value) {

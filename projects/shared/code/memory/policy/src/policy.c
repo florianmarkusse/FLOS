@@ -8,41 +8,41 @@
 #include "shared/memory/management/management.h"
 #include "shared/memory/management/page.h"
 
-void *allocateIdentityMemory(U64_pow2 blockSize) {
+void *identityMemoryAlloc(U64_pow2 blockSize) {
     ASSERT(blockSize >= pageSizeSmallest());
     ASSERT(powerOf2(blockSize));
 
-    return allocPhysicalMemory(blockSize);
+    return physicalMemoryAlloc(blockSize);
 }
 
-void freeIdentityMemory(Memory memory) {
+void identityMemoryFree(Memory memory) {
     ASSERT(aligned(memory.start, pageSizeSmallest()));
     ASSERT(aligned(memory.bytes, pageSizeSmallest()));
 
-    freePhysicalMemory(memory);
+    physicalMemoryFree(memory);
 }
 
-void freeIdentityMemoryNotBlockSize(Memory memory) {
+void identityMemoryNotBlockSizeFree(Memory memory) {
     memory.start = alignUp(memory.start, pageSizeSmallest());
     memory.bytes = alignDown(memory.bytes, pageSizeSmallest());
 
-    freePhysicalMemory(memory);
+    physicalMemoryFree(memory);
 }
 
-void *allocateMappableMemory(U64_pow2 blockSize, U64_pow2 mappingSize) {
+void *mappableMemoryAlloc(U64_pow2 blockSize, U64_pow2 mappingSize) {
     ASSERT(powerOf2(blockSize));
     ASSERT(blockSize >= pageSizeSmallest());
     ASSERT(powerOf2(mappingSize));
     ASSERT(mappingSize >= pageSizeSmallest());
     ASSERT(blockSize >= mappingSize);
 
-    void *result = allocVirtualMemory(blockSize);
-    addPageMapping((Memory){.start = (U64)result, .bytes = blockSize},
+    void *result = virtualMemoryAlloc(blockSize);
+    pageMappingAdd((Memory){.start = (U64)result, .bytes = blockSize},
                    mappingSize);
     return result;
 }
 
-void freeMappableMemory(Memory memory) {
+void mappableMemoryFree(Memory memory) {
     ASSERT(aligned(memory.start, pageSizeSmallest()));
     ASSERT(aligned(memory.bytes, pageSizeSmallest()));
 
@@ -63,7 +63,7 @@ void freeMappableMemory(Memory memory) {
                        toFreePhysical.start + toFreePhysical.bytes) {
                 toFreePhysical.bytes += mapped.bytes;
             } else {
-                freePhysicalMemory(toFreePhysical);
+                physicalMemoryFree(toFreePhysical);
                 toFreePhysical = mapped; // Final free happens after loop
             }
         }
@@ -75,7 +75,7 @@ void freeMappableMemory(Memory memory) {
     }
 
     if (toFreePhysical.start) {
-        freePhysicalMemory(toFreePhysical);
+        physicalMemoryFree(toFreePhysical);
     }
 
     if (virtualAddressesLen < PAGE_CACHE_FLUSH_THRESHOLD) {
@@ -86,6 +86,6 @@ void freeMappableMemory(Memory memory) {
         pageCacheFlush();
     }
 
-    removePageMapping(memory.start);
-    freeVirtualMemory(memory);
+    pageMappingRemove(memory.start);
+    virtualMemoryFree(memory);
 }

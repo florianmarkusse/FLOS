@@ -48,7 +48,7 @@ static constexpr UUID NIL_UUID = {0};
 static constexpr UUID MAX_UUID = {
     .u64 = {0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}};
 
-void setUUIDType(UUID *uuid, U8 version, UUIDVariant variant);
+void UUIDTypeSet(UUID *uuid, U8 version, UUIDVariant variant);
 
 [[nodiscard]] bool UUIDEquals(UUID a, UUID b);
 

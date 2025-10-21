@@ -13,7 +13,7 @@ bool trie_insertStringSet(String key, TrieSetString **set, Arena *perm) {
         }
         set = &(*set)->child[hash >> 62];
     }
-    *set = NEW(perm, TrieSetString, .flags = ZERO_MEMORY);
+    *set = NEW(perm, TrieSetString, .flags = ALLOCATOR_ZERO_MEMORY);
     (*set)->data = key;
     return true;
 }

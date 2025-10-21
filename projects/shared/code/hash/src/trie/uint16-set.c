@@ -14,7 +14,7 @@ bool trieU16Insert(U16 key, TrieSetU16 **set, Arena *perm) {
         }
         set = &(*set)->child[hash >> 14];
     }
-    *set = NEW(perm, TrieSetU16, .flags = ZERO_MEMORY);
+    *set = NEW(perm, TrieSetU16, .flags = ALLOCATOR_ZERO_MEMORY);
     (*set)->data = key;
     return true;
 }

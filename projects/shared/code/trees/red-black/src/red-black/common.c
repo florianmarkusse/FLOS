@@ -1,6 +1,6 @@
 #include "shared/trees/red-black/common.h"
 
-U32 rebalanceInsert(RedBlackDirection direction,
+U32 redBlackRebalanceInsert(RedBlackDirection direction,
                     CommonNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                     RotationUpdater rotationUpdater) {
     RedBlackNode *grandParent = visitedNodes[len - 3].node;
@@ -22,7 +22,7 @@ U32 rebalanceInsert(RedBlackDirection direction,
     //     \           /
     //      z         y
     if (visitedNodes[len - 2].direction == !direction) {
-        rotateAround((RedBlackNode *)grandParent, (RedBlackNode *)parent,
+        redBlackRotate((RedBlackNode *)grandParent, (RedBlackNode *)parent,
                      (RedBlackNode *)node, direction, direction);
         if (rotationUpdater) {
             rotationUpdater(parent, node);
@@ -40,7 +40,7 @@ U32 rebalanceInsert(RedBlackDirection direction,
     parent->color = RB_TREE_BLACK;
     grandParent->color = RB_TREE_RED;
 
-    rotateAround((RedBlackNode *)visitedNodes[len - 4].node,
+    redBlackRotate((RedBlackNode *)visitedNodes[len - 4].node,
                  (RedBlackNode *)grandParent, (RedBlackNode *)parent,
                  !direction, visitedNodes[len - 4].direction);
     if (rotationUpdater) {
@@ -57,7 +57,7 @@ U32 rebalanceInsert(RedBlackDirection direction,
 // a black node from the other direction subtree means that we stil need to
 // address that problem. On the other hand, coloring a node black in the
 // direction subtree immediately solves the deficiency in the whole tree.
-U32 rebalanceDelete(RedBlackDirection direction,
+U32 redBlackRebalanceDelete(RedBlackDirection direction,
                     CommonNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
                     RotationUpdater rotationUpdater) {
     RedBlackNode *node = visitedNodes[len - 1].node;
@@ -79,7 +79,7 @@ U32 rebalanceDelete(RedBlackDirection direction,
         childOtherDirection->color = RB_TREE_BLACK;
         node->color = RB_TREE_RED;
 
-        rotateAround((RedBlackNode *)visitedNodes[len - 2].node,
+        redBlackRotate((RedBlackNode *)visitedNodes[len - 2].node,
                      (RedBlackNode *)node, (RedBlackNode *)childOtherDirection,
                      direction, visitedNodes[len - 2].direction);
         if (rotationUpdater) {
@@ -124,7 +124,7 @@ U32 rebalanceDelete(RedBlackDirection direction,
         childOtherDirection->color = RB_TREE_RED;
         innerChildOtherDirection->color = RB_TREE_BLACK;
 
-        rotateAround((RedBlackNode *)node, (RedBlackNode *)childOtherDirection,
+        redBlackRotate((RedBlackNode *)node, (RedBlackNode *)childOtherDirection,
                      (RedBlackNode *)innerChildOtherDirection, !direction,
                      !direction);
         if (rotationUpdater) {
@@ -151,7 +151,7 @@ U32 rebalanceDelete(RedBlackDirection direction,
     node->color = RB_TREE_BLACK;
     outerChildOtherDirection->color = RB_TREE_BLACK;
 
-    rotateAround((RedBlackNode *)visitedNodes[len - 2].node,
+    redBlackRotate((RedBlackNode *)visitedNodes[len - 2].node,
                  (RedBlackNode *)node, (RedBlackNode *)childOtherDirection,
                  direction, visitedNodes[len - 2].direction);
     if (rotationUpdater) {
@@ -161,14 +161,14 @@ U32 rebalanceDelete(RedBlackDirection direction,
     return 0;
 }
 
-RedBlackDirection calculateDirection(U64 value, U64 toCompare) {
+RedBlackDirection redBlackCalculateDirection(U64 value, U64 toCompare) {
     if (value >= toCompare) {
         return RB_TREE_RIGHT;
     }
     return RB_TREE_LEFT;
 }
 
-void rotateAround(RedBlackNode *rotationParent, RedBlackNode *rotationNode,
+void redBlackRotate(RedBlackNode *rotationParent, RedBlackNode *rotationNode,
                   RedBlackNode *rotationChild,
                   RedBlackDirection rotationDirection,
                   RedBlackDirection parentToChildDirection) {
@@ -178,7 +178,7 @@ void rotateAround(RedBlackNode *rotationParent, RedBlackNode *rotationNode,
     rotationParent->children[parentToChildDirection] = rotationChild;
 }
 
-U32 findAdjacentInSteps(RedBlackNode *node, CommonNodeVisited *visitedNodes,
+U32 redBlackfindAdjacentInSteps(RedBlackNode *node, CommonNodeVisited *visitedNodes,
                         RedBlackDirection direction) {
     if (!node->children[direction]) {
         return 0;
@@ -207,7 +207,7 @@ U32 findAdjacentInSteps(RedBlackNode *node, CommonNodeVisited *visitedNodes,
     return traversals;
 }
 
-void childrenAddPreOrder(RedBlackNode *current, RedBlackNode **buffer,
+void redBlackChildrenPreOrderAdd(RedBlackNode *current, RedBlackNode **buffer,
                          U32 *currentLen) {
     for (RedBlackDirection dir = RB_TREE_CHILD_COUNT; dir-- > 0;) {
         if (current->children[dir]) {

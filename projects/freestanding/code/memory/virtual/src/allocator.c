@@ -15,7 +15,7 @@
 
 void *memoryZeroedForVirtualGet(VirtualAllocationType type) {
     U32 bytes = virtualStructBytes[type];
-    void *result = allocateIdentityMemory(bytes);
+    void *result = identityMemoryAlloc(bytes);
     memset(result, 0, bytes);
 
     return result;
@@ -25,6 +25,6 @@ void *memoryZeroedForVirtualGet(VirtualAllocationType type) {
 // it requires extra memory for the mapping. So the memory we map in might not
 // immediately be used.
 void memoryZeroedForVirtualFree(U64 address, VirtualAllocationType type) {
-    freeIdentityMemory(
+    identityMemoryFree(
         (Memory){.start = address, .bytes = virtualStructBytes[type]});
 }

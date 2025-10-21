@@ -9,7 +9,7 @@ typedef struct {
     U64 bytes;
 } Memory;
 
-typedef MAX_LENGTH_ARRAY(Memory) Memory_max_a;
+typedef ARRAY_MAX_LENGTH(Memory) Memory_max_a;
 typedef ARRAY(Memory) Memory_a;
 
 #endif

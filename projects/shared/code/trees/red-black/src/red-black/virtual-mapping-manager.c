@@ -1,17 +1,17 @@
 #include "shared/trees/red-black/virtual-mapping-manager.h"
 #include "abstraction/memory/virtual/converter.h"
 
-void insertVMMNode(VMMNode **tree, VMMNode *createdNode) {
-    insertRedBlackNodeBasic((RedBlackNodeBasic **)tree,
+void VMMNodeInsert(VMMNode **tree, VMMNode *createdNode) {
+    redBlackNodeBasicInsert((RedBlackNodeBasic **)tree,
                             (RedBlackNodeBasic *)createdNode);
 }
 
-VMMNode *deleteVMMNode(VMMNode **tree, U64 value) {
-    return (VMMNode *)deleteRedBlackNodeBasic((RedBlackNodeBasic **)tree,
+VMMNode *VMMNodeDelete(VMMNode **tree, U64 value) {
+    return (VMMNode *)redBlackNodeBasicDelete((RedBlackNodeBasic **)tree,
                                               value);
 }
 
-VMMNode *findGreatestBelowOrEqualVMMNode(VMMNode **tree, U64 address) {
-    return (VMMNode *)findGreatestBelowOrEqual((RedBlackNodeBasic **)tree,
+VMMNode *VMMNodeFindGreatestBelowOrEqual(VMMNode **tree, U64 address) {
+    return (VMMNode *)redBlackNodeBasicFindGreatestBelowOrEqual((RedBlackNodeBasic **)tree,
                                                address);
 }

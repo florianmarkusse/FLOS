@@ -9,7 +9,7 @@ typedef enum { RB_TREE_LEFT = 0, RB_TREE_RIGHT = 1 } RedBlackDirection;
 static constexpr auto RB_TREE_CHILD_COUNT = 2;
 static constexpr auto RB_TREE_MAX_HEIGHT = 128;
 
-RedBlackDirection calculateDirection(U64 value, U64 toCompare);
+RedBlackDirection redBlackCalculateDirection(U64 value, U64 toCompare);
 
 // TODO: Having color here as the second argument causes some likely extra
 // padding in structs that is unneeded. However, for the polymorphism to work,
@@ -33,29 +33,30 @@ typedef struct {
 typedef void (*RotationUpdater)(void *rotationNode, void *rotationChild);
 
 [[nodiscard]] U32
-rebalanceInsert(RedBlackDirection direction,
-                CommonNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
-                RotationUpdater rotationUpdater);
+redBlackRebalanceInsert(RedBlackDirection direction,
+                        CommonNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT],
+                        U32 len, RotationUpdater rotationUpdater);
 [[nodiscard]] U32
-rebalanceDelete(RedBlackDirection direction,
-                CommonNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT], U32 len,
-                RotationUpdater rotationUpdater);
+redBlackRebalanceDelete(RedBlackDirection direction,
+                        CommonNodeVisited visitedNodes[RB_TREE_MAX_HEIGHT],
+                        U32 len, RotationUpdater rotationUpdater);
 
-void rotateAround(RedBlackNode *rotationParent, RedBlackNode *rotationNode,
-                  RedBlackNode *rotationChild,
-                  RedBlackDirection rotationDirection,
-                  RedBlackDirection parentToChildDirection);
+void redBlackRotate(RedBlackNode *rotationParent, RedBlackNode *rotationNode,
+                    RedBlackNode *rotationChild,
+                    RedBlackDirection rotationDirection,
+                    RedBlackDirection parentToChildDirection);
 
-[[nodiscard]] U32 findAdjacentInSteps(RedBlackNode *node,
-                                      CommonNodeVisited *visitedNodes,
-                                      RedBlackDirection direction);
+[[nodiscard]] U32 redBlackfindAdjacentInSteps(RedBlackNode *node,
+                                              CommonNodeVisited *visitedNodes,
+                                              RedBlackDirection direction);
 
-void childrenAddPreOrder(RedBlackNode *current, RedBlackNode **buffer,
-                         U32 *currentLen);
+void redBlackChildrenPreOrderAdd(RedBlackNode *current, RedBlackNode **buffer,
+                                 U32 *currentLen);
 
-#define TREE_TRAVERSAL_PRE_ORDER(node, len, buffer)                                 \
+#define RB_TREE_TRAVERSAL_PRE_ORDER(node, len, buffer)                         \
     for (; (len) > 0 && ((node) = (buffer)[(len) - 1]);                        \
-         (len) -= 1, childrenAddPreOrder((RedBlackNode *)(node),               \
-                                         (RedBlackNode **)(buffer), &(len)))
+         (len) -= 1,                                                           \
+         redBlackChildrenPreOrderAdd((RedBlackNode *)(node),                   \
+                                     (RedBlackNode **)(buffer), &(len)))
 
 #endif

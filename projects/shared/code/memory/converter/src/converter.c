@@ -14,14 +14,14 @@ U64_pow2 static pageAligned(U64 bytes) {
                pageSizeLargest());
 }
 
-U64_pow2 increasePageSize(U64_pow2 pageSize) {
+U64_pow2 pageSizeIncrease(U64_pow2 pageSize) {
     U64 largerPages =
         (~((pageSize | (pageSize - 1)))) & pageSizesAvailableMask();
 
     return largerPages & -largerPages;
 }
 
-U64_pow2 decreasePageSize(U64_pow2 pageSize) {
+U64_pow2 pageSizeDecrease(U64_pow2 pageSize) {
     U64 smallerPages = ((pageSize - 1) & pageSizesAvailableMask());
     return 1ULL << (((sizeof(U64) * BITS_PER_BYTE) - 1) -
                     (U64)(__builtin_clzll(smallerPages)));
@@ -32,7 +32,7 @@ U64_pow2 pageSizeEncompassing(U64 bytes) {
     if (isPageSizeValid(result)) {
         return result;
     }
-    return increasePageSize(result);
+    return pageSizeIncrease(result);
 }
 
 U64_pow2 pageSizeFitting(U64 bytes) {
@@ -40,7 +40,7 @@ U64_pow2 pageSizeFitting(U64 bytes) {
     if (isPageSizeValid(result)) {
         return result;
     }
-    return decreasePageSize(result);
+    return pageSizeDecrease(result);
 }
 
 static U64_pow2 largestAlignedPage(U64 address) {
@@ -56,7 +56,7 @@ static U64_pow2 largestAlignedPage(U64 address) {
         return result;
     }
 
-    return decreasePageSize(result);
+    return pageSizeDecrease(result);
 }
 
 U64_pow2 pageSizeLeastLargerThan(U64 address, U64 bytes) {
@@ -70,5 +70,5 @@ U64_pow2 pageSizeLeastLargerThan(U64 address, U64 bytes) {
     if (isPageSizeValid(alignedBytes)) {
         return alignedBytes;
     }
-    return increasePageSize(alignedBytes);
+    return pageSizeIncrease(alignedBytes);
 }

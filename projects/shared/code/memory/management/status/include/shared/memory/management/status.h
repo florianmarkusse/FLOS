@@ -4,8 +4,8 @@
 #include "shared/memory/management/definitions.h"
 #include "shared/types/numeric.h"
 
-void appendPhysicalMemoryManagerStatus();
-void appendVirtualMemoryManagerStatus();
+void physicalMemoryManagerStatusAppend();
+void virtualMemoryManagerStatusAppend();
 
 void memoryAppend(Memory memory);
 void mappingMemoryAppend(U64 virtualAddress, U64 physicalAddress, U64 size);

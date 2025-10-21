@@ -352,7 +352,7 @@ static void createFileEntryAfterWritingData(U8 name[FAT32_SHORT_NAME_LEN],
 static Cluster pathCreate(String FAT32FilePath, Cluster startCluster) {
     StringIter parentDirectories;
 
-    TOKENIZE_STRING(FAT32FilePath, parentDirectories, PATH_DELIMITER, 0) {
+    STRING_TOKENIZE(FAT32FilePath, parentDirectories, PATH_DELIMITER, 0) {
         startCluster =
             createOrGetDirectory(parentDirectories.string.buf, startCluster);
     }

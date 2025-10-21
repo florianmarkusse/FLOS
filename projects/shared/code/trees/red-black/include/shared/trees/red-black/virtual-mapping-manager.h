@@ -10,12 +10,12 @@ typedef struct {
     U64_pow2 mappingSize;
 } VMMNode;
 
-typedef MAX_LENGTH_ARRAY(VMMNode) RedBlackVMM_max_a;
-typedef MAX_LENGTH_ARRAY(VMMNode *) RedBlackVMMPtr_max_a;
+typedef ARRAY_MAX_LENGTH(VMMNode) RedBlackVMM_max_a;
+typedef ARRAY_MAX_LENGTH(VMMNode *) RedBlackVMMPtr_max_a;
 
-void insertVMMNode(VMMNode **tree, VMMNode *createdNode);
-[[nodiscard]] VMMNode *deleteVMMNode(VMMNode **tree, U64 value);
-[[nodiscard]] VMMNode *findGreatestBelowOrEqualVMMNode(VMMNode **tree,
+void VMMNodeInsert(VMMNode **tree, VMMNode *createdNode);
+[[nodiscard]] VMMNode *VMMNodeDelete(VMMNode **tree, U64 value);
+[[nodiscard]] VMMNode *VMMNodeFindGreatestBelowOrEqual(VMMNode **tree,
                                                        U64 address);
 
 #endif

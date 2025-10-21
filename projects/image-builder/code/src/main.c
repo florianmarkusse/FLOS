@@ -192,18 +192,18 @@ int main(int argc, char **argv) {
         if (!strcmp(flag, PHYSICAL_BOUNDARY_FLAG)) {
             String physString =
                 STRING_LEN(argv[i + 1], (U32)strlen(argv[i + 1]));
-            physicalBoundary = parseU32(physString, 10);
+            physicalBoundary = U32Parse(physString, 10);
         }
         if (!strcmp(flag, OPTIMAL_TRANSFER_FLAG)) {
             String optimalTransferString =
                 STRING_LEN(argv[i + 1], (U32)strlen(argv[i + 1]));
             optimalTransferLengthGranularity =
-                parseU32(optimalTransferString, 10);
+                U32Parse(optimalTransferString, 10);
         }
         if (!strcmp(flag, LBA_FLAG)) {
             String lbaString =
                 STRING_LEN(argv[i + 1], (U32)strlen(argv[i + 1]));
-            configuration.LBASizeBytes = parseU16(lbaString, 10);
+            configuration.LBASizeBytes = U16Parse(lbaString, 10);
         }
     }
 

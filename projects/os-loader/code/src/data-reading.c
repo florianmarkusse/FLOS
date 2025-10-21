@@ -187,10 +187,10 @@ U32 kernelBytesFromPartition(Arena scratch) {
     // Assumes the below file structure:
     // KERNEL_SIZE_BYTES=132456
     StringIter lines;
-    TOKENIZE_STRING(dataFile, lines, '\n', 0) {
+    STRING_TOKENIZE(dataFile, lines, '\n', 0) {
         StringIter tokens;
         bool second = false;
-        TOKENIZE_STRING(lines.string, tokens, '=', 0) {
+        STRING_TOKENIZE(lines.string, tokens, '=', 0) {
             if (second) {
                 U32 bytes = 0;
                 for (typeof(tokens.string.len) i = 0; i < tokens.string.len;

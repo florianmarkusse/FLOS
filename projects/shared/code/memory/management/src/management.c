@@ -15,26 +15,26 @@
 Buddy buddyPhysical;
 Buddy buddyVirtual;
 
-void freeVirtualMemory(Memory memory) { buddyFree(&buddyVirtual, memory); }
+void virtualMemoryFree(Memory memory) { buddyFree(&buddyVirtual, memory); }
 
-void freePhysicalMemory(Memory memory) { buddyFree(&buddyPhysical, memory); }
+void physicalMemoryFree(Memory memory) { buddyFree(&buddyPhysical, memory); }
 
-void *allocVirtualMemory(U64_pow2 blockSize) {
+void *virtualMemoryAlloc(U64_pow2 blockSize) {
     return buddyAllocate(&buddyVirtual, blockSize);
 }
 
-void *allocPhysicalMemory(U64_pow2 blockSize) {
+void *physicalMemoryAlloc(U64_pow2 blockSize) {
     return buddyAllocate(&buddyPhysical, blockSize);
 }
 
 static void identityArrayToMappable(void_max_a *array, U32 elementSizeBytes,
                                     U64_pow2 bytesNewBuffer) {
-    void *virtualBuffer = allocVirtualMemory(bytesNewBuffer);
+    void *virtualBuffer = virtualMemoryAlloc(bytesNewBuffer);
 
     U64 bytesUsed = array->len * elementSizeBytes;
     U32 mapsToDo = (U32)ceilingDivide(bytesUsed, pageSizeSmallest());
     for (typeof(mapsToDo) i = 0; i < mapsToDo; i++) {
-        (void)handlePageFault((U64)virtualBuffer + (i * pageSizeSmallest()));
+        (void)pageFaultHandle((U64)virtualBuffer + (i * pageSizeSmallest()));
     }
 
     memcpy(virtualBuffer, array->buf, array->len * elementSizeBytes);
@@ -96,7 +96,7 @@ static void treeWithFreeListToMappable(NodeAllocator *nodeAllocator,
                              sizeof(*nodeAllocator->nodesFreeList.buf))));
 }
 
-void initMemoryManagers(KernelMemory *kernelMemory) {
+void memoryManagersInit(KernelMemory *kernelMemory) {
     buddyPhysical.data = kernelMemory->buddyPhysical;
     if (setjmp(buddyPhysical.memoryExhausted)) {
         interruptPhysicalMemory();

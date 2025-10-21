@@ -29,17 +29,17 @@ typedef struct {
 
 typedef ARRAY(RedBlackNodeBasic *) RedBlackNodeBasicPtr_a;
 
-typedef MAX_LENGTH_ARRAY(RedBlackNodeBasic) RedBlackNodeBasic_max_a;
-typedef MAX_LENGTH_ARRAY(RedBlackNodeBasic *) RedBlackNodeBasicPtr_max_a;
+typedef ARRAY_MAX_LENGTH(RedBlackNodeBasic) RedBlackNodeBasic_max_a;
+typedef ARRAY_MAX_LENGTH(RedBlackNodeBasic *) RedBlackNodeBasicPtr_max_a;
 
-void insertRedBlackNodeBasic(RedBlackNodeBasic **tree,
+void redBlackNodeBasicInsert(RedBlackNodeBasic **tree,
                              RedBlackNodeBasic *createdNode);
 [[nodiscard]] RedBlackNodeBasic *
-deleteRedBlackNodeBasic(RedBlackNodeBasic **tree, U64 value);
-[[nodiscard]] RedBlackNodeBasic *popRedBlackNodeBasic(RedBlackNodeBasic **tree);
+redBlackNodeBasicDelete(RedBlackNodeBasic **tree, U64 value);
+[[nodiscard]] RedBlackNodeBasic *redBlackNodeBasicPop(RedBlackNodeBasic **tree);
 [[nodiscard]] RedBlackNodeBasic *
-deleteAtLeastRedBlackNodeBasic(RedBlackNodeBasic **tree, U64 value);
+redBlackNodeBasicDeleteAtLeast(RedBlackNodeBasic **tree, U64 value);
 [[nodiscard]] RedBlackNodeBasic *
-findGreatestBelowOrEqual(RedBlackNodeBasic **tree, U64 value);
+redBlackNodeBasicFindGreatestBelowOrEqual(RedBlackNodeBasic **tree, U64 value);
 
 #endif

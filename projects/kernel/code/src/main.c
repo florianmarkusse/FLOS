@@ -56,10 +56,10 @@ static void appendMemoryDeltaType(AvailableMemoryState startMemory,
 
 static void appendMemoryDelta(AvailableMemoryState startPhysicalMemory,
                               AvailableMemoryState startVirtualMemory) {
-    AvailableMemoryState endPhysicalMemory = getAvailablePhysicalMemory();
+    AvailableMemoryState endPhysicalMemory = physicalMemoryAvailableGet();
     appendMemoryDeltaType(startPhysicalMemory, endPhysicalMemory);
 
-    AvailableMemoryState endVirtualMemory = getAvailableVirtualMemory();
+    AvailableMemoryState endVirtualMemory = virtualMemoryAvailableGet();
     appendMemoryDeltaType(startVirtualMemory, endVirtualMemory);
 }
 
@@ -71,15 +71,15 @@ typedef enum { IDENTITY_MEMORY, MAPPABLE_MEMORY } MemoryWritableType;
 static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
                             MemoryWritableType memoryWritableType,
                             U64 expectedPageFaults) {
-    AvailableMemoryState startPhysicalMemory = getAvailablePhysicalMemory();
-    AvailableMemoryState startVirtualMemory = getAvailableVirtualMemory();
+    AvailableMemoryState startPhysicalMemory = physicalMemoryAvailableGet();
+    AvailableMemoryState startVirtualMemory = virtualMemoryAvailableGet();
     volatile U64 beforePageFaults;
     volatile U64 afterPageFaults;
 
     U64 *buffer;
     U64 cycles;
     if (memoryWritableType == IDENTITY_MEMORY) {
-        buffer = allocateIdentityMemory(
+        buffer = identityMemoryAlloc(
             MAX(pageSizeSmallest(), START_ENTRIES_COUNT * sizeof(U64)));
 
         U64_max_a dynamicArray = {
@@ -89,11 +89,11 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
         for (typeof(arrayEntries) i = 0; i < arrayEntries; i++) {
             if (dynamicArray.len >= dynamicArray.cap) {
                 U64 currentBytes = dynamicArray.cap * sizeof(U64);
-                U64 *temp = allocateIdentityMemory(
+                U64 *temp = identityMemoryAlloc(
                     MAX(pageSizeSmallest(), currentBytes * GROWTH_RATE));
                 memcpy(temp, dynamicArray.buf, currentBytes);
 
-                freeIdentityMemory((Memory){.start = (U64)dynamicArray.buf,
+                identityMemoryFree((Memory){.start = (U64)dynamicArray.buf,
                                             .bytes = currentBytes});
                 dynamicArray.buf = temp;
                 dynamicArray.cap *= GROWTH_RATE;
@@ -107,7 +107,7 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
 
         cycles = endCycleCount - startCycleCount;
     } else {
-        buffer = allocateMappableMemory(TEST_MEMORY_AMOUNT, pageSize);
+        buffer = mappableMemoryAlloc(TEST_MEMORY_AMOUNT, pageSize);
         beforePageFaults = pageFaultsCurrent;
         U64 startCycleCount = cycleCounterGet(true, false);
 
@@ -136,11 +136,11 @@ static U64 arrayWritingTest(U64_pow2 pageSize, U64 arrayEntries,
     }
 
     if (memoryWritableType == IDENTITY_MEMORY) {
-        freeIdentityMemory(
+        identityMemoryFree(
             (Memory){.start = (U64)buffer,
                      .bytes = ceilingPowerOf2(arrayEntries * alignof(U64))});
     } else {
-        freeMappableMemory(
+        mappableMemoryFree(
             (Memory){.start = (U64)buffer, .bytes = TEST_MEMORY_AMOUNT});
 
         U64 expectedAfterPageFaults = beforePageFaults + expectedPageFaults;
@@ -280,7 +280,7 @@ static void baselineTest() {
 
     for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
          iteration++) {
-        U64 *buffer = allocateIdentityMemory(MAX_TEST_ENTRIES * sizeof(U64));
+        U64 *buffer = identityMemoryAlloc(MAX_TEST_ENTRIES * sizeof(U64));
 
         U64 startCycleCount = cycleCounterGet(true, false);
 
@@ -289,7 +289,7 @@ static void baselineTest() {
         }
         U64 endCycleCount = cycleCounterGet(false, true);
 
-        freeIdentityMemory((Memory){.start = (U64)buffer,
+        identityMemoryFree((Memory){.start = (U64)buffer,
                                     .bytes = MAX_TEST_ENTRIES * sizeof(U64)});
 
         U64 cycles = endCycleCount - startCycleCount;
@@ -310,7 +310,7 @@ static void baselineTest() {
 
     for (typeof(TEST_ITERATIONS) iteration = 0; iteration < TEST_ITERATIONS;
          iteration++) {
-        U64 *buffer = allocateIdentityMemory(MAX_TEST_ENTRIES * sizeof(U64));
+        U64 *buffer = identityMemoryAlloc(MAX_TEST_ENTRIES * sizeof(U64));
         U64 entriesToWrite =
             ringBufferIndex(biskiNext(&state), MAX_TEST_ENTRIES);
 
@@ -321,7 +321,7 @@ static void baselineTest() {
         }
         U64 endCycleCount = cycleCounterGet(false, true);
 
-        freeIdentityMemory((Memory){.start = (U64)buffer,
+        identityMemoryFree((Memory){.start = (U64)buffer,
                                     .bytes = MAX_TEST_ENTRIES * sizeof(U64)});
 
         U64 cycles = endCycleCount - startCycleCount;
@@ -364,9 +364,9 @@ kernelMain(struct KernelParameters *kernelParams) {
     BREAKPOINT;
 
     archInit(kernelParams->archParams);
-    initMemoryManagers(&kernelParams->memory);
+    memoryManagersInit(&kernelParams->memory);
 
-    void *initMemory = (void *)allocateIdentityMemory(INIT_MEMORY);
+    void *initMemory = (void *)identityMemoryAlloc(INIT_MEMORY);
     Arena arena = (Arena){.curFree = initMemory,
                           .beg = initMemory,
                           .end = initMemory + INIT_MEMORY};
@@ -383,14 +383,14 @@ kernelMain(struct KernelParameters *kernelParams) {
 
     interruptsEnable();
 
-    freeIdentityMemoryNotBlockSize(
+    identityMemoryNotBlockSizeFree(
         (Memory){.start = (U64)arena.curFree,
                  .bytes = (U64)(arena.end - arena.curFree)});
-    freeIdentityMemoryNotBlockSize((Memory){
+    identityMemoryNotBlockSizeFree((Memory){
         .start = kernelParams->permanentLeftoverFree.start,
         .bytes = kernelParams->permanentLeftoverFree.bytes,
     });
-    freeIdentityMemoryNotBlockSize((Memory){.start = kernelParams->self.start,
+    identityMemoryNotBlockSizeFree((Memory){.start = kernelParams->self.start,
                                             .bytes = kernelParams->self.bytes});
 
     // NOTE: from here, everything is initialized
@@ -402,7 +402,7 @@ kernelMain(struct KernelParameters *kernelParams) {
         biskiSeed(&state, PRNG_SEED);
 
         KFLUSH_AFTER {
-            appendMemoryManagementStatus();
+            memoryManagementStatusAppend();
             memoryVirtualMappingStatusAppend();
 
             INFO(STRING("Iterations per test: "));

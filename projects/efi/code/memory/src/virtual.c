@@ -65,7 +65,7 @@ StackResult stackCreateAndMap(U64 virtualMemoryFirstAvailable, U64 stackSize,
     virtualMemoryFirstAvailable =
         virtualAlign(virtualMemoryFirstAvailable, stackAddress, stackSize);
     U64 stackGuardPageAddress = virtualMemoryFirstAvailable - stackSize;
-    addPageMapping((Memory){.start = stackGuardPageAddress, .bytes = stackSize},
+    pageMappingAdd((Memory){.start = stackGuardPageAddress, .bytes = stackSize},
                    GUARD_PAGE_SIZE);
 
     KFLUSH_AFTER {

@@ -65,7 +65,7 @@ U32 nodeCount(RedBlackNode *tree) {
     U32 len = 1;
     RedBlackNode *node;
 
-    TREE_TRAVERSAL_PRE_ORDER(node, len, buffer) { result++; }
+    RB_TREE_TRAVERSAL_PRE_ORDER(node, len, buffer) { result++; }
 
     return result;
 }

@@ -43,9 +43,9 @@
     iteratorType *functionName(/* NOLINTNEXTLINE */                            \
                                stringSetType *set, Arena *perm) {              \
         /* NOLINTNEXTLINE */                                                   \
-        iteratorType *it = NEW(perm, iteratorType, .flags = ZERO_MEMORY);      \
+        iteratorType *it = NEW(perm, iteratorType, .flags = ALLOCATOR_ZERO_MEMORY);      \
         if (set != nullptr) {                                                  \
-            it->head = NEW(perm, iterNodeType, .flags = ZERO_MEMORY);          \
+            it->head = NEW(perm, iterNodeType, .flags = ALLOCATOR_ZERO_MEMORY);          \
             it->head->set = set;                                               \
         }                                                                      \
         return it;                                                             \
@@ -72,7 +72,7 @@
                     it->free = it->free->next;                                 \
                     nextIter->index = 0;                                       \
                 } else {                                                       \
-                    nextIter = NEW(perm, iterNodeType, .flags = ZERO_MEMORY);  \
+                    nextIter = NEW(perm, iterNodeType, .flags = ALLOCATOR_ZERO_MEMORY);  \
                 }                                                              \
                 nextIter->set = it->head->set->child[index - 1];               \
                 nextIter->next = it->head;                                     \

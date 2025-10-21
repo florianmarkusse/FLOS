@@ -166,7 +166,7 @@ void *alignedMemoryBlockAlloc(U64_pow2 bytes, U64_pow2 alignment, Arena scratch,
     if (pageSize == pageSizeLargest()) {
         largerPageSize = pageSize;
     } else {
-        largerPageSize = increasePageSize(pageSize);
+        largerPageSize = pageSizeIncrease(pageSize);
     }
 
     AlignedMemory bestDescriptor = {
@@ -200,7 +200,7 @@ void *alignedMemoryBlockAlloc(U64_pow2 bytes, U64_pow2 alignment, Arena scratch,
 
         largerPageSize = pageSize;
         if (pageSize > pageSizeSmallest()) {
-            pageSize = decreasePageSize(pageSize);
+            pageSize = pageSizeDecrease(pageSize);
         } else {
             pageSize = 0;
         }

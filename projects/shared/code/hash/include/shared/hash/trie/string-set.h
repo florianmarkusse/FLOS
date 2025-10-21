@@ -50,9 +50,9 @@ TRIE_ITERATOR_HEADER_FILE(TrieSetString, trie_stringIterNode,
 //__attribute__((unused)) static trie_Iter *newIter(trie_StringSet
 //*set,
 //                                                        arena *perm) {
-//    trie_Iter *it = NEW(perm, trie_Iter, .flags = ZERO_MEMORY);
+//    trie_Iter *it = NEW(perm, trie_Iter, .flags = ALLOCATOR_ZERO_MEMORY);
 //    if (set != nullptr) {
-//        it->head = NEW(perm, trie_IterNode, .flags = ZERO_MEMORY);
+//        it->head = NEW(perm, trie_IterNode, .flags = ALLOCATOR_ZERO_MEMORY);
 //        it->head->set = set;
 //    }
 //    return it;
@@ -82,7 +82,7 @@ TRIE_ITERATOR_HEADER_FILE(TrieSetString, trie_stringIterNode,
 //                nextIter->index = 0;
 //            } else {
 //                nextIter = NEW(perm, trie_IterNode,
-//                .flags = ZERO_MEMORY);
+//                .flags = ALLOCATOR_ZERO_MEMORY);
 //            }
 //            nextIter->set = it->head->set->child[index - 1];
 //            nextIter->next = it->head;

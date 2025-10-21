@@ -12,7 +12,7 @@ void *alloc(Arena *a, U64 size, U64_pow2 align, U64 count, U8 flags) {
     // 2's complement is all bits flipped + 1
     U64 padding = (-(U64)a->curFree) & (align - 1);
     if (count > (avail - padding) / size) {
-        if (flags & NULLPTR_ON_FAIL) {
+        if (flags & ALLOCATOR_NULLPTR_ON_FAIL) {
             return nullptr;
         }
         longjmp(a->jmpBuf, 1);
@@ -21,5 +21,5 @@ void *alloc(Arena *a, U64 size, U64_pow2 align, U64 count, U8 flags) {
     U8 *p = a->curFree + padding;
     a->curFree += padding + total;
 
-    return flags & ZERO_MEMORY ? memset(p, 0, total) : p;
+    return flags & ALLOCATOR_ZERO_MEMORY ? memset(p, 0, total) : p;
 }

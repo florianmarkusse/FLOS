@@ -17,11 +17,11 @@ typedef enum {
     PAGE_FAULT_RESULT_STACK_OVERFLOW
 } PageFaultResult;
 
-[[nodiscard]] PageFaultResult handlePageFault(U64 faultingAddress);
+[[nodiscard]] PageFaultResult pageFaultHandle(U64 faultingAddress);
 
 static constexpr U64_pow2 GUARD_PAGE_SIZE = 0;
 
-void addPageMapping(Memory memory, U64_pow2 pageSize);
-void removePageMapping(U64 address);
+void pageMappingAdd(Memory memory, U64_pow2 pageSize);
+void pageMappingRemove(U64 address);
 
 #endif
