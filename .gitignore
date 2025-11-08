@@ -50,3 +50,5 @@ brestore.*
 *.efi
 *.INF
 *.hdd
+
+.env
