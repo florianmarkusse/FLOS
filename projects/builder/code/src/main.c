@@ -123,6 +123,15 @@ typedef double F64;
 #define MIN_POS_VALUE(x)                                                       \
     _Generic((x), F32: F32_MIN_POS, F64: F64_MIN_POS, default: "unknown")
 
+#define ARRAY_MAX_LENGTH(T)                                                    \
+    struct {                                                                   \
+        T *buf;                                                                \
+        U32 len;                                                               \
+        U32 cap;                                                               \
+    }
+
+typedef ARRAY_MAX_LENGTH(char *) charPtr_max_a;
+
 // static constexpr auto BITS_PER_BYTE = 8;
 
 typedef struct {
@@ -174,6 +183,8 @@ typedef struct {
          1);                                                                   \
          (stringIter).pos += (stringIter).string.len + 1)
 
+// TODO: remave exit(1) calls!
+
 static constexpr auto FULL_ACCESS_USER_ONLY = 0700;
 int fileDescriptorOpen(char *path, int flags) {
     int result = open(path, flags | O_CREAT | O_APPEND, FULL_ACCESS_USER_ONLY);
@@ -184,36 +195,50 @@ int fileDescriptorOpen(char *path, int flags) {
     return result;
 }
 
-int commandRun(String command, char *fdIn, char *fdOut, char *fdErr) {
-    int fdInDescriptor = -1;
-    if (fdIn) {
-        fdInDescriptor = fileDescriptorOpen(fdIn, O_RDONLY);
-        if (fdInDescriptor < 0) {
-            printf("Could not create file descriptor %s: %s", fdIn,
-                   strerror(errno));
-        }
-        printf("fdInd: %d\n", fdInDescriptor);
-    }
+// TODO: should just be some arena that you add to I guess...
+static charPtr_max_a argumentsHolderCreate() {
+    static constexpr auto ARGUMENTS_MAX = 256;
+    charPtr_max_a arguments = {
+        .buf = malloc(ARGUMENTS_MAX * sizeof(typeof(*arguments.buf))),
+        .len = 0,
+        .cap = ARGUMENTS_MAX};
+    return arguments;
+}
 
-    int fdOutDescriptor = -1;
-    if (fdOut) {
-        fdOutDescriptor = fileDescriptorOpen(fdOut, O_WRONLY);
-        if (fdOutDescriptor < 0) {
-            printf("Could not create file descriptor %s: %s", fdOut,
-                   strerror(errno));
-        }
-        printf("fdout: %d\n", fdOutDescriptor);
+// TODO: person should really be freeing this...
+static void commandTokenize(charPtr_max_a *argumentsCurrent, String command) {
+    String commandCopy = {.buf = malloc(command.len), .len = command.len};
+    if (!commandCopy.buf) {
+        printf("no memoryn...\n");
     }
+    memcpy(commandCopy.buf, command.buf, command.len);
 
-    int fdErrDescriptor = -1;
-    if (fdErr) {
-        fdErrDescriptor = fileDescriptorOpen(fdErr, O_WRONLY);
-        if (fdErrDescriptor < 0) {
-            printf("Could not create file descriptor %s: %s", fdErr,
-                   strerror(errno));
-        }
-        printf("fderr: %d\n", fdErrDescriptor);
+    StringIter tokens;
+    // TODO: Really just dupilcate this command and use an arena, I don't
+    // like changing the input command...
+    // NOTE: this fails if there are
+    // multiple spaces in the command, do I care?
+    STRING_TOKENIZE(commandCopy, tokens, ' ', 0) {
+        tokens.string.buf[tokens.string.len] = '\0';
+        argumentsCurrent->buf[argumentsCurrent->len] =
+            (char *)tokens.string.buf;
+        argumentsCurrent->len++;
     }
+}
+
+typedef struct {
+    int fdIn;
+    int fdOut;
+    int fdErr;
+} FileDescriptors;
+
+static int commandExecute(charPtr_max_a arguments,
+                          FileDescriptors childFileDescriptors) {
+    printf("running command: \n");
+    for (U32 i = 0; i < arguments.len; i++) {
+        printf("%s ", arguments.buf[i]);
+    }
+    printf("\n");
 
     pid_t cpid = fork();
     if (cpid < 0) {
@@ -222,81 +247,54 @@ int commandRun(String command, char *fdIn, char *fdOut, char *fdErr) {
     }
 
     if (cpid == 0) {
-        if (fdInDescriptor >= 0) {
-            if (dup2(fdInDescriptor, STDIN_FILENO) < 0) {
+        if (childFileDescriptors.fdIn >= 0) {
+            if (dup2(childFileDescriptors.fdIn, STDIN_FILENO) < 0) {
                 printf("Could not setup stdin for child process: %s",
                        strerror(errno));
                 exit(1);
             }
         }
 
-        if (fdOutDescriptor >= 0) {
-            if (dup2(fdOutDescriptor, STDOUT_FILENO) < 0) {
+        if (childFileDescriptors.fdOut >= 0) {
+            if (dup2(childFileDescriptors.fdOut, STDOUT_FILENO) < 0) {
                 printf("Could not setup stdout for child process: %s",
                        strerror(errno));
                 exit(1);
             }
         }
 
-        if (fdErrDescriptor >= 0) {
-            if (dup2(fdErrDescriptor, STDERR_FILENO) < 0) {
+        if (childFileDescriptors.fdErr >= 0) {
+            if (dup2(childFileDescriptors.fdErr, STDERR_FILENO) < 0) {
                 printf("Could not setup stderr for child process: %s",
                        strerror(errno));
                 exit(1);
             }
         }
 
-        // TODO: should just be some arena that you add to I guess...
-        char *arguments[64];
-
-        String commandCopy = {.buf = malloc(command.len), .len = command.len};
-        if (!commandCopy.buf) {
-            printf("no memoryn...\n");
-        }
-        memcpy(commandCopy.buf, command.buf, command.len);
-
-        StringIter tokens;
-        // TODO: Really just dupilcate this command and use an arena, I don't
-        // like changing the input command...
-        // NOTE: this fails if there are
-        // multiple spaces in the command, do I care?
-        U32 i = 0;
-        STRING_TOKENIZE(commandCopy, tokens, ' ', 0) {
-            tokens.string.buf[tokens.string.len] = '\0';
-            printf("token: %s\n", tokens.string.buf);
-            arguments[i] = (char *)tokens.string.buf;
-            i++;
-        }
-
-        arguments[i] = nullptr;
-
-        if (execvp(arguments[0], arguments)) {
-            printf("Could not exec child process for %s: %s", command.buf,
-                   strerror(errno));
-            fflush(stdout);
-            fflush(stderr);
-
-            free(commandCopy.buf);
-
+        arguments.buf[arguments.len] = nullptr;
+        arguments.len++;
+        if (execvp(arguments.buf[0], arguments.buf)) {
+            printf("Could not exec child process for binary %s: %s",
+                   arguments.buf[0], strerror(errno));
             exit(1);
         }
         __builtin_unreachable();
     }
 
-    if (fdInDescriptor >= 0) {
-        if (close(fdInDescriptor)) {
+    if (childFileDescriptors.fdIn >= 0) {
+        if (close(childFileDescriptors.fdIn)) {
             printf("Could not close fdin descriptor: %s\n", strerror(errno));
             exit(1);
         }
     }
-    if (fdOutDescriptor >= 0) {
-        if (close(fdOutDescriptor)) {
+    if (childFileDescriptors.fdOut >= 0) {
+        if (close(childFileDescriptors.fdOut)) {
             printf("Could not close fdOut Descriptor: %s\n", strerror(errno));
             exit(1);
         }
     }
-    if (fdErrDescriptor >= 0) {
-        if (close(fdErrDescriptor)) {
+    if (childFileDescriptors.fdErr >= 0) {
+        if (close(childFileDescriptors.fdErr)) {
             printf("Could not close fdErr Descriptor: %s\n", strerror(errno));
             exit(1);
         }
@@ -305,7 +303,131 @@ int commandRun(String command, char *fdIn, char *fdOut, char *fdErr) {
     return cpid;
 }
 
-static String ROOT_FOLDER = STRING("FLOS");
+FileDescriptors childFildDescriptorsCreate(char *fdIn, char *fdOut,
+                                           char *fdErr) {
+    FileDescriptors result = {
+        .fdIn = -1,
+        .fdOut = -1,
+        .fdErr = -1,
+    };
+
+    if (fdIn) {
+        result.fdIn = fileDescriptorOpen(fdIn, O_RDONLY);
+        if (result.fdIn < 0) {
+            printf("Could not create file descriptor %s: %s", fdIn,
+                   strerror(errno));
+        }
+    }
+
+    if (fdOut) {
+        result.fdOut = fileDescriptorOpen(fdOut, O_WRONLY);
+        if (result.fdOut < 0) {
+            printf("Could not create file descriptor %s: %s", fdOut,
+                   strerror(errno));
+        }
+    }
+
+    if (fdErr) {
+        result.fdErr = fileDescriptorOpen(fdErr, O_WRONLY);
+        if (result.fdErr < 0) {
+            printf("Could not create file descriptor %s: %s", fdErr,
+                   strerror(errno));
+        }
+    }
+
+    return result;
+}
+
+int commandRun(String command, char *fdIn, char *fdOut, char *fdErr) {
+    FileDescriptors childFileDescriptors =
+        childFildDescriptorsCreate(fdIn, fdOut, fdErr);
+    charPtr_max_a argumentsCurrent = argumentsHolderCreate();
+    commandTokenize(&argumentsCurrent, command);
+
+    int result = commandExecute(argumentsCurrent, childFileDescriptors);
+
+    return result;
+}
+
+typedef struct {
+    String compiler;
+    String file;
+    String flags;
+} CCompilationInput;
+
+static String SRC_DIR = STRING("src");
+static String ROOT_DIR = STRING("FLOS");
+
+static String dirPrefixFindSingleOccurrence(String path, String dir) {
+    StringIter dirs;
+    bool dirFound = false;
+    U32 dirPrefixLen = 0;
+    STRING_TOKENIZE(path, dirs, '/', 0) {
+        if (dirFound && !dirPrefixLen) {
+            dirPrefixLen = dirs.pos;
+        }
+
+        if (stringEquals(dirs.string, dir)) {
+            if (dirFound) {
+                return (String){0};
+            } else {
+                dirFound = true;
+            }
+        }
+    }
+
+    return (String){.buf = path.buf, .len = dirPrefixLen};
+}
+
+int CCodeCompile(CCompilationInput *input, char *fdIn, char *fdOut,
+                 char *fdErr) {
+    charPtr_max_a argumentsCurrent = argumentsHolderCreate();
+
+    commandTokenize(&argumentsCurrent, input->compiler);
+    commandTokenize(&argumentsCurrent, input->flags);
+    commandTokenize(&argumentsCurrent, STRING("-c"));
+    commandTokenize(&argumentsCurrent, input->file);
+
+    String srcDir = dirPrefixFindSingleOccurrence(input->file, SRC_DIR);
+    if (!srcDir.len) {
+        fprintf(
+            stderr,
+            "could not find a path that contains a single %.*s, given: %.*s\n",
+            SRC_DIR.len, SRC_DIR.buf, input->file.len, input->file.buf);
+        return 1;
+    }
+
+    String afterPrefix = {.buf = input->file.buf + srcDir.len,
+                          .len = input->file.len - srcDir.len};
+    // NOTE: +2 for the .o
+    U32 outputLen = afterPrefix.len + 2;
+    String output = {.buf = malloc(outputLen), .len = outputLen};
+    memcpy(output.buf, afterPrefix.buf, afterPrefix.len);
+    output.buf[output.len - 2] = '.';
+    output.buf[output.len - 1] = 'o';
+
+    printf("input:           %.*s\n", input->file.len, (char *)input->file.buf);
+    printf("prefix is:       %.*s\n", srcDir.len, srcDir.buf);
+    printf("after prefix is: %.*s\n", afterPrefix.len, afterPrefix.buf);
+    printf("output is:       %.*s\n", output.len, output.buf);
+
+    exit(1);
+    __builtin_unreachable();
+
+    return 1;
+
+    // commandTokenize(&argumentsCurrent, STRING("-o"));
+    // commandTokenize(&argumentsCurrent, input->output);
+    //
+    // FileDescriptors childFileDescriptors =
+    //     childFildDescriptorsCreate(fdIn, fdOut, fdErr);
+    //
+    // // charPtr_max_a arguments = commandTokenize(command);
+    //
+    // int result = commandExecute(argumentsCurrent, childFileDescriptors);
+    //
+    // return result;
+}
 
 int main(int argc, char **argv) {
     printf("hello from builder!\n");
@@ -319,43 +441,35 @@ int main(int argc, char **argv) {
         perror("getcwd() error");
         return 1;
     }
-    String cwd = {.buf = (unsigned char *)buffer, .len = strlen(buffer)};
 
-    StringIter folders;
-    U32 rootFolderLen = 1;
-    bool rootFolderFound = false;
-    STRING_TOKENIZE(cwd, folders, '/', 0) {
-        printf("dir: %.*s\n", folders.string.len, (char *)folders.string.buf);
-        rootFolderLen += folders.string.len;
-        if (stringEquals(folders.string, ROOT_FOLDER)) {
-            rootFolderFound = true;
-            break;
-        }
-        rootFolderLen++; // Adding the next '/'
-    }
-
-    if (!rootFolderFound) {
-        printf("Run me inside FLOS!!!\n");
+    String rootDir = dirPrefixFindSingleOccurrence(
+        (String){.buf = (unsigned char *)buffer, .len = strlen(buffer)},
+        ROOT_DIR);
+    if (!rootDir.len) {
+        fprintf(stderr,
+                "Run me inside a path that contains a single %.*s, given: %s\n",
+                ROOT_DIR.len, ROOT_DIR.buf, buffer);
         return 1;
     }
 
-    cwd.buf[rootFolderLen] = '\0';
-    cwd.len = rootFolderLen;
-    if (chdir((char *)cwd.buf)) {
+    rootDir.buf[rootDir.len] = '\0';
+    if (chdir((char *)rootDir.buf)) {
         perror("chdir() error");
         return 1;
     }
 
-    printf("Current folder: %.*s\n", cwd.len, (char *)cwd.buf);
+    printf("Current dir: %.*s\n", rootDir.len, (char *)rootDir.buf);
 
     int status;
     int first = commandRun(STRING("mkdir -p projects/example/code/build"),
                            nullptr, nullptr, nullptr);
     waitpid(first, &status, 0);
-    int sec = commandRun(STRING("clang-19 projects/example/code/src/main.c -o "
-                                "projects/example/code/build/output"),
-                         nullptr, nullptr, nullptr);
-    waitpid(sec, &status, 0);
+
+    CCompilationInput cInput = {.compiler = STRING("clang-19"),
+                                .file =
+                                    STRING("projects/example/code/src/main.c")};
+    int cCcmpilation = CCodeCompile(&cInput, nullptr, nullptr, nullptr);
+    waitpid(cCcmpilation, &status, 0);
     int childPid = commandRun(STRING("projects/example/code/build/output"),
                               nullptr, nullptr, nullptr);
     waitpid(childPid, &status, 0);
