@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #if !defined(__INT8_TYPE__) || !defined(__UINT8_TYPE__) ||                     \
@@ -173,8 +174,9 @@ typedef struct {
          1);                                                                   \
          (stringIter).pos += (stringIter).string.len + 1)
 
+static constexpr auto FULL_ACCESS_USER_ONLY = 0700;
 int fileDescriptorOpen(char *path, int flags) {
-    int result = open(path, flags);
+    int result = open(path, flags | O_CREAT | O_APPEND, FULL_ACCESS_USER_ONLY);
     if (result < 0) {
         printf("Could not open file %s: %s", path, strerror(errno));
         return -1;
@@ -182,7 +184,7 @@ int fileDescriptorOpen(char *path, int flags) {
     return result;
 }
 
-int commandRun(char *command, char *fdIn, char *fdOut, char *fdErr) {
+int commandRun(String command, char *fdIn, char *fdOut, char *fdErr) {
     int fdInDescriptor = -1;
     if (fdIn) {
         fdInDescriptor = fileDescriptorOpen(fdIn, O_RDONLY);
@@ -190,6 +192,7 @@ int commandRun(char *command, char *fdIn, char *fdOut, char *fdErr) {
             printf("Could not create file descriptor %s: %s", fdIn,
                    strerror(errno));
         }
+        printf("fdInd: %d\n", fdInDescriptor);
     }
 
     int fdOutDescriptor = -1;
@@ -199,6 +202,7 @@ int commandRun(char *command, char *fdIn, char *fdOut, char *fdErr) {
             printf("Could not create file descriptor %s: %s", fdOut,
                    strerror(errno));
         }
+        printf("fdout: %d\n", fdOutDescriptor);
     }
 
     int fdErrDescriptor = -1;
@@ -208,6 +212,7 @@ int commandRun(char *command, char *fdIn, char *fdOut, char *fdErr) {
             printf("Could not create file descriptor %s: %s", fdErr,
                    strerror(errno));
         }
+        printf("fderr: %d\n", fdErrDescriptor);
     }
 
     pid_t cpid = fork();
@@ -217,7 +222,7 @@ int commandRun(char *command, char *fdIn, char *fdOut, char *fdErr) {
     }
 
     if (cpid == 0) {
-        if (fdInDescriptor) {
+        if (fdInDescriptor >= 0) {
             if (dup2(fdInDescriptor, STDIN_FILENO) < 0) {
                 printf("Could not setup stdin for child process: %s",
                        strerror(errno));
@@ -225,7 +230,7 @@ int commandRun(char *command, char *fdIn, char *fdOut, char *fdErr) {
             }
         }
 
-        if (fdOutDescriptor) {
+        if (fdOutDescriptor >= 0) {
             if (dup2(fdOutDescriptor, STDOUT_FILENO) < 0) {
                 printf("Could not setup stdout for child process: %s",
                        strerror(errno));
@@ -233,7 +238,7 @@ int commandRun(char *command, char *fdIn, char *fdOut, char *fdErr) {
             }
         }
 
-        if (fdErrDescriptor) {
+        if (fdErrDescriptor >= 0) {
             if (dup2(fdErrDescriptor, STDERR_FILENO) < 0) {
                 printf("Could not setup stderr for child process: %s",
                        strerror(errno));
@@ -241,16 +246,60 @@ int commandRun(char *command, char *fdIn, char *fdOut, char *fdErr) {
             }
         }
 
-        char *arguments[2];
-        arguments[0] = command;
-        arguments[1] = nullptr;
+        // TODO: should just be some arena that you add to I guess...
+        char *arguments[64];
 
-        if (execvp(command, arguments) < 0) {
-            printf("Could not exec child process for %s: %s", command,
+        String commandCopy = {.buf = malloc(command.len), .len = command.len};
+        if (!commandCopy.buf) {
+            printf("no memoryn...\n");
+        }
+        memcpy(commandCopy.buf, command.buf, command.len);
+
+        StringIter tokens;
+        // TODO: Really just dupilcate this command and use an arena, I don't
+        // like changing the input command...
+        // NOTE: this fails if there are
+        // multiple spaces in the command, do I care?
+        U32 i = 0;
+        STRING_TOKENIZE(commandCopy, tokens, ' ', 0) {
+            tokens.string.buf[tokens.string.len] = '\0';
+            printf("token: %s\n", tokens.string.buf);
+            arguments[i] = (char *)tokens.string.buf;
+            i++;
+        }
+
+        arguments[i] = nullptr;
+
+        if (execvp(arguments[0], arguments)) {
+            printf("Could not exec child process for %s: %s", command.buf,
                    strerror(errno));
+            fflush(stdout);
+            fflush(stderr);
+
+            free(commandCopy.buf);
+
             exit(1);
         }
         __builtin_unreachable();
+    }
+
+    if (fdInDescriptor >= 0) {
+        if (close(fdInDescriptor)) {
+            printf("Could not close fdin descriptor: %s\n", strerror(errno));
+            exit(1);
+        }
+    }
+    if (fdOutDescriptor >= 0) {
+        if (close(fdOutDescriptor)) {
+            printf("Could not close fdOut Descriptor: %s\n", strerror(errno));
+            exit(1);
+        }
+    }
+    if (fdErrDescriptor >= 0) {
+        if (close(fdErrDescriptor)) {
+            printf("Could not close fdErr Descriptor: %s\n", strerror(errno));
+            exit(1);
+        }
     }
 
     return cpid;
@@ -273,7 +322,7 @@ int main(int argc, char **argv) {
     String cwd = {.buf = (unsigned char *)buffer, .len = strlen(buffer)};
 
     StringIter folders;
-    U32 rootFolderLen = 1; // Count root '/'
+    U32 rootFolderLen = 1;
     bool rootFolderFound = false;
     STRING_TOKENIZE(cwd, folders, '/', 0) {
         printf("dir: %.*s\n", folders.string.len, (char *)folders.string.buf);
@@ -289,12 +338,27 @@ int main(int argc, char **argv) {
         printf("Run me inside FLOS!!!\n");
         return 1;
     }
+
+    cwd.buf[rootFolderLen] = '\0';
     cwd.len = rootFolderLen;
+    if (chdir((char *)cwd.buf)) {
+        perror("chdir() error");
+        return 1;
+    }
 
-    printf("Root folder: %.*s\n", cwd.len, (char *)cwd.buf);
+    printf("Current folder: %.*s\n", cwd.len, (char *)cwd.buf);
 
-    char *command = "mkdir -p code/build && clang-19 code/src/main.c -o "
-                    "code/build/output && code/build/output";
+    int status;
+    int first = commandRun(STRING("mkdir -p projects/example/code/build"),
+                           nullptr, nullptr, nullptr);
+    waitpid(first, &status, 0);
+    int sec = commandRun(STRING("clang-19 projects/example/code/src/main.c -o "
+                                "projects/example/code/build/output"),
+                         nullptr, nullptr, nullptr);
+    waitpid(sec, &status, 0);
+    int childPid = commandRun(STRING("projects/example/code/build/output"),
+                              nullptr, nullptr, nullptr);
+    waitpid(childPid, &status, 0);
 
     return 0;
 }
