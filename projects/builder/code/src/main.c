@@ -1,9 +1,12 @@
+#define _POSIX_C_SOURCE 200809L // Required for dprintf
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -130,6 +133,7 @@ typedef double F64;
         U32 cap;                                                               \
     }
 
+// TODO: can replace this with a _a array! we know the size here!
 typedef ARRAY_MAX_LENGTH(char *) charPtr_max_a;
 
 // static constexpr auto BITS_PER_BYTE = 8;
@@ -187,10 +191,10 @@ typedef struct {
 
 static constexpr auto FULL_ACCESS_USER_ONLY = 0700;
 int fileDescriptorOpen(char *path, int flags) {
-    int result = open(path, flags | O_CREAT | O_APPEND, FULL_ACCESS_USER_ONLY);
+    int result = open(path, flags, FULL_ACCESS_USER_ONLY);
     if (result < 0) {
-        printf("Could not open file %s: %s", path, strerror(errno));
-        return -1;
+        fprintf(stderr, "Could not open file %s: %s", path, strerror(errno));
+        exit(1);
     }
     return result;
 }
@@ -207,9 +211,13 @@ static charPtr_max_a argumentsHolderCreate() {
 
 // TODO: person should really be freeing this...
 static void commandTokenize(charPtr_max_a *argumentsCurrent, String command) {
-    String commandCopy = {.buf = malloc(command.len), .len = command.len};
+    // NOTE: null terminator = +1
+    String commandCopy = {.buf = malloc(command.len + 1), .len = command.len};
     if (!commandCopy.buf) {
         printf("no memoryn...\n");
+    }
+    if (!command.buf) {
+        printf("is null\n");
     }
     memcpy(commandCopy.buf, command.buf, command.len);
 
@@ -305,6 +313,7 @@ static int commandExecute(charPtr_max_a arguments,
 
 FileDescriptors childFildDescriptorsCreate(char *fdIn, char *fdOut,
                                            char *fdErr) {
+    static constexpr auto CHILD_FLAGS = O_CREAT | O_APPEND;
     FileDescriptors result = {
         .fdIn = -1,
         .fdOut = -1,
@@ -312,7 +321,7 @@ FileDescriptors childFildDescriptorsCreate(char *fdIn, char *fdOut,
     };
 
     if (fdIn) {
-        result.fdIn = fileDescriptorOpen(fdIn, O_RDONLY);
+        result.fdIn = fileDescriptorOpen(fdIn, O_RDONLY | CHILD_FLAGS);
         if (result.fdIn < 0) {
             printf("Could not create file descriptor %s: %s", fdIn,
                    strerror(errno));
@@ -320,7 +329,7 @@ FileDescriptors childFildDescriptorsCreate(char *fdIn, char *fdOut,
     }
 
     if (fdOut) {
-        result.fdOut = fileDescriptorOpen(fdOut, O_WRONLY);
+        result.fdOut = fileDescriptorOpen(fdOut, O_WRONLY | CHILD_FLAGS);
         if (result.fdOut < 0) {
             printf("Could not create file descriptor %s: %s", fdOut,
                    strerror(errno));
@@ -328,7 +337,7 @@ FileDescriptors childFildDescriptorsCreate(char *fdIn, char *fdOut,
     }
 
     if (fdErr) {
-        result.fdErr = fileDescriptorOpen(fdErr, O_WRONLY);
+        result.fdErr = fileDescriptorOpen(fdErr, O_WRONLY | CHILD_FLAGS);
         if (result.fdErr < 0) {
             printf("Could not create file descriptor %s: %s", fdErr,
                    strerror(errno));
@@ -350,12 +359,14 @@ int commandRun(String command, char *fdIn, char *fdOut, char *fdErr) {
 }
 
 typedef struct {
+    String rootDir;
     String compiler;
-    String file;
+    String module;
     String flags;
 } CCompilationInput;
 
 static String SRC_DIR = STRING("src");
+static String BUILD_DIR = STRING("build");
 static String ROOT_DIR = STRING("FLOS");
 
 static String dirPrefixFindSingleOccurrence(String path, String dir) {
@@ -379,51 +390,276 @@ static String dirPrefixFindSingleOccurrence(String path, String dir) {
     return (String){.buf = path.buf, .len = dirPrefixLen};
 }
 
-int CCodeCompile(CCompilationInput *input, char *fdIn, char *fdOut,
-                 char *fdErr) {
+static String dirAppend(String base, String dir) {
+    U32 newDirLen = base.len + 1 + dir.len; // NOTE: '/'
+    String result = {.buf = malloc(newDirLen), .len = newDirLen};
+    memcpy(result.buf, base.buf, base.len);
+    result.buf[base.len] = '/';
+    memcpy(result.buf + base.len + 1, dir.buf, dir.len); // NOTE: '/'
+
+    return result;
+}
+
+typedef struct {
+    String input;
+    String output;
+} CCompileUnit;
+
+// TODO: can replace this with a _a array! we know the size here!
+typedef ARRAY_MAX_LENGTH(CCompileUnit) CCompileUnit_max_a;
+
+#define COMPILE_COMMANDS_STRING "compile_commands.json"
+static int compileCommandsJSONWrite(CCompilationInput *input,
+                                    CCompileUnit_max_a compileUnits) {
+    static String COMPILE_COMMANDS = (String){
+        .buf = (U8 *)COMPILE_COMMANDS_STRING,
+        .len = sizeof(COMPILE_COMMANDS_STRING) // NOTE: intentionally adding
+                                               // the null terminator!!!
+    };
+
+    String compileCommandsFile = dirAppend(input->module, COMPILE_COMMANDS);
+    int fd = fileDescriptorOpen((char *)compileCommandsFile.buf,
+                                O_WRONLY | O_CREAT | O_TRUNC);
+
+    // 3. Write Data
+    // dprintf works like fprintf but writes directly to the file descriptor.
+    dprintf(fd, "[\n");
+
+    for (size_t i = 0; i < compileUnits.len; i++) {
+        CCompileUnit *unit = &compileUnits.buf[i];
+
+        if (i > 0) {
+            dprintf(fd, ",\n");
+        }
+
+        dprintf(fd, "  {\n");
+        // TODO: fix this, root dir shouldnt havve this extra /?
+        dprintf(fd, "    \"directory\": \"%.*s\",\n", input->rootDir.len - 1,
+                input->rootDir.buf);
+
+        // Reconstruct the compile command
+        dprintf(fd, "    \"command\": \"%.*s %.*s -c %.*s -o %.*s\",\n",
+                input->compiler.len, input->compiler.buf, input->flags.len,
+                input->flags.buf, unit->input.len, unit->input.buf,
+                unit->output.len, unit->output.buf);
+
+        dprintf(fd, "    \"file\": \"%.*s\",\n", unit->input.len,
+                unit->input.buf);
+        dprintf(fd, "    \"output\": \"%.*s\"\n", unit->output.len,
+                unit->output.buf);
+        dprintf(fd, "  }");
+    }
+
+    dprintf(fd, "\n]\n");
+
+    if (fsync(fd) == -1) {
+        perror("fsync failed");
+    }
+
+    close(fd);
+}
+
+// TODO: Arena really....
+static String COutputFileCreate(String input, String srcDir, String buildDir) {
+    // TODO: ugly? Fix with arena stuff? and nicer appends maybe:
+    U32 prefixLen = srcDir.len + 1; // NOTE: '/'
+    U32 simpleLen = input.len - prefixLen;
+    String simpleOutputFile = {.buf = malloc(simpleLen + 2), // NOTE: ".o"
+                               .len = simpleLen + 2};
+    memcpy(simpleOutputFile.buf, input.buf + prefixLen, simpleLen);
+    simpleOutputFile.buf[simpleOutputFile.len - 2] = '.';
+    simpleOutputFile.buf[simpleOutputFile.len - 1] = 'o';
+
+    String outputFileFinal = dirAppend(buildDir, simpleOutputFile);
+    return dirAppend(buildDir, simpleOutputFile);
+}
+
+static int CFileCompile(charPtr_max_a *argumentsCurrent,
+                        FileDescriptors *childFileDescriptors, String input,
+                        String output) {
+    commandTokenize(argumentsCurrent, input);
+    commandTokenize(argumentsCurrent, STRING("-o"));
+    commandTokenize(argumentsCurrent, output);
+
+    int result = commandExecute(*argumentsCurrent, *childFileDescriptors);
+
+    argumentsCurrent->len -= 3;
+
+    return result;
+}
+
+static constexpr auto STACK_SIZE_MAX = 64;
+static constexpr auto C_COMPILE_UNITS_MAX = 64;
+
+int CModuleCompile(CCompilationInput *input, char *fdIn, char *fdOut,
+                   char *fdErr) {
+    FileDescriptors childFileDescriptors =
+        childFildDescriptorsCreate(fdIn, fdOut, fdErr);
+
     charPtr_max_a argumentsCurrent = argumentsHolderCreate();
 
     commandTokenize(&argumentsCurrent, input->compiler);
-    commandTokenize(&argumentsCurrent, input->flags);
+    if (input->flags.len) {
+        commandTokenize(&argumentsCurrent, input->flags);
+    }
     commandTokenize(&argumentsCurrent, STRING("-c"));
-    commandTokenize(&argumentsCurrent, input->file);
 
-    String srcDir = dirPrefixFindSingleOccurrence(input->file, SRC_DIR);
-    if (!srcDir.len) {
-        fprintf(
-            stderr,
-            "could not find a path that contains a single %.*s, given: %.*s\n",
-            SRC_DIR.len, SRC_DIR.buf, input->file.len, input->file.buf);
-        return 1;
+    printf("module: %.*s\n", input->module.len, input->module.buf);
+
+    String srcDir = dirAppend(input->module, SRC_DIR);
+    String buildDir = dirAppend(input->module, BUILD_DIR);
+
+    printf("src:    %.*s\n", srcDir.len, srcDir.buf);
+    printf("bld:    %.*s\n", buildDir.len, buildDir.buf);
+
+    // TODO: arena really..
+    // NOTE: is null terminated, but the len field does NOT include the null
+    // terminator at the end
+    String dirStackNulled[STACK_SIZE_MAX];
+    for (U32 i = 0; i < STACK_SIZE_MAX; i++) {
+        dirStackNulled[i].buf = malloc(PATH_MAX);
     }
 
-    String afterPrefix = {.buf = input->file.buf + srcDir.len,
-                          .len = input->file.len - srcDir.len};
-    // NOTE: +2 for the .o
-    U32 outputLen = afterPrefix.len + 2;
-    String output = {.buf = malloc(outputLen), .len = outputLen};
-    memcpy(output.buf, afterPrefix.buf, afterPrefix.len);
-    output.buf[output.len - 2] = '.';
-    output.buf[output.len - 1] = 'o';
+    memcpy(dirStackNulled[0].buf, srcDir.buf, srcDir.len);
+    dirStackNulled[0].len = srcDir.len;
+    dirStackNulled[0].buf[dirStackNulled[0].len] = '\0';
 
-    printf("input:           %.*s\n", input->file.len, (char *)input->file.buf);
-    printf("prefix is:       %.*s\n", srcDir.len, srcDir.buf);
-    printf("after prefix is: %.*s\n", afterPrefix.len, afterPrefix.buf);
-    printf("output is:       %.*s\n", output.len, output.buf);
+    U32 dirStackLen = 1;
+
+    CCompileUnit_max_a compileUnits = {
+        .buf = malloc(C_COMPILE_UNITS_MAX * sizeof(typeof(*compileUnits.buf))),
+        .len = 0,
+        .cap = C_COMPILE_UNITS_MAX,
+    };
+
+    while (dirStackLen) {
+        String dirString = dirStackNulled[dirStackLen - 1];
+        dirStackLen--;
+
+        DIR *dir = opendir((char *)dirString.buf);
+        if (!dir) {
+            fprintf(stderr, "Error: Cannot open directory %s\n", dirString.buf);
+            exit(1);
+        }
+
+        for (struct dirent *entry = readdir(dir); entry; entry = readdir(dir)) {
+            U32 entryLen = strlen(entry->d_name);
+            if ((entryLen == 1 && !memcmp(entry->d_name, ".", entryLen)) ||
+                entryLen == 2 && !memcmp(entry->d_name, "..", entryLen)) {
+                continue;
+            }
+
+            if (dirStackLen > STACK_SIZE_MAX) {
+                perror("too many on the stack");
+            }
+
+            dirStackNulled[dirStackLen] = dirAppend(
+                dirString,
+                (String){.buf = (U8 *)entry->d_name,
+                         .len =
+                             entryLen +
+                             1}); // NOTE: want to copy the null terminator too
+            dirStackNulled[dirStackLen]
+                .len--; // NOTE: subtract the null terminator from len tho
+
+            struct stat statbuf;
+            if (stat((char *)dirStackNulled[dirStackLen].buf, &statbuf) == -1) {
+                perror("Error getting file status");
+                exit(1);
+            }
+
+            if (S_ISDIR(statbuf.st_mode)) {
+                printf("[DIR]:  %s\n", dirStackNulled[dirStackLen].buf);
+                dirStackNulled[dirStackLen].len =
+                    dirString.len + 1 + entryLen; // NOTE: '/'
+                dirStackLen++;
+            } else if (S_ISREG(statbuf.st_mode)) {
+                printf("[FILE]: %s\n", dirStackNulled[dirStackLen].buf);
+
+                String output = COutputFileCreate(dirStackNulled[dirStackLen],
+                                                  srcDir, buildDir);
+
+                if (compileUnits.len > compileUnits.cap) {
+                    fprintf(stderr, "no space for compile units!\n");
+                    exit(1);
+                }
+                compileUnits.buf[compileUnits.len] = (CCompileUnit){
+                    .input = dirStackNulled[dirStackLen],
+                    .output = output,
+                };
+                compileUnits.len++;
+
+                int result =
+                    CFileCompile(&argumentsCurrent, &childFileDescriptors,
+                                 dirStackNulled[dirStackLen], output);
+
+                int status;
+                int success = waitpid(result, &status, 0);
+                if (success == -1) {
+                    perror("waitpid failed");
+                    exit(1);
+                }
+
+                if (!WIFEXITED(status)) {
+                    perror("Did not exit as intended");
+                    exit(1);
+                }
+
+                int exitCode = WEXITSTATUS(status);
+                if (exitCode) {
+                    fprintf(stderr, "Child exited with a code %d.\n", exitCode);
+                    exit(1);
+                }
+
+                printf("child exited successfully!\n");
+            }
+        }
+    }
+
+    for (U32 i = 0; i < compileUnits.len; i++) {
+        printf("input: %.*s\n", compileUnits.buf[i].input.len,
+               compileUnits.buf[i].input.buf);
+        printf("output: %.*s\n", compileUnits.buf[i].output.len,
+               compileUnits.buf[i].output.buf);
+    }
+
+    compileCommandsJSONWrite(input, compileUnits);
 
     exit(1);
     __builtin_unreachable();
 
-    return 1;
-
+    // commandTokenize(&argumentsCurrent, input->file);
+    //
+    // String srcDir = dirPrefixFindSingleOccurrence(input->file, SRC_DIR);
+    // if (!srcDir.len) {
+    //     fprintf(
+    //         stderr,
+    //         "could not find a path that contains a single %.*s, given:
+    //         %.*s\n", SRC_DIR.len, SRC_DIR.buf, input->file.len,
+    //         input->file.buf);
+    //     return 1;
+    // }
+    //
+    // String afterPrefix = {.buf = input->file.buf + srcDir.len,
+    //                       .len = input->file.len - srcDir.len};
+    // // NOTE: +2 for the .o
+    // U32 outputLen = afterPrefix.len + 2;
+    // String output = {.buf = malloc(outputLen), .len = outputLen};
+    // memcpy(output.buf, afterPrefix.buf, afterPrefix.len);
+    // output.buf[output.len - 2] = '.';
+    // output.buf[output.len - 1] = 'o';
+    //
+    // printf("input:           %.*s\n", input->file.len, (char
+    // *)input->file.buf); printf("prefix is:       %.*s\n", srcDir.len,
+    // srcDir.buf); printf("after prefix is: %.*s\n", afterPrefix.len,
+    // afterPrefix.buf); printf("output is:       %.*s\n", output.len,
+    // output.buf);
+    //
     // commandTokenize(&argumentsCurrent, STRING("-o"));
-    // commandTokenize(&argumentsCurrent, input->output);
+    // commandTokenize(&argumentsCurrent, output);
     //
     // FileDescriptors childFileDescriptors =
     //     childFildDescriptorsCreate(fdIn, fdOut, fdErr);
-    //
-    // // charPtr_max_a arguments = commandTokenize(command);
-    //
     // int result = commandExecute(argumentsCurrent, childFileDescriptors);
     //
     // return result;
@@ -465,14 +701,15 @@ int main(int argc, char **argv) {
                            nullptr, nullptr, nullptr);
     waitpid(first, &status, 0);
 
-    CCompilationInput cInput = {.compiler = STRING("clang-19"),
-                                .file =
-                                    STRING("projects/example/code/src/main.c")};
-    int cCcmpilation = CCodeCompile(&cInput, nullptr, nullptr, nullptr);
+    CCompilationInput cInput = {.rootDir = rootDir,
+                                .compiler = STRING("clang-19"),
+                                .flags = STRING("-std=c23"),
+                                .module = STRING("projects/example/code")};
+    int cCcmpilation = CModuleCompile(&cInput, nullptr, nullptr, nullptr);
     waitpid(cCcmpilation, &status, 0);
-    int childPid = commandRun(STRING("projects/example/code/build/output"),
-                              nullptr, nullptr, nullptr);
-    waitpid(childPid, &status, 0);
+    // int childPid = commandRun(STRING("projects/example/code/build/output"),
+    //                           nullptr, nullptr, nullptr);
+    // waitpid(childPid, &status, 0);
 
     return 0;
 }
